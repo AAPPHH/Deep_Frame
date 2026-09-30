@@ -32,7 +32,7 @@ def _mesh_axes(figure, slot, shape, color, title, grid, top=False):
     vertices, faces = shape.tessellate(0.1, 0.2)
     vertices = np.asarray([tuple(point) for point in vertices])
     triangles = vertices[np.asarray(faces)]
-    mesh = collection(triangles, facecolors=color, edgecolors="none", shade=True)
+    mesh = collection(triangles, facecolors=color, linewidths=0, shade=True)
     axis.add_collection3d(mesh)
     lower = np.asarray(grid["origin_mm"])
     size = np.asarray(grid["spacing_mm"]) * np.asarray(grid["shape"])
@@ -48,7 +48,7 @@ def _mesh_axes(figure, slot, shape, color, title, grid, top=False):
     return axis
 
 
-def render_topology_evidence(domain, density, reference_solid, candidate_solid, history, output_dir):
+def render_topology_evidence(domain, density, reference_solid, candidate_solid, history, output_dir, label=""):
     plt, _ = _plot_modules()
     field = np.asarray(density, dtype=float)
     if field.shape != tuple(domain["grid"]["shape"]) or not np.all(np.isfinite(field)):
@@ -67,7 +67,8 @@ def render_topology_evidence(domain, density, reference_solid, candidate_solid, 
         _mesh_axes(figure, index + 1, solid, color, title, domain["grid"])
         _mesh_axes(figure, index + 4, solid, color, "Top view", domain["grid"], top=True)
     fraction = domain["metadata"]["preserve_fraction_of_allowed"]
-    figure.suptitle(f"Deep_Frame Phase 1 | geometry and design field | fixed cells {100 * fraction:.2f}% of allowed space", fontsize=15)
+    prefix = label + " | " if label else ""
+    figure.suptitle(f"{prefix}Deep_Frame Phase 1 | fixed cells {100 * fraction:.2f}% of allowed space", fontsize=15)
     image_path = directory / "geometry_comparison.png"
     figure.savefig(image_path, dpi=160)
     plt.close(figure)
@@ -86,7 +87,7 @@ def render_topology_evidence(domain, density, reference_solid, candidate_solid, 
             axis.scatter(origin[0] + spacing[0] * (preserve_points[:, 0] + 0.5), origin[1] + spacing[1] * (preserve_points[:, 1] + 0.5), marker="s", facecolors="none", edgecolors="#f28c28", linewidths=0.8, s=32, label="fixed cells")
         axis.set(title=f"z = {origin[2] + spacing[2] * (layer + 0.5):g} mm", xlabel="x / mm", ylabel="y / mm", aspect="equal")
     figure.colorbar(image, ax=axes[0].tolist(), shrink=0.7, label="Physical material density (0 to 1)")
-    figure.suptitle("Final density field | white: forbidden | orange outline: prescribed interface", fontsize=13)
+    figure.suptitle(prefix + "Density field | white: forbidden | orange outline: prescribed interface", fontsize=13)
     image_path = directory / "density_slices.png"
     figure.savefig(image_path, dpi=160)
     plt.close(figure)
@@ -103,11 +104,14 @@ def render_topology_evidence(domain, density, reference_solid, candidate_solid, 
         axes[1].set(xlabel="Evaluation", ylabel="Density volume / mm3", title="Material budget")
         for axis in axes:
             axis.grid(alpha=0.2)
+        if label:
+            figure.suptitle(label)
         image_path = directory / "optimization_history.png"
         figure.savefig(image_path, dpi=160)
         plt.close(figure)
         result["optimization_history"] = str(image_path.resolve())
     result["rendering"] = "Matplotlib orthographic CAD triangle projections; identical limits and scale for all geometry panels; no synthetic or hand-edited geometry"
+    result["label"] = label
     result["matplotlib_version"] = version("matplotlib")
     result["density_sha256"] = hashlib.sha256(np.ascontiguousarray(field).tobytes()).hexdigest()
     result["cad_volumes_mm3"] = {"reference": float(reference_solid.volume), "candidate": float(candidate_solid.volume)}
