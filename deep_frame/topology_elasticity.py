@@ -90,7 +90,7 @@ def select_nodes(points, region):
 
 
 class HexElasticity:
-    def __init__(self, domain):
+    def __init__(self, domain, interface_node_policy="allowed_adjacent"):
         self.domain = domain
         self.points, self.connectivity, self.dofs = regular_grid(domain["grid"])
         self.ndof = len(self.points) * 3
@@ -101,6 +101,16 @@ class HexElasticity:
             raise ValueError("Elasticity requires allowed cells matching the grid")
         self.active_nodes = np.unique(self.connectivity[self.active_elements])
         self.active_dofs = (3 * self.active_nodes[:, None] + np.arange(3)).ravel()
+        self.interface_node_policy = interface_node_policy
+        if interface_node_policy == "allowed_adjacent":
+            self.interface_nodes = self.active_nodes
+        elif interface_node_policy == "preserve_adjacent":
+            preserve = np.asarray(domain["preserve"], dtype=bool).ravel()
+            if preserve.size != self.nelem or not np.any(preserve) or np.any(preserve & ~self.active_elements):
+                raise ValueError("Preserve-adjacent interface policy requires valid nonempty preserves")
+            self.interface_nodes = np.unique(self.connectivity[preserve])
+        else:
+            raise ValueError("Unknown topology interface_node_policy")
         material = domain["material"]
         self.young = float(material["young_modulus_mpa"])
         self.density = float(material["density_g_cm3"])
@@ -150,11 +160,11 @@ class HexElasticity:
     def _select(self, region, case_name, role):
         try:
             selected = select_nodes(self.points, region)
-            nodes = np.intersect1d(selected, self.active_nodes, assume_unique=True)
+            nodes = np.intersect1d(selected, self.interface_nodes, assume_unique=True)
             if not len(nodes):
                 raise ValueError(f"Empty topology node selector: {region}")
             if len(nodes) < len(selected):
-                self.selector_filtering.append({"case": case_name, "role": role, "selector": region, "removed_forbidden_only_nodes": len(selected) - len(nodes), "selected_nodes": len(nodes)})
+                self._record_filter(selected, nodes, region, case_name, role)
             return nodes
         except ValueError as error:
             if not str(error).startswith("Empty topology node selector"):
@@ -165,13 +175,17 @@ class HexElasticity:
                 "max_mm": (np.asarray(region["max_mm"]) + self.spacing / 2).tolist(),
             }
             selected = select_nodes(self.points, expanded)
-            nodes = np.intersect1d(selected, self.active_nodes, assume_unique=True)
+            nodes = np.intersect1d(selected, self.interface_nodes, assume_unique=True)
             if not len(nodes):
-                raise ValueError(f"Empty topology node selector on allowed material: {region}")
+                raise ValueError(f"Empty topology node selector under {self.interface_node_policy}: {region}")
             self.selector_expansions.append({"case": case_name, "role": role, "original": region, "expanded": expanded, "expansion_each_side_mm": (self.spacing / 2).tolist(), "selected_nodes": len(nodes)})
             if len(nodes) < len(selected):
-                self.selector_filtering.append({"case": case_name, "role": role, "selector": expanded, "removed_forbidden_only_nodes": len(selected) - len(nodes), "selected_nodes": len(nodes)})
+                self._record_filter(selected, nodes, expanded, case_name, role)
             return nodes
+
+    def _record_filter(self, selected, nodes, region, case_name, role):
+        allowed_count = len(np.intersect1d(selected, self.active_nodes, assume_unique=True))
+        self.selector_filtering.append({"case": case_name, "role": role, "selector": region, "removed_forbidden_only_nodes": len(selected) - allowed_count, "removed_nonpreserve_interface_nodes": allowed_count - len(nodes), "selected_nodes": len(nodes)})
 
     def matrix(self, moduli):
         moduli = np.asarray(moduli, dtype=float).ravel()
@@ -252,4 +266,4 @@ class HexElasticity:
         return (np.sqrt(np.sort(eigenvalues)) / (2 * np.pi)).tolist()
 
     def diagnostics(self):
-        return json.loads(json.dumps({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]}, allow_nan=False))
+        return json.loads(json.dumps({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]}, allow_nan=False))

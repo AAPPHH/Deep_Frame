@@ -169,3 +169,16 @@ def test_forbidden_only_nodes_receive_no_load_and_no_ghost_stiffness():
     assert stiffness[inactive].nnz == 0
     assert system.diagnostics()["selector_filtering"]
     assert system.solve(domain["allowed"].astype(float))["tip"]["compliance_n_mm"] > 0
+
+
+def test_preserved_interface_policy_excludes_unattached_free_load_nodes():
+    domain = beam_domain((6, 5, 5))
+    domain["preserve"][-1] = False
+    domain["preserve"][-1, 2, 2] = True
+    system = HexElasticity(domain, interface_node_policy="preserve_adjacent")
+    force = system.cases[0]["force"].reshape(-1, 3)
+    loaded = np.flatnonzero(np.linalg.norm(force, axis=1) > 0)
+    assert len(loaded) == 4
+    assert np.all(np.isin(loaded, system.interface_nodes))
+    assert system.diagnostics()["selector_filtering"][0]["removed_nonpreserve_interface_nodes"] == 32
+    assert np.sum(force, axis=0) == pytest.approx([0.0, 0.0, -1.0])
