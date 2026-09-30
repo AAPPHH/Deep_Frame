@@ -315,8 +315,26 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
             candidate_id = variant_name + f"_t{index:02d}"
             previous = next((entry for entry in manifest["candidates"] if entry["id"] == candidate_id), None)
             if previous and "record" in previous.get("artifacts", {}) and _valid_artifacts(previous, directory):
-                canonical = json.loads((directory / previous["artifacts"]["record"]["path"]).read_text(encoding="utf-8"))
-                canonical["artifacts"]["record"] = previous["artifacts"]["record"]
+                record_path = directory / previous["artifacts"]["record"]["path"]
+                canonical = json.loads(record_path.read_text(encoding="utf-8"))
+                if "fea" in canonical:
+                    canonical["diagnostics"] = [message for message in canonical.get("diagnostics", []) if not message.startswith(("Failed mechanical screens:", "Cached verification:"))]
+                    try:
+                        if not canonical.get("checks", {}).get("passed", False):
+                            raise ValueError("Cached geometry/manufacturing checks did not pass")
+                        _verify_cases(canonical["fea"], comparison_cases)
+                        canonical["comparison"] = compare_to_baseline(canonical["fea"], baseline, config["relative_constraints"])
+                        canonical["status"] = "ok" if canonical["comparison"]["passed"] else "invalid"
+                        if not canonical["comparison"]["passed"]:
+                            canonical["diagnostics"].append("Failed mechanical screens: " + ", ".join(name for name, passed in canonical["comparison"]["checks"].items() if not passed))
+                    except ValueError as error:
+                        canonical["status"] = "invalid"
+                        canonical["diagnostics"].append("Cached verification: " + str(error))
+                elif canonical.get("status") == "ok":
+                    canonical["status"] = "invalid"
+                    canonical["diagnostics"].append("Cached verification: missing independent FEA")
+                _save(record_path, canonical)
+                canonical["artifacts"]["record"] = _artifact(record_path, directory)
                 manifest["candidates"] = [entry for entry in manifest["candidates"] if entry["id"] != candidate_id] + [canonical]
                 continue
             candidate_dir = directory / "candidates" / candidate_id
