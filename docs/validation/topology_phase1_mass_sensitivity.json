@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "analysis": "additional modal point-mass sensitivity, separate from official pipeline acceptance",
+  "source_commit": "1f15bf0481c68ae4be2e826dca7ae87936d63d5f",
+  "reference_point_mass_g": 37.0,
+  "point_mass_g": 74.0,
+  "reference_frequencies_hz": [
+    1075.764,
+    1192.776,
+    1446.945,
+    1548.478,
+    1972.901,
+    2095.669
+  ],
+  "frequencies_hz": [
+    824.3202,
+    902.7666,
+    1070.14,
+    1525.608,
+    1902.266,
+    2090.076
+  ],
+  "all_frequencies_decrease": true,
+  "discarded_rigid_modes": 0,
+  "point_mass_coupling": [
+    {
+      "name": "battery",
+      "mass_g": 37.0,
+      "position_mm": [
+        -1.6781509643504353e-16,
+        -3.0144237274670914e-16,
+        34.5
+      ],
+      "attachment_nodes": 64,
+      "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+    }
+  ],
+  "frame_mass_g": 58.53180409071862,
+  "baseline_total_mass_g": 95.53180409071862,
+  "modified_total_mass_g": 132.53180409071862,
+  "changed_input_lines": [
+    {
+      "line": 178282,
+      "before": "3.7e-05",
+      "after": "7.4e-05"
+    }
+  ],
+  "material_units": "mm, N, s, tonne; density 1.09e-09 tonne/mm3",
+  "unchanged": [
+    "all mesh nodes and elements",
+    "material",
+    "fixtures",
+    "rigid attachment patch",
+    "modal solver settings"
+  ],
+  "artifacts": {
+    "density_field": {
+      "path": "C:\\clones\\Deep_Frame_P1B\\exports\\topology\\final_solver\\fields.npz",
+      "sha256": "fedca08920d04fc762e4c439a377c677520f37417036309dfe7de40e64d98534"
+    },
+    "solid_step": {
+      "path": "C:\\clones\\Deep_Frame_P1C\\exports\\topology\\final45_threshold20\\solid.step",
+      "sha256": "0d5ef5447e7e4299902a7f54c0d0e8e44a0d13b523eb913a69960687bfd7b92c"
+    },
+    "modal37_input": {
+      "path": "C:\\clones\\Deep_Frame_P1C\\exports\\topology\\final45_threshold20\\fea\\evaluation_fvxob7ws\\case_3.inp",
+      "sha256": "2bfa2f71da3141744f6d537188fc24d9ee1757a03d9fc135a6950fdda3dd8d39"
+    },
+    "modal37_data": {
+      "path": "C:\\clones\\Deep_Frame_P1C\\exports\\topology\\final45_threshold20\\fea\\evaluation_fvxob7ws\\case_3.dat",
+      "sha256": "40880254e232ee6cf844f5a452d00fedad976db1e5bcca01a3a93aa3bc8c8aed"
+    },
+    "modal74_input": {
+      "path": "C:\\clones\\Deep_Frame_P1C\\exports\\topology\\final45_threshold20\\mass_sensitivity\\battery74g.inp",
+      "sha256": "46c03c56f650215299a6fd9e898702683bde5f5cab8eaefc82be8cabeced5bc4"
+    },
+    "modal74_data": {
+      "path": "C:\\clones\\Deep_Frame_P1C\\exports\\topology\\final45_threshold20\\mass_sensitivity\\battery74g.dat",
+      "sha256": "b8e8dcfe5a44942d5ab19185208b711b21d97111627fccc712b79c5e1bfca6a4"
+    }
+  },
+  "limitations": [
+    "Isotropic dry full-density PA6-CF surrogate",
+    "Rigid patch suppresses local strap-band deformation",
+    "No mesh, patch-width or printed-material convergence study",
+    "Not a flight qualification"
+  ]
+}
