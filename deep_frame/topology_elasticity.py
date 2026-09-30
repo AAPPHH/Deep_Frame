@@ -96,6 +96,11 @@ class HexElasticity:
         self.ndof = len(self.points) * 3
         self.nelem = len(self.connectivity)
         self.spacing = np.asarray(domain["grid"]["spacing_mm"], dtype=float)
+        self.active_elements = np.asarray(domain["allowed"], dtype=bool).ravel()
+        if self.active_elements.size != self.nelem or not np.any(self.active_elements):
+            raise ValueError("Elasticity requires allowed cells matching the grid")
+        self.active_nodes = np.unique(self.connectivity[self.active_elements])
+        self.active_dofs = (3 * self.active_nodes[:, None] + np.arange(3)).ravel()
         material = domain["material"]
         self.young = float(material["young_modulus_mpa"])
         self.density = float(material["density_g_cm3"])
@@ -103,11 +108,12 @@ class HexElasticity:
             raise ValueError("Young modulus and density must be finite and positive")
         self.constitutive = elasticity_matrix(material["poisson_ratio"])
         self.ke, self.me, self.strain = hexahedron_matrices(self.spacing, material["poisson_ratio"])
-        self.rows = np.repeat(self.dofs, 24, axis=1).ravel()
-        self.columns = np.tile(self.dofs, (1, 24)).ravel()
+        self.rows = np.repeat(self.dofs[self.active_elements], 24, axis=1).ravel()
+        self.columns = np.tile(self.dofs[self.active_elements], (1, 24)).ravel()
         self.groups = defaultdict(list)
         self.cases = []
         self.selector_expansions = []
+        self.selector_filtering = []
         names = set()
         for case in domain["load_cases"]:
             if case["name"] in names:
@@ -119,7 +125,7 @@ class HexElasticity:
             if len(fixed_nodes) < 3 or np.linalg.matrix_rank(self.points[fixed_nodes] - self.points[fixed_nodes[0]]) < 2:
                 raise ValueError("Topology fixture requires three non-collinear nodes")
             fixed = (3 * fixed_nodes[:, None] + np.arange(3)).ravel()
-            free = np.setdiff1d(np.arange(self.ndof), fixed, assume_unique=True)
+            free = np.setdiff1d(self.active_dofs, fixed, assume_unique=True)
             compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "load_regions": []}
             if case["analysis"] == "static":
                 force = np.zeros(self.ndof)
@@ -143,7 +149,13 @@ class HexElasticity:
 
     def _select(self, region, case_name, role):
         try:
-            return select_nodes(self.points, region)
+            selected = select_nodes(self.points, region)
+            nodes = np.intersect1d(selected, self.active_nodes, assume_unique=True)
+            if not len(nodes):
+                raise ValueError(f"Empty topology node selector: {region}")
+            if len(nodes) < len(selected):
+                self.selector_filtering.append({"case": case_name, "role": role, "selector": region, "removed_forbidden_only_nodes": len(selected) - len(nodes), "selected_nodes": len(nodes)})
+            return nodes
         except ValueError as error:
             if not str(error).startswith("Empty topology node selector"):
                 raise
@@ -152,15 +164,20 @@ class HexElasticity:
                 "min_mm": (np.asarray(region["min_mm"]) - self.spacing / 2).tolist(),
                 "max_mm": (np.asarray(region["max_mm"]) + self.spacing / 2).tolist(),
             }
-            nodes = select_nodes(self.points, expanded)
+            selected = select_nodes(self.points, expanded)
+            nodes = np.intersect1d(selected, self.active_nodes, assume_unique=True)
+            if not len(nodes):
+                raise ValueError(f"Empty topology node selector on allowed material: {region}")
             self.selector_expansions.append({"case": case_name, "role": role, "original": region, "expanded": expanded, "expansion_each_side_mm": (self.spacing / 2).tolist(), "selected_nodes": len(nodes)})
+            if len(nodes) < len(selected):
+                self.selector_filtering.append({"case": case_name, "role": role, "selector": expanded, "removed_forbidden_only_nodes": len(selected) - len(nodes), "selected_nodes": len(nodes)})
             return nodes
 
     def matrix(self, moduli):
         moduli = np.asarray(moduli, dtype=float).ravel()
         if len(moduli) != self.nelem or np.any(moduli <= 0) or not np.all(np.isfinite(moduli)):
             raise ValueError("Every element needs a finite positive modulus")
-        values = (moduli[:, None] * self.ke.ravel()[None, :]).ravel()
+        values = (moduli[self.active_elements, None] * self.ke.ravel()[None, :]).ravel()
         stiffness = coo_matrix((values, (self.rows, self.columns)), shape=(self.ndof, self.ndof)).tocsc()
         return (stiffness + stiffness.T) * 0.5
 
@@ -173,6 +190,8 @@ class HexElasticity:
         moduli = self.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization)
         derivative = self.young * (1 - min_stiffness_ratio) * penalization * density ** (penalization - 1)
         stiffness = self.matrix(moduli)
+        moduli[~self.active_elements] = 0
+        derivative[~self.active_elements] = 0
         results = {}
         for cases in self.groups.values():
             free = cases[0]["free"]
@@ -222,7 +241,7 @@ class HexElasticity:
         if density.size != self.nelem or not np.all(np.isfinite(density)) or np.any(density <= 0) or np.any(density > 1):
             raise ValueError("Voxel modal verification requires strictly positive densities")
         stiffness = self.matrix(self.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization))
-        mass_values = (self.density * 1e-9 * density[:, None] * self.me.ravel()[None, :]).ravel()
+        mass_values = (self.density * 1e-9 * density[self.active_elements, None] * self.me.ravel()[None, :]).ravel()
         mass = coo_matrix((mass_values, (self.rows, self.columns)), shape=(self.ndof, self.ndof)).tocsc()
         free = case["free"]
         if not 0 < number < len(free):
@@ -233,4 +252,4 @@ class HexElasticity:
         return (np.sqrt(np.sort(eigenvalues)) / (2 * np.pi)).tolist()
 
     def diagnostics(self):
-        return json.loads(json.dumps({"nodes": len(self.points), "elements": self.nelem, "dofs": self.ndof, "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]}, allow_nan=False))
+        return json.loads(json.dumps({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]}, allow_nan=False))

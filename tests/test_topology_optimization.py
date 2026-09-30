@@ -153,3 +153,19 @@ def test_modal_point_mass_requires_independent_calculix():
     domain["point_masses"] = [{"name": "battery", "mass_g": 37}]
     with pytest.raises(ValueError, match="independent CalculiX"):
         HexElasticity(domain).elastic_frequencies(np.ones(36), "modes")
+
+
+def test_forbidden_only_nodes_receive_no_load_and_no_ghost_stiffness():
+    domain = beam_domain((6, 4, 4))
+    domain["allowed"][:, 2:, :] = False
+    domain["preserve"] &= domain["allowed"]
+    domain["forbidden"] = ~domain["allowed"]
+    system = HexElasticity(domain)
+    inactive = np.setdiff1d(np.arange(system.ndof), system.active_dofs)
+    for case in system.cases:
+        if case["analysis"] == "static":
+            assert np.all(case["force"][inactive] == 0)
+    stiffness = system.matrix(np.full(system.nelem, 4430.0))
+    assert stiffness[inactive].nnz == 0
+    assert system.diagnostics()["selector_filtering"]
+    assert system.solve(domain["allowed"].astype(float))["tip"]["compliance_n_mm"] > 0
