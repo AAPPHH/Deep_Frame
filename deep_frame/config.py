@@ -1,7 +1,10 @@
 from pathlib import Path
 
 from deep_frame.component_defaults import COMPONENT_DEFAULTS
+from deep_frame.fea_config import FEA_CONFIG
 from deep_frame.frame_defaults import FRAME_DEFAULTS, FRAME_DEFAULT_SOURCES
+from deep_frame.integration_config import INTEGRATION_CONFIG
+from deep_frame.optimization_config import OPTIMIZATION_CONFIG, SEARCH_SPACE
 
 
 CONFIG = {
@@ -13,12 +16,11 @@ CONFIG = {
     "frame": FRAME_DEFAULTS,
     "components": COMPONENT_DEFAULTS,
     "default_sources": FRAME_DEFAULT_SOURCES,
-    "material": {
-        "name": "Generic dry PA6-CF, provisional Bambu reference",
-        "density_g_cm3": 1.09,
-        "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf",
-        "assumptions": "Homogeneous full-density envelope; filament, infill and anisotropy remain unselected",
-    },
+    "material": FEA_CONFIG["material"],
+    "fea": FEA_CONFIG,
+    "optimization": OPTIMIZATION_CONFIG,
+    "optimization_search_space": SEARCH_SPACE,
+    "integration": INTEGRATION_CONFIG,
     "checks": {
         "minimum_clearance_mm": 0.5,
         "prop_clearance_mm": 2.0,

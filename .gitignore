@@ -17,3 +17,4 @@ env/
 *.[sS][tT][eE][pP]
 *.[sS][tT][pP]
 *.[sS][tT][lL]
+/exports/frame_v0.json
