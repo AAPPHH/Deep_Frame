@@ -1,6 +1,8 @@
-from math import atan2, degrees, hypot, isfinite, sqrt
+from math import atan2, cos, degrees, hypot, isfinite, radians, sin, sqrt
 
-from build123d import Align, Box, Cylinder, Part, Pos, Rot
+from build123d import Align, Box, Cylinder, Pos, Rot, Solid
+
+from deep_frame.components import _mount_holes
 
 
 def motor_positions(config: dict) -> dict:
@@ -19,12 +21,11 @@ def motor_positions(config: dict) -> dict:
 def mount_positions(config: dict) -> dict:
     components = config["components"]
     aio_pitch = components["aio15"]["mount_pitch_mm"]
-    motor_pitch = components["motor"]["mount_pitch_mm"]
     holes = {
         "aio15": [(sx * aio_pitch / 2, sy * aio_pitch / 2) for sx in (-1, 1) for sy in (-1, 1)]
     }
     for name, (x, y) in motor_positions(config).items():
-        holes[name] = [(x + sx * motor_pitch / 2, y + sy * motor_pitch / 2) for sx in (-1, 1) for sy in (-1, 1)]
+        holes[name] = [(x + dx, y + dy) for dx, dy, _ in _mount_holes(components["motor"])]
     return holes
 
 
@@ -36,7 +37,39 @@ def cylinder_at(radius, height, x=0, y=0, z=0):
     return Pos(x, y, z) * Cylinder(radius, height, align=(Align.CENTER, Align.CENTER, Align.MIN))
 
 
-def build_frame(config: dict) -> Part:
+def camera_mount_z(config: dict) -> float:
+    camera = config["components"]["camera"]
+    tilt = radians(camera["tilt_deg"])
+    extent = abs(camera["height_mm"] * cos(tilt)) + abs(camera["length_mm"] * sin(tilt))
+    return config["frame"]["base_thickness_mm"] + config["frame"]["camera_bottom_clearance_mm"] + extent / 2
+
+
+def structural_margins(config: dict) -> dict:
+    f = config["frame"]
+    c = config["components"]
+    motor_hole_radius = (c["motor"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2
+    hole_radius = hypot(*_mount_holes(c["motor"])[0][:2])
+    return {
+        "base": f["base_thickness_mm"],
+        "arm_height": f["arm_height_mm"],
+        "arm_width_half": f["arm_width_mm"] / 2,
+        "deck": f["deck_thickness_mm"],
+        "walls": f["minimum_wall_mm"],
+        "motor_shaft_web": hole_radius - motor_hole_radius - f["motor_shaft_hole_mm"] / 2,
+        "motor_outer_web": f["motor_pad_radius_mm"] - hole_radius - motor_hole_radius,
+        "aio_window_web": sqrt(2) * (c["aio15"]["mount_pitch_mm"] - f["base_window_mm"]) / 2 - (c["aio15"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2,
+        "wall_top_web": f["deck_top_mm"] - f["deck_thickness_mm"] - f["wall_window_bottom_mm"] - f["wall_window_height_mm"],
+        "wall_bottom_web": f["wall_window_bottom_mm"] - f["base_thickness_mm"],
+        "wall_end_web": (f["support_length_mm"] - f["wall_window_length_mm"]) / 2,
+        "deck_window_side_web": (f["deck_width_mm"] - f["deck_window_width_mm"]) / 2,
+        "deck_window_end_web": (f["deck_length_mm"] - f["deck_window_length_mm"]) / 2,
+        "strap_outer_web": f["deck_width_mm"] / 2 - f["strap_slot_x_mm"] - f["strap_slot_width_mm"] / 2,
+        "strap_inner_web": f["strap_slot_x_mm"] - f["strap_slot_width_mm"] / 2 - f["deck_window_width_mm"] / 2,
+        "strap_end_web": f["deck_length_mm"] / 2 - f["strap_slot_y_mm"] - f["strap_slot_length_mm"] / 2,
+    }
+
+
+def build_frame(config: dict) -> Solid:
     f = config["frame"]
     c = config["components"]
     if any(not isfinite(value) or value <= 0 for value in f.values()):
@@ -44,7 +77,7 @@ def build_frame(config: dict) -> Part:
     wall = f["minimum_wall_mm"]
     base = f["base_thickness_mm"]
     deck_z = f["deck_top_mm"] - f["deck_thickness_mm"]
-    if min(base, f["arm_height_mm"], f["deck_thickness_mm"], f["arm_width_mm"] / 2) < wall:
+    if min(structural_margins(config).values()) < wall - 1e-7:
         raise ValueError("Structural dimensions violate the minimum wall thickness.")
     if f["deck_width_mm"] < c["battery"]["width_mm"] + 2 * f["battery_margin_mm"]:
         raise ValueError("The battery deck is too narrow.")
@@ -88,7 +121,7 @@ def build_frame(config: dict) -> Part:
         frame += box_at(wall, f["cage_length_mm"], f["cage_height_mm"], sign * (camera_width + wall) / 2, camera_y)
     for sign in (-1, 1):
         frame += box_at(cage_width, wall, wall, y=camera_y + sign * (f["cage_length_mm"] - wall) / 2, z=f["cage_height_mm"] - wall)
-    camera_mount = Pos(0, camera_y, f["camera_mount_z_mm"]) * Rot(0, 90, 0) * Cylinder(f["camera_screw_diameter_mm"] / 2, cage_width + 2)
+    camera_mount = Pos(0, camera_y, camera_mount_z(config)) * Rot(0, 90, 0) * Cylinder(f["camera_screw_diameter_mm"] / 2, cage_width + 2)
     frame -= camera_mount
 
     tail = box_at(f["tail_width_mm"], f["tail_length_mm"], base, y=-f["tail_y_mm"])
@@ -116,7 +149,7 @@ def build_frame(config: dict) -> Part:
 
     if not frame.is_valid or len(frame.solids()) != 1:
         raise ValueError("The frame must be one valid solid.")
-    return frame
+    return frame.solids()[0]
 
 
 def assembly_placements(config: dict) -> dict:

@@ -84,7 +84,7 @@
     "rationale": "Aus AIO15- und Akkuhuelle, Stegbreiten und2-mm-Mindestwand abgeleitete eigene Druckabmessung."
   },
   "base_window_mm": {
-    "value": 22.0,
+    "value": 20.0,
     "kind": "design_assumption",
     "frame_ids": [
       "tadpole_hd_3",
@@ -95,7 +95,7 @@
       "functional_voids",
       "component_driven"
     ],
-    "rationale": "Aus AIO15- und Akkuhuelle, Stegbreiten und2-mm-Mindestwand abgeleitete eigene Druckabmessung."
+    "rationale": "20-mm-Fenster haelt um25.5-mm-M2-Montageachsen mindestens2-mm-Material bis zum Fenster."
   },
   "arm_width_mm": {
     "value": 6.5,
@@ -154,7 +154,7 @@
     "rationale": "Eigene Dimensionierung fuer65-mm-Props und30-mm-Akku; Querschnitte sind vorlaeufige PA6-CF-Annahmen."
   },
   "motor_shaft_hole_mm": {
-    "value": 4.4,
+    "value": 2.8,
     "kind": "design_assumption",
     "frame_ids": [
       "gecko_3",
@@ -165,7 +165,7 @@
       "wide_x",
       "component_driven"
     ],
-    "rationale": "Eigene Dimensionierung fuer65-mm-Props und30-mm-Akku; Querschnitte sind vorlaeufige PA6-CF-Annahmen."
+    "rationale": "2.8-mm-Zentralbohrung laesst bei4.5-mm-Lochkreisradius und1.1-mm-Schraubradius genau2-mm-Netzsteg; reale Motorunterseite pruefen."
   },
   "hole_clearance_mm": {
     "value": 0.2,
@@ -498,7 +498,7 @@
     "rationale": "Lux-Huelle mit20Grad-Tilt, Freiraum und tragendem Schutzrand; Schraubensitz ist vorlaeufig."
   },
   "tail_width_mm": {
-    "value": 36.0,
+    "value": 40.0,
     "kind": "design_assumption",
     "frame_ids": [
       "odonata_40mm",
@@ -507,7 +507,7 @@
     "principle_ids": [
       "tail_routing"
     ],
-    "rationale": "Aus Steckerhuellen, Clearance und Propellerfreigang abgeleitete eigene Heckabmessung."
+    "rationale": "40-mm-Heckfuss ueberlappt die Deckwaende flaechig;36mm erzeugte eine nichtmannigfaltige Linienberuehrung im STL."
   },
   "tail_length_mm": {
     "value": 40.0,
