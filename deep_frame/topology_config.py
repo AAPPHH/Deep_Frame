@@ -32,6 +32,7 @@ TOPOLOGY_CONFIG = {
         ],
     },
     "optimizer": {
+        "interface_node_policy": "preserve_adjacent",
         "volume_fraction": 0.10,
         "filter_radius_mm": 6.0,
         "penalization": 3.0,
