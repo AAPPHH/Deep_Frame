@@ -187,3 +187,27 @@ def test_resume_recovers_baseline_and_candidate_truth_from_hashed_records(tmp_pa
     assert restored["candidates"][1]["status"] == "invalid"
     assert restored["pareto_ids"] == ["default_t00"]
     assert calls == {"generator": 1, "fea": 2, "reconstructor": 2}
+
+
+def test_cached_candidate_is_recompared_after_baseline_reverification(tmp_path):
+    _, calls, callbacks = pipeline_fixture()
+    original = callbacks["evaluator"]
+    changed = {"active": False}
+
+    def evaluator(solid, material, masses, cases, settings):
+        result = original(solid, material, masses, cases, settings)
+        if solid.volume > 90 and changed["active"]:
+            result["eigenfrequencies_hz"] = [200.0]
+            result["load_cases"]["modes"]["eigenfrequencies_hz"] = [200.0]
+        return result
+
+    callbacks["evaluator"] = evaluator
+    settings = {"output_dir": str(tmp_path), "density_thresholds": [0.2]}
+    first = run_topology({}, settings, **callbacks)
+    (Path(first["run_dir"]) / "baseline/fea.json").write_text("damaged")
+    changed["active"] = True
+    restored = run_topology({}, settings, **callbacks)
+    assert restored["status"] == "invalid"
+    assert restored["selected_id"] is None
+    assert not restored["candidates"][0]["comparison"]["checks"]["frequency"]
+    assert calls["fea"] == 3
