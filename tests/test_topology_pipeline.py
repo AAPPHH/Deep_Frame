@@ -123,6 +123,7 @@ def test_manufacturing_failures_are_rejected_before_independent_fea(tmp_path):
     assert result["selected_id"] is None
     assert calls["fea"] == 1
     assert "wall below nozzle limit" in result["candidates"][0]["diagnostics"][0]
+    assert "geometry.step" in result["candidates"][0]["artifacts"]
 
 
 def test_missing_modal_case_cannot_pass_mechanical_verification(tmp_path):
@@ -166,3 +167,23 @@ def test_all_five_predeclared_comparisons_are_enforced():
         comparison = compare_to_baseline(candidate, result, limits)
         assert not comparison["passed"]
         assert not comparison["checks"][expected]
+
+
+def test_resume_recovers_baseline_and_candidate_truth_from_hashed_records(tmp_path):
+    _, calls, callbacks = pipeline_fixture()
+    settings = {"output_dir": str(tmp_path), "density_thresholds": [0.2, 0.5]}
+    first = run_topology({}, settings, **callbacks)
+    path = Path(first["run_dir"]) / "manifest.json"
+    manifest = json.loads(path.read_text())
+    manifest["baseline"]["result"]["frame_mass_g"] = 999999
+    manifest["candidates"][0]["status"] = "invalid"
+    manifest["candidates"][0]["comparison"]["selection_score"] = 999999
+    manifest["candidates"][1]["status"] = "ok"
+    manifest["candidates"][1]["comparison"] = deepcopy(manifest["candidates"][0]["comparison"])
+    path.write_text(json.dumps(manifest))
+    restored = run_topology({}, settings, **callbacks)
+    assert restored["baseline"]["result"]["frame_mass_g"] == pytest.approx(0.1)
+    assert restored["candidates"][0]["status"] == "ok"
+    assert restored["candidates"][1]["status"] == "invalid"
+    assert restored["pareto_ids"] == ["default_t00"]
+    assert calls == {"generator": 1, "fea": 2, "reconstructor": 2}
