@@ -211,3 +211,18 @@ def test_cached_candidate_is_recompared_after_baseline_reverification(tmp_path):
     assert restored["selected_id"] is None
     assert not restored["candidates"][0]["comparison"]["checks"]["frequency"]
     assert calls["fea"] == 3
+
+
+def test_failed_baseline_updates_latest_pointer_and_preserves_failure_record(tmp_path):
+    _, calls, callbacks = pipeline_fixture()
+
+    def evaluator(solid, material, masses, cases, settings):
+        return {"status": "failed", "diagnostics": ["solver timeout"]}
+
+    callbacks["evaluator"] = evaluator
+    result = run_topology({}, {"output_dir": str(tmp_path), "density_thresholds": [0.2]}, **callbacks)
+    latest = json.loads((tmp_path / "latest.json").read_text())
+    assert result["status"] == latest["status"] == "failed"
+    assert latest["manifest"] == str(Path(result["run_dir"]) / "manifest.json")
+    assert calls["generator"] == 0
+    assert result["baseline"]["result"]["diagnostics"] == ["solver timeout"]
