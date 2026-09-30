@@ -18,7 +18,7 @@ Die Standarddiskretisierung besitzt 34 x 32 x 8 Zellen mit 4 mm Kantenlaenge. Ze
 
 Die Preserve-Zellen belegen **2.7046 Prozent** des zulaessigen Raums. **97.2954 Prozent** bleiben freie Optimierungsvariablen. Diese Angaben betreffen das Raster; exakte Kontaktgrenzen und Bohrungen aendern das physische Endvolumen. Die Preserve-Maske enthaelt mehrere getrennte Komponenten und kann allein keinen tragenden Frame bilden.
 
-`volume_fraction = 0.10` begrenzt das SIMP-Dichtevolumen auf 37388.8 mm3, entsprechend 40.755 g bei 1.09 g/cm3. Dies ist kein vorweggenommenes Ergebnisgewicht: Dichteschwelle, exakte lokale Anschluesse, Ausschnitte und Qualitaetspruefungen bestimmen das tatsaechliche Gewicht. Die zugehoerigen Werte und die tatsaechlichen Masken werden je Lauf gespeichert.
+`volume_fraction = 0.10` begrenzt das SIMP-Dichtevolumen auf 37388.8 mm3, entsprechend 40.754 g bei 1.09 g/cm3. Dies ist kein vorweggenommenes Ergebnisgewicht: Dichteschwelle, exakte lokale Anschluesse, Ausschnitte und Qualitaetspruefungen bestimmen das tatsaechliche Gewicht. Die zugehoerigen Werte und die tatsaechlichen Masken werden je Lauf gespeichert.
 
 ## Feste funktionale Anschluesse
 

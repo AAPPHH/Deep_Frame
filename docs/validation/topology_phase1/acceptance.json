@@ -1,0 +1,464 @@
+{
+  "schema_version": "deep-frame-topology-acceptance-v1",
+  "status": "ok",
+  "run_manifest": "../../../exports/topology/phase1/2cd7bcbc15b67fc7/manifest.json",
+  "versioned_manifest": "run_manifest.json",
+  "input_sha256": "2cd7bcbc15b67fc74f4dbade325ffa8663b41a10d36905e72904195d5483b873",
+  "source_revision": "f816fd93e268d6c5d49761830a768d92cd0854b8",
+  "source_dirty": false,
+  "selected_id": "default_t00",
+  "pareto_ids": [
+    "default_t00"
+  ],
+  "comparison": {
+    "passed": true,
+    "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+    },
+    "ratios": {
+      "frame_mass_ratio": 1.8198545039059488,
+      "stiffness_ratio": 37.645066696493046,
+      "frequency_ratio": 5.260356765637836,
+      "displacement_ratio": 0.03156660196855304,
+      "stress_ratio": 0.0864838675264551
+    },
+    "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+    },
+    "candidate": {
+      "frame_mass_g": 58.53180409071862,
+      "stiffness_n_per_mm": 194.39106808692114,
+      "max_displacement_mm": 0.008062850696662235,
+      "max_von_mises_mpa": 0.5174761080440285,
+      "first_frequency_hz": 1075.764
+    },
+    "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+    },
+    "selection_score": 2.154570053660322
+  },
+  "optimization": {
+    "method": "3D Hex8 SIMP, spatial density filter, smooth projection, normalized multi-load compliance, OC volume constraint",
+    "initialization": "uniform in every free cell; fixed preserves; no frame template or connectivity seed",
+    "converged": false,
+    "stop_reason": "max_iterations",
+    "iterations": 45,
+    "objective_initial": 1.0,
+    "objective_final": 0.013326497619003118,
+    "density_volume_mm3": 37388.79999833853,
+    "density_frame_mass_g": 40.753791998189,
+    "gray_fraction_free": 0.17276565798733287
+  },
+  "domain": {
+    "allowed_cells": 5842,
+    "preserve_cells": 158,
+    "free_cells": 5684,
+    "preserve_fraction_of_allowed": 0.02704553235193427,
+    "allowed_volume_mm3": 373888.0,
+    "preserve_volume_mm3": 10112.0
+  },
+  "reconstruction": {
+    "method": "conservative_voxel_threshold_greedy_cuboids",
+    "density_threshold": 0.2,
+    "occupied_voxels": 819,
+    "connectivity": 6,
+    "repairs": [
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          7,
+          27,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.034380805448818885,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          9,
+          7,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.1774794385069857,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          12,
+          21,
+          5
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.19608086535813013,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          14,
+          10,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.061234919875626105,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          16,
+          10,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.11078986729369267,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          11,
+          13,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.13100253777705595,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          11,
+          16,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.15652224624902059,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          21,
+          6,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.13424123207375221,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          21,
+          2,
+          1
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.18204554161575415,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          21,
+          6,
+          1
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.0995644153217222,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          13,
+          27,
+          4
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.18742067954903546,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      }
+    ],
+    "cuboid_count": 147,
+    "voxel_volume_mm3": 52416.0,
+    "raster_forbidden_voxel_overlap_mm3": {},
+    "final_volume_mm3": 53698.902835521665,
+    "exact_region_volume_change_mm3": 1282.902835521665,
+    "runtime_s": 2.0228301999159157,
+    "source_grid": {
+      "origin_mm": [
+        -68.0,
+        -64.0,
+        0.0
+      ],
+      "spacing_mm": [
+        4.0,
+        4.0,
+        4.0
+      ],
+      "shape": [
+        34,
+        32,
+        8
+      ],
+      "axis_order": "xyz",
+      "order": "C"
+    },
+    "minimum_voxel_feature_mm": 4.0,
+    "preserve_union_count": 25,
+    "forbidden_cut_count": 56
+  },
+  "feature_checks": {
+    "minimum_feature_mm": 2.0,
+    "nozzle_limit_mm": 2.0,
+    "method": "voxel feature lower bound plus exact preserve ligament checks and post-Boolean normal-ray screen",
+    "reconstruction_report_present": true,
+    "passed": true,
+    "grid_feature_mm": 4.0,
+    "post_boolean_wall_screen": {
+      "method": "exact inward CAD normal rays, nine UV samples per face with projected largest-triangle fallback",
+      "minimum_required_mm": 2.0,
+      "minimum_measured_mm": 1.999999999999697,
+      "ray_count": 4182,
+      "thin_samples": [],
+      "thin_sample_count": 0,
+      "unresolved_faces": [],
+      "passed": true,
+      "limitations": "Finite surface sampling is a geometric screen, not a proof of global minimum thickness between samples"
+    }
+  },
+  "candidate_statuses": [
+    {
+      "id": "default_t00",
+      "density_threshold": 0.2,
+      "status": "ok",
+      "stage": "complete",
+      "diagnostics": []
+    },
+    {
+      "id": "default_t01",
+      "density_threshold": 0.25,
+      "status": "invalid",
+      "stage": "geometry",
+      "diagnostics": [
+        "ValueError: Density threshold produced 2 face-connected components"
+      ]
+    },
+    {
+      "id": "default_t02",
+      "density_threshold": 0.3,
+      "status": "invalid",
+      "stage": "geometry",
+      "diagnostics": [
+        "ValueError: Density threshold produced 3 face-connected components"
+      ]
+    },
+    {
+      "id": "default_t03",
+      "density_threshold": 0.35,
+      "status": "invalid",
+      "stage": "geometry",
+      "diagnostics": [
+        "ValueError: Density threshold produced 6 face-connected components"
+      ]
+    },
+    {
+      "id": "default_t04",
+      "density_threshold": 0.4,
+      "status": "invalid",
+      "stage": "geometry",
+      "diagnostics": [
+        "ValueError: Density threshold produced 13 face-connected components"
+      ]
+    },
+    {
+      "id": "default_t05",
+      "density_threshold": 0.5,
+      "status": "invalid",
+      "stage": "geometry",
+      "diagnostics": [
+        "ValueError: Density threshold produced 12 face-connected components"
+      ]
+    }
+  ],
+  "baseline_mesh": {
+    "gmsh_version": "4.15.2",
+    "element_type": "C3D10",
+    "element_count": 45491,
+    "minimum_jacobian_mm3": 0.053391162260114436,
+    "mesh_size_mm": 3.0,
+    "second_order_linear": true,
+    "high_order_optimize": 0,
+    "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+    "node_count": 83406
+  },
+  "candidate_mesh": {
+    "gmsh_version": "4.15.2",
+    "element_type": "C3D10",
+    "element_count": 60933,
+    "minimum_jacobian_mm3": 0.06504657037365616,
+    "mesh_size_mm": 3.0,
+    "second_order_linear": true,
+    "high_order_optimize": 0,
+    "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+    "node_count": 110430
+  },
+  "point_mass_coupling": [
+    {
+      "name": "battery",
+      "mass_g": 37.0,
+      "position_mm": [
+        -1.6781509643504353e-16,
+        -3.0144237274670914e-16,
+        34.5
+      ],
+      "attachment_nodes": 64,
+      "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+    }
+  ],
+  "mass_scope": "frame plus battery point mass; motors, props, camera and AIO excluded from FEA",
+  "raw_artifact_hashes": {
+    "baseline_step": {
+      "path": "baseline/geometry.step",
+      "sha256": "0791b4cbc53e658091c5b1aa851f68ff632fe508940b82b30b4611791b28108c",
+      "size_bytes": 664982
+    },
+    "candidate_step": {
+      "path": "candidates/default_t00/geometry.step",
+      "sha256": "1ff3b7ae4bc64d300d62b17452db80bf9c2f879929ae185ce9e7c5e1936c04ab",
+      "size_bytes": 1919743
+    },
+    "density_fields": {
+      "path": "optimizer/default/fields.npz",
+      "sha256": "e9f188ab36bdef40fd6bcb45d9cc37ee7fafbf652a08ca7cf95b54f2faa113da",
+      "size_bytes": 18013
+    }
+  },
+  "versioned_artifacts": {
+    "run_manifest.json": {
+      "sha256": "4d6f9fbc3c9c3129a5683dbb300d2e295031e186364b38049cf948b6375f08a9",
+      "size_bytes": 249271
+    },
+    "inputs.json": {
+      "sha256": "f46b2489f04a3c7fd0e7695dac23bca1422c1901faebcd7d9b576cd39b052baa",
+      "size_bytes": 146456
+    },
+    "fields.npz": {
+      "sha256": "e9f188ab36bdef40fd6bcb45d9cc37ee7fafbf652a08ca7cf95b54f2faa113da",
+      "size_bytes": 18013
+    },
+    "optimization.json": {
+      "sha256": "199c658642980c81b14cc728ba6da734fe7e1d274c836f4e41fad322835070a9",
+      "size_bytes": 145645
+    },
+    "candidate_record.json": {
+      "sha256": "da2253d8ac9440e80ddb06c63c890804584d9f1840bcb01ff5584dd8412744bd",
+      "size_bytes": 66588
+    },
+    "baseline_fea.json": {
+      "sha256": "99cec72296390ce7b21d50e4f7bb185fdc021053b24c427ff5f1645918065442",
+      "size_bytes": 5600
+    },
+    "candidate_fea.json": {
+      "sha256": "7cbc7fc407669080b148d976a672684c80075e6cbfcfc847cb6563d3c2834906",
+      "size_bytes": 5836
+    }
+  },
+  "visualizations": {
+    "geometry_comparison": "geometry_comparison.png",
+    "density_slices": "density_slices.png",
+    "optimization_history": "optimization_history.png",
+    "rendering": "Matplotlib orthographic CAD triangle projections; identical limits and scale for all geometry panels; no synthetic or hand-edited geometry",
+    "label": "",
+    "matplotlib_version": "3.11.2",
+    "density_sha256": "043c5164a102a233d19ef6bbd337fc3ebc7d3da46eeef2bc28ca4c4eb25daee7",
+    "cad_volumes_mm3": {
+      "reference": 29507.25056330862,
+      "candidate": 53698.90283551958
+    },
+    "grid": {
+      "origin_mm": [
+        -68.0,
+        -64.0,
+        0.0
+      ],
+      "spacing_mm": [
+        4.0,
+        4.0,
+        4.0
+      ],
+      "shape": [
+        34,
+        32,
+        8
+      ],
+      "axis_order": "xyz",
+      "order": "C"
+    },
+    "source_input_sha256": "2cd7bcbc15b67fc74f4dbade325ffa8663b41a10d36905e72904195d5483b873",
+    "source_selected_id": "default_t00",
+    "verified_geometry_artifacts": {
+      "baseline": {
+        "path": "baseline/geometry.step",
+        "sha256": "0791b4cbc53e658091c5b1aa851f68ff632fe508940b82b30b4611791b28108c",
+        "size_bytes": 664982
+      },
+      "candidate": {
+        "path": "candidates/default_t00/geometry.step",
+        "sha256": "1ff3b7ae4bc64d300d62b17452db80bf9c2f879929ae185ce9e7c5e1936c04ab",
+        "size_bytes": 1919743
+      }
+    }
+  }
+}

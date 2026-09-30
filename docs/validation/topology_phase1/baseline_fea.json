@@ -1,0 +1,156 @@
+{
+  "status": "ok",
+  "mass_g": 69.16290311400827,
+  "eigenfrequencies_hz": [
+    204.504,
+    240.6657,
+    240.9864,
+    426.2794,
+    464.7615,
+    601.5691
+  ],
+  "max_displacement_mm": 0.25542346004471833,
+  "max_von_mises_mpa": 5.983498689923118,
+  "stiffness_n_per_mm": 5.163785992309858,
+  "load_cases": {
+    "arm_tip": {
+      "analysis": "static",
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 2.938383537483186,
+      "loads": [
+        {
+          "node_count": 1248,
+          "force_n": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "mean_displacement_mm": [
+            -0.011528314294871797,
+            0.006203563523237182,
+            -0.19365636017628246
+          ],
+          "directional_displacement_mm": 0.19365636017628246,
+          "stiffness_n_per_mm": 5.163785992309858
+        }
+      ],
+      "stiffness_n_per_mm": 5.163785992309858,
+      "fixed_node_count": 716
+    },
+    "battery_impact": {
+      "analysis": "static",
+      "max_displacement_mm": 0.028385830163246792,
+      "max_von_mises_mpa": 1.126452415192182,
+      "loads": [
+        {
+          "node_count": 58,
+          "force_n": [
+            0.0,
+            0.0,
+            -3.6284604999999996
+          ],
+          "mean_displacement_mm": [
+            -1.1580045517241378e-05,
+            0.0004473436224137933,
+            -0.023297142931034485
+          ],
+          "directional_displacement_mm": 0.023297142931034485,
+          "stiffness_n_per_mm": 155.74701630758642
+        }
+      ],
+      "stiffness_n_per_mm": 155.74701630758642,
+      "fixed_node_count": 4933
+    },
+    "camera_side": {
+      "analysis": "static",
+      "max_displacement_mm": 0.1943364860042192,
+      "max_von_mises_mpa": 5.983498689923118,
+      "loads": [
+        {
+          "node_count": 738,
+          "force_n": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "mean_displacement_mm": [
+            0.14997036653116527,
+            0.0003627629945799421,
+            -0.0010043117886178858
+          ],
+          "directional_displacement_mm": 0.14997036653116527,
+          "stiffness_n_per_mm": 33.339919849838815
+        }
+      ],
+      "stiffness_n_per_mm": 33.339919849838815,
+      "fixed_node_count": 4933
+    },
+    "modes": {
+      "analysis": "modal",
+      "eigenfrequencies_hz": [
+        204.504,
+        240.6657,
+        240.9864,
+        426.2794,
+        464.7615,
+        601.5691
+      ],
+      "discarded_rigid_modes": 0,
+      "fixture": "all translations fixed on selected nodes",
+      "fixed_node_count": 4933
+    }
+  },
+  "diagnostics": [],
+  "artifacts": {
+    "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0",
+    "arm_tip": {
+      "input": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_0.inp",
+      "data": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_0.dat",
+      "log": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_0.log"
+    },
+    "battery_impact": {
+      "input": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_1.inp",
+      "data": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_1.dat",
+      "log": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_1.log"
+    },
+    "camera_side": {
+      "input": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_2.inp",
+      "data": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_2.dat",
+      "log": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_2.log"
+    },
+    "modes": {
+      "input": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_3.inp",
+      "data": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_3.dat",
+      "log": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\case_3.log"
+    },
+    "result": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\baseline\\fea\\evaluation_ytec1wh0\\result.json"
+  },
+  "mesh": {
+    "gmsh_version": "4.15.2",
+    "element_type": "C3D10",
+    "element_count": 45491,
+    "minimum_jacobian_mm3": 0.053391162260114436,
+    "mesh_size_mm": 3.0,
+    "second_order_linear": true,
+    "high_order_optimize": 0,
+    "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+    "node_count": 83406
+  },
+  "point_mass_coupling": [
+    {
+      "name": "battery",
+      "mass_g": 37.0,
+      "position_mm": [
+        -1.6781509643504353e-16,
+        -3.0144237274670914e-16,
+        34.5
+      ],
+      "attachment_nodes": 58,
+      "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+    }
+  ],
+  "frame_mass_g": 32.16290311400827,
+  "point_mass_g": 37.0,
+  "solver_version": "2.22",
+  "runtime_s": 44.126069299993105
+}
