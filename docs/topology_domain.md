@@ -47,6 +47,8 @@ Der Adapter uebernimmt die bisherigen Armspitzen-, 10-g-Akku-Aufprall-, seitlich
 
 Diese vier Faelle stehen in `comparison_load_cases` und muessen unveraendert auf **v0 und freie Struktur** angewandt werden. Alte v0-Ergebniswerte mit breiter Zentralklemme sind keine gueltigen Vergleichswerte fuer diesen Lauf. Alle anderen Faelle fixieren weiterhin die vier Motor-Unterseiten. Der Akku wird identisch an die Querflaeche bei z = 29 mm gekoppelt; die Punktmasse liegt bei [0, 0, 34.5] mm.
 
+Im internen Hex8-Adapter verwendet dieser Frame-Designraum ausdruecklich `interface_node_policy: preserve_adjacent`: Lasten und Fixierungen treffen nur Knoten an festen Kontaktzellen. Eine um bis zu eine halbe Zellenweite erweiterte Auswahl darf dadurch keine beliebigen freien Materialknoten im breiten geometrischen Selektor belasten. Selektorerweiterung und Policy werden gespeichert. Die abschliessende FEA verwendet weiterhin die exakten Kontaktflaechen am rekonstruierten Solid.
+
 17 weitere Faelle belasten sonst nicht direkt belastete Pflichtanschluesse einzeln mit 0.05 N nach unten. Sie verhindern, dass lastfreie Montageschnittstellen als unverbundene Inseln verbleiben. In der normierten Compliance-Zielfunktion besitzen die drei Hauptfaelle zusammen 90 Prozent Gewicht, alle 17 Anschlussfaelle zusammen 10 Prozent. Eine kleine Kraft alleine wuerde nach Compliance-Normierung das Gewicht nicht verringern. Der separate geometrische Nachweis der Verbindung aller Pflichtanschluesse bleibt notwendig.
 
 ## Fertigung und Quellen
