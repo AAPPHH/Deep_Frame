@@ -11,14 +11,14 @@ Die Standarddiskretisierung besitzt 34 x 32 x 8 Zellen mit 4 mm Kantenlaenge. Ze
 | Menge | Zellen | Rastervolumen |
 | --- | ---: | ---: |
 | Gesamter Quader | 8704 | 557056 mm3 |
-| Zulaessiger Materialraum | 5918 | 378752 mm3 |
-| Feste lokale Anschluesse | 162 | 10368 mm3 |
-| Frei optimierbare Zellen | 5756 | 368384 mm3 |
-| Gesperrt | 2786 | 178304 mm3 |
+| Zulaessiger Materialraum | 5842 | 373888 mm3 |
+| Feste lokale Anschluesse | 158 | 10112 mm3 |
+| Frei optimierbare Zellen | 5684 | 363776 mm3 |
+| Gesperrt | 2862 | 183168 mm3 |
 
-Die Preserve-Zellen belegen **2.7374 Prozent** des zulaessigen Raums. **97.2626 Prozent** bleiben freie Optimierungsvariablen. Diese Angaben betreffen das Raster; exakte Kontaktgrenzen und Bohrungen aendern das physische Endvolumen. Die Preserve-Maske enthaelt mehrere getrennte Komponenten und kann allein keinen tragenden Frame bilden.
+Die Preserve-Zellen belegen **2.7046 Prozent** des zulaessigen Raums. **97.2954 Prozent** bleiben freie Optimierungsvariablen. Diese Angaben betreffen das Raster; exakte Kontaktgrenzen und Bohrungen aendern das physische Endvolumen. Die Preserve-Maske enthaelt mehrere getrennte Komponenten und kann allein keinen tragenden Frame bilden.
 
-`volume_fraction = 0.10` begrenzt das SIMP-Dichtevolumen auf 37875.2 mm3, entsprechend 41.284 g bei 1.09 g/cm3. Dies ist kein vorweggenommenes Ergebnisgewicht: Dichteschwelle, exakte lokale Anschluesse, Ausschnitte und Qualitaetspruefungen bestimmen das tatsaechliche Gewicht. Die zugehoerigen Werte und die tatsaechlichen Masken werden je Lauf gespeichert.
+`volume_fraction = 0.10` begrenzt das SIMP-Dichtevolumen auf 37388.8 mm3, entsprechend 40.755 g bei 1.09 g/cm3. Dies ist kein vorweggenommenes Ergebnisgewicht: Dichteschwelle, exakte lokale Anschluesse, Ausschnitte und Qualitaetspruefungen bestimmen das tatsaechliche Gewicht. Die zugehoerigen Werte und die tatsaechlichen Masken werden je Lauf gespeichert.
 
 ## Feste funktionale Anschluesse
 
@@ -26,7 +26,7 @@ Die Preserve-Zellen belegen **2.7374 Prozent** des zulaessigen Raums. **97.2626 
 - Vier AIO15-Bosse: 3.2 mm Radius, Oberkante 5.5 mm, Bohrungen gemaess dem bestehenden 25.5-mm-M2-Lochbild. Der umgebende Boden bleibt frei.
 - Vier einzelne Akku-Auflageflaechen sowie zwei kurze Koppelflaechen an der Querlinie y = 0. Ihre Oberseite liegt bei z = 29 mm. Die Koppelflaechen dienen derselben 37-g-Akku-Punktmasse wie im Vergleichsmodell.
 - Vier lokale Strap-Oesen mit 2-mm-Rand, deren Schlitze seitlich neben der 30-mm-Akkubreite liegen. Durch sie laeuft der Strap ueber die breite Akkuflaeche. Die tragende Verbindung der Oesen wird optimiert.
-- Zwei kleine Kamera-Schraublaschen und zwei obere Schutz-/Lastkontaktflaechen. Dazwischen ist weder eine Kaefigwand noch ein Verbindungsbogen vorgeschrieben.
+- Zwei kleine Kamera-Schraublaschen und zwei obere Schutz-/Lastkontaktflaechen. Ihre lokale Breite von 6 mm erreicht die Rastergrenze x = +/-16 mm; dies verhindert subvoxelduenne Reste zwischen Schraubbohrung und freiem Material. Die Breite ist eine eigene Diskretisierungs-/Montageannahme, keine kopierte v0-Geometrie. Dazwischen ist weder eine Kaefigwand noch ein Verbindungsbogen vorgeschrieben.
 - Lokale XT30- und Balancer-Auflagen mit zugaenglichen Enden fuer die Befestigung durch Band oder Kleber sowie eine VTX-Antennenaufnahme mit 3-mm-Bohrung. Befestigungsmethode, Steckerbelegung und Kabelradien sind vorlaeufige Montageannahmen.
 
 Diese lokalen Primitiven sind menschliche Formannahmen fuer die notwendigen Schnittstellen. Sie duerfen nicht als frei optimierte Geometrie ausgegeben werden. Die tragenden Verbindungen zwischen ihnen entstehen aus dem freien Materialfeld.
@@ -36,6 +36,8 @@ Diese lokalen Primitiven sind menschliche Formannahmen fuer die notwendigen Schn
 Die vorhandenen parametrisierbaren Komponenten-Platzhalter liefern die Bauraumhuellen fuer AIO15, Lux-Kamera mit Tilt, GNB5502S120A, vier Motoren, Props, XT30 und Balancer. Hardware erhaelt 0.5 mm Zusatzfreiraum; geplante untere Auflageflaechen behalten Kontaktabstand null ohne positives Durchdringungsvolumen. Props erhalten radial und axial 2 mm Freiraum. Die 65-mm-Scheibe bleibt die bewusst konservative Nutzervorgabe.
 
 Zusaetzlich gesperrt werden Batterieentnahme nach oben, AIO-Einschub von rechts bei abgesteckten Kabeln, Kameraeinbau/Linsenkorridor nach vorne, Steckerentnahme nach oben, vorlaeufige Motor-/Balancer-Kabelkorridore und Schraub-/Antennenbohrungen. Diese Korridore sind nachvollziehbare Montageannahmen, keine vollstaendige Simulation aller Werkzeuge, biegsamen Kabel oder des Kamera-Sichtfeldes.
+
+Die Kamera-Schraubbohrung endet exakt an den lokalen Laschen. Ausserhalb davon ist ein 4-mm-Werkzeugkorridor konservativ rasterisiert. Der Antennenkanal reicht durch den gesamten Bauraum nach oben; oberhalb der festen Oese wird auch er konservativ rasterisiert. Damit kann weder ein mathematisch vorhandener Schraubenkanal eine duenne freie Resthaut erzeugen noch eine kurze Antennenbohrung unter einer spaeter hinzukommenden Rasterzelle blind enden.
 
 Eine freie Rasterzelle wird konservativ entfernt, sobald ihr Quader eine Hardware-/Prop-/Zugangshuellenflaeche mit positivem Volumen schneidet. Reine Beruehrung einer Auflageflaeche entfernt die darunterliegende Zelle nicht. Damit schneidet die exakte Rekonstruktion keine zufaellig duennen Resthaeute aus freien Hardware-Randzellen. Subvoxel-Bohrungen und Strap-Schlitze haben `rasterize: false` und werden zwingend geometrisch ausgeschnitten.
 
