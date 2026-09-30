@@ -1,0 +1,5 @@
+build123d==0.13.0
+ocp_vscode==4.1.0
+numpy==2.5.3
+trimesh==5.1.0
+pytest==9.1.1
