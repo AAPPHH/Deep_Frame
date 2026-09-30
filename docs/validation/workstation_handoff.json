@@ -1,0 +1,26 @@
+{
+  "accepted_run_artifact_hashes_verified": 88,
+  "accepted_run_copied_byte_identically": true,
+  "accepted_run_files": 89,
+  "accepted_run_size_bytes": 365026154,
+  "archive": "Deep_Frame-phase1-938bbdf-workstation.zip",
+  "archive_sha256": "7fdc575fb39795a14ab33aca3d8f11b969070da8bcd1ac16c1ae2c4fca42dec9",
+  "archive_size_bytes": 122676395,
+  "bundle_verify_passed": true,
+  "clean_clone_commit": "938bbdfc42a8ca04887fdc494fd6b0c4b5cb6061",
+  "clean_clone_fsck_passed": true,
+  "clean_clone_line_ending_differences": [
+    "components.py",
+    "model.py"
+  ],
+  "clean_clone_normalized_source_matches": 26,
+  "clean_clone_source_hash_matches": 24,
+  "clean_clone_tag": "phase1-workstation-2026-09-30",
+  "package_files": 122,
+  "schema_version": "deep-frame-handoff-validation-v1",
+  "sha256_verified_payload_files": 121,
+  "solver_runs_during_handoff": 0,
+  "source_original_bytes_matching_archived_run": 26,
+  "zip_crc_verified": true,
+  "zip_payload_hashes_verified": true
+}
