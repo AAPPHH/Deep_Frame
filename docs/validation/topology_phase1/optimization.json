@@ -1,0 +1,3941 @@
+{
+  "status": "ok",
+  "summary": {
+    "method": "3D Hex8 SIMP, spatial density filter, smooth projection, normalized multi-load compliance, OC volume constraint",
+    "initialization": "uniform in every free cell; fixed preserves; no frame template or connectivity seed",
+    "settings": {
+      "volume_fraction": 0.1,
+      "filter_radius_mm": 6.0,
+      "penalization": 3.0,
+      "min_stiffness_ratio": 1e-06,
+      "max_iterations": 45,
+      "minimum_iterations": 10,
+      "change_tolerance": 0.015,
+      "move_limit": 0.12,
+      "projection_beta": 1.0,
+      "projection_eta": 0.5,
+      "minimum_design_density": 0.001,
+      "case_weights": {
+        "arm_tip": 1.0,
+        "battery_impact": 1.0,
+        "camera_side": 1.0,
+        "connection_aio_contact_0": 0.0196078431372549,
+        "connection_aio_contact_1": 0.0196078431372549,
+        "connection_aio_contact_2": 0.0196078431372549,
+        "connection_aio_contact_3": 0.0196078431372549,
+        "connection_battery_contact_-1_-1": 0.0196078431372549,
+        "connection_battery_contact_-1_1": 0.0196078431372549,
+        "connection_battery_contact_1_-1": 0.0196078431372549,
+        "connection_battery_contact_1_1": 0.0196078431372549,
+        "connection_strap_contact_-1_-1": 0.0196078431372549,
+        "connection_strap_contact_-1_1": 0.0196078431372549,
+        "connection_strap_contact_1_-1": 0.0196078431372549,
+        "connection_strap_contact_1_1": 0.0196078431372549,
+        "connection_camera_mount_-1": 0.0196078431372549,
+        "connection_camera_mount_1": 0.0196078431372549,
+        "connection_xt30_contact": 0.0196078431372549,
+        "connection_balancer_contact": 0.0196078431372549,
+        "connection_antenna_contact": 0.0196078431372549
+      },
+      "max_runtime_s": null,
+      "interface_node_policy": "preserve_adjacent"
+    },
+    "converged": false,
+    "stop_reason": "max_iterations",
+    "iterations": 45,
+    "volume_fraction": 0.09999999999555624,
+    "target_volume_fraction": 0.1,
+    "density_volume_mm3": 37388.79999833853,
+    "density_frame_mass_g": 40.753791998189,
+    "objective_initial": 1.0,
+    "objective_final": 0.013326497619003118,
+    "normalization_compliances_n_mm": {
+      "arm_tip": 1.5221862582843002,
+      "battery_impact": 0.9222770334416532,
+      "camera_side": 0.9051555415485135,
+      "connection_aio_contact_0": 0.00045574804862286774,
+      "connection_aio_contact_1": 0.0004549569413666455,
+      "connection_aio_contact_2": 0.0008258975389598301,
+      "connection_aio_contact_3": 0.0008006042405269014,
+      "connection_battery_contact_-1_-1": 0.00028703339114845826,
+      "connection_battery_contact_-1_1": 0.0002686861395297235,
+      "connection_battery_contact_1_-1": 0.0003173314105988323,
+      "connection_battery_contact_1_1": 0.0003002764675642654,
+      "connection_strap_contact_-1_-1": 0.00022722181639366518,
+      "connection_strap_contact_-1_1": 0.00021821352905850356,
+      "connection_strap_contact_1_-1": 0.0002773744364220597,
+      "connection_strap_contact_1_1": 0.0002690795402102246,
+      "connection_camera_mount_-1": 0.00036041066132918193,
+      "connection_camera_mount_1": 0.000397407919397298,
+      "connection_xt30_contact": 0.0006688568018472362,
+      "connection_balancer_contact": 0.0005171256553126648,
+      "connection_antenna_contact": 0.0006843006315919269
+    },
+    "normalized_case_weights": {
+      "arm_tip": 0.3,
+      "battery_impact": 0.3,
+      "camera_side": 0.3,
+      "connection_aio_contact_0": 0.0058823529411764705,
+      "connection_aio_contact_1": 0.0058823529411764705,
+      "connection_aio_contact_2": 0.0058823529411764705,
+      "connection_aio_contact_3": 0.0058823529411764705,
+      "connection_battery_contact_-1_-1": 0.0058823529411764705,
+      "connection_battery_contact_-1_1": 0.0058823529411764705,
+      "connection_battery_contact_1_-1": 0.0058823529411764705,
+      "connection_battery_contact_1_1": 0.0058823529411764705,
+      "connection_strap_contact_-1_-1": 0.0058823529411764705,
+      "connection_strap_contact_-1_1": 0.0058823529411764705,
+      "connection_strap_contact_1_-1": 0.0058823529411764705,
+      "connection_strap_contact_1_1": 0.0058823529411764705,
+      "connection_camera_mount_-1": 0.0058823529411764705,
+      "connection_camera_mount_1": 0.0058823529411764705,
+      "connection_xt30_contact": 0.0058823529411764705,
+      "connection_balancer_contact": 0.0058823529411764705,
+      "connection_antenna_contact": 0.0058823529411764705
+    },
+    "static_surrogate_metrics": {
+      "arm_tip": {
+        "compliance_n_mm": 0.018121106520179106,
+        "relative_residual": 3.875715785399224e-12,
+        "max_displacement_mm": 0.031142530868319796,
+        "max_von_mises_mpa": 0.3439848250643675,
+        "loads": [
+          {
+            "node_count": 23,
+            "force_n": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "mean_displacement_mm": [
+              0.0005704925576943104,
+              0.0017976045902810044,
+              -0.018121106520179103
+            ],
+            "directional_displacement_mm": 0.018121106520179103,
+            "stiffness_n_per_mm": 55.18426807360969
+          }
+        ],
+        "stiffness_n_per_mm": 55.18426807360969
+      },
+      "battery_impact": {
+        "compliance_n_mm": 0.012257600759806789,
+        "relative_residual": 3.097534999081693e-13,
+        "max_displacement_mm": 0.0038472381683874696,
+        "max_von_mises_mpa": 0.14348765083659884,
+        "loads": [
+          {
+            "node_count": 18,
+            "force_n": [
+              0.0,
+              0.0,
+              -3.6284604999999996
+            ],
+            "mean_displacement_mm": [
+              0.00015560142773036187,
+              -0.0003235422416274002,
+              -0.00337818222350961
+            ],
+            "directional_displacement_mm": 0.00337818222350961,
+            "stiffness_n_per_mm": 1074.0866714497047
+          }
+        ],
+        "stiffness_n_per_mm": 1074.0866714497047
+      },
+      "camera_side": {
+        "compliance_n_mm": 0.010882564356797379,
+        "relative_residual": 1.553975478439507e-13,
+        "max_displacement_mm": 0.004803521399328562,
+        "max_von_mises_mpa": 0.19157119890954102,
+        "loads": [
+          {
+            "node_count": 18,
+            "force_n": [
+              5.0,
+              0.0,
+              0.0
+            ],
+            "mean_displacement_mm": [
+              0.0021765128713594757,
+              -6.227434846350715e-05,
+              -6.978322677166192e-05
+            ],
+            "directional_displacement_mm": 0.0021765128713594757,
+            "stiffness_n_per_mm": 2297.252667693594
+          }
+        ],
+        "stiffness_n_per_mm": 2297.252667693594
+      },
+      "connection_aio_contact_0": {
+        "compliance_n_mm": 1.1192490935277203e-05,
+        "relative_residual": 1.4493955254753805e-13,
+        "max_displacement_mm": 0.0002892007160601318,
+        "max_von_mises_mpa": 0.008624667000203036,
+        "loads": [
+          {
+            "node_count": 2,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              1.619773531853265e-05,
+              2.4624713106430134e-05,
+              -0.00022384981870554404
+            ],
+            "directional_displacement_mm": 0.00022384981870554406,
+            "stiffness_n_per_mm": 223.36404062837715
+          }
+        ],
+        "stiffness_n_per_mm": 223.36404062837715
+      },
+      "connection_aio_contact_1": {
+        "compliance_n_mm": 3.551260127528494e-06,
+        "relative_residual": 1.126471954911613e-13,
+        "max_displacement_mm": 9.906010993348705e-05,
+        "max_von_mises_mpa": 0.003537002913720054,
+        "loads": [
+          {
+            "node_count": 2,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              6.878754416541799e-06,
+              6.506489876496547e-06,
+              -7.102520255056988e-05
+            ],
+            "directional_displacement_mm": 7.102520255056988e-05,
+            "stiffness_n_per_mm": 703.975465109023
+          }
+        ],
+        "stiffness_n_per_mm": 703.975465109023
+      },
+      "connection_aio_contact_2": {
+        "compliance_n_mm": 1.0053488087750972e-05,
+        "relative_residual": 1.6387887026849732e-13,
+        "max_displacement_mm": 0.0002582129772684265,
+        "max_von_mises_mpa": 0.00562950385585326,
+        "loads": [
+          {
+            "node_count": 2,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -8.058090493818868e-06,
+              7.631660788796514e-06,
+              -0.00020106976175501942
+            ],
+            "directional_displacement_mm": 0.00020106976175501942,
+            "stiffness_n_per_mm": 248.66991219156714
+          }
+        ],
+        "stiffness_n_per_mm": 248.66991219156714
+      },
+      "connection_aio_contact_3": {
+        "compliance_n_mm": 6.852958653711411e-06,
+        "relative_residual": 1.1753144508468612e-13,
+        "max_displacement_mm": 0.00022503664501849743,
+        "max_von_mises_mpa": 0.004947471088624597,
+        "loads": [
+          {
+            "node_count": 2,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -1.2188768215097583e-05,
+              1.2318800490339318e-05,
+              -0.0001370591730742282
+            ],
+            "directional_displacement_mm": 0.0001370591730742282,
+            "stiffness_n_per_mm": 364.80593657836465
+          }
+        ],
+        "stiffness_n_per_mm": 364.80593657836465
+      },
+      "connection_battery_contact_-1_-1": {
+        "compliance_n_mm": 5.803167095434044e-06,
+        "relative_residual": 2.97445976100821e-13,
+        "max_displacement_mm": 0.00014280203136385884,
+        "max_von_mises_mpa": 0.0040011546982702895,
+        "loads": [
+          {
+            "node_count": 6,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              2.0512170099828638e-05,
+              -3.2344416081861512e-06,
+              -0.00011606334190868085
+            ],
+            "directional_displacement_mm": 0.00011606334190868085,
+            "stiffness_n_per_mm": 430.7992444275835
+          }
+        ],
+        "stiffness_n_per_mm": 430.7992444275835
+      },
+      "connection_battery_contact_-1_1": {
+        "compliance_n_mm": 2.137242968818276e-06,
+        "relative_residual": 1.621305430999772e-13,
+        "max_displacement_mm": 5.211241476547054e-05,
+        "max_von_mises_mpa": 0.0027676844626378047,
+        "loads": [
+          {
+            "node_count": 6,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              4.290797962263625e-06,
+              -1.182975253695116e-05,
+              -4.274485937636551e-05
+            ],
+            "directional_displacement_mm": 4.27448593763655e-05,
+            "stiffness_n_per_mm": 1169.7313017163888
+          }
+        ],
+        "stiffness_n_per_mm": 1169.7313017163888
+      },
+      "connection_battery_contact_1_-1": {
+        "compliance_n_mm": 5.2634509825017535e-06,
+        "relative_residual": 2.4974811082754485e-13,
+        "max_displacement_mm": 0.00012157937983783333,
+        "max_von_mises_mpa": 0.004628249991575385,
+        "loads": [
+          {
+            "node_count": 6,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -1.449751945577763e-05,
+              5.404137451884744e-06,
+              -0.00010526901965003507
+            ],
+            "directional_displacement_mm": 0.00010526901965003507,
+            "stiffness_n_per_mm": 474.9735503021125
+          }
+        ],
+        "stiffness_n_per_mm": 474.9735503021125
+      },
+      "connection_battery_contact_1_1": {
+        "compliance_n_mm": 2.500558276795821e-06,
+        "relative_residual": 2.026785765292043e-13,
+        "max_displacement_mm": 7.106460750531924e-05,
+        "max_von_mises_mpa": 0.0036471621596767686,
+        "loads": [
+          {
+            "node_count": 6,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              4.0081337398139927e-07,
+              -1.5418334773279184e-05,
+              -5.001116553591642e-05
+            ],
+            "directional_displacement_mm": 5.001116553591643e-05,
+            "stiffness_n_per_mm": 999.7767391382149
+          }
+        ],
+        "stiffness_n_per_mm": 999.7767391382149
+      },
+      "connection_strap_contact_-1_-1": {
+        "compliance_n_mm": 4.9398114917619425e-06,
+        "relative_residual": 2.386275510446071e-13,
+        "max_displacement_mm": 0.00012246735716308843,
+        "max_von_mises_mpa": 0.003799555513165478,
+        "loads": [
+          {
+            "node_count": 5,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              1.4299741903712182e-05,
+              -6.35472603247308e-06,
+              -9.879622983523886e-05
+            ],
+            "directional_displacement_mm": 9.879622983523886e-05,
+            "stiffness_n_per_mm": 506.0921867502872
+          }
+        ],
+        "stiffness_n_per_mm": 506.0921867502872
+      },
+      "connection_strap_contact_-1_1": {
+        "compliance_n_mm": 2.646027892018533e-06,
+        "relative_residual": 1.5434121095096907e-13,
+        "max_displacement_mm": 6.0947806090743184e-05,
+        "max_von_mises_mpa": 0.0024556029245193785,
+        "loads": [
+          {
+            "node_count": 5,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              3.38639317635739e-06,
+              -1.4673319285975385e-05,
+              -5.292055784037066e-05
+            ],
+            "directional_displacement_mm": 5.292055784037066e-05,
+            "stiffness_n_per_mm": 944.8124139359942
+          }
+        ],
+        "stiffness_n_per_mm": 944.8124139359942
+      },
+      "connection_strap_contact_1_-1": {
+        "compliance_n_mm": 4.660586579372748e-06,
+        "relative_residual": 2.2100777259404021e-13,
+        "max_displacement_mm": 0.0001316456630777932,
+        "max_von_mises_mpa": 0.004378090099546359,
+        "loads": [
+          {
+            "node_count": 5,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -9.439037858335575e-06,
+              7.135464016513241e-06,
+              -9.321173158745498e-05
+            ],
+            "directional_displacement_mm": 9.321173158745498e-05,
+            "stiffness_n_per_mm": 536.4131654725028
+          }
+        ],
+        "stiffness_n_per_mm": 536.4131654725028
+      },
+      "connection_strap_contact_1_1": {
+        "compliance_n_mm": 3.0914863461348207e-06,
+        "relative_residual": 2.006106659279909e-13,
+        "max_displacement_mm": 7.80909900265889e-05,
+        "max_von_mises_mpa": 0.003250465772827227,
+        "loads": [
+          {
+            "node_count": 5,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              3.497865148201159e-06,
+              -1.5700762033929917e-05,
+              -6.182972692269641e-05
+            ],
+            "directional_displacement_mm": 6.182972692269641e-05,
+            "stiffness_n_per_mm": 808.6725025085957
+          }
+        ],
+        "stiffness_n_per_mm": 808.6725025085957
+      },
+      "connection_camera_mount_-1": {
+        "compliance_n_mm": 2.9029616243554478e-06,
+        "relative_residual": 2.030632671716767e-13,
+        "max_displacement_mm": 0.00013216751017092591,
+        "max_von_mises_mpa": 0.0036748361724380746,
+        "loads": [
+          {
+            "node_count": 8,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              1.1072897329642926e-05,
+              -9.276328854853656e-06,
+              -5.805923248710896e-05
+            ],
+            "directional_displacement_mm": 5.805923248710896e-05,
+            "stiffness_n_per_mm": 861.1894759563285
+          }
+        ],
+        "stiffness_n_per_mm": 861.1894759563285
+      },
+      "connection_camera_mount_1": {
+        "compliance_n_mm": 4.559876333893112e-06,
+        "relative_residual": 2.794046635540359e-13,
+        "max_displacement_mm": 0.00021827423018261436,
+        "max_von_mises_mpa": 0.005470155147823082,
+        "loads": [
+          {
+            "node_count": 8,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -2.030846194238738e-05,
+              -2.631622323372828e-05,
+              -9.119752667786224e-05
+            ],
+            "directional_displacement_mm": 9.119752667786224e-05,
+            "stiffness_n_per_mm": 548.2604827279516
+          }
+        ],
+        "stiffness_n_per_mm": 548.2604827279516
+      },
+      "connection_xt30_contact": {
+        "compliance_n_mm": 3.9245962275137775e-05,
+        "relative_residual": 6.728546467268134e-13,
+        "max_displacement_mm": 0.0010880715648260066,
+        "max_von_mises_mpa": 0.010724317144732643,
+        "loads": [
+          {
+            "node_count": 3,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              0.000148361105280028,
+              0.00022486890066516889,
+              -0.0007849192455027555
+            ],
+            "directional_displacement_mm": 0.0007849192455027556,
+            "stiffness_n_per_mm": 63.7008205448881
+          }
+        ],
+        "stiffness_n_per_mm": 63.7008205448881
+      },
+      "connection_balancer_contact": {
+        "compliance_n_mm": 2.7218689039453135e-05,
+        "relative_residual": 3.5872448249551824e-13,
+        "max_displacement_mm": 0.0008686543168734185,
+        "max_von_mises_mpa": 0.006619411751281529,
+        "loads": [
+          {
+            "node_count": 4,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              0.00012460075200639877,
+              7.79869530062882e-05,
+              -0.0005443737807890627
+            ],
+            "directional_displacement_mm": 0.0005443737807890627,
+            "stiffness_n_per_mm": 91.84865576649496
+          }
+        ],
+        "stiffness_n_per_mm": 91.84865576649496
+      },
+      "connection_antenna_contact": {
+        "compliance_n_mm": 4.667004200205289e-05,
+        "relative_residual": 5.782662516393214e-13,
+        "max_displacement_mm": 0.0013755267410615328,
+        "max_von_mises_mpa": 0.011283886140733916,
+        "loads": [
+          {
+            "node_count": 3,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              6.631348417339708e-05,
+              8.781509151745925e-05,
+              -0.0009334008400410579
+            ],
+            "directional_displacement_mm": 0.0009334008400410579,
+            "stiffness_n_per_mm": 53.56755410440881
+          }
+        ],
+        "stiffness_n_per_mm": 53.56755410440881
+      }
+    },
+    "modal_assessment": "independent gmsh/CalculiX candidate verification, including specified point masses; no voxel-frequency substitute",
+    "stress_assessment": "Hex8 Gauss-point SIMP stresses are surrogate diagnostics only; exact-solid CalculiX governs candidate stress constraints",
+    "manufacturing_assessment": "density filtering regularizes lengths; reconstructed-solid feature, connection, forbidden and manufacturing checks remain mandatory",
+    "gray_fraction_free": 0.17276565798733287,
+    "element_model": "three displacement DOFs/node, fully integrated trilinear 8-node 3D elasticity, 2x2x2 Gauss integration",
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "density": "g/cm3",
+      "internal_modal_mass": "tonne"
+    },
+    "system": {
+      "nodes": 10395,
+      "active_nodes": 8864,
+      "elements": 8704,
+      "active_elements": 5842,
+      "dofs": 31185,
+      "active_dofs": 26592,
+      "interface_node_policy": "preserve_adjacent",
+      "independent_fixtures": 2,
+      "selector_expansions": [
+        {
+          "case": "battery_impact",
+          "role": "load",
+          "original": {
+            "kind": "box",
+            "min_mm": [
+              -20.1,
+              -2.0,
+              28.99
+            ],
+            "max_mm": [
+              20.1,
+              2.0,
+              29.01
+            ]
+          },
+          "expanded": {
+            "kind": "box",
+            "min_mm": [
+              -22.1,
+              -4.0,
+              26.99
+            ],
+            "max_mm": [
+              22.1,
+              4.0,
+              31.01
+            ]
+          },
+          "expansion_each_side_mm": [
+            2.0,
+            2.0,
+            2.0
+          ],
+          "selected_nodes": 18
+        }
+      ],
+      "selector_filtering": [
+        {
+          "case": "arm_tip",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              3.99
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              4.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -22.1,
+              -4.0,
+              26.99
+            ],
+            "max_mm": [
+              22.1,
+              4.0,
+              31.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 15,
+          "selected_nodes": 18
+        },
+        {
+          "case": "camera_side",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "camera_side",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "camera_side",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "camera_side",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "camera_side",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -12.01,
+              26.5,
+              19.5
+            ],
+            "max_mm": [
+              12.01,
+              43.5,
+              26.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 20,
+          "removed_nonpreserve_interface_nodes": 18,
+          "selected_nodes": 18
+        },
+        {
+          "case": "modes",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "modes",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "modes",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "modes",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_0",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_0",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_0",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_0",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_2",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_2",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_2",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_2",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_3",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_3",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_3",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_3",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -12.6,
+              -55.2,
+              0
+            ],
+            "max_mm": [
+              -2.4000000000000004,
+              -34.8,
+              2.5
+            ]
+          },
+          "removed_forbidden_only_nodes": 9,
+          "removed_nonpreserve_interface_nodes": 3,
+          "selected_nodes": 3
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              2.5999999999999996,
+              -52.75,
+              0
+            ],
+            "max_mm": [
+              12.4,
+              -37.25,
+              2.5
+            ]
+          },
+          "removed_forbidden_only_nodes": 6,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 4
+        },
+        {
+          "case": "connection_antenna_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_antenna_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_antenna_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_antenna_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        }
+      ],
+      "cases": [
+        {
+          "name": "arm_tip",
+          "analysis": "static",
+          "fixed_nodes": 4,
+          "load_nodes": [
+            23
+          ]
+        },
+        {
+          "name": "battery_impact",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            18
+          ]
+        },
+        {
+          "name": "camera_side",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            18
+          ]
+        },
+        {
+          "name": "modes",
+          "analysis": "modal",
+          "fixed_nodes": 92,
+          "load_nodes": []
+        },
+        {
+          "name": "connection_aio_contact_0",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            2
+          ]
+        },
+        {
+          "name": "connection_aio_contact_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            2
+          ]
+        },
+        {
+          "name": "connection_aio_contact_2",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            2
+          ]
+        },
+        {
+          "name": "connection_aio_contact_3",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            2
+          ]
+        },
+        {
+          "name": "connection_battery_contact_-1_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            6
+          ]
+        },
+        {
+          "name": "connection_battery_contact_-1_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            6
+          ]
+        },
+        {
+          "name": "connection_battery_contact_1_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            6
+          ]
+        },
+        {
+          "name": "connection_battery_contact_1_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            6
+          ]
+        },
+        {
+          "name": "connection_strap_contact_-1_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            5
+          ]
+        },
+        {
+          "name": "connection_strap_contact_-1_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            5
+          ]
+        },
+        {
+          "name": "connection_strap_contact_1_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            5
+          ]
+        },
+        {
+          "name": "connection_strap_contact_1_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            5
+          ]
+        },
+        {
+          "name": "connection_camera_mount_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            8
+          ]
+        },
+        {
+          "name": "connection_camera_mount_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            8
+          ]
+        },
+        {
+          "name": "connection_xt30_contact",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            3
+          ]
+        },
+        {
+          "name": "connection_balancer_contact",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            4
+          ]
+        },
+        {
+          "name": "connection_antenna_contact",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            3
+          ]
+        }
+      ]
+    },
+    "elapsed_s": 131.6806144999573
+  },
+  "history": [
+    {
+      "iteration": 1,
+      "final_evaluation": false,
+      "objective": 1.0,
+      "physical_density_sum": 584.2,
+      "compliances_n_mm": {
+        "arm_tip": 1.5221862582843002,
+        "battery_impact": 0.9222770334416532,
+        "camera_side": 0.9051555415485135,
+        "connection_aio_contact_0": 0.00045574804862286774,
+        "connection_aio_contact_1": 0.0004549569413666455,
+        "connection_aio_contact_2": 0.0008258975389598301,
+        "connection_aio_contact_3": 0.0008006042405269014,
+        "connection_battery_contact_-1_-1": 0.00028703339114845826,
+        "connection_battery_contact_-1_1": 0.0002686861395297235,
+        "connection_battery_contact_1_-1": 0.0003173314105988323,
+        "connection_battery_contact_1_1": 0.0003002764675642654,
+        "connection_strap_contact_-1_-1": 0.00022722181639366518,
+        "connection_strap_contact_-1_1": 0.00021821352905850356,
+        "connection_strap_contact_1_-1": 0.0002773744364220597,
+        "connection_strap_contact_1_1": 0.0002690795402102246,
+        "connection_camera_mount_-1": 0.00036041066132918193,
+        "connection_camera_mount_1": 0.000397407919397298,
+        "connection_xt30_contact": 0.0006688568018472362,
+        "connection_balancer_contact": 0.0005171256553126648,
+        "connection_antenna_contact": 0.0006843006315919269
+      },
+      "maximum_design_change": 0.12000000000000001,
+      "maximum_relative_residual": 3.0784672939074047e-10,
+      "elapsed_s": 3.2399735000217333
+    },
+    {
+      "iteration": 2,
+      "final_evaluation": false,
+      "objective": 0.2197594308301231,
+      "physical_density_sum": 584.1999991548171,
+      "compliances_n_mm": {
+        "arm_tip": 0.27065829468344466,
+        "battery_impact": 0.22158273110172796,
+        "camera_side": 0.17672295323884346,
+        "connection_aio_contact_0": 0.00012877418511980817,
+        "connection_aio_contact_1": 7.21737813118546e-05,
+        "connection_aio_contact_2": 0.0001377051069678962,
+        "connection_aio_contact_3": 0.00011083159376072299,
+        "connection_battery_contact_-1_-1": 0.00011351186390591721,
+        "connection_battery_contact_-1_1": 5.225507895454341e-05,
+        "connection_battery_contact_1_-1": 9.990391062138178e-05,
+        "connection_battery_contact_1_1": 5.60233413539564e-05,
+        "connection_strap_contact_-1_-1": 8.222531579999262e-05,
+        "connection_strap_contact_-1_1": 4.939962698488649e-05,
+        "connection_strap_contact_1_-1": 7.474817108947966e-05,
+        "connection_strap_contact_1_1": 5.379549124173257e-05,
+        "connection_camera_mount_-1": 6.200986259659319e-05,
+        "connection_camera_mount_1": 6.881038077449986e-05,
+        "connection_xt30_contact": 0.0007871734116077684,
+        "connection_balancer_contact": 0.0002769287859329719,
+        "connection_antenna_contact": 0.000771575401479548
+      },
+      "maximum_design_change": 0.12000000000000002,
+      "maximum_relative_residual": 4.984967297685904e-11,
+      "elapsed_s": 6.398970399983227
+    },
+    {
+      "iteration": 3,
+      "final_evaluation": false,
+      "objective": 0.09345837186185951,
+      "physical_density_sum": 584.1999976045634,
+      "compliances_n_mm": {
+        "arm_tip": 0.1281428418026222,
+        "battery_impact": 0.08963924813283566,
+        "camera_side": 0.06922342462680119,
+        "connection_aio_contact_0": 6.426029534713416e-05,
+        "connection_aio_contact_1": 2.8837648597815936e-05,
+        "connection_aio_contact_2": 6.699806399676951e-05,
+        "connection_aio_contact_3": 5.590889684498927e-05,
+        "connection_battery_contact_-1_-1": 4.453480517980002e-05,
+        "connection_battery_contact_-1_1": 1.977330601726163e-05,
+        "connection_battery_contact_1_-1": 4.096994761107475e-05,
+        "connection_battery_contact_1_1": 2.2087148621815965e-05,
+        "connection_strap_contact_-1_-1": 3.362935473067646e-05,
+        "connection_strap_contact_-1_1": 2.0306681919020544e-05,
+        "connection_strap_contact_1_-1": 3.198555022933079e-05,
+        "connection_strap_contact_1_1": 2.335718451510952e-05,
+        "connection_camera_mount_-1": 2.3792368500568186e-05,
+        "connection_camera_mount_1": 2.950197585849141e-05,
+        "connection_xt30_contact": 0.0003252085712810026,
+        "connection_balancer_contact": 0.00015427276663343732,
+        "connection_antenna_contact": 0.0003987152570531509
+      },
+      "maximum_design_change": 0.12000000000000002,
+      "maximum_relative_residual": 2.105647632225189e-11,
+      "elapsed_s": 9.636025100015104
+    },
+    {
+      "iteration": 4,
+      "final_evaluation": false,
+      "objective": 0.052175337689372964,
+      "physical_density_sum": 584.1999971155074,
+      "compliances_n_mm": {
+        "arm_tip": 0.07159024059402457,
+        "battery_impact": 0.049897548254545246,
+        "camera_side": 0.03728263195876943,
+        "connection_aio_contact_0": 3.903753307644875e-05,
+        "connection_aio_contact_1": 1.5623919019373375e-05,
+        "connection_aio_contact_2": 3.9403195102586067e-05,
+        "connection_aio_contact_3": 3.2738022665262825e-05,
+        "connection_battery_contact_-1_-1": 2.4066367074183878e-05,
+        "connection_battery_contact_-1_1": 1.048994652730421e-05,
+        "connection_battery_contact_1_-1": 2.2361630823572203e-05,
+        "connection_battery_contact_1_1": 1.183670438972305e-05,
+        "connection_strap_contact_-1_-1": 1.8989250048095182e-05,
+        "connection_strap_contact_-1_1": 1.1425495231551747e-05,
+        "connection_strap_contact_1_-1": 1.7987844819919942e-05,
+        "connection_strap_contact_1_1": 1.3162448298074248e-05,
+        "connection_camera_mount_-1": 1.2264530026604698e-05,
+        "connection_camera_mount_1": 1.6512693570457557e-05,
+        "connection_xt30_contact": 0.00019547185664379538,
+        "connection_balancer_contact": 9.464909879367885e-05,
+        "connection_antenna_contact": 0.00025278697876203476
+      },
+      "maximum_design_change": 0.12000000000000005,
+      "maximum_relative_residual": 1.2568090635773889e-11,
+      "elapsed_s": 12.274807399953716
+    },
+    {
+      "iteration": 5,
+      "final_evaluation": false,
+      "objective": 0.0352884624239727,
+      "physical_density_sum": 584.1999979788408,
+      "compliances_n_mm": {
+        "arm_tip": 0.04840183854212378,
+        "battery_impact": 0.03423879889513164,
+        "camera_side": 0.02501151496173635,
+        "connection_aio_contact_0": 2.804502474596654e-05,
+        "connection_aio_contact_1": 1.0318971707275985e-05,
+        "connection_aio_contact_2": 2.7776596676203143e-05,
+        "connection_aio_contact_3": 2.2165955457047968e-05,
+        "connection_battery_contact_-1_-1": 1.5865994634986737e-05,
+        "connection_battery_contact_-1_1": 6.867081935719031e-06,
+        "connection_battery_contact_1_-1": 1.500729369455004e-05,
+        "connection_battery_contact_1_1": 7.812437676101935e-06,
+        "connection_strap_contact_-1_-1": 1.3092092991767176e-05,
+        "connection_strap_contact_-1_1": 7.74242108935619e-06,
+        "connection_strap_contact_1_-1": 1.2396961459125349e-05,
+        "connection_strap_contact_1_1": 8.9552080566186e-06,
+        "connection_camera_mount_-1": 7.948869505684371e-06,
+        "connection_camera_mount_1": 1.1343554509491018e-05,
+        "connection_xt30_contact": 0.0001235207744835618,
+        "connection_balancer_contact": 6.786714811413762e-05,
+        "connection_antenna_contact": 0.0001625319227764084
+      },
+      "maximum_design_change": 0.12000000000000005,
+      "maximum_relative_residual": 8.443881595545033e-12,
+      "elapsed_s": 14.549609599984251
+    },
+    {
+      "iteration": 6,
+      "final_evaluation": false,
+      "objective": 0.027246790376807568,
+      "physical_density_sum": 584.1999992336034,
+      "compliances_n_mm": {
+        "arm_tip": 0.03710890640944188,
+        "battery_impact": 0.026513643735924464,
+        "camera_side": 0.019273115102186412,
+        "connection_aio_contact_0": 2.3275214101268686e-05,
+        "connection_aio_contact_1": 7.815036739765471e-06,
+        "connection_aio_contact_2": 2.265155631189663e-05,
+        "connection_aio_contact_3": 1.689197587428411e-05,
+        "connection_battery_contact_-1_-1": 1.2117466120923824e-05,
+        "connection_battery_contact_-1_1": 5.080182713586629e-06,
+        "connection_battery_contact_1_-1": 1.1766260208282603e-05,
+        "connection_battery_contact_1_1": 5.862790736525431e-06,
+        "connection_strap_contact_-1_-1": 1.0243747994218225e-05,
+        "connection_strap_contact_-1_1": 5.835617794478885e-06,
+        "connection_strap_contact_1_-1": 9.841996881403666e-06,
+        "connection_strap_contact_1_1": 6.8771411661403595e-06,
+        "connection_camera_mount_-1": 5.90778202697966e-06,
+        "connection_camera_mount_1": 8.893776143912442e-06,
+        "connection_xt30_contact": 9.345825659523037e-05,
+        "connection_balancer_contact": 5.6369713248639975e-05,
+        "connection_antenna_contact": 0.00012433547395720865
+      },
+      "maximum_design_change": 0.12000000000000005,
+      "maximum_relative_residual": 6.300274066253638e-12,
+      "elapsed_s": 16.886058599920943
+    },
+    {
+      "iteration": 7,
+      "final_evaluation": false,
+      "objective": 0.022781132376452427,
+      "physical_density_sum": 584.1999988711086,
+      "compliances_n_mm": {
+        "arm_tip": 0.030854608011430598,
+        "battery_impact": 0.022144353803301313,
+        "camera_side": 0.016268569347065616,
+        "connection_aio_contact_0": 2.0527660765842475e-05,
+        "connection_aio_contact_1": 6.414861292533514e-06,
+        "connection_aio_contact_2": 1.980397173949516e-05,
+        "connection_aio_contact_3": 1.383705455138165e-05,
+        "connection_battery_contact_-1_-1": 1.0170520841260318e-05,
+        "connection_battery_contact_-1_1": 4.0730263714885125e-06,
+        "connection_battery_contact_1_-1": 1.0061104832178488e-05,
+        "connection_battery_contact_1_1": 4.754138411122277e-06,
+        "connection_strap_contact_-1_-1": 8.666642315742078e-06,
+        "connection_strap_contact_-1_1": 4.744904634640732e-06,
+        "connection_strap_contact_1_-1": 8.454816823637434e-06,
+        "connection_strap_contact_1_1": 5.683900129168184e-06,
+        "connection_camera_mount_-1": 4.8366205128419e-06,
+        "connection_camera_mount_1": 7.544942324175569e-06,
+        "connection_xt30_contact": 7.567898133700832e-05,
+        "connection_balancer_contact": 4.951128784117695e-05,
+        "connection_antenna_contact": 0.00010027369683175802
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 5.772489242088276e-12,
+      "elapsed_s": 19.51372699998319
+    },
+    {
+      "iteration": 8,
+      "final_evaluation": false,
+      "objective": 0.019995406267375712,
+      "physical_density_sum": 584.1999998627304,
+      "compliances_n_mm": {
+        "arm_tip": 0.026925165425171708,
+        "battery_impact": 0.019301793992180485,
+        "camera_side": 0.014455339621280438,
+        "connection_aio_contact_0": 1.8614582420784766e-05,
+        "connection_aio_contact_1": 5.52004030132403e-06,
+        "connection_aio_contact_2": 1.791611554645177e-05,
+        "connection_aio_contact_3": 1.1879649025519576e-05,
+        "connection_battery_contact_-1_-1": 8.977662916164791e-06,
+        "connection_battery_contact_-1_1": 3.4255038174998056e-06,
+        "connection_battery_contact_1_-1": 8.970451711283672e-06,
+        "connection_battery_contact_1_1": 4.018870593212979e-06,
+        "connection_strap_contact_-1_-1": 7.654987325918091e-06,
+        "connection_strap_contact_-1_1": 4.050222389956307e-06,
+        "connection_strap_contact_1_-1": 7.55772143081784e-06,
+        "connection_strap_contact_1_1": 4.8911314750859785e-06,
+        "connection_camera_mount_-1": 4.1834741007582905e-06,
+        "connection_camera_mount_1": 6.641341237746014e-06,
+        "connection_xt30_contact": 6.618535200530891e-05,
+        "connection_balancer_contact": 4.5249756049817966e-05,
+        "connection_antenna_contact": 8.73512563774543e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 5.798829413231603e-12,
+      "elapsed_s": 21.880972099956125
+    },
+    {
+      "iteration": 9,
+      "final_evaluation": false,
+      "objective": 0.018161544490239743,
+      "physical_density_sum": 584.1999986176932,
+      "compliances_n_mm": {
+        "arm_tip": 0.024311360936482167,
+        "battery_impact": 0.017423816236603763,
+        "camera_side": 0.01341247901311078,
+        "connection_aio_contact_0": 1.708960273055926e-05,
+        "connection_aio_contact_1": 4.9178250600018444e-06,
+        "connection_aio_contact_2": 1.6482105745682355e-05,
+        "connection_aio_contact_3": 1.0566821421181271e-05,
+        "connection_battery_contact_-1_-1": 8.170971686616844e-06,
+        "connection_battery_contact_-1_1": 3.004765442649893e-06,
+        "connection_battery_contact_1_-1": 8.197916337114543e-06,
+        "connection_battery_contact_1_1": 3.543082216111465e-06,
+        "connection_strap_contact_-1_-1": 6.959557106292058e-06,
+        "connection_strap_contact_-1_1": 3.599891548635557e-06,
+        "connection_strap_contact_1_-1": 6.944955788235392e-06,
+        "connection_strap_contact_1_1": 4.3715957074495615e-06,
+        "connection_camera_mount_-1": 3.7716970229466697e-06,
+        "connection_camera_mount_1": 6.062753991241467e-06,
+        "connection_xt30_contact": 5.875153982397005e-05,
+        "connection_balancer_contact": 4.173121067631023e-05,
+        "connection_antenna_contact": 7.684504427127199e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 5.166115058954103e-12,
+      "elapsed_s": 24.431766099995002
+    },
+    {
+      "iteration": 10,
+      "final_evaluation": false,
+      "objective": 0.017094616865475653,
+      "physical_density_sum": 584.1999980191292,
+      "compliances_n_mm": {
+        "arm_tip": 0.02261299419822406,
+        "battery_impact": 0.016276263553494923,
+        "camera_side": 0.01315805629017286,
+        "connection_aio_contact_0": 1.5614782816628492e-05,
+        "connection_aio_contact_1": 4.535224872187956e-06,
+        "connection_aio_contact_2": 1.5102420800503738e-05,
+        "connection_aio_contact_3": 9.65775644734672e-06,
+        "connection_battery_contact_-1_-1": 7.588261314710771e-06,
+        "connection_battery_contact_-1_1": 2.7860191299035706e-06,
+        "connection_battery_contact_1_-1": 7.585213737283074e-06,
+        "connection_battery_contact_1_1": 3.3182467252782993e-06,
+        "connection_strap_contact_-1_-1": 6.497532704052394e-06,
+        "connection_strap_contact_-1_1": 3.3507089653205217e-06,
+        "connection_strap_contact_1_-1": 6.50556853661542e-06,
+        "connection_strap_contact_1_1": 4.083879824682438e-06,
+        "connection_camera_mount_-1": 3.618164164829601e-06,
+        "connection_camera_mount_1": 5.868369478008276e-06,
+        "connection_xt30_contact": 5.3090839643739e-05,
+        "connection_balancer_contact": 3.8184635711672416e-05,
+        "connection_antenna_contact": 6.848948798495811e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.882545729125742e-12,
+      "elapsed_s": 26.76323159993626
+    },
+    {
+      "iteration": 11,
+      "final_evaluation": false,
+      "objective": 0.01638006891875735,
+      "physical_density_sum": 584.1999997245172,
+      "compliances_n_mm": {
+        "arm_tip": 0.021775194674671018,
+        "battery_impact": 0.015383494946176645,
+        "camera_side": 0.012870022024932436,
+        "connection_aio_contact_0": 1.476903680101661e-05,
+        "connection_aio_contact_1": 4.318083844219941e-06,
+        "connection_aio_contact_2": 1.4179032857431082e-05,
+        "connection_aio_contact_3": 9.122877439443872e-06,
+        "connection_battery_contact_-1_-1": 7.209444338307676e-06,
+        "connection_battery_contact_-1_1": 2.639395177276311e-06,
+        "connection_battery_contact_1_-1": 7.1489522538401694e-06,
+        "connection_battery_contact_1_1": 3.1465835013125724e-06,
+        "connection_strap_contact_-1_-1": 6.172881295700967e-06,
+        "connection_strap_contact_-1_1": 3.1800848402862344e-06,
+        "connection_strap_contact_1_-1": 6.192440303393209e-06,
+        "connection_strap_contact_1_1": 3.864124647887059e-06,
+        "connection_camera_mount_-1": 3.4992494264024006e-06,
+        "connection_camera_mount_1": 5.650258989960723e-06,
+        "connection_xt30_contact": 5.015563474142608e-05,
+        "connection_balancer_contact": 3.610325331508262e-05,
+        "connection_antenna_contact": 6.409184731225136e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 5.033585265918741e-12,
+      "elapsed_s": 29.112804799922742
+    },
+    {
+      "iteration": 12,
+      "final_evaluation": false,
+      "objective": 0.015867055062697748,
+      "physical_density_sum": 584.199999611023,
+      "compliances_n_mm": {
+        "arm_tip": 0.021051545307591013,
+        "battery_impact": 0.014840756072240762,
+        "camera_side": 0.012686970404758802,
+        "connection_aio_contact_0": 1.4016898865294824e-05,
+        "connection_aio_contact_1": 4.157216947917634e-06,
+        "connection_aio_contact_2": 1.3473109291493757e-05,
+        "connection_aio_contact_3": 8.736135137266536e-06,
+        "connection_battery_contact_-1_-1": 6.9716837212110165e-06,
+        "connection_battery_contact_-1_1": 2.5425180359222864e-06,
+        "connection_battery_contact_1_-1": 6.8389455373315755e-06,
+        "connection_battery_contact_1_1": 3.0388399008370485e-06,
+        "connection_strap_contact_-1_-1": 5.965204873152247e-06,
+        "connection_strap_contact_-1_1": 3.0625990195448366e-06,
+        "connection_strap_contact_1_-1": 5.96748433135022e-06,
+        "connection_strap_contact_1_1": 3.7239607758785226e-06,
+        "connection_camera_mount_-1": 3.405470491513487e-06,
+        "connection_camera_mount_1": 5.483516078107233e-06,
+        "connection_xt30_contact": 4.7599860562651476e-05,
+        "connection_balancer_contact": 3.420960580105531e-05,
+        "connection_antenna_contact": 6.010421710767008e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.563043054590883e-12,
+      "elapsed_s": 31.63305019994732
+    },
+    {
+      "iteration": 13,
+      "final_evaluation": false,
+      "objective": 0.015465550503494846,
+      "physical_density_sum": 584.1999998322871,
+      "compliances_n_mm": {
+        "arm_tip": 0.02047859003227185,
+        "battery_impact": 0.014390392526914595,
+        "camera_side": 0.012544853092264375,
+        "connection_aio_contact_0": 1.3415302947961696e-05,
+        "connection_aio_contact_1": 4.030628178131127e-06,
+        "connection_aio_contact_2": 1.2918004026875124e-05,
+        "connection_aio_contact_3": 8.44072132842902e-06,
+        "connection_battery_contact_-1_-1": 6.731583690641042e-06,
+        "connection_battery_contact_-1_1": 2.466836280474625e-06,
+        "connection_battery_contact_1_-1": 6.5901144710186384e-06,
+        "connection_battery_contact_1_1": 2.9642449837168268e-06,
+        "connection_strap_contact_-1_-1": 5.7694165998893515e-06,
+        "connection_strap_contact_-1_1": 2.9661648463251974e-06,
+        "connection_strap_contact_1_-1": 5.801282500071207e-06,
+        "connection_strap_contact_1_1": 3.6215185946662527e-06,
+        "connection_camera_mount_-1": 3.3250306159491975e-06,
+        "connection_camera_mount_1": 5.366185421218182e-06,
+        "connection_xt30_contact": 4.5943624817734895e-05,
+        "connection_balancer_contact": 3.293526740108248e-05,
+        "connection_antenna_contact": 5.763039704351149e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.105567516190864e-12,
+      "elapsed_s": 33.85498900001403
+    },
+    {
+      "iteration": 14,
+      "final_evaluation": false,
+      "objective": 0.015122737505729131,
+      "physical_density_sum": 584.1999996622869,
+      "compliances_n_mm": {
+        "arm_tip": 0.020013435520492805,
+        "battery_impact": 0.014016552641075524,
+        "camera_side": 0.01240780087785029,
+        "connection_aio_contact_0": 1.2923576949502477e-05,
+        "connection_aio_contact_1": 3.929132922617856e-06,
+        "connection_aio_contact_2": 1.2417510882001888e-05,
+        "connection_aio_contact_3": 8.174503262186393e-06,
+        "connection_battery_contact_-1_-1": 6.548866333204062e-06,
+        "connection_battery_contact_-1_1": 2.4048262526300064e-06,
+        "connection_battery_contact_1_-1": 6.384516400866176e-06,
+        "connection_battery_contact_1_1": 2.9007258461102756e-06,
+        "connection_strap_contact_-1_-1": 5.610771143054498e-06,
+        "connection_strap_contact_-1_1": 2.892120357040976e-06,
+        "connection_strap_contact_1_-1": 5.6585302104622735e-06,
+        "connection_strap_contact_1_1": 3.5357816490359188e-06,
+        "connection_camera_mount_-1": 3.263769988013944e-06,
+        "connection_camera_mount_1": 5.265312887416991e-06,
+        "connection_xt30_contact": 4.4444894177366824e-05,
+        "connection_balancer_contact": 3.1700926769009996e-05,
+        "connection_antenna_contact": 5.5297456731680263e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 3.998971935715204e-12,
+      "elapsed_s": 36.309150799992494
+    },
+    {
+      "iteration": 15,
+      "final_evaluation": false,
+      "objective": 0.014818801269312043,
+      "physical_density_sum": 584.1999986731435,
+      "compliances_n_mm": {
+        "arm_tip": 0.019584957835087173,
+        "battery_impact": 0.013730753439154798,
+        "camera_side": 0.012232982224363309,
+        "connection_aio_contact_0": 1.2519453777414299e-05,
+        "connection_aio_contact_1": 3.845787941988289e-06,
+        "connection_aio_contact_2": 1.1949855887022996e-05,
+        "connection_aio_contact_3": 7.926028313790336e-06,
+        "connection_battery_contact_-1_-1": 6.402443345513429e-06,
+        "connection_battery_contact_-1_1": 2.3553534821942128e-06,
+        "connection_battery_contact_1_-1": 6.200070095918348e-06,
+        "connection_battery_contact_1_1": 2.8434968461006925e-06,
+        "connection_strap_contact_-1_-1": 5.490574166960905e-06,
+        "connection_strap_contact_-1_1": 2.835115399375963e-06,
+        "connection_strap_contact_1_-1": 5.525928885233787e-06,
+        "connection_strap_contact_1_1": 3.4622707962977797e-06,
+        "connection_camera_mount_-1": 3.205663199958838e-06,
+        "connection_camera_mount_1": 5.175754686137104e-06,
+        "connection_xt30_contact": 4.3337408019491324e-05,
+        "connection_balancer_contact": 3.0623834916411684e-05,
+        "connection_antenna_contact": 5.353202740311383e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.356275860430505e-12,
+      "elapsed_s": 39.25290209997911
+    },
+    {
+      "iteration": 16,
+      "final_evaluation": false,
+      "objective": 0.014551925054858993,
+      "physical_density_sum": 584.1999998993447,
+      "compliances_n_mm": {
+        "arm_tip": 0.019228237108387572,
+        "battery_impact": 0.01352479773215384,
+        "camera_side": 0.012014623450492968,
+        "connection_aio_contact_0": 1.2233556493982814e-05,
+        "connection_aio_contact_1": 3.7903801375017955e-06,
+        "connection_aio_contact_2": 1.1534280956418407e-05,
+        "connection_aio_contact_3": 7.721652575061504e-06,
+        "connection_battery_contact_-1_-1": 6.291234317496339e-06,
+        "connection_battery_contact_-1_1": 2.315448023832774e-06,
+        "connection_battery_contact_1_-1": 6.035963427093742e-06,
+        "connection_battery_contact_1_1": 2.7920254996738448e-06,
+        "connection_strap_contact_-1_-1": 5.412497474036225e-06,
+        "connection_strap_contact_-1_1": 2.794640461097609e-06,
+        "connection_strap_contact_1_-1": 5.403267897112939e-06,
+        "connection_strap_contact_1_1": 3.399222183473136e-06,
+        "connection_camera_mount_-1": 3.1470075223096495e-06,
+        "connection_camera_mount_1": 5.0876042376522325e-06,
+        "connection_xt30_contact": 4.238835032187379e-05,
+        "connection_balancer_contact": 2.9694805237352228e-05,
+        "connection_antenna_contact": 5.203519092702736e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.111787367522626e-12,
+      "elapsed_s": 41.70703169994522
+    },
+    {
+      "iteration": 17,
+      "final_evaluation": false,
+      "objective": 0.014335362895919251,
+      "physical_density_sum": 584.1999985443626,
+      "compliances_n_mm": {
+        "arm_tip": 0.018972276836585446,
+        "battery_impact": 0.013358149880136864,
+        "camera_side": 0.011812615173227122,
+        "connection_aio_contact_0": 1.19799191661403e-05,
+        "connection_aio_contact_1": 3.750722428692622e-06,
+        "connection_aio_contact_2": 1.1174288153340715e-05,
+        "connection_aio_contact_3": 7.561996695440657e-06,
+        "connection_battery_contact_-1_-1": 6.193514420957542e-06,
+        "connection_battery_contact_-1_1": 2.2834742271530945e-06,
+        "connection_battery_contact_1_-1": 5.895511184642672e-06,
+        "connection_battery_contact_1_1": 2.7507303798730055e-06,
+        "connection_strap_contact_-1_-1": 5.340402258840918e-06,
+        "connection_strap_contact_-1_1": 2.7608045032251878e-06,
+        "connection_strap_contact_1_-1": 5.293446301054015e-06,
+        "connection_strap_contact_1_1": 3.353195765226546e-06,
+        "connection_camera_mount_-1": 3.100187522507037e-06,
+        "connection_camera_mount_1": 5.010168532362582e-06,
+        "connection_xt30_contact": 4.1722117576664663e-05,
+        "connection_balancer_contact": 2.89772668911459e-05,
+        "connection_antenna_contact": 5.095656079421844e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 3.8206600431542395e-12,
+      "elapsed_s": 43.794216400012374
+    },
+    {
+      "iteration": 18,
+      "final_evaluation": false,
+      "objective": 0.0141723355982432,
+      "physical_density_sum": 584.1999986927326,
+      "compliances_n_mm": {
+        "arm_tip": 0.01882331590937521,
+        "battery_impact": 0.013216392639914048,
+        "camera_side": 0.011641748158610661,
+        "connection_aio_contact_0": 1.1805042567094929e-05,
+        "connection_aio_contact_1": 3.7204671708991982e-06,
+        "connection_aio_contact_2": 1.102098800507809e-05,
+        "connection_aio_contact_3": 7.461850410289213e-06,
+        "connection_battery_contact_-1_-1": 6.112026786121386e-06,
+        "connection_battery_contact_-1_1": 2.2580233318017504e-06,
+        "connection_battery_contact_1_-1": 5.791521073460609e-06,
+        "connection_battery_contact_1_1": 2.713109148678234e-06,
+        "connection_strap_contact_-1_-1": 5.275359461632136e-06,
+        "connection_strap_contact_-1_1": 2.7327934474473316e-06,
+        "connection_strap_contact_1_-1": 5.211818542324682e-06,
+        "connection_strap_contact_1_1": 3.315292111104347e-06,
+        "connection_camera_mount_-1": 3.063183520237812e-06,
+        "connection_camera_mount_1": 4.940134392994274e-06,
+        "connection_xt30_contact": 4.133157325795249e-05,
+        "connection_balancer_contact": 2.8513522183913835e-05,
+        "connection_antenna_contact": 5.023412913955782e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.296278608441087e-12,
+      "elapsed_s": 46.358127899933606
+    },
+    {
+      "iteration": 19,
+      "final_evaluation": false,
+      "objective": 0.014058676186134253,
+      "physical_density_sum": 584.1999994905952,
+      "compliances_n_mm": {
+        "arm_tip": 0.01874139726653165,
+        "battery_impact": 0.013117339352761336,
+        "camera_side": 0.011507426476032055,
+        "connection_aio_contact_0": 1.1701651446237766e-05,
+        "connection_aio_contact_1": 3.7033353536063744e-06,
+        "connection_aio_contact_2": 1.0935096350861273e-05,
+        "connection_aio_contact_3": 7.37330371256442e-06,
+        "connection_battery_contact_-1_-1": 6.058866495774534e-06,
+        "connection_battery_contact_-1_1": 2.242597240794657e-06,
+        "connection_battery_contact_1_-1": 5.7155113526268495e-06,
+        "connection_battery_contact_1_1": 2.684059421469251e-06,
+        "connection_strap_contact_-1_-1": 5.230155546988978e-06,
+        "connection_strap_contact_-1_1": 2.71719682346807e-06,
+        "connection_strap_contact_1_-1": 5.152015345718146e-06,
+        "connection_strap_contact_1_1": 3.2881279633574663e-06,
+        "connection_camera_mount_-1": 3.0378227259949517e-06,
+        "connection_camera_mount_1": 4.882545197818138e-06,
+        "connection_xt30_contact": 4.106003027380995e-05,
+        "connection_balancer_contact": 2.8248062516777573e-05,
+        "connection_antenna_contact": 4.9719370887248366e-05
+      },
+      "maximum_design_change": 0.08866257990750831,
+      "maximum_relative_residual": 4.017250220291425e-12,
+      "elapsed_s": 48.930916099925525
+    },
+    {
+      "iteration": 20,
+      "final_evaluation": false,
+      "objective": 0.013965916044996397,
+      "physical_density_sum": 584.1999996354125,
+      "compliances_n_mm": {
+        "arm_tip": 0.0186665844262978,
+        "battery_impact": 0.013038686541750019,
+        "camera_side": 0.01139348854673617,
+        "connection_aio_contact_0": 1.1609055620112203e-05,
+        "connection_aio_contact_1": 3.6893770056717315e-06,
+        "connection_aio_contact_2": 1.0846590368038399e-05,
+        "connection_aio_contact_3": 7.278640101387704e-06,
+        "connection_battery_contact_-1_-1": 6.02276306865147e-06,
+        "connection_battery_contact_-1_1": 2.2298396664489604e-06,
+        "connection_battery_contact_1_-1": 5.655199280687787e-06,
+        "connection_battery_contact_1_1": 2.6578591913327987e-06,
+        "connection_strap_contact_-1_-1": 5.198341339637845e-06,
+        "connection_strap_contact_-1_1": 2.7064346264041542e-06,
+        "connection_strap_contact_1_-1": 5.098675080138783e-06,
+        "connection_strap_contact_1_1": 3.2628567305708156e-06,
+        "connection_camera_mount_-1": 3.0159635162266497e-06,
+        "connection_camera_mount_1": 4.827485571469651e-06,
+        "connection_xt30_contact": 4.0967571501650816e-05,
+        "connection_balancer_contact": 2.8072542255372483e-05,
+        "connection_antenna_contact": 4.94241766373183e-05
+      },
+      "maximum_design_change": 0.10819738109014448,
+      "maximum_relative_residual": 3.854794075760937e-12,
+      "elapsed_s": 51.34135320002679
+    },
+    {
+      "iteration": 21,
+      "final_evaluation": false,
+      "objective": 0.013888828204427191,
+      "physical_density_sum": 584.199999619234,
+      "compliances_n_mm": {
+        "arm_tip": 0.018610351806055473,
+        "battery_impact": 0.012964452376368505,
+        "camera_side": 0.011312842017864155,
+        "connection_aio_contact_0": 1.1527817231376751e-05,
+        "connection_aio_contact_1": 3.6775931207110085e-06,
+        "connection_aio_contact_2": 1.0756808684362913e-05,
+        "connection_aio_contact_3": 7.188063479390451e-06,
+        "connection_battery_contact_-1_-1": 5.9911053521658245e-06,
+        "connection_battery_contact_-1_1": 2.220530238799484e-06,
+        "connection_battery_contact_1_-1": 5.600170699897928e-06,
+        "connection_battery_contact_1_1": 2.636134311893009e-06,
+        "connection_strap_contact_-1_-1": 5.169966561465637e-06,
+        "connection_strap_contact_-1_1": 2.6985795649603027e-06,
+        "connection_strap_contact_1_-1": 5.046027298246771e-06,
+        "connection_strap_contact_1_1": 3.23999362558834e-06,
+        "connection_camera_mount_-1": 3.0002789850997748e-06,
+        "connection_camera_mount_1": 4.780967365101697e-06,
+        "connection_xt30_contact": 4.081120229747463e-05,
+        "connection_balancer_contact": 2.788704252122445e-05,
+        "connection_antenna_contact": 4.903649573281825e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.007041466463915e-12,
+      "elapsed_s": 53.942522099940106
+    },
+    {
+      "iteration": 22,
+      "final_evaluation": false,
+      "objective": 0.013823341454398577,
+      "physical_density_sum": 584.1999996571329,
+      "compliances_n_mm": {
+        "arm_tip": 0.018548238451751353,
+        "battery_impact": 0.012888607179249523,
+        "camera_side": 0.011262974669132331,
+        "connection_aio_contact_0": 1.1457758715245316e-05,
+        "connection_aio_contact_1": 3.6662447938646317e-06,
+        "connection_aio_contact_2": 1.0669779605317794e-05,
+        "connection_aio_contact_3": 7.106342425401101e-06,
+        "connection_battery_contact_-1_-1": 5.960087417992277e-06,
+        "connection_battery_contact_-1_1": 2.2125719099163303e-06,
+        "connection_battery_contact_1_-1": 5.548038534300586e-06,
+        "connection_battery_contact_1_1": 2.62067151053631e-06,
+        "connection_strap_contact_-1_-1": 5.142200834010892e-06,
+        "connection_strap_contact_-1_1": 2.690960540472988e-06,
+        "connection_strap_contact_1_-1": 4.996167086565392e-06,
+        "connection_strap_contact_1_1": 3.2241685663497866e-06,
+        "connection_camera_mount_-1": 2.9862389383402903e-06,
+        "connection_camera_mount_1": 4.75545161357305e-06,
+        "connection_xt30_contact": 4.0677560906196195e-05,
+        "connection_balancer_contact": 2.781655709807542e-05,
+        "connection_antenna_contact": 4.871258609412281e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 3.972047355210054e-12,
+      "elapsed_s": 57.0173061999958
+    },
+    {
+      "iteration": 23,
+      "final_evaluation": false,
+      "objective": 0.013767034420669027,
+      "physical_density_sum": 584.199999720412,
+      "compliances_n_mm": {
+        "arm_tip": 0.018499389806378254,
+        "battery_impact": 0.012818282579992986,
+        "camera_side": 0.01122203138059282,
+        "connection_aio_contact_0": 1.139985876740134e-05,
+        "connection_aio_contact_1": 3.656740718682463e-06,
+        "connection_aio_contact_2": 1.0598287178148279e-05,
+        "connection_aio_contact_3": 7.054085164732775e-06,
+        "connection_battery_contact_-1_-1": 5.932635994454795e-06,
+        "connection_battery_contact_-1_1": 2.2057443005348235e-06,
+        "connection_battery_contact_1_-1": 5.504584836204594e-06,
+        "connection_battery_contact_1_1": 2.606249717811153e-06,
+        "connection_strap_contact_-1_-1": 5.116972078258865e-06,
+        "connection_strap_contact_-1_1": 2.6846000370310036e-06,
+        "connection_strap_contact_1_-1": 4.953675770518825e-06,
+        "connection_strap_contact_1_1": 3.2099656522680526e-06,
+        "connection_camera_mount_-1": 2.9755693634675498e-06,
+        "connection_camera_mount_1": 4.7337544302094174e-06,
+        "connection_xt30_contact": 4.0541727130604605e-05,
+        "connection_balancer_contact": 2.7797396675165956e-05,
+        "connection_antenna_contact": 4.839536596990827e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.116641112394193e-12,
+      "elapsed_s": 60.07633910002187
+    },
+    {
+      "iteration": 24,
+      "final_evaluation": false,
+      "objective": 0.013717690824255998,
+      "physical_density_sum": 584.1999998346815,
+      "compliances_n_mm": {
+        "arm_tip": 0.01845137788305501,
+        "battery_impact": 0.012759354447929906,
+        "camera_side": 0.01118539249286804,
+        "connection_aio_contact_0": 1.1345674899303287e-05,
+        "connection_aio_contact_1": 3.6478243529583427e-06,
+        "connection_aio_contact_2": 1.0526885117361639e-05,
+        "connection_aio_contact_3": 6.993666112793932e-06,
+        "connection_battery_contact_-1_-1": 5.914104031513616e-06,
+        "connection_battery_contact_-1_1": 2.2006904410142576e-06,
+        "connection_battery_contact_1_-1": 5.4701851884843205e-06,
+        "connection_battery_contact_1_1": 2.5919969087237487e-06,
+        "connection_strap_contact_-1_-1": 5.098940964863513e-06,
+        "connection_strap_contact_-1_1": 2.6811548366117974e-06,
+        "connection_strap_contact_1_-1": 4.913844416715479e-06,
+        "connection_strap_contact_1_1": 3.1953601305738377e-06,
+        "connection_camera_mount_-1": 2.9685013409441853e-06,
+        "connection_camera_mount_1": 4.710705955408611e-06,
+        "connection_xt30_contact": 4.042811954934807e-05,
+        "connection_balancer_contact": 2.7800518359784083e-05,
+        "connection_antenna_contact": 4.813347168113393e-05
+      },
+      "maximum_design_change": 0.07310432556986968,
+      "maximum_relative_residual": 3.9082432537183665e-12,
+      "elapsed_s": 63.22546029998921
+    },
+    {
+      "iteration": 25,
+      "final_evaluation": false,
+      "objective": 0.013674416305718372,
+      "physical_density_sum": 584.1999997198498,
+      "compliances_n_mm": {
+        "arm_tip": 0.01840592522304225,
+        "battery_impact": 0.012708479969142074,
+        "camera_side": 0.011156949626547188,
+        "connection_aio_contact_0": 1.1302921276972226e-05,
+        "connection_aio_contact_1": 3.639028245105498e-06,
+        "connection_aio_contact_2": 1.0459797100573863e-05,
+        "connection_aio_contact_3": 6.9313034549002716e-06,
+        "connection_battery_contact_-1_-1": 5.897247436808156e-06,
+        "connection_battery_contact_-1_1": 2.196555855733562e-06,
+        "connection_battery_contact_1_-1": 5.4415440661614105e-06,
+        "connection_battery_contact_1_1": 2.5814043705153416e-06,
+        "connection_strap_contact_-1_-1": 5.081005247577535e-06,
+        "connection_strap_contact_-1_1": 2.6774674926441885e-06,
+        "connection_strap_contact_1_-1": 4.882422895746977e-06,
+        "connection_strap_contact_1_1": 3.1833634144474625e-06,
+        "connection_camera_mount_-1": 2.963163699325219e-06,
+        "connection_camera_mount_1": 4.6928351233991065e-06,
+        "connection_xt30_contact": 4.030009660853986e-05,
+        "connection_balancer_contact": 2.778453156547296e-05,
+        "connection_antenna_contact": 4.785273484320254e-05
+      },
+      "maximum_design_change": 0.09341982080265299,
+      "maximum_relative_residual": 4.053219161715471e-12,
+      "elapsed_s": 66.69588060001843
+    },
+    {
+      "iteration": 26,
+      "final_evaluation": false,
+      "objective": 0.013635503418321602,
+      "physical_density_sum": 584.1999994548103,
+      "compliances_n_mm": {
+        "arm_tip": 0.01836859778824479,
+        "battery_impact": 0.012667025941345837,
+        "camera_side": 0.011123867087316773,
+        "connection_aio_contact_0": 1.1268858588994002e-05,
+        "connection_aio_contact_1": 3.629968408854313e-06,
+        "connection_aio_contact_2": 1.0406933307443162e-05,
+        "connection_aio_contact_3": 6.8818788274784284e-06,
+        "connection_battery_contact_-1_-1": 5.887797469859387e-06,
+        "connection_battery_contact_-1_1": 2.1916353052875914e-06,
+        "connection_battery_contact_1_-1": 5.422661876197428e-06,
+        "connection_battery_contact_1_1": 2.570906563869677e-06,
+        "connection_strap_contact_-1_-1": 5.066107223180716e-06,
+        "connection_strap_contact_-1_1": 2.6740355625999917e-06,
+        "connection_strap_contact_1_-1": 4.8609144054832365e-06,
+        "connection_strap_contact_1_1": 3.172102247315018e-06,
+        "connection_camera_mount_-1": 2.9562351363506214e-06,
+        "connection_camera_mount_1": 4.673542417115686e-06,
+        "connection_xt30_contact": 4.018526496124917e-05,
+        "connection_balancer_contact": 2.7774942781824684e-05,
+        "connection_antenna_contact": 4.759033564548834e-05
+      },
+      "maximum_design_change": 0.11954640151534335,
+      "maximum_relative_residual": 4.0893032602778716e-12,
+      "elapsed_s": 70.16671040002257
+    },
+    {
+      "iteration": 27,
+      "final_evaluation": false,
+      "objective": 0.01359918803134579,
+      "physical_density_sum": 584.1999990667925,
+      "compliances_n_mm": {
+        "arm_tip": 0.018349139698733172,
+        "battery_impact": 0.01262565124906193,
+        "camera_side": 0.011084917478136768,
+        "connection_aio_contact_0": 1.1238752908085143e-05,
+        "connection_aio_contact_1": 3.6227841599749782e-06,
+        "connection_aio_contact_2": 1.0377720558686505e-05,
+        "connection_aio_contact_3": 6.884613292911917e-06,
+        "connection_battery_contact_-1_-1": 5.877648733720375e-06,
+        "connection_battery_contact_-1_1": 2.18650819968659e-06,
+        "connection_battery_contact_1_-1": 5.403618832410602e-06,
+        "connection_battery_contact_1_1": 2.5593757373666107e-06,
+        "connection_strap_contact_-1_-1": 5.052217690664413e-06,
+        "connection_strap_contact_-1_1": 2.6714050521118605e-06,
+        "connection_strap_contact_1_-1": 4.841871483632529e-06,
+        "connection_strap_contact_1_1": 3.1601996697596753e-06,
+        "connection_camera_mount_-1": 2.949046668728953e-06,
+        "connection_camera_mount_1": 4.6524070605629494e-06,
+        "connection_xt30_contact": 4.0060273623599194e-05,
+        "connection_balancer_contact": 2.7803522055447877e-05,
+        "connection_antenna_contact": 4.7329127963476885e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.081562318382034e-12,
+      "elapsed_s": 72.93577640003059
+    },
+    {
+      "iteration": 28,
+      "final_evaluation": false,
+      "objective": 0.013564749216504218,
+      "physical_density_sum": 584.1999998752437,
+      "compliances_n_mm": {
+        "arm_tip": 0.018330254060288702,
+        "battery_impact": 0.012585520185035975,
+        "camera_side": 0.01104488840339641,
+        "connection_aio_contact_0": 1.1217750824847262e-05,
+        "connection_aio_contact_1": 3.6158733683931414e-06,
+        "connection_aio_contact_2": 1.0358875355760773e-05,
+        "connection_aio_contact_3": 6.894043097474798e-06,
+        "connection_battery_contact_-1_-1": 5.8700184640601815e-06,
+        "connection_battery_contact_-1_1": 2.180981570513498e-06,
+        "connection_battery_contact_1_-1": 5.387047208638618e-06,
+        "connection_battery_contact_1_1": 2.547740758436114e-06,
+        "connection_strap_contact_-1_-1": 5.04059260919487e-06,
+        "connection_strap_contact_-1_1": 2.668761692905994e-06,
+        "connection_strap_contact_1_-1": 4.825341244212192e-06,
+        "connection_strap_contact_1_1": 3.148524478948354e-06,
+        "connection_camera_mount_-1": 2.94131155757083e-06,
+        "connection_camera_mount_1": 4.631027876897944e-06,
+        "connection_xt30_contact": 3.99817373042695e-05,
+        "connection_balancer_contact": 2.785056294359419e-05,
+        "connection_antenna_contact": 4.714513199543976e-05
+      },
+      "maximum_design_change": 0.12,
+      "maximum_relative_residual": 4.150832067619654e-12,
+      "elapsed_s": 75.88371279998682
+    },
+    {
+      "iteration": 29,
+      "final_evaluation": false,
+      "objective": 0.01353155133023294,
+      "physical_density_sum": 584.1999999311176,
+      "compliances_n_mm": {
+        "arm_tip": 0.018316961958276527,
+        "battery_impact": 0.012545702155735923,
+        "camera_side": 0.011005283110460255,
+        "connection_aio_contact_0": 1.1196214264142642e-05,
+        "connection_aio_contact_1": 3.6108658209747246e-06,
+        "connection_aio_contact_2": 1.03389533270928e-05,
+        "connection_aio_contact_3": 6.897637050768059e-06,
+        "connection_battery_contact_-1_-1": 5.862977188157588e-06,
+        "connection_battery_contact_-1_1": 2.1756667276307544e-06,
+        "connection_battery_contact_1_-1": 5.371416008312507e-06,
+        "connection_battery_contact_1_1": 2.5367343925643247e-06,
+        "connection_strap_contact_-1_-1": 5.029997737476717e-06,
+        "connection_strap_contact_-1_1": 2.666285125581437e-06,
+        "connection_strap_contact_1_-1": 4.808968881614346e-06,
+        "connection_strap_contact_1_1": 3.137303825525434e-06,
+        "connection_camera_mount_-1": 2.9342649958718487e-06,
+        "connection_camera_mount_1": 4.610084854967252e-06,
+        "connection_xt30_contact": 3.9911013105314405e-05,
+        "connection_balancer_contact": 2.784087941007723e-05,
+        "connection_antenna_contact": 4.700732251115539e-05
+      },
+      "maximum_design_change": 0.11731632016384785,
+      "maximum_relative_residual": 4.25582873997873e-12,
+      "elapsed_s": 78.86520549992565
+    },
+    {
+      "iteration": 30,
+      "final_evaluation": false,
+      "objective": 0.013499042782032088,
+      "physical_density_sum": 584.1999992125521,
+      "compliances_n_mm": {
+        "arm_tip": 0.018294863349266114,
+        "battery_impact": 0.012512074890439399,
+        "camera_side": 0.010970190114494542,
+        "connection_aio_contact_0": 1.1172312440827995e-05,
+        "connection_aio_contact_1": 3.604433030169334e-06,
+        "connection_aio_contact_2": 1.0312552279387775e-05,
+        "connection_aio_contact_3": 6.893501712146617e-06,
+        "connection_battery_contact_-1_-1": 5.857329772060477e-06,
+        "connection_battery_contact_-1_1": 2.170652609086933e-06,
+        "connection_battery_contact_1_-1": 5.356856034435138e-06,
+        "connection_battery_contact_1_1": 2.528428036902672e-06,
+        "connection_strap_contact_-1_-1": 5.020510573626165e-06,
+        "connection_strap_contact_-1_1": 2.6639986698797597e-06,
+        "connection_strap_contact_1_-1": 4.793392895323487e-06,
+        "connection_strap_contact_1_1": 3.1288358363058386e-06,
+        "connection_camera_mount_-1": 2.927620651081572e-06,
+        "connection_camera_mount_1": 4.594927193453497e-06,
+        "connection_xt30_contact": 3.982115231239319e-05,
+        "connection_balancer_contact": 2.7747995541439488e-05,
+        "connection_antenna_contact": 4.6854544983210614e-05
+      },
+      "maximum_design_change": 0.09174724482450221,
+      "maximum_relative_residual": 4.290969624891807e-12,
+      "elapsed_s": 82.86380369996186
+    },
+    {
+      "iteration": 31,
+      "final_evaluation": false,
+      "objective": 0.01347014075795996,
+      "physical_density_sum": 584.199999355355,
+      "compliances_n_mm": {
+        "arm_tip": 0.018265550817532027,
+        "battery_impact": 0.012476199209157568,
+        "camera_side": 0.010955975841347719,
+        "connection_aio_contact_0": 1.1176681234977465e-05,
+        "connection_aio_contact_1": 3.5969430051180364e-06,
+        "connection_aio_contact_2": 1.0279893854263882e-05,
+        "connection_aio_contact_3": 6.8864581123716795e-06,
+        "connection_battery_contact_-1_-1": 5.8488601521022465e-06,
+        "connection_battery_contact_-1_1": 2.1664501899189613e-06,
+        "connection_battery_contact_1_-1": 5.342050596922557e-06,
+        "connection_battery_contact_1_1": 2.5243150227246297e-06,
+        "connection_strap_contact_-1_-1": 5.008054017433023e-06,
+        "connection_strap_contact_-1_1": 2.6609918833024076e-06,
+        "connection_strap_contact_1_-1": 4.775789014709451e-06,
+        "connection_strap_contact_1_1": 3.1231541840016863e-06,
+        "connection_camera_mount_-1": 2.923030984265608e-06,
+        "connection_camera_mount_1": 4.589928696252245e-06,
+        "connection_xt30_contact": 3.969767127195185e-05,
+        "connection_balancer_contact": 2.7556080736820314e-05,
+        "connection_antenna_contact": 4.668240285783916e-05
+      },
+      "maximum_design_change": 0.07453069701979453,
+      "maximum_relative_residual": 3.934030031862012e-12,
+      "elapsed_s": 86.06847369996831
+    },
+    {
+      "iteration": 32,
+      "final_evaluation": false,
+      "objective": 0.013444625273352507,
+      "physical_density_sum": 584.1999995973629,
+      "compliances_n_mm": {
+        "arm_tip": 0.018238827479991948,
+        "battery_impact": 0.012443075515201333,
+        "camera_side": 0.01094268508139906,
+        "connection_aio_contact_0": 1.118140234469505e-05,
+        "connection_aio_contact_1": 3.589935695696969e-06,
+        "connection_aio_contact_2": 1.0247998608571203e-05,
+        "connection_aio_contact_3": 6.877412246781696e-06,
+        "connection_battery_contact_-1_-1": 5.840420573097822e-06,
+        "connection_battery_contact_-1_1": 2.162776403830452e-06,
+        "connection_battery_contact_1_-1": 5.328708612037132e-06,
+        "connection_battery_contact_1_1": 2.5204277521915933e-06,
+        "connection_strap_contact_-1_-1": 4.99633860159851e-06,
+        "connection_strap_contact_-1_1": 2.6584557191999947e-06,
+        "connection_strap_contact_1_-1": 4.7583434632928486e-06,
+        "connection_strap_contact_1_1": 3.117326691751873e-06,
+        "connection_camera_mount_-1": 2.918942462152699e-06,
+        "connection_camera_mount_1": 4.5855549311201845e-06,
+        "connection_xt30_contact": 3.963101722577804e-05,
+        "connection_balancer_contact": 2.73805351973904e-05,
+        "connection_antenna_contact": 4.6614295208233006e-05
+      },
+      "maximum_design_change": 0.0567878759338013,
+      "maximum_relative_residual": 3.878281950968886e-12,
+      "elapsed_s": 89.587980399956
+    },
+    {
+      "iteration": 33,
+      "final_evaluation": false,
+      "objective": 0.01342552429984605,
+      "physical_density_sum": 584.1999993156305,
+      "compliances_n_mm": {
+        "arm_tip": 0.018218500598390017,
+        "battery_impact": 0.01241364638353881,
+        "camera_side": 0.01093497629974597,
+        "connection_aio_contact_0": 1.1187946618659838e-05,
+        "connection_aio_contact_1": 3.5842623468576833e-06,
+        "connection_aio_contact_2": 1.0221514094061662e-05,
+        "connection_aio_contact_3": 6.8693911083679555e-06,
+        "connection_battery_contact_-1_-1": 5.833714881511826e-06,
+        "connection_battery_contact_-1_1": 2.1602139142673147e-06,
+        "connection_battery_contact_1_-1": 5.318039847646915e-06,
+        "connection_battery_contact_1_1": 2.517459001024555e-06,
+        "connection_strap_contact_-1_-1": 4.9863053611847365e-06,
+        "connection_strap_contact_-1_1": 2.656665047294616e-06,
+        "connection_strap_contact_1_-1": 4.743207399451588e-06,
+        "connection_strap_contact_1_1": 3.1122702457746995e-06,
+        "connection_camera_mount_-1": 2.916448112498805e-06,
+        "connection_camera_mount_1": 4.5833652961099215e-06,
+        "connection_xt30_contact": 3.9594217509236724e-05,
+        "connection_balancer_contact": 2.728137394823266e-05,
+        "connection_antenna_contact": 4.6612323174889526e-05
+      },
+      "maximum_design_change": 0.053917547405933686,
+      "maximum_relative_residual": 4.0896201222061144e-12,
+      "elapsed_s": 92.81802110001445
+    },
+    {
+      "iteration": 34,
+      "final_evaluation": false,
+      "objective": 0.013411307658018018,
+      "physical_density_sum": 584.1999999640052,
+      "compliances_n_mm": {
+        "arm_tip": 0.018204365051579866,
+        "battery_impact": 0.012387054191794174,
+        "camera_side": 0.010929275768800754,
+        "connection_aio_contact_0": 1.1198069989135845e-05,
+        "connection_aio_contact_1": 3.580455649024141e-06,
+        "connection_aio_contact_2": 1.020173226167454e-05,
+        "connection_aio_contact_3": 6.862507884241256e-06,
+        "connection_battery_contact_-1_-1": 5.8288091684110645e-06,
+        "connection_battery_contact_-1_1": 2.1577134927070005e-06,
+        "connection_battery_contact_1_-1": 5.309283271398352e-06,
+        "connection_battery_contact_1_1": 2.514733805074086e-06,
+        "connection_strap_contact_-1_-1": 4.977988537033102e-06,
+        "connection_strap_contact_-1_1": 2.6553271869157476e-06,
+        "connection_strap_contact_1_-1": 4.730239977386377e-06,
+        "connection_strap_contact_1_1": 3.107864241736799e-06,
+        "connection_camera_mount_-1": 2.91497737962576e-06,
+        "connection_camera_mount_1": 4.581603459667999e-06,
+        "connection_xt30_contact": 3.956855360964146e-05,
+        "connection_balancer_contact": 2.7295618096984682e-05,
+        "connection_antenna_contact": 4.665025112596422e-05
+      },
+      "maximum_design_change": 0.049821216923457645,
+      "maximum_relative_residual": 4.27193829804809e-12,
+      "elapsed_s": 95.80802669993136
+    },
+    {
+      "iteration": 35,
+      "final_evaluation": false,
+      "objective": 0.013399235973454302,
+      "physical_density_sum": 584.1999994984594,
+      "compliances_n_mm": {
+        "arm_tip": 0.018191152879710164,
+        "battery_impact": 0.012363547231879045,
+        "camera_side": 0.010923881786050804,
+        "connection_aio_contact_0": 1.120845386896494e-05,
+        "connection_aio_contact_1": 3.57665406581182e-06,
+        "connection_aio_contact_2": 1.0184819568222805e-05,
+        "connection_aio_contact_3": 6.856623331997755e-06,
+        "connection_battery_contact_-1_-1": 5.825881910475482e-06,
+        "connection_battery_contact_-1_1": 2.1553247453167105e-06,
+        "connection_battery_contact_1_-1": 5.302216959014737e-06,
+        "connection_battery_contact_1_1": 2.5122805143352636e-06,
+        "connection_strap_contact_-1_-1": 4.97163212617145e-06,
+        "connection_strap_contact_-1_1": 2.654203771153114e-06,
+        "connection_strap_contact_1_-1": 4.718503246687833e-06,
+        "connection_strap_contact_1_1": 3.1040048612874305e-06,
+        "connection_camera_mount_-1": 2.913393930773889e-06,
+        "connection_camera_mount_1": 4.579955302265465e-06,
+        "connection_xt30_contact": 3.957726234991046e-05,
+        "connection_balancer_contact": 2.732832716697506e-05,
+        "connection_antenna_contact": 4.670448786598571e-05
+      },
+      "maximum_design_change": 0.046053576476032254,
+      "maximum_relative_residual": 4.601902329657226e-12,
+      "elapsed_s": 99.11912609997671
+    },
+    {
+      "iteration": 36,
+      "final_evaluation": false,
+      "objective": 0.013388410678892243,
+      "physical_density_sum": 584.1999994372097,
+      "compliances_n_mm": {
+        "arm_tip": 0.018180495282274278,
+        "battery_impact": 0.012342997617954786,
+        "camera_side": 0.010919339492043075,
+        "connection_aio_contact_0": 1.1219256878704753e-05,
+        "connection_aio_contact_1": 3.573206489033186e-06,
+        "connection_aio_contact_2": 1.0169482841060249e-05,
+        "connection_aio_contact_3": 6.851935855684478e-06,
+        "connection_battery_contact_-1_-1": 5.824066785968275e-06,
+        "connection_battery_contact_-1_1": 2.1531617890364904e-06,
+        "connection_battery_contact_1_-1": 5.296401216010979e-06,
+        "connection_battery_contact_1_1": 2.51019627559225e-06,
+        "connection_strap_contact_-1_-1": 4.966524336995463e-06,
+        "connection_strap_contact_-1_1": 2.6533462821580297e-06,
+        "connection_strap_contact_1_-1": 4.708209917975225e-06,
+        "connection_strap_contact_1_1": 3.1008119917286122e-06,
+        "connection_camera_mount_-1": 2.9119684477763004e-06,
+        "connection_camera_mount_1": 4.5786626447555825e-06,
+        "connection_xt30_contact": 3.957201279602925e-05,
+        "connection_balancer_contact": 2.733658294950087e-05,
+        "connection_antenna_contact": 4.6726026315667256e-05
+      },
+      "maximum_design_change": 0.044881181225330136,
+      "maximum_relative_residual": 4.156153876397695e-12,
+      "elapsed_s": 101.75424079992808
+    },
+    {
+      "iteration": 37,
+      "final_evaluation": false,
+      "objective": 0.013378821344640988,
+      "physical_density_sum": 584.1999996898228,
+      "compliances_n_mm": {
+        "arm_tip": 0.01816948614541321,
+        "battery_impact": 0.01232840630286436,
+        "camera_side": 0.010914534878753664,
+        "connection_aio_contact_0": 1.1225885312126575e-05,
+        "connection_aio_contact_1": 3.5701174048909948e-06,
+        "connection_aio_contact_2": 1.0153450896415598e-05,
+        "connection_aio_contact_3": 6.8472617549771495e-06,
+        "connection_battery_contact_-1_-1": 5.822967798840053e-06,
+        "connection_battery_contact_-1_1": 2.151251523319509e-06,
+        "connection_battery_contact_1_-1": 5.290976157850036e-06,
+        "connection_battery_contact_1_1": 2.5084237098154402e-06,
+        "connection_strap_contact_-1_-1": 4.964341960524077e-06,
+        "connection_strap_contact_-1_1": 2.6528969167593975e-06,
+        "connection_strap_contact_1_-1": 4.69911217943423e-06,
+        "connection_strap_contact_1_1": 3.0981512895805103e-06,
+        "connection_camera_mount_-1": 2.910193064681784e-06,
+        "connection_camera_mount_1": 4.577121457036689e-06,
+        "connection_xt30_contact": 3.954646060556067e-05,
+        "connection_balancer_contact": 2.7326690898000295e-05,
+        "connection_antenna_contact": 4.671792999643157e-05
+      },
+      "maximum_design_change": 0.04332609028610057,
+      "maximum_relative_residual": 4.343809025977958e-12,
+      "elapsed_s": 105.08685670001432
+    },
+    {
+      "iteration": 38,
+      "final_evaluation": false,
+      "objective": 0.013370185114605929,
+      "physical_density_sum": 584.199999792214,
+      "compliances_n_mm": {
+        "arm_tip": 0.01815936352848359,
+        "battery_impact": 0.012315787479555335,
+        "camera_side": 0.010909861163814458,
+        "connection_aio_contact_0": 1.1230806160738567e-05,
+        "connection_aio_contact_1": 3.5671874302185657e-06,
+        "connection_aio_contact_2": 1.01380912105862e-05,
+        "connection_aio_contact_3": 6.843047777572382e-06,
+        "connection_battery_contact_-1_-1": 5.821726737853905e-06,
+        "connection_battery_contact_-1_1": 2.149372025310646e-06,
+        "connection_battery_contact_1_-1": 5.2859280139330165e-06,
+        "connection_battery_contact_1_1": 2.506949296100743e-06,
+        "connection_strap_contact_-1_-1": 4.962568657441953e-06,
+        "connection_strap_contact_-1_1": 2.652343150231612e-06,
+        "connection_strap_contact_1_-1": 4.6909042006021255e-06,
+        "connection_strap_contact_1_1": 3.0959835844957593e-06,
+        "connection_camera_mount_-1": 2.9083363517540406e-06,
+        "connection_camera_mount_1": 4.575636352871961e-06,
+        "connection_xt30_contact": 3.952522731339281e-05,
+        "connection_balancer_contact": 2.731345071187847e-05,
+        "connection_antenna_contact": 4.6716555934172054e-05
+      },
+      "maximum_design_change": 0.04195303207621748,
+      "maximum_relative_residual": 4.420498706341333e-12,
+      "elapsed_s": 108.60097399994265
+    },
+    {
+      "iteration": 39,
+      "final_evaluation": false,
+      "objective": 0.013362365979465413,
+      "physical_density_sum": 584.1999999293768,
+      "compliances_n_mm": {
+        "arm_tip": 0.018149176765239982,
+        "battery_impact": 0.012304562283240821,
+        "camera_side": 0.010905699739616161,
+        "connection_aio_contact_0": 1.1233683927206351e-05,
+        "connection_aio_contact_1": 3.5642174628343407e-06,
+        "connection_aio_contact_2": 1.0123018923173124e-05,
+        "connection_aio_contact_3": 6.838984030107386e-06,
+        "connection_battery_contact_-1_-1": 5.820022172268629e-06,
+        "connection_battery_contact_-1_1": 2.147402933114436e-06,
+        "connection_battery_contact_1_-1": 5.281701576252071e-06,
+        "connection_battery_contact_1_1": 2.5057219810057742e-06,
+        "connection_strap_contact_-1_-1": 4.960297355734055e-06,
+        "connection_strap_contact_-1_1": 2.651506619649466e-06,
+        "connection_strap_contact_1_-1": 4.684194988311845e-06,
+        "connection_strap_contact_1_1": 3.0943732193879766e-06,
+        "connection_camera_mount_-1": 2.906728961340432e-06,
+        "connection_camera_mount_1": 4.574157299132828e-06,
+        "connection_xt30_contact": 3.950849650195722e-05,
+        "connection_balancer_contact": 2.7302215041073958e-05,
+        "connection_antenna_contact": 4.673050695977346e-05
+      },
+      "maximum_design_change": 0.04077429580759495,
+      "maximum_relative_residual": 4.13303702446453e-12,
+      "elapsed_s": 112.16027019999456
+    },
+    {
+      "iteration": 40,
+      "final_evaluation": false,
+      "objective": 0.01335537292804215,
+      "physical_density_sum": 584.1999993267581,
+      "compliances_n_mm": {
+        "arm_tip": 0.018143667596633935,
+        "battery_impact": 0.012293335844279626,
+        "camera_side": 0.010901633539214575,
+        "connection_aio_contact_0": 1.1234281525907141e-05,
+        "connection_aio_contact_1": 3.562102883106527e-06,
+        "connection_aio_contact_2": 1.0109676615203262e-05,
+        "connection_aio_contact_3": 6.841082632229731e-06,
+        "connection_battery_contact_-1_-1": 5.81743357488307e-06,
+        "connection_battery_contact_-1_1": 2.1455559509955216e-06,
+        "connection_battery_contact_1_-1": 5.2775561747359434e-06,
+        "connection_battery_contact_1_1": 2.5046131687246587e-06,
+        "connection_strap_contact_-1_-1": 4.9574409415548815e-06,
+        "connection_strap_contact_-1_1": 2.6505168472183025e-06,
+        "connection_strap_contact_1_-1": 4.67822689643054e-06,
+        "connection_strap_contact_1_1": 3.092983735510467e-06,
+        "connection_camera_mount_-1": 2.905501603591836e-06,
+        "connection_camera_mount_1": 4.572621199308789e-06,
+        "connection_xt30_contact": 3.947829377368019e-05,
+        "connection_balancer_contact": 2.7294208599144868e-05,
+        "connection_antenna_contact": 4.673521639900117e-05
+      },
+      "maximum_design_change": 0.039716070340304666,
+      "maximum_relative_residual": 4.0525167846098705e-12,
+      "elapsed_s": 115.37027880002279
+    },
+    {
+      "iteration": 41,
+      "final_evaluation": false,
+      "objective": 0.013349168261488159,
+      "physical_density_sum": 584.1999995726734,
+      "compliances_n_mm": {
+        "arm_tip": 0.01814074719430076,
+        "battery_impact": 0.012281612292208567,
+        "camera_side": 0.01089936998632044,
+        "connection_aio_contact_0": 1.1233105880827276e-05,
+        "connection_aio_contact_1": 3.5607377086362836e-06,
+        "connection_aio_contact_2": 1.00979070085209e-05,
+        "connection_aio_contact_3": 6.8451892845821384e-06,
+        "connection_battery_contact_-1_-1": 5.814166158137884e-06,
+        "connection_battery_contact_-1_1": 2.1443030964083065e-06,
+        "connection_battery_contact_1_-1": 5.273072638900566e-06,
+        "connection_battery_contact_1_1": 2.503629094733468e-06,
+        "connection_strap_contact_-1_-1": 4.95404178777342e-06,
+        "connection_strap_contact_-1_1": 2.6497297654909103e-06,
+        "connection_strap_contact_1_-1": 4.672434425957901e-06,
+        "connection_strap_contact_1_1": 3.0915295489503913e-06,
+        "connection_camera_mount_-1": 2.9056222254405827e-06,
+        "connection_camera_mount_1": 4.571205139587979e-06,
+        "connection_xt30_contact": 3.944116619495774e-05,
+        "connection_balancer_contact": 2.7282778181058716e-05,
+        "connection_antenna_contact": 4.673024008192757e-05
+      },
+      "maximum_design_change": 0.03845133598335393,
+      "maximum_relative_residual": 4.1895136223890045e-12,
+      "elapsed_s": 117.82416109996848
+    },
+    {
+      "iteration": 42,
+      "final_evaluation": false,
+      "objective": 0.013343566862942056,
+      "physical_density_sum": 584.1999993665484,
+      "compliances_n_mm": {
+        "arm_tip": 0.018137595157592577,
+        "battery_impact": 0.01227098300517779,
+        "camera_side": 0.010896863619426694,
+        "connection_aio_contact_0": 1.1230299681797159e-05,
+        "connection_aio_contact_1": 3.559211550708761e-06,
+        "connection_aio_contact_2": 1.008860853427387e-05,
+        "connection_aio_contact_3": 6.848263157310171e-06,
+        "connection_battery_contact_-1_-1": 5.811654377499716e-06,
+        "connection_battery_contact_-1_1": 2.143021326525845e-06,
+        "connection_battery_contact_1_-1": 5.26922978172841e-06,
+        "connection_battery_contact_1_1": 2.502688190554089e-06,
+        "connection_strap_contact_-1_-1": 4.9512465016260185e-06,
+        "connection_strap_contact_-1_1": 2.649074645491229e-06,
+        "connection_strap_contact_1_-1": 4.6674541313348045e-06,
+        "connection_strap_contact_1_1": 3.0901885318977097e-06,
+        "connection_camera_mount_-1": 2.9056189297141e-06,
+        "connection_camera_mount_1": 4.569577658817545e-06,
+        "connection_xt30_contact": 3.9415133854036695e-05,
+        "connection_balancer_contact": 2.727887249871405e-05,
+        "connection_antenna_contact": 4.6741792419158176e-05
+      },
+      "maximum_design_change": 0.025893511939243274,
+      "maximum_relative_residual": 4.0211753707908335e-12,
+      "elapsed_s": 120.57749189995229
+    },
+    {
+      "iteration": 43,
+      "final_evaluation": false,
+      "objective": 0.013338646724749291,
+      "physical_density_sum": 584.1999993491816,
+      "compliances_n_mm": {
+        "arm_tip": 0.018134744055067313,
+        "battery_impact": 0.012265206709411417,
+        "camera_side": 0.010893880456938634,
+        "connection_aio_contact_0": 1.1222660474151814e-05,
+        "connection_aio_contact_1": 3.557684983687009e-06,
+        "connection_aio_contact_2": 1.0079485578099722e-05,
+        "connection_aio_contact_3": 6.850487636010571e-06,
+        "connection_battery_contact_-1_-1": 5.809457328574017e-06,
+        "connection_battery_contact_-1_1": 2.141795197639626e-06,
+        "connection_battery_contact_1_-1": 5.26668237845068e-06,
+        "connection_battery_contact_1_1": 2.50207197577195e-06,
+        "connection_strap_contact_-1_-1": 4.948598608155656e-06,
+        "connection_strap_contact_-1_1": 2.648608846432056e-06,
+        "connection_strap_contact_1_-1": 4.664523153648274e-06,
+        "connection_strap_contact_1_1": 3.0898388392010246e-06,
+        "connection_camera_mount_-1": 2.9055113542483804e-06,
+        "connection_camera_mount_1": 4.567465410956946e-06,
+        "connection_xt30_contact": 3.935750109605876e-05,
+        "connection_balancer_contact": 2.7259673785370174e-05,
+        "connection_antenna_contact": 4.670883890453808e-05
+      },
+      "maximum_design_change": 0.026048707664643067,
+      "maximum_relative_residual": 4.414171930147832e-12,
+      "elapsed_s": 123.20078469999135
+    },
+    {
+      "iteration": 44,
+      "final_evaluation": false,
+      "objective": 0.013334267673118886,
+      "physical_density_sum": 584.1999994104855,
+      "compliances_n_mm": {
+        "arm_tip": 0.018130514426652162,
+        "battery_impact": 0.01226236969521911,
+        "camera_side": 0.0108903698077965,
+        "connection_aio_contact_0": 1.121054907911442e-05,
+        "connection_aio_contact_1": 3.555573346559305e-06,
+        "connection_aio_contact_2": 1.0069068020444711e-05,
+        "connection_aio_contact_3": 6.851917486308572e-06,
+        "connection_battery_contact_-1_-1": 5.806391719772321e-06,
+        "connection_battery_contact_-1_1": 2.1403657773951516e-06,
+        "connection_battery_contact_1_-1": 5.263969194583967e-06,
+        "connection_battery_contact_1_1": 2.501814570499739e-06,
+        "connection_strap_contact_-1_-1": 4.9451021446743336e-06,
+        "connection_strap_contact_-1_1": 2.6477609111095638e-06,
+        "connection_strap_contact_1_-1": 4.662246994733216e-06,
+        "connection_strap_contact_1_1": 3.0907891608044668e-06,
+        "connection_camera_mount_-1": 2.904882295134631e-06,
+        "connection_camera_mount_1": 4.56504761974594e-06,
+        "connection_xt30_contact": 3.9307728726257785e-05,
+        "connection_balancer_contact": 2.723939752462147e-05,
+        "connection_antenna_contact": 4.668475808597967e-05
+      },
+      "maximum_design_change": 0.025869425544277513,
+      "maximum_relative_residual": 4.502507162376295e-12,
+      "elapsed_s": 126.00251289992593
+    },
+    {
+      "iteration": 45,
+      "final_evaluation": false,
+      "objective": 0.013330212534086349,
+      "physical_density_sum": 584.1999998855613,
+      "compliances_n_mm": {
+        "arm_tip": 0.018126486679978498,
+        "battery_impact": 0.012259282952299349,
+        "camera_side": 0.010886622873049635,
+        "connection_aio_contact_0": 1.120146020869757e-05,
+        "connection_aio_contact_1": 3.5535230947759348e-06,
+        "connection_aio_contact_2": 1.005962567866579e-05,
+        "connection_aio_contact_3": 6.852710004618685e-06,
+        "connection_battery_contact_-1_-1": 5.804083110246894e-06,
+        "connection_battery_contact_-1_1": 2.138878964817806e-06,
+        "connection_battery_contact_1_-1": 5.261902340862123e-06,
+        "connection_battery_contact_1_1": 2.5012937282132793e-06,
+        "connection_strap_contact_-1_-1": 4.942158277355494e-06,
+        "connection_strap_contact_-1_1": 2.6469612536495986e-06,
+        "connection_strap_contact_1_-1": 4.660069303978825e-06,
+        "connection_strap_contact_1_1": 3.091279621529014e-06,
+        "connection_camera_mount_-1": 2.9040455952924965e-06,
+        "connection_camera_mount_1": 4.562535594318721e-06,
+        "connection_xt30_contact": 3.927245531430522e-05,
+        "connection_balancer_contact": 2.7228543991104757e-05,
+        "connection_antenna_contact": 4.667730890834196e-05
+      },
+      "maximum_design_change": 0.025575524340178735,
+      "maximum_relative_residual": 4.181696209369511e-12,
+      "elapsed_s": 128.8069066000171
+    },
+    {
+      "iteration": 46,
+      "final_evaluation": true,
+      "objective": 0.013326497619003118,
+      "physical_density_sum": 584.1999999740395,
+      "compliances_n_mm": {
+        "arm_tip": 0.018121106520179106,
+        "battery_impact": 0.012257600759806789,
+        "camera_side": 0.010882564356797379,
+        "connection_aio_contact_0": 1.1192490935277203e-05,
+        "connection_aio_contact_1": 3.551260127528494e-06,
+        "connection_aio_contact_2": 1.0053488087750972e-05,
+        "connection_aio_contact_3": 6.852958653711411e-06,
+        "connection_battery_contact_-1_-1": 5.803167095434044e-06,
+        "connection_battery_contact_-1_1": 2.137242968818276e-06,
+        "connection_battery_contact_1_-1": 5.2634509825017535e-06,
+        "connection_battery_contact_1_1": 2.500558276795821e-06,
+        "connection_strap_contact_-1_-1": 4.9398114917619425e-06,
+        "connection_strap_contact_-1_1": 2.646027892018533e-06,
+        "connection_strap_contact_1_-1": 4.660586579372748e-06,
+        "connection_strap_contact_1_1": 3.0914863461348207e-06,
+        "connection_camera_mount_-1": 2.9029616243554478e-06,
+        "connection_camera_mount_1": 4.559876333893112e-06,
+        "connection_xt30_contact": 3.9245962275137775e-05,
+        "connection_balancer_contact": 2.7218689039453135e-05,
+        "connection_antenna_contact": 4.667004200205289e-05
+      },
+      "maximum_design_change": null,
+      "maximum_relative_residual": 3.875715785399224e-12,
+      "elapsed_s": 131.6798920999281
+    }
+  ],
+  "diagnostics": [
+    "Density iteration stopped at max_iterations; convergence is not claimed"
+  ]
+}

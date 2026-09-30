@@ -1,0 +1,46 @@
+{
+  "geometry_comparison": "geometry_comparison.png",
+  "density_slices": "density_slices.png",
+  "optimization_history": "optimization_history.png",
+  "rendering": "Matplotlib orthographic CAD triangle projections; identical limits and scale for all geometry panels; no synthetic or hand-edited geometry",
+  "label": "",
+  "matplotlib_version": "3.11.2",
+  "density_sha256": "043c5164a102a233d19ef6bbd337fc3ebc7d3da46eeef2bc28ca4c4eb25daee7",
+  "cad_volumes_mm3": {
+    "reference": 29507.25056330862,
+    "candidate": 53698.90283551958
+  },
+  "grid": {
+    "origin_mm": [
+      -68.0,
+      -64.0,
+      0.0
+    ],
+    "spacing_mm": [
+      4.0,
+      4.0,
+      4.0
+    ],
+    "shape": [
+      34,
+      32,
+      8
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+  },
+  "source_input_sha256": "2cd7bcbc15b67fc74f4dbade325ffa8663b41a10d36905e72904195d5483b873",
+  "source_selected_id": "default_t00",
+  "verified_geometry_artifacts": {
+    "baseline": {
+      "path": "baseline/geometry.step",
+      "sha256": "0791b4cbc53e658091c5b1aa851f68ff632fe508940b82b30b4611791b28108c",
+      "size_bytes": 664982
+    },
+    "candidate": {
+      "path": "candidates/default_t00/geometry.step",
+      "sha256": "1ff3b7ae4bc64d300d62b17452db80bf9c2f879929ae185ce9e7c5e1936c04ab",
+      "size_bytes": 1919743
+    }
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "status": "ok",
+  "mass_g": 95.53180409071862,
+  "eigenfrequencies_hz": [
+    1075.764,
+    1192.776,
+    1446.945,
+    1548.478,
+    1972.901,
+    2095.669
+  ],
+  "max_displacement_mm": 0.008062850696662235,
+  "max_von_mises_mpa": 0.5174761080440285,
+  "stiffness_n_per_mm": 194.39106808692114,
+  "load_cases": {
+    "arm_tip": {
+      "analysis": "static",
+      "max_displacement_mm": 0.008062850696662235,
+      "max_von_mises_mpa": 0.5174761080440285,
+      "loads": [
+        {
+          "node_count": 1450,
+          "force_n": [
+            0.0,
+            0.0,
+            -1.0
+          ],
+          "mean_displacement_mm": [
+            6.68095652255862e-05,
+            0.00039622168082758565,
+            -0.005144269280689657
+          ],
+          "directional_displacement_mm": 0.005144269280689657,
+          "stiffness_n_per_mm": 194.39106808692114
+        }
+      ],
+      "stiffness_n_per_mm": 194.39106808692114,
+      "fixed_node_count": 727
+    },
+    "battery_impact": {
+      "analysis": "static",
+      "max_displacement_mm": 0.0013404602206377751,
+      "max_von_mises_mpa": 0.24048691023779942,
+      "loads": [
+        {
+          "node_count": 64,
+          "force_n": [
+            0.0,
+            0.0,
+            -3.6284604999999996
+          ],
+          "mean_displacement_mm": [
+            0.00010453872484374998,
+            -9.939914525624998e-05,
+            -0.0011664945515624998
+          ],
+          "directional_displacement_mm": 0.0011664945515624998,
+          "stiffness_n_per_mm": 3110.5678934717166
+        }
+      ],
+      "stiffness_n_per_mm": 3110.5678934717166,
+      "fixed_node_count": 6146
+    },
+    "camera_side": {
+      "analysis": "static",
+      "max_displacement_mm": 0.001387367994944402,
+      "max_von_mises_mpa": 0.23965326105843168,
+      "loads": [
+        {
+          "node_count": 955,
+          "force_n": [
+            5.0,
+            0.0,
+            0.0
+          ],
+          "mean_displacement_mm": [
+            0.0008798357905759156,
+            -3.9822481510995234e-06,
+            -0.00011319444653727759
+          ],
+          "directional_displacement_mm": 0.0008798357905759156,
+          "stiffness_n_per_mm": 5682.878616164434
+        }
+      ],
+      "stiffness_n_per_mm": 5682.878616164434,
+      "fixed_node_count": 6146
+    },
+    "modes": {
+      "analysis": "modal",
+      "eigenfrequencies_hz": [
+        1075.764,
+        1192.776,
+        1446.945,
+        1548.478,
+        1972.901,
+        2095.669
+      ],
+      "discarded_rigid_modes": 0,
+      "fixture": "all translations fixed on selected nodes",
+      "fixed_node_count": 6146
+    }
+  },
+  "diagnostics": [],
+  "artifacts": {
+    "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w",
+    "arm_tip": {
+      "input": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_0.inp",
+      "data": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_0.dat",
+      "log": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_0.log"
+    },
+    "battery_impact": {
+      "input": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_1.inp",
+      "data": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_1.dat",
+      "log": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_1.log"
+    },
+    "camera_side": {
+      "input": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_2.inp",
+      "data": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_2.dat",
+      "log": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_2.log"
+    },
+    "modes": {
+      "input": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_3.inp",
+      "data": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_3.dat",
+      "log": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\case_3.log"
+    },
+    "result": "C:\\clones\\Deep_Frame\\exports\\topology\\phase1\\2cd7bcbc15b67fc7\\candidates\\default_t00\\fea\\evaluation_khmczp5w\\result.json"
+  },
+  "mesh": {
+    "gmsh_version": "4.15.2",
+    "element_type": "C3D10",
+    "element_count": 60933,
+    "minimum_jacobian_mm3": 0.06504657037365616,
+    "mesh_size_mm": 3.0,
+    "second_order_linear": true,
+    "high_order_optimize": 0,
+    "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+    "node_count": 110430
+  },
+  "point_mass_coupling": [
+    {
+      "name": "battery",
+      "mass_g": 37.0,
+      "position_mm": [
+        -1.6781509643504353e-16,
+        -3.0144237274670914e-16,
+        34.5
+      ],
+      "attachment_nodes": 64,
+      "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+    }
+  ],
+  "frame_mass_g": 58.53180409071862,
+  "point_mass_g": 37.0,
+  "solver_version": "2.22",
+  "runtime_s": 58.650345700094476
+}
