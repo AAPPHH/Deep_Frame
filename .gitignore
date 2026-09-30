@@ -18,3 +18,4 @@ env/
 *.[sS][tT][pP]
 *.[sS][tT][lL]
 /exports/frame_v0.json
+/exports/topology/
