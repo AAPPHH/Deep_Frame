@@ -59,6 +59,55 @@ def voxel_boxes(mask):
     return min(alternatives, key=len)
 
 
+def _ambiguous_cells(mask):
+    for axis in range(3):
+        others = [index for index in range(3) if index != axis]
+        for plane in range(mask.shape[axis]):
+            square = np.take(mask, plane, axis=axis)
+            a, b, c, d = square[:-1, :-1], square[1:, :-1], square[:-1, 1:], square[1:, 1:]
+            ambiguous = (a & d & ~b & ~c) | (b & c & ~a & ~d)
+            if np.any(ambiguous):
+                i, j = np.argwhere(ambiguous)[0]
+                cells = []
+                for di, dj in ((0, 0), (0, 1), (1, 0), (1, 1)):
+                    index = [0, 0, 0]
+                    index[axis], index[others[0]], index[others[1]] = plane, i + di, j + dj
+                    if not mask[tuple(index)]:
+                        cells.append(tuple(index))
+                return cells, "diagonal_edge_contact"
+    for index in np.ndindex(tuple(value - 1 for value in mask.shape)):
+        block = mask[tuple(slice(value, value + 2) for value in index)]
+        if 1 < np.sum(block) < 8 and label(block, generate_binary_structure(3, 1))[1] > 1:
+            cells = []
+            for offset in np.argwhere(~block):
+                if any(block[tuple(offset + direction)] for direction in np.array([[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]]) if np.all((offset + direction >= 0) & (offset + direction < 2))):
+                    cells.append(tuple(np.array(index) + offset))
+            return cells, "diagonal_vertex_contact"
+    return [], None
+
+
+def _repair_manifold_cells(occupied, domain, density, settings):
+    allowed = np.asarray(domain["allowed"], dtype=bool)
+    repaired = occupied.copy()
+    maximum = settings.get("maximum_repair_voxels", max(1, int(np.sum(occupied) * 0.05)))
+    if not isinstance(maximum, int) or maximum < 0:
+        raise ValueError("maximum_repair_voxels must be a nonnegative integer")
+    repairs = []
+    volume = float(np.prod(domain["grid"]["spacing_mm"]))
+    while True:
+        candidates, cause = _ambiguous_cells(repaired)
+        if not candidates:
+            return repaired, repairs
+        candidates = [index for index in candidates if allowed[index]]
+        if not candidates:
+            raise ValueError("Manifold raster repair would enter forbidden cells")
+        if len(repairs) >= maximum:
+            raise ValueError("Manifold raster repair exceeded maximum_repair_voxels")
+        selected = min(candidates, key=lambda index: (-float(density[index]), index))
+        repaired[selected] = True
+        repairs.append({"method": "density_guided_local_manifold_fill", "cause": cause, "cell_xyz": [int(value) for value in selected], "material_before": 0, "material_after": 1, "density_before": float(density[selected]), "density_after": 1.0, "added_volume_mm3": volume})
+
+
 def threshold_field(domain, density, settings):
     grid = domain["grid"]
     shape = tuple(grid["shape"])
@@ -88,6 +137,9 @@ def threshold_field(domain, density, settings):
         count = 1
     if count != 1:
         raise ValueError(f"Density threshold produced {count} face-connected components")
+    if settings.get("repair_manifold_voxels", False):
+        occupied, changes = _repair_manifold_cells(occupied, domain, field, settings)
+        repairs.extend(changes)
     return occupied, {"method": "conservative_voxel_threshold_greedy_cuboids", "density_threshold": threshold, "occupied_voxels": int(np.sum(occupied)), "connectivity": 6, "repairs": repairs}
 
 

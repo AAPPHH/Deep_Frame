@@ -152,3 +152,38 @@ def test_nonplanar_reconstruction_reaches_independent_gmsh_and_calculix(tmp_path
     assert result["max_von_mises_mpa"] > 0
     assert result["eigenfrequencies_hz"][0] > 0
     assert result["mass_g"] == pytest.approx(21.34656)
+
+
+def diagonal_contact_field():
+    domain, _ = spatial_loop()
+    shape = (5, 5, 2)
+    domain["grid"]["shape"] = list(shape)
+    domain.update(allowed=np.ones(shape, dtype=bool), preserve=np.zeros(shape, dtype=bool), forbidden=np.zeros(shape, dtype=bool))
+    field = np.zeros(shape)
+    for x, y in [(1, 1), (1, 0), (2, 0), (3, 0), (3, 1), (3, 2), (2, 2)]:
+        field[x, y, :] = 1
+    return domain, field
+
+
+def test_optional_manifold_repair_is_density_guided_and_logged():
+    domain, field = diagonal_contact_field()
+    field[2, 1, :] = 0.3
+    solid = reconstruct_topology(domain, field, {"repair_manifold_voxels": True, "maximum_repair_voxels": 4})
+    result = validate_topology(solid, domain, {})
+    assert result["passed"], result["violations"]
+    repairs = solid.topology_report["repairs"]
+    assert repairs and all(item["method"] == "density_guided_local_manifold_fill" for item in repairs)
+    assert repairs[0]["cell_xyz"][:2] == [2, 1]
+    assert repairs[0]["density_before"] == 0.3
+    assert sum(item["added_volume_mm3"] for item in repairs) > 0
+
+
+def test_manifold_repair_never_fills_forbidden_cells_or_exceeds_limit():
+    domain, field = diagonal_contact_field()
+    with pytest.raises(ValueError, match="maximum_repair_voxels"):
+        reconstruct_topology(domain, field, {"repair_manifold_voxels": True, "maximum_repair_voxels": 0})
+    domain["allowed"][1, 2, :] = False
+    domain["allowed"][2, 1, :] = False
+    domain["forbidden"] = ~domain["allowed"]
+    with pytest.raises(ValueError, match="forbidden cells"):
+        reconstruct_topology(domain, field, {"repair_manifold_voxels": True, "maximum_repair_voxels": 100})

@@ -2,8 +2,10 @@ from itertools import combinations
 
 import numpy as np
 import trimesh
-from build123d import Align, Axis, Box, Pos, Vector
+from build123d import Align, Box, Pos, Vector
 from OCP.BRep import BRep_Tool
+from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
+from OCP.gp import gp_Dir, gp_Lin, gp_Pnt
 from scipy.ndimage import generate_binary_structure, label
 
 from deep_frame.topology_geometry import _compound, _volume, region_shape
@@ -71,12 +73,15 @@ def _wall_ray_screen(solid, minimum):
     measurements = []
     thin = []
     unresolved = []
+    intersector = IntCurvesFace_ShapeIntersector()
+    intersector.Load(solid.wrapped, 1e-7)
+    maximum_distance = solid.bounding_box().diagonal * 2
     for face_index, face in enumerate(solid.faces()):
         points = []
         for u in (0.2, 0.5, 0.8):
             for v in (0.2, 0.5, 0.8):
                 point = face.position_at(u, v)
-                if face.is_inside(point):
+                if face.is_inside(point) and all(edge.distance_to(point) > 1e-5 for edge in face.edges()):
                     points.append(point)
         if not points:
             vertices, triangles = face.tessellate(0.1, 0.2)
@@ -88,11 +93,9 @@ def _wall_ray_screen(solid, minimum):
         sampled = 0
         for point in points:
             direction = -face.normal_at(point)
-            if not solid.is_inside(point + direction * 1e-4):
-                continue
-            intersections = solid.find_intersection_points(Axis(point, direction))
-            distances = [(intersection - point).dot(direction) for intersection, _ in intersections]
-            positive = [distance for distance in distances if distance > 1e-5]
+            line = gp_Lin(gp_Pnt(*point), gp_Dir(*direction))
+            intersector.PerformNearest(line, 1e-5, maximum_distance)
+            positive = [intersector.WParameter(index) for index in range(1, intersector.NbPnt() + 1) if intersector.WParameter(index) > 1e-5]
             if not positive:
                 continue
             thickness = min(positive)
