@@ -1,0 +1,904 @@
+{
+  "passed": true,
+  "violations": [],
+  "checks": {
+    "topology": {
+      "solid_count": 1,
+      "valid": true,
+      "closed": true,
+      "passed": true
+    },
+    "mounts": {
+      "passed": true,
+      "groups": {
+        "aio15": [
+          {
+            "position_mm": [
+              -12.75,
+              -12.75
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              -12.75,
+              12.75
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              12.75,
+              -12.75
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              12.75,
+              12.75
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          }
+        ],
+        "front_left": [
+          {
+            "position_mm": [
+              -51.2812598450186,
+              43.05685292203018
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              -57.645220875697525,
+              43.05685292203018
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              -57.64522087569753,
+              36.69289189135126
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              -51.2812598450186,
+              36.69289189135125
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          }
+        ],
+        "front_right": [
+          {
+            "position_mm": [
+              57.645220875697525,
+              43.05685292203018
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              51.2812598450186,
+              43.05685292203018
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              51.281259845018596,
+              36.69289189135126
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              57.645220875697525,
+              36.69289189135125
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          }
+        ],
+        "rear_left": [
+          {
+            "position_mm": [
+              -51.2812598450186,
+              -36.69289189135126
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              -57.645220875697525,
+              -36.69289189135126
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              -57.64522087569753,
+              -43.05685292203018
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              -51.2812598450186,
+              -43.05685292203019
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          }
+        ],
+        "rear_right": [
+          {
+            "position_mm": [
+              57.645220875697525,
+              -36.69289189135126
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              51.2812598450186,
+              -36.69289189135126
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              51.281259845018596,
+              -43.05685292203018
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          },
+          {
+            "position_mm": [
+              57.645220875697525,
+              -43.05685292203019
+            ],
+            "diameter_mm": 2.2,
+            "passed": true
+          }
+        ]
+      }
+    },
+    "clearances": {
+      "passed": true,
+      "pairs": {
+        "frame:aio15": {
+          "distance_mm": 0.0,
+          "required_mm": 0.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": true,
+          "passed": true
+        },
+        "frame:camera": {
+          "distance_mm": 2.0,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "frame:battery": {
+          "distance_mm": 0.0,
+          "required_mm": 0.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": true,
+          "passed": true
+        },
+        "frame:xt30": {
+          "distance_mm": 0.0,
+          "required_mm": 0.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": true,
+          "passed": true
+        },
+        "frame:balancer": {
+          "distance_mm": 0.0,
+          "required_mm": 0.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": true,
+          "passed": true
+        },
+        "frame:motor_front_left": {
+          "distance_mm": 0.0,
+          "required_mm": 0.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": true,
+          "passed": true
+        },
+        "frame:prop_front_left": {
+          "distance_mm": 3.9517150599391924,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "frame:motor_front_right": {
+          "distance_mm": 0.0,
+          "required_mm": 0.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": true,
+          "passed": true
+        },
+        "frame:prop_front_right": {
+          "distance_mm": 3.9517150599391937,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "frame:motor_rear_left": {
+          "distance_mm": 0.0,
+          "required_mm": 0.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": true,
+          "passed": true
+        },
+        "frame:prop_rear_left": {
+          "distance_mm": 3.9517150599391924,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "frame:motor_rear_right": {
+          "distance_mm": 0.0,
+          "required_mm": 0.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": true,
+          "passed": true
+        },
+        "frame:prop_rear_right": {
+          "distance_mm": 3.9517150599391915,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:camera": {
+          "distance_mm": 11.857512291914107,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:battery": {
+          "distance_mm": 17.5,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:xt30": {
+          "distance_mm": 23.150000000000006,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:balancer": {
+          "distance_mm": 25.6,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:motor_front_left": {
+          "distance_mm": 38.652727463959714,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:prop_front_left": {
+          "distance_mm": 16.076218001569654,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:motor_front_right": {
+          "distance_mm": 38.652727463959714,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:prop_front_right": {
+          "distance_mm": 16.07621800156965,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:motor_rear_left": {
+          "distance_mm": 38.652727463959714,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:prop_rear_left": {
+          "distance_mm": 16.07621800156965,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:motor_rear_right": {
+          "distance_mm": 38.652727463959714,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "aio15:prop_rear_right": {
+          "distance_mm": 16.07621800156965,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:battery": {
+          "distance_mm": 8.788627526075285,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:xt30": {
+          "distance_mm": 65.58800851983388,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:balancer": {
+          "distance_mm": 67.93924430767368,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:motor_front_left": {
+          "distance_mm": 39.36324036035806,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:prop_front_left": {
+          "distance_mm": 13.963244504876727,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:motor_front_right": {
+          "distance_mm": 39.36324036035806,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:prop_front_right": {
+          "distance_mm": 13.963244504876727,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:motor_rear_left": {
+          "distance_mm": 73.53512076092478,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:prop_rear_left": {
+          "distance_mm": 48.225084475241566,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:motor_rear_right": {
+          "distance_mm": 73.53512076092478,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "camera:prop_rear_right": {
+          "distance_mm": 48.22508447524157,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:xt30": {
+          "distance_mm": 22.5162163784238,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:balancer": {
+          "distance_mm": 22.971776161193983,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:motor_front_left": {
+          "distance_mm": 34.83099004656814,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:prop_front_left": {
+          "distance_mm": 10.920562576203473,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:motor_front_right": {
+          "distance_mm": 34.83099004656814,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:prop_front_right": {
+          "distance_mm": 10.920562576203471,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:motor_rear_left": {
+          "distance_mm": 34.83099004656814,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:prop_rear_left": {
+          "distance_mm": 10.920562576203473,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:motor_rear_right": {
+          "distance_mm": 34.83099004656814,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "battery:prop_rear_right": {
+          "distance_mm": 10.920562576203473,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:balancer": {
+          "distance_mm": 5.0,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:motor_front_left": {
+          "distance_mm": 82.01939430717749,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:prop_front_left": {
+          "distance_mm": 58.07035226095707,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:motor_front_right": {
+          "distance_mm": 89.97298106316154,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:prop_front_right": {
+          "distance_mm": 65.84891710106871,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:motor_rear_left": {
+          "distance_mm": 34.76324036035806,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:prop_rear_left": {
+          "distance_mm": 15.939895546892341,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:motor_rear_right": {
+          "distance_mm": 49.76324036035806,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "xt30:prop_rear_right": {
+          "distance_mm": 27.567689073561827,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "balancer:motor_front_left": {
+          "distance_mm": 92.0839620272645,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "balancer:prop_front_left": {
+          "distance_mm": 67.8270653327538,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "balancer:motor_front_right": {
+          "distance_mm": 84.28140463253509,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "balancer:prop_front_right": {
+          "distance_mm": 60.172915929846084,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "balancer:motor_rear_left": {
+          "distance_mm": 49.97980708027908,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "balancer:prop_rear_left": {
+          "distance_mm": 27.530472500553596,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "balancer:motor_rear_right": {
+          "distance_mm": 34.98571213026027,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "balancer:prop_rear_right": {
+          "distance_mm": 15.673094048215841,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_left:prop_front_left": {
+          "distance_mm": 2.0,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_left:motor_front_right": {
+          "distance_mm": 94.72648072071613,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_left:prop_front_right": {
+          "distance_mm": 69.3553237258671,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_left:motor_rear_left": {
+          "distance_mm": 65.54974481338144,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_left:prop_rear_left": {
+          "distance_mm": 40.19952746711893,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_left:motor_rear_right": {
+          "distance_mm": 120.80000000000001,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_left:prop_rear_right": {
+          "distance_mm": 95.4209620576108,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_left:motor_front_right": {
+          "distance_mm": 69.3553237258671,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_left:prop_front_right": {
+          "distance_mm": 43.92648072071613,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_left:motor_rear_left": {
+          "distance_mm": 40.19952746711893,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_left:prop_rear_left": {
+          "distance_mm": 14.74974481338144,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_left:motor_rear_right": {
+          "distance_mm": 95.4209620576108,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_left:prop_rear_right": {
+          "distance_mm": 70.0,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_right:prop_front_right": {
+          "distance_mm": 2.0,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_right:motor_rear_left": {
+          "distance_mm": 120.80000000000001,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_right:prop_rear_left": {
+          "distance_mm": 95.4209620576108,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_right:motor_rear_right": {
+          "distance_mm": 65.54974481338144,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_front_right:prop_rear_right": {
+          "distance_mm": 40.19952746711893,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_right:motor_rear_left": {
+          "distance_mm": 95.4209620576108,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_right:prop_rear_left": {
+          "distance_mm": 70.0,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_right:motor_rear_right": {
+          "distance_mm": 40.19952746711893,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_front_right:prop_rear_right": {
+          "distance_mm": 14.74974481338144,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_rear_left:prop_rear_left": {
+          "distance_mm": 2.0,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_rear_left:motor_rear_right": {
+          "distance_mm": 94.72648072071613,
+          "required_mm": 0.5,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_rear_left:prop_rear_right": {
+          "distance_mm": 69.3553237258671,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_rear_left:motor_rear_right": {
+          "distance_mm": 69.3553237258671,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "prop_rear_left:prop_rear_right": {
+          "distance_mm": 43.92648072071613,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        },
+        "motor_rear_right:prop_rear_right": {
+          "distance_mm": 2.0,
+          "required_mm": 2.0,
+          "intersection_mm3": 0.0,
+          "planned_support_contact": false,
+          "passed": true
+        }
+      },
+      "collisions": [],
+      "violations": []
+    },
+    "battery_prop_overlap": {
+      "area_mm2": 0.0,
+      "percent_of_battery_area": 0.0,
+      "battery_area_mm2": 1890.0,
+      "definition": "union of all prop swept disks projected along z, divided by battery top-view area",
+      "maximum_percent": 0.0,
+      "passed": true
+    },
+    "structural_walls": {
+      "minimum_wall_mm": 2.0,
+      "margins_mm": {
+        "base": 2.5,
+        "arm_height": 4.0,
+        "arm_width_half": 3.25,
+        "deck": 2.5,
+        "walls": 2.0,
+        "motor_shaft_web": 2.000000000000001,
+        "motor_outer_web": 3.899999999999999,
+        "aio_window_web": 2.7890872965260116,
+        "wall_top_web": 4.5,
+        "wall_bottom_web": 9.5,
+        "wall_end_web": 20.0,
+        "deck_window_side_web": 9.0,
+        "deck_window_end_web": 12.0,
+        "strap_outer_web": 2.5,
+        "strap_inner_web": 4.5,
+        "strap_end_web": 17.0
+      },
+      "passed": true
+    },
+    "mass_properties": {
+      "mass_g": 105.06290311400828,
+      "frame_mass_g": 32.16290311400827,
+      "component_masses_g": {
+        "aio15": 7.2,
+        "camera": 2.3,
+        "battery": 37.0,
+        "xt30": 0.0,
+        "balancer": 0.0,
+        "motor_front_left": 5.9,
+        "prop_front_left": 0.7,
+        "motor_front_right": 5.9,
+        "prop_front_right": 0.7,
+        "motor_rear_left": 5.9,
+        "prop_rear_left": 0.7,
+        "motor_rear_right": 5.9,
+        "prop_rear_right": 0.7
+      },
+      "center_of_mass_mm": [
+        -0.012100159640739787,
+        0.7637584381540654,
+        18.906921239368735
+      ],
+      "inertia_tensor_g_mm2": [
+        [
+          108711.68805905816,
+          -54.0583184883626,
+          -17.0694532036366
+        ],
+        [
+          -54.0583184883626,
+          123630.70886259308,
+          -984.4133686343749
+        ],
+        [
+          -17.0694532036366,
+          -984.4133686343749,
+          195390.17333619125
+        ]
+      ],
+      "inertia_about": "assembly center of mass, global x/y/z axes",
+      "model": "exact CAD volume integrals, homogeneous component equivalent envelopes, parallel-axis theorem"
+    }
+  }
+}

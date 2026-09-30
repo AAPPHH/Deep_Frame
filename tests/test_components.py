@@ -21,7 +21,7 @@ def test_component_envelopes_and_mass(component_config):
         "aio15": (31.3, 31.3, 6.0),
         "camera": (16.0, 14.0, 14.0),
         "battery": (30.0, 63.0, 11.0),
-        "motor": (16.0, 16.0, 12.0),
+        "motor": (14.2, 14.2, 14.6),
         "prop": (65.0, 65.0, 0.8),
         "xt30": (10.2, 12.4, 5.2),
         "balancer": (9.8, 7.5, 5.7),
@@ -47,15 +47,16 @@ def test_mount_holes_have_configured_axes_and_diameters(component_config, name, 
     assert len(surfaces) == 4
     axes = sorted((round(face.axis_of_rotation.position.X, 6), round(face.axis_of_rotation.position.Y, 6)) for face in surfaces)
     half_pitch = spec["mount_pitch_mm"] / 2
-    expected = sorted((x, y) for x in (-half_pitch, half_pitch) for y in (-half_pitch, half_pitch))
-    np.testing.assert_allclose(axes, expected)
-    np.testing.assert_allclose([hole[:2] for hole in part["mount_holes"]], expected)
+    half_side = half_pitch / np.sqrt(2) if spec.get("mount_layout") == "bolt_circle" else half_pitch
+    expected = sorted((x, y) for x in (-half_side, half_side) for y in (-half_side, half_side))
+    np.testing.assert_allclose(axes, expected, atol=1e-6)
+    np.testing.assert_allclose(sorted(tuple(round(value, 6) for value in hole[:2]) for hole in part["mount_holes"]), expected, atol=1e-6)
 
 
 def test_dimensions_mounts_and_camera_tilt_respond_to_config(component_config):
     specs = component_config["components"]
     specs["aio15"].update(stack_height_mm=9.0, mount_pitch_mm=24.0)
-    specs["motor"].update(diameter_mm=20.0, height_mm=15.0, mount_pitch_mm=10.0, mass_g=8.0)
+    specs["motor"].update(diameter_mm=20.0, height_mm=15.0, mount_pitch_mm=10.0, mass_g=8.0, mount_layout="square")
     specs["camera"]["tilt_deg"] = 35.0
     specs["prop"]["diameter_mm"] = 72.0
     specs["battery"].update(length_mm=70.0, width_mm=32.0)
@@ -74,12 +75,13 @@ def test_dimensions_mounts_and_camera_tilt_respond_to_config(component_config):
 
 
 def test_placement_transforms_geometry_mass_center_and_mount_axes(component_config):
+    component_config["components"]["motor"].update(mount_layout="square", diameter_mm=16.0)
     parts = build_components(component_config, {
         "front_motor": {"prototype": "motor", "position": (40, 30, 3), "rotation": (0, 0, 90)},
         "rear_motor": {"prototype": "motor", "position": (-40, -30, 3)},
     })
-    np.testing.assert_allclose(parts["front_motor"]["center_of_mass_mm"], (40, 30, 9))
-    np.testing.assert_allclose(parts["rear_motor"]["center_of_mass_mm"], (-40, -30, 9))
+    np.testing.assert_allclose(parts["front_motor"]["center_of_mass_mm"], (40, 30, 10.3))
+    np.testing.assert_allclose(parts["rear_motor"]["center_of_mass_mm"], (-40, -30, 10.3))
     np.testing.assert_allclose(parts["front_motor"]["mount_holes"][0], (44.5, 25.5, 3))
     assert parts["front_motor"]["shape"].distance_to(parts["rear_motor"]["shape"]) > 0
 
