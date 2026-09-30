@@ -187,3 +187,13 @@ def test_manifold_repair_never_fills_forbidden_cells_or_exceeds_limit():
     domain["forbidden"] = ~domain["allowed"]
     with pytest.raises(ValueError, match="forbidden cells"):
         reconstruct_topology(domain, field, {"repair_manifold_voxels": True, "maximum_repair_voxels": 100})
+
+
+def test_build_plate_face_alone_does_not_require_support():
+    domain, field = spatial_loop()
+    field[:] = 1
+    domain["manufacturing"]["supports_allowed"] = False
+    solid = reconstruct_topology(domain, field, {})
+    result = validate_topology(solid, domain, {})
+    assert result["passed"], result["violations"]
+    assert not result["checks"]["supports"]["supports_required"]

@@ -174,7 +174,8 @@ def validate_topology(solid, domain: dict, settings: dict) -> dict:
         violations.append("manufacturing:minimum_feature_screen_failed")
     checks["features"] = features
     build_direction = manufacturing["build_direction"]
-    support_needed = bool(np.any(mesh.face_normals[:, 2] < -0.1))
+    above_build_plate = mesh.triangles_center[:, 2] > mesh.bounds[0, 2] + 1e-6
+    support_needed = bool(np.any((mesh.face_normals[:, 2] < -0.1) & above_build_plate))
     support = {"build_direction": build_direction, "supports_allowed": bool(manufacturing["supports_allowed"]), "supports_required": support_needed, "method": "conservative downward-face flag; slicer planning required", "passed": build_direction == [0, 0, 1] and (manufacturing["supports_allowed"] or not support_needed)}
     support["accessibility"] = _support_accessibility(solid, occupied)
     support["passed"] = support["passed"] and support["accessibility"]["passed"]
