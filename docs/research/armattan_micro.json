@@ -1,0 +1,2946 @@
+[
+  {
+    "id": "tadpole_2_5",
+    "name": "Tadpole 2.5 / 65 mm",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://armattanquads.com/products/tadpole"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 2.5,
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 119.5,
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": "Diagonal; Kombiseite zeigt die ursprünglichen 65-mm/2.5-Zoll-Daten."
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 2
+        },
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 16,
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": "Maximale Stackhöhe; keine Deck-Oberkantenhöhe."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 17.5,
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": "Quelle nennt nur 9 mm; keine eindeutige quadratische oder kreisförmige Definition."
+      },
+      "camera_width_mm": {
+        "value": 14,
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "Oben auf separater LiPo-Platte",
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK-Hauptplatte; Aluminium-Käfig und Heckpfosten; Gummi-Antennenhalter",
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Einstellung nicht belegt",
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "principle": "Top-Akku mit eigenständigem tragendem Deck",
+        "evidence": "Tadpole wurde ausdrücklich für einen Akku oberhalb der Elektronik konstruiert.",
+        "source": "https://armattanquads.com/products/tadpole",
+        "scale_independent": true,
+        "rationale": "Die räumliche Trennung von Akku und Elektronik ist auch bei 2.5 Zoll sinnvoll; Abmessungen bleiben komponentenabhängig."
+      },
+      {
+        "principle": "Kamera hinter einem tragenden Schutzkäfig",
+        "evidence": "Der vordere Aluminiumkäfig schützt die Nano-Kamera.",
+        "source": "https://armattanquads.com/products/tadpole",
+        "scale_independent": true,
+        "rationale": "Schutzvolumen und Lastumleitung um die Kamera sind maßstabsübergreifend; Material und Querschnitt werden neu ausgelegt."
+      },
+      {
+        "principle": "Heck nur so hoch und breit wie erforderlich",
+        "evidence": "Kurze Heckpfosten reduzieren Masse und erzeugen ein geneigtes LiPo-Deck.",
+        "source": "https://armattanquads.com/products/tadpole",
+        "scale_independent": true,
+        "rationale": "Funktionsbezogene Materialverteilung statt gleichförmiger Bauhöhe spart bei jeder Größe Masse."
+      },
+      {
+        "principle": "Antennenkabel mit eigenem Heckhalter führen",
+        "evidence": "Der Gummihalter wird ohne zusätzliche Schrauben an die Heckpfosten gekoppelt.",
+        "source": "https://armattanquads.com/products/tadpole",
+        "scale_independent": true,
+        "rationale": "Ein definierter Kabelpfad hält Leitungen aus dem Propellerraum; im Druckteil durch Führungen umsetzbar."
+      }
+    ]
+  },
+  {
+    "id": "tadpole_3",
+    "name": "Tadpole 3",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+      "https://armattanquads.com/products/tadpole"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 131.25,
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 2
+        },
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 16,
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 19.5,
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": "Nur Nennabstand 9 mm angegeben."
+      },
+      "camera_width_mm": {
+        "value": 14,
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "Top-Mount-LiPo",
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK; Aluminium-Käfig und Heckpfosten; Gummi-Antennenhalter",
+        "source": "https://www.defiancerc.com/products/armattan-tadpole-3-micro-quad-frame",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Einstellung nicht belegt",
+        "source": "https://armattanquads.com/products/tadpole",
+        "note": "Kombiseite belegt die aktuelle Variante; spezifische Maße aus dort erhaltener Herstellerbeschreibung, signiert Chris Leroux."
+      }
+    }
+  },
+  {
+    "id": "tadpole_hd_3",
+    "name": "Tadpole HD 3",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://armattanquads.com/products/tadpole-hd"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 137,
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 2.5
+        },
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 18,
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 26,
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": "Nur Nennabstand 9 mm angegeben."
+      },
+      "camera_width_mm": {
+        "value": 19,
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "Top-Mount; längeres und höheres Deck als Tadpole",
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK-Platten; Aluminium-Käfig und Heckpfosten",
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Einstellung nicht belegt",
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "principle": "Elektronikbedarf bestimmt Deckhöhe und Montagebereich",
+        "evidence": "HD-Version erhält mehr Bauraum und direkte Whoop-AIO-Montage; Teile nicht mit Original austauschbar.",
+        "source": "https://armattanquads.com/products/tadpole-hd",
+        "scale_independent": true,
+        "rationale": "Bauraum muss vom tatsächlich gewählten Board und dessen Anschlüssen ausgehen; bestehende Proportionen sind keine Passformgarantie."
+      }
+    ]
+  },
+  {
+    "id": "gecko_3",
+    "name": "Gecko 3",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://armattanquads.com/products/gecko-3"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 139,
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": 1.3658536585365855,
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": "Exakte Ableitung aus 112 mm links/rechts und 82 mm vorne/hinten; die Diagonale wird separat mit 139 mm gerundet angegeben."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3,
+          "top": 2
+        },
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 22,
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": 22,
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": "Hersteller nennt 22 mm Deckhöhe; Messbezug/Ober- oder Unterkante nicht definiert."
+      },
+      "mass_g": {
+        "value": 42,
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          12,
+          12
+        ],
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": "Tabelle nennt empfohlenen Motor mit 12x12-Montage."
+      },
+      "camera_width_mm": {
+        "value": 19,
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "Top-Mount; LiPo-Strap und Schaumauflage",
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK; Titan-Käfig; Aluminium-Kameraschutz und Abstandshalter; Gummi-Antennenführung",
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Einstellung nicht belegt",
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "principle": "Seitlich breiterer Motorabstand als Längsabstand",
+        "evidence": "3-Zoll-Gecko nennt 112 mm quer und 82 mm längs.",
+        "source": "https://armattanquads.com/products/gecko-3",
+        "scale_independent": true,
+        "rationale": "Das dimensionslose Verhältnis dient als Layout-Startwert; Propellerfreigang und Komponenten bestimmen den neuen Radstand."
+      },
+      {
+        "principle": "Heckhalter schützen Platte und Antenne",
+        "evidence": "Gummiführung leitet die Antenne nach oben; Heckpfosten schützen CFK-Kanten bei Heckaufprall.",
+        "source": "https://armattanquads.com/products/gecko-3",
+        "scale_independent": true,
+        "rationale": "Gezielte Rand- und Kabelprotektion ist ohne Titan oder kopierte Geometrie auf ein Druckteil übertragbar."
+      },
+      {
+        "principle": "Nachgiebiger Kameraschutz vor empfindlichem Gehäuse",
+        "evidence": "Separater Aluminium-Cam-Saver innerhalb des Titankäfigs.",
+        "source": "https://armattanquads.com/products/gecko-3",
+        "scale_independent": true,
+        "rationale": "Die funktionale Schutzreihenfolge ist unabhängig von der Größe; v0 übernimmt nur den Käfigraum, keine validierte Sollbruchstelle."
+      }
+    ]
+  },
+  {
+    "id": "gecko_4",
+    "name": "Gecko 4",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+      "https://armattanquads.com/products/gecko-3"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 4,
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 174,
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": 1.280373831775701,
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": "Aus 137 mm quer / 107 mm längs; Variante im spezifischen Händlerarchiv mit Herstellertext."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3,
+          "top": 2
+        },
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 22,
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": 22,
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": "Hersteller nennt 22 mm Deckhöhe; Messbezug/Ober- oder Unterkante nicht definiert."
+      },
+      "mass_g": {
+        "value": 45,
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": "Quelle nennt nur 14XX-Motorpattern; daraus keinen Lochabstand abgeleitet."
+      },
+      "camera_width_mm": {
+        "value": 19,
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "Top-Mount; Strap und Schaumauflage",
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK; Titan-Käfig; Aluminium-Abstandshalter und Cam-Saver",
+        "source": "https://www.getfpv.com/multi-rotor-frames/4-quad-frames/armattan-gecko-4-frame.html",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Einstellung nicht belegt",
+        "source": "https://armattanquads.com/products/gecko-3",
+        "note": "Aktuelle Kombiseite; keine eigenständige Einstellungsbestätigung."
+      }
+    }
+  },
+  {
+    "id": "japalura_3",
+    "name": "Japalura 3",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://armattanquads.com/products/japalura"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://armattanquads.com/products/japalura",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 138,
+        "source": "https://armattanquads.com/products/japalura",
+        "note": "Im Beschreibungstext ausdrücklich Diagonalabstand."
+      },
+      "layout": {
+        "value": "Freestyle Bus",
+        "source": "https://armattanquads.com/products/japalura",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3,
+          "other_cf": null,
+          "aluminium_side_brace": 4
+        },
+        "source": "https://armattanquads.com/products/japalura",
+        "note": "Widerspruch: Spezifikation übrige CFK-Platten 1.5 mm, Stückliste Seiten-/Topplatten 2 mm; ungelöst, null."
+      },
+      "stack_height_mm": {
+        "value": 28,
+        "source": "https://armattanquads.com/products/japalura",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 51,
+        "source": "https://armattanquads.com/products/japalura",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          12,
+          12
+        ],
+        "source": "https://armattanquads.com/products/japalura",
+        "note": "Kanonische Seite nennt 12x12; Variante mit URL-Parameter enthält stattdessen unspezifisch 13xx."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/japalura",
+        "note": "Nur HS1177-Kompatibilität beschrieben; keine Kamerabreite in mm."
+      },
+      "battery_mount": {
+        "value": "Oben oder unten; LiPo-Strap und Schaumauflage",
+        "source": "https://armattanquads.com/products/japalura",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK; Aluminium 6061",
+        "source": "https://armattanquads.com/products/japalura",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Einstellung nicht belegt",
+        "source": "https://armattanquads.com/products/japalura",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "principle": "Seitliche Schutzstruktur um Elektronik",
+        "evidence": "Zwei Aluminiumrippen schützen die zentralen Einbauten.",
+        "source": "https://armattanquads.com/products/japalura",
+        "scale_independent": true,
+        "rationale": "Durchgehende Seitenstrukturen können Komponenten schützen und Lasten zum Grundkörper führen; geschlossene Druckwände sind ein eigener Entwurf, keine kopierte Armattan-Geometrie."
+      }
+    ]
+  },
+  {
+    "id": "japalura_4",
+    "name": "Japalura 4",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.getfpv.com/armattan-japalura-4-silver.html",
+      "https://armattanquads.com/products/japalura"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 4,
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 174,
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": ""
+      },
+      "layout": {
+        "value": "Freestyle Bus",
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3,
+          "other_cf": null,
+          "aluminium_side_brace": 4
+        },
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": "Spezifikation 1.5 mm übrige CFK-Platten widerspricht 2 mm in Stückliste."
+      },
+      "stack_height_mm": {
+        "value": 28,
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 56,
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": "Ungefährer Herstellerwert (~56 g), keine Schätzung dieser Recherche."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": "Nur 13xx als Motorklasse genannt; kein metrisches Lochbild."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": "Oben oder unten; Strap und Schaumauflage",
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK; Aluminium 6061",
+        "source": "https://www.getfpv.com/armattan-japalura-4-silver.html",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Einstellung nicht belegt",
+        "source": "https://armattanquads.com/products/japalura",
+        "note": "Kombiseite belegt heutige Listung."
+      }
+    }
+  },
+  {
+    "id": "odonata_40mm",
+    "name": "Odonata 40 mm",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://armattanquads.com/products/odonata-1"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": "40 mm (1.6-Zoll-Klasse)",
+        "source": "https://armattanquads.com/products/odonata-1",
+        "note": "40 mm ist Propellerdurchmesser, nicht Radstand."
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 1.5,
+          "top": 1.5
+        },
+        "source": "https://armattanquads.com/products/odonata-1",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/odonata-1",
+        "note": "Stückliste belegt 15-mm-Delrin-Standoffs; dies ist keine garantierte nutzbare Stackhöhe."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/odonata-1",
+        "note": "15-mm-Abstandshalter genannt, kein Bezugssystem für Deckhöhe."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Keine Herstellerangabe. Händler nennen widersprüchlich 7.71 g und 8.8 g mit unklarem Lieferumfang."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": "Top-Mount; TPU-Whoop-Akkuhalter",
+        "source": "https://armattanquads.com/products/odonata-1",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK; Delrin-Abstandshalter; TPU-Kamera-/Heck-/Akkuhalter",
+        "source": "https://armattanquads.com/products/odonata-1",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Armattan Lite, keine lebenslange Garantie",
+        "source": "https://armattanquads.com/products/odonata-1",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "principle": "Integrierte Führung für Antenne und Akkuleitung",
+        "evidence": "Separater TPU-Heckhalter bündelt Antenne und Akkuleitung.",
+        "source": "https://armattanquads.com/products/odonata-1",
+        "scale_independent": true,
+        "rationale": "Leitungen außerhalb des Propellerbereichs fixieren ist unabhängig vom Maßstab."
+      },
+      {
+        "principle": "Gewicht mit lokal angepasster Materialwahl reduzieren",
+        "evidence": "Delrin-Abstandshalter statt Aluminium; dünne CFK-Platten.",
+        "source": "https://armattanquads.com/products/odonata-1",
+        "scale_independent": true,
+        "rationale": "Nur die funktionale Materialverteilung wird übertragen; CFK-Dicken sind keine PA-CF-Druckdimensionierung."
+      },
+      {
+        "principle": "Kleine Frames verfolgen ein anderes Reparaturbudget",
+        "evidence": "Lite-Serie setzt auf preiswerte Ersatzteile statt lebenslanger Garantie.",
+        "source": "https://armattanquads.com/products/odonata-1",
+        "scale_independent": false,
+        "rationale": "Skalen- und Einsatzzielabhängiges Produktkonzept; v0 als Monolith muss vollständig ersetzt werden."
+      }
+    ]
+  },
+  {
+    "id": "bobcat_4_compressed_x",
+    "name": "Bobcat 4 LR (Compressed X)",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://armattanquads.com/products/bobcat"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 4,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 182,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 2.5,
+          "arms": 3
+        },
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 57,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          [
+            12,
+            12
+          ],
+          [
+            9,
+            9
+          ]
+        ],
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": [
+          19,
+          20
+        ],
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "Top-Mount; zwei LiPo-Straps und Lite Grip",
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK; Aluminium-Käfig, Anker und Heckpfosten",
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Arme von Garantie ausgenommen",
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "principle": "Layout per modularer Armbefestigung wechseln",
+        "evidence": "Ein Kit lässt sich als True X oder Compressed X aufbauen.",
+        "source": "https://armattanquads.com/products/bobcat",
+        "scale_independent": false,
+        "rationale": "Schraubbare austauschbare Arme sind bei größeren LR-Frames praktikabel; zusätzliche Fügestellen widersprechen dem einteiligen 2.5-Zoll-Druckziel."
+      }
+    ]
+  },
+  {
+    "id": "bobcat_4_true_x",
+    "name": "Bobcat 4 LR (True X)",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://armattanquads.com/products/bobcat"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 4,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 200,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "layout": {
+        "value": "True X",
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": 1,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": "Aus der Definition True X abgeleitet, keine gemessenen Einzelabstände."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 2.5,
+          "arms": 3
+        },
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 57,
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          [
+            12,
+            12
+          ],
+          [
+            9,
+            9
+          ]
+        ],
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": [
+          19,
+          20
+        ],
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "Top-Mount; zwei LiPo-Straps und Lite Grip",
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK; Aluminium-Käfig, Anker und Heckpfosten",
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Offiziell gelistet, ausverkauft; Arme von Garantie ausgenommen",
+        "source": "https://armattanquads.com/products/bobcat",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_3_5_9",
+    "name": "Tadpole 3.5 Conversion 9 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_3_5_12",
+    "name": "Tadpole 3.5 Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_gecko_dji_3_5_12",
+    "name": "Gecko DJI 3.5 Vista/Polar Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+      "https://www.armattanproductions.com/pages/kit_detail/3012"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": "https://www.armattanproductions.com/pages/kit_detail/3012",
+        "note": "20 mm in Beschreibung und 22/23 mm Heckpfosten in Stückliste; keine definierte Deckhöhe."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": "Top-Mount; verlängerte Platte, Strap und zwei Tadpole-Pads",
+        "source": "https://www.armattanproductions.com/pages/kit_detail/3012",
+        "note": ""
+      },
+      "material": {
+        "value": "CFK-Plattenkonversion; vorhandener Titan-Gecko-Käfig weiterverwendet",
+        "source": "https://www.armattanproductions.com/pages/kit_detail/3012",
+        "note": "Kit enthält nur Platten; vollständiger Frame benötigt zusätzliche Originalteile."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_dji_3_5_polar_9",
+    "name": "Tadpole DJI 3.5 Polar Conversion 9 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_dji_3_5_polar_12",
+    "name": "Tadpole DJI 3.5 Polar Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_dji_3_polar_9",
+    "name": "Tadpole DJI 3 Polar Conversion 9 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_dji_3_polar_12",
+    "name": "Tadpole DJI 3 Polar Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+      "https://www.rotorbuilds.com/build/28101",
+      "https://www.armattanproductions.com/pages/kit_detail/2988"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 135,
+        "source": "https://www.rotorbuilds.com/build/28101",
+        "note": "Primärbericht des Kit-Konstrukteurs DronerFPV."
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://www.rotorbuilds.com/build/28101",
+        "note": "Primärbericht des Kit-Konstrukteurs DronerFPV."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 23,
+        "source": "https://www.rotorbuilds.com/build/28101",
+        "note": "Primärbericht des Kit-Konstrukteurs DronerFPV."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://www.rotorbuilds.com/build/28101",
+        "note": "17.0 g beziehen sich nur auf die Hauptplatte; Gesamtframe unbekannt."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": 19,
+        "source": "https://www.rotorbuilds.com/build/28101",
+        "note": "Primärbericht des Kit-Konstrukteurs DronerFPV."
+      },
+      "battery_mount": {
+        "value": "Top-Mount; verlängerte Platte",
+        "source": "https://www.rotorbuilds.com/build/28101",
+        "note": "Primärbericht des Kit-Konstrukteurs DronerFPV."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_gecko_dji_4_12",
+    "name": "Gecko DJI Ultralight 4 Vista Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+      "https://www.armattanproductions.com/pages/shop_product_list/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 4,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://www.armattanproductions.com/pages/shop_product_list/5378",
+        "note": "Quelle enthält den Platzhalter xxx.00 mm."
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://www.armattanproductions.com/pages/shop_product_list/5378",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3,
+          "top": 2
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_list/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 23,
+        "source": "https://www.armattanproductions.com/pages/shop_product_list/5378",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://www.armattanproductions.com/pages/shop_product_list/5378",
+        "note": "Quelle enthält den Platzhalter xx.0 g nur für die Hauptplatte."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": 19,
+        "source": "https://www.armattanproductions.com/pages/shop_product_list/5378",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "Top-Mount, verlängerte LiPo-Platte",
+        "source": "https://www.armattanproductions.com/pages/shop_product_list/5378",
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_2_5_9",
+    "name": "Tadpole 2.5 Conversion 9 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 2.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_2_5_12",
+    "name": "Tadpole 2.5 Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 2.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_3_9",
+    "name": "Tadpole 3 Conversion 9 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_3_12",
+    "name": "Tadpole 3 Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_dji_2_5_nebula_9",
+    "name": "Tadpole DJI 2.5 Nebula Conversion 9 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 2.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 9,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_dji_2_5_nebula_12",
+    "name": "Tadpole DJI 2.5 Nebula Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 2.5,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "dronerfpv_tadpole_dji_3_nebula_12",
+    "name": "Tadpole DJI 3 Nebula Conversion 12 mm",
+    "scope": "armattan_productions_third_party_conversion",
+    "sources": [
+      "https://www.armattanproductions.com/pages/shop_product_grid/5378"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 3,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": 12,
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": "Nennmaß im Produkttitel; keine quadratische Definition behauptet."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "DronerFPV-Katalogeintrag; aktuelle Lieferfähigkeit unbestätigt",
+        "source": "https://www.armattanproductions.com/pages/shop_product_grid/5378",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "armatank_162",
+    "name": "ArmaTank 162",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.getfpv.com/armattan-armatank-162.html"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 4,
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 162,
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "note": ""
+      },
+      "layout": {
+        "value": "X",
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4
+        },
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 74.3,
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "note": "Frame inklusive Hardware, UniPod und PDB; erhaltener Herstellertext."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": "Klett-Strap",
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "note": ""
+      },
+      "material": {
+        "value": "3K-Twill-CFK; UniPod",
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Historisches Modell belegt; aktueller Herstellerstatus unbekannt",
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "principle": "Stecker und Antennen mechanisch entlasten",
+        "evidence": "XT60-Schutz und höhenverstellbarer VTX-/Antennenhalter.",
+        "source": "https://www.getfpv.com/armattan-armatank-162.html",
+        "scale_independent": true,
+        "rationale": "Halter und Kabelrückhalt dürfen Crashlasten nicht an die Platinenlötstellen weiterreichen; auf XT30 und Balancerführung übertragbar."
+      }
+    ]
+  },
+  {
+    "id": "f1_4b_3mm",
+    "name": "F1-4B 3 mm (14xx/18xx)",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": "Name F1-4B allein nicht als belastbare Propellerfreigabe übernommen."
+      },
+      "wheelbase_mm": {
+        "value": 175,
+        "source": "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d",
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 3
+        },
+        "source": "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "Historisches Modell belegt; aktueller Herstellerstatus unbekannt",
+        "source": "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "f1_4b_4mm",
+    "name": "F1-4B 4 mm (2204) / IPDB / Mobius",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.asiatees.com/display?brand=TOPLINE&id=120279&model=All"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4
+        },
+        "source": "https://www.asiatees.com/display?brand=TOPLINE&id=120279&model=All",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://www.asiatees.com/display?brand=TOPLINE&id=120279&model=All",
+        "note": "170 g enthalten Verpackung; nicht als Framegewicht verwendbar."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "Vom Händler als eingestellt bezeichnet",
+        "source": "https://www.asiatees.com/display?brand=TOPLINE&id=120279&model=All",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "f1_4_acro",
+    "name": "F1-4 Acro / IPDB",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.asiatees.com/Sale"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "Historisches Modell belegt; aktueller Herstellerstatus unbekannt",
+        "source": "https://www.asiatees.com/Sale",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "morphite_x155",
+    "name": "Morphite X 155 / LED",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.asiatees.com/display?TopCad-ALL-Parts-Hop-Ups-Upgrades=&id=120277"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://www.asiatees.com/display?TopCad-ALL-Parts-Hop-Ups-Upgrades=&id=120277",
+        "note": "155 nur im Modellnamen; hier nicht als vermessenen Motorabstand übernommen."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://www.asiatees.com/display?TopCad-ALL-Parts-Hop-Ups-Upgrades=&id=120277",
+        "note": "92 g enthalten Verpackung; nicht als Framegewicht verwendbar."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "Vom Händler als eingestellt bezeichnet",
+        "source": "https://www.asiatees.com/display?TopCad-ALL-Parts-Hop-Ups-Upgrades=&id=120277",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "morphite_180",
+    "name": "FPV Morphite 180",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.asiatees.com/Sale"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://www.asiatees.com/Sale",
+        "note": "180 nur im Modellnamen; kein belastbares Datenblatt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "Historisches Modell belegt; aktueller Herstellerstatus unbekannt",
+        "source": "https://www.asiatees.com/Sale",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "bumper_2",
+    "name": "Bumper 2",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.getfpv.com/shop-by-brand/armattan.html",
+      "https://www.dronelec.com/c/r/411-armattan/1"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 2,
+        "source": "https://www.dronelec.com/c/r/411-armattan/1",
+        "note": "Händler-Katalogtitel."
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "Historisches Modell belegt; aktueller Herstellerstatus unbekannt",
+        "source": "https://www.getfpv.com/shop-by-brand/armattan.html",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "armadillo_pup_4",
+    "name": "Armadillo PUP 4 (Rot/Blau)",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.dronelec.com/c/r/411-armattan/1"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 4,
+        "source": "https://www.dronelec.com/c/r/411-armattan/1",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "Historisches Modell belegt; aktueller Herstellerstatus unbekannt",
+        "source": "https://www.dronelec.com/c/r/411-armattan/1",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "scx_180",
+    "name": "SCX 180 (Redback/Cobalt)",
+    "scope": "armattan_quads",
+    "sources": [
+      "https://www.dronelec.com/c/r/411-armattan/1"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://www.dronelec.com/c/r/411-armattan/1",
+        "note": "180 nur als Modellbezeichnung belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lifecycle": {
+        "value": "Historisches Modell belegt; aktueller Herstellerstatus unbekannt",
+        "source": "https://www.dronelec.com/c/r/411-armattan/1",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "craftedkwads_odonata_hd_2",
+    "name": "CraftedKwads Odonata HD 2 Dual Variant",
+    "scope": "related_designer_not_armattan_quads",
+    "sources": [
+      "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 2,
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 95,
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 2,
+          "top": 1.5
+        },
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": "20-mm-Standoffs sind keine garantierte nutzbare Stackhöhe."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 11,
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          {
+            "diameter": 6.6,
+            "points": 3,
+            "screw": "M1.4"
+          },
+          {
+            "diameter": 9,
+            "points": 2,
+            "screw": "M2"
+          }
+        ],
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 14,
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": "CFK; Aluminium-Standoffs; TPU-Halter",
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Verwandte CraftedKwads-Marke; Händler ausverkauft, kein Armattan-Quads-Serienmodell",
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-frame-kit-dual-variant",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "craftedkwads_odonata_hd_2_ironclad",
+    "name": "CraftedKwads Odonata HD 2 Ironclad",
+    "scope": "related_designer_not_armattan_quads",
+    "sources": [
+      "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-ironclad-micro-frame-kit"
+    ],
+    "fields": {
+      "size_class_in": {
+        "value": 2,
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-ironclad-micro-frame-kit",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 2.5,
+          "top": 1.5
+        },
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-ironclad-micro-frame-kit",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "mass_g": {
+        "value": 13,
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-ironclad-micro-frame-kit",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          {
+            "diameter": 6.6,
+            "points": 3,
+            "screw": "M1.4"
+          },
+          {
+            "diameter": 9,
+            "points": 2,
+            "screw": "M2"
+          }
+        ],
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-ironclad-micro-frame-kit",
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 14,
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-ironclad-micro-frame-kit",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": "Nicht belegt."
+      },
+      "material": {
+        "value": "CFK",
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-ironclad-micro-frame-kit",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "Verwandte CraftedKwads-Marke; Händler ausverkauft, kein Armattan-Quads-Serienmodell",
+        "source": "https://www.racedayquads.com/products/craftedkwads-odonata-hd-2-ironclad-micro-frame-kit",
+        "note": ""
+      }
+    }
+  }
+]

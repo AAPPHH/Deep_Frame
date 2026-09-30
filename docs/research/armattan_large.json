@@ -1,0 +1,3187 @@
+[
+  {
+    "id": "chameleon_og_5_original",
+    "name": "Chameleon OG 5 – original",
+    "sources": [
+      "https://armattanquads.com/products/chameleon"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 220,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "layout": {
+        "value": "Freestyle Bus",
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "bottom": 4,
+          "top": 2,
+          "camera_cage": 4
+        },
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 118,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": "approx.; revision distinguished"
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": "Only motor class 22xx stated; bolt spacing unknown."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; strap and foam pad",
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; 6061 aluminum cage",
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "id": "low_battery",
+        "principle": "Vertikalen Akkuabstand klein halten",
+        "evidence": "Abgesenkte Topplate nähert Akku dem Schwerpunkt; Käfig kann bei Rückenlandung schützen.",
+        "source": "https://armattanquads.com/products/chameleon",
+        "scale_independent": true,
+        "rationale": "Schwerpunkt und Trägheitsmoment bleiben bei Micro relevant; konkrete Deckhöhe folgt Komponentenfreiraum."
+      }
+    ]
+  },
+  {
+    "id": "chameleon_og_5_reinforced",
+    "name": "Chameleon OG 5 – reinforced",
+    "sources": [
+      "https://armattanquads.com/products/chameleon"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 220,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "layout": {
+        "value": "Freestyle Bus",
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "bottom": 4,
+          "top": 2,
+          "camera_cage": 4
+        },
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 128,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": "approx.; revision distinguished"
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": "Only motor class 22xx stated; bolt spacing unknown."
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; strap and foam pad",
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; 6061 aluminum cage",
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/chameleon",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "chameleon_ti_5",
+    "name": "Chameleon Ti 5",
+    "sources": [
+      "https://armattanquads.com/products/chameleon-ti-5-inch"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 220,
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "top": 2,
+          "hd_camera": 1.5,
+          "rear_vtx": 2,
+          "shim": 4
+        },
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 22,
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 118,
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 28.5,
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; strap and foam pad",
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; titanium cage; aluminum standoffs",
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "chameleon_ti_6",
+    "name": "Chameleon Ti 6",
+    "sources": [
+      "https://armattanquads.com/products/chameleon-ti-5-inch"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 6,
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": "Combined page specifications explicitly headed TI 5; not transferred."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": "Combined page 118 g explicitly TI 5; not transferred."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/chameleon-ti-5-inch",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "chameleon_ti_lr_6",
+    "name": "Chameleon Ti LR 6",
+    "sources": [
+      "https://armattanquads.com/products/chameleon-ti-lr-6-inch"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 6,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 264,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "top": 2,
+          "hd_camera": 1.5,
+          "rear_vtx": 2,
+          "shim": 4
+        },
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 22,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": 22,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": "Manufacturer calls this smashed deck; datum unspecified."
+      },
+      "mass_g": {
+        "value": 142,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": "Only motor class 22xx stated; bolt spacing unknown."
+      },
+      "camera_width_mm": {
+        "value": 28.5,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; extended foam pad and strap",
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; titanium cage; aluminum standoffs",
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "chameleon_ti_lr_7",
+    "name": "Chameleon Ti LR 7",
+    "sources": [
+      "https://armattanquads.com/products/chameleon-ti-lr-6-inch"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 7,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": "Combined page specifications explicitly headed 6 LR; not transferred."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": "Combined page 142 g explicitly 6 LR; not transferred."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/chameleon-ti-lr-6-inch",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "rooster_5",
+    "name": "Rooster 5",
+    "sources": [
+      "https://armattanquads.com/products/rooster-1"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 230,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "arms": 4
+        },
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 22,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": "Combined page says approx.125 g without variant-specific assignment."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 28.5,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; grade 5 titanium cage; aluminum standoffs; steel bolts",
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "rooster_6",
+    "name": "Rooster 6",
+    "sources": [
+      "https://armattanquads.com/products/rooster-1"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 6,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 253,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "arms": 4
+        },
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 22,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": "Combined page says approx.125 g without variant-specific assignment."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 28.5,
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; grade 5 titanium cage; aluminum standoffs; steel bolts",
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/rooster-1",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "marmotte_5_standard",
+    "name": "Marmotte 5 – standard",
+    "sources": [
+      "https://armattanquads.com/products/marmotte"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 236,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "top": 2,
+          "hd_camera": 1.5
+        },
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": "Approx.115 g pooled for both carbon choices; variant mass missing."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 21,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; strap and foam pad",
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "material": {
+        "value": "standard carbon fiber; titanium cage; aluminum standoffs and camera savers",
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "id": "camera_protection",
+        "principle": "Kamera hinter schützender Struktur platzieren",
+        "evidence": "Titan-Käfig und biegbare Aluminiumhalter schützen die Kamera.",
+        "source": "https://armattanquads.com/products/marmotte",
+        "scale_independent": true,
+        "rationale": "Schutzabstand und abgeleiteter Crashkontakt sind größenunabhängig; Lux-Abmessungen bestimmen Innenraum."
+      }
+    ]
+  },
+  {
+    "id": "marmotte_5_space_grade",
+    "name": "Marmotte 5 – space_grade",
+    "sources": [
+      "https://armattanquads.com/products/marmotte"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 236,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "top": 2,
+          "hd_camera": 1.5
+        },
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": "Approx.115 g pooled for both carbon choices; variant mass missing."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 21,
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; strap and foam pad",
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "material": {
+        "value": "space_grade carbon fiber; titanium cage; aluminum standoffs and camera savers",
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/marmotte",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "id": "metal_machining",
+        "principle": "Titan und bearbeitete Laminatplatten",
+        "evidence": "Gefräster Titan-Käfig und Carbonplatten werden kombiniert.",
+        "source": "https://armattanquads.com/products/marmotte",
+        "scale_independent": false,
+        "rationale": "Werkstoffe und Schraubverbindungen lassen sich nicht dimensionsgleich auf anisotropen PA-CF-Druck übertragen."
+      }
+    ]
+  },
+  {
+    "id": "marmotte_dji_5",
+    "name": "Marmotte DJI 5",
+    "sources": [
+      "https://armattanquads.com/products/marmotte-dji-edition"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 236,
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4
+        },
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 115,
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": "approx."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 21,
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; modified LiPo plate",
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; titanium cage; aluminum standoffs",
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "id": "cable_retention",
+        "principle": "Antenne führen und Zug entlasten",
+        "evidence": "Spezielle Gummidurchführungen ordnen die DJI-Antennen.",
+        "source": "https://armattanquads.com/products/marmotte-dji-edition",
+        "scale_independent": true,
+        "rationale": "Leitungen müssen unabhängig von Propgröße aus rotierenden Bereichen bleiben; v0 verwendet integrierte Schlaufen."
+      }
+    ]
+  },
+  {
+    "id": "badger_5",
+    "name": "Badger 5",
+    "sources": [
+      "https://armattanquads.com/products/badger-1"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 236,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "arms": 4,
+          "top": 2,
+          "hd_camera": 1.5
+        },
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": "Combined page says approx.130 g without variant-specific assignment."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": "Only motor class 22xx stated; bolt spacing unknown."
+      },
+      "camera_width_mm": {
+        "value": 21,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; strap and foam pad",
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; titanium cage; aluminum standoffs",
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "id": "replaceable_arms",
+        "principle": "Austauschbare Arme und Metallkäfig",
+        "evidence": "Badger ersetzt Marmottes feste Arme durch demontierbare Arme.",
+        "source": "https://armattanquads.com/products/badger-1",
+        "scale_independent": false,
+        "rationale": "Klemmflächen, Schrauben und Werkzeugzugang kosten bei 2.5 Zoll relativ viel Masse; widerspricht dem einteiligen Solid."
+      }
+    ]
+  },
+  {
+    "id": "badger_6",
+    "name": "Badger 6",
+    "sources": [
+      "https://armattanquads.com/products/badger-1"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 6,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 256,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "arms": 4,
+          "top": 2,
+          "hd_camera": 1.5
+        },
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": "Combined page says approx.130 g without variant-specific assignment."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": "Only motor class 22xx stated; bolt spacing unknown."
+      },
+      "camera_width_mm": {
+        "value": 21,
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; strap and foam pad",
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; titanium cage; aluminum standoffs",
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/badger-1",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "badger_dji_5",
+    "name": "Badger DJI 5",
+    "sources": [
+      "https://armattanquads.com/products/badger-dji-edition"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": "Combined page says 236 mm and up to 5.5 inch props while offering 6 inch; variant-specific value missing."
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "arms": 4
+        },
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": "Combined page says approx.130 g without variant-specific assignment."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": "Only motor class 22xx stated; bolt spacing unknown."
+      },
+      "camera_width_mm": {
+        "value": 21,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; modified LiPo plate",
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; titanium cage; aluminum standoffs",
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "badger_dji_6",
+    "name": "Badger DJI 6",
+    "sources": [
+      "https://armattanquads.com/products/badger-dji-edition"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 6,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": "Combined page says 236 mm and up to 5.5 inch props while offering 6 inch; variant-specific value missing."
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "arms": 4
+        },
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": "Combined page says approx.130 g without variant-specific assignment."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": "Only motor class 22xx stated; bolt spacing unknown."
+      },
+      "camera_width_mm": {
+        "value": 21,
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top; modified LiPo plate",
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; titanium cage; aluminum standoffs",
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/badger-dji-edition",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "beaver_5",
+    "name": "Beaver 5",
+    "sources": [
+      "https://armattanquads.com/products/beaver"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 235,
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "layout": {
+        "value": "Compressed X",
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 2.5,
+          "arms": 5
+        },
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 25,
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 126,
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          [
+            16,
+            16
+          ],
+          [
+            16,
+            19
+          ],
+          [
+            19,
+            19
+          ]
+        ],
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": [
+          19,
+          20
+        ],
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; aluminum",
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/beaver",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "id": "deck_load_path",
+        "principle": "Akkudeck strukturell anbinden",
+        "evidence": "Zusätzliche Topplate-Anker versteifen den gesamten Rahmen.",
+        "source": "https://armattanquads.com/products/beaver",
+        "scale_independent": true,
+        "rationale": "Lastpfad und Steifigkeit gelten in jeder Größe; im Druckteil können breite Wände dieselbe funktionale Aufgabe erfüllen. Keine Armattan-Wandgeometrie behauptet."
+      }
+    ]
+  },
+  {
+    "id": "mongoose_5_arm_3",
+    "name": "Mongoose 5 – 3 mm arms",
+    "sources": [
+      "https://armattanquads.com/products/mongoose-1"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 228,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "layout": {
+        "value": "Stretch X",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "bottom": 3,
+          "arms": 3,
+          "top": 2
+        },
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 23,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": "Table 67 g incl.foam; prose 61 g; arm variant unspecified."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 19,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top or bottom; strap, two foam pads",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; aluminum; stainless steel hardware",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "id": "multifunction",
+        "principle": "Tragende Teile mit Haltefunktionen kombinieren",
+        "evidence": "Frontstütze verbindet Rahmen, Kamera und Armklemmung; wenige Schrauben.",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "scale_independent": true,
+        "rationale": "Bei kleinen Druckteilen sparen kombinierte Funktionen zusätzliche Teile und Masse."
+      },
+      {
+        "id": "race_exception",
+        "principle": "Leichtbau und Crashkonzept abwägen",
+        "evidence": "Lite-Rennrahmen besitzt ausdrücklich keine Bruchgarantie.",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "scale_independent": true,
+        "rationale": "Funktionsreserven, Masse und Ersetzbarkeit müssen gemeinsam betrachtet werden; keine Hersteller-Bruchfestigkeit auf v0 übertragen."
+      }
+    ]
+  },
+  {
+    "id": "mongoose_5_arm_4",
+    "name": "Mongoose 5 – 4 mm arms",
+    "sources": [
+      "https://armattanquads.com/products/mongoose-1"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 228,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "layout": {
+        "value": "Stretch X",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "bottom": 3,
+          "arms": 4,
+          "top": 2
+        },
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 23,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": "Table 67 g incl.foam; prose 61 g; arm variant unspecified."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": 19,
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top or bottom; strap, two foam pads",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; aluminum; stainless steel hardware",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "listed_sold_out",
+        "source": "https://armattanquads.com/products/mongoose-1",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "nutria_5",
+    "name": "Nutria 5",
+    "sources": [
+      "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 238,
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "bottom": 3,
+          "main_center": 4,
+          "top": 4,
+          "camera_cage": 2,
+          "arms": 5
+        },
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 25,
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 176,
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          [
+            16,
+            16
+          ],
+          [
+            19,
+            19
+          ]
+        ],
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": [
+          19,
+          22
+        ],
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": "Continuous supported range; washers for <=20 mm."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "titanium cage; aluminum rear posts and camera braces",
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "preorder_eta_2026",
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "nutria_7",
+    "name": "Nutria 7",
+    "sources": [
+      "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7"
+    ],
+    "source_type": "manufacturer",
+    "fields": {
+      "size_class_in": {
+        "value": 7,
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 290,
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "bottom": 3,
+          "main_center": 4,
+          "top": 4,
+          "camera_cage": 2,
+          "arms": 5
+        },
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 25,
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 186,
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          [
+            16,
+            16
+          ],
+          [
+            19,
+            19
+          ]
+        ],
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": [
+          19,
+          22
+        ],
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": "Continuous supported range; washers for <=20 mm."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "titanium cage; aluminum rear posts and camera braces",
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "preorder_eta_2026",
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "note": ""
+      }
+    },
+    "construction_notes": [
+      {
+        "id": "large_payload",
+        "principle": "Mehrfachstacks und längere Arme",
+        "evidence": "Mehrere Elektronikpositionen; 5-/7-Zoll-Arme teilen alle übrigen Bauteile.",
+        "source": "https://armattanquads.com/products/nutria-frame-kit-choose-5-or-7",
+        "scale_independent": false,
+        "rationale": "Große Videosender, GPS und Akkus brauchen nutzbare Länge; AIO15 integriert Funktionen, zusätzlicher Stackraum ist unnötig."
+      }
+    ]
+  },
+  {
+    "id": "cf_226",
+    "name": "CF-226",
+    "sources": [
+      "https://www.highlightcomputer.com/CF258.pdf"
+    ],
+    "source_type": "archived_manufacturer_product_copy",
+    "fields": {
+      "size_class_in": {
+        "value": "5–6",
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": "Not inferred from model number."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "arms": 4,
+          "center": 2,
+          "fc_cover": 1
+        },
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "3K twill carbon fiber",
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": "Historical listing; production end date unavailable."
+      }
+    }
+  },
+  {
+    "id": "cf_258",
+    "name": "CF-258",
+    "sources": [
+      "https://www.highlightcomputer.com/CF258.pdf"
+    ],
+    "source_type": "archived_manufacturer_product_copy",
+    "fields": {
+      "size_class_in": {
+        "value": "6–7",
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 258,
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "arms": 4,
+          "center": 2,
+          "fc_cover": 1
+        },
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 130,
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": [
+          16,
+          19
+        ],
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "3K twill carbon fiber",
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": "Historical listing; production end date unavailable."
+      }
+    }
+  },
+  {
+    "id": "cf_355",
+    "name": "CF-355",
+    "sources": [
+      "https://www.highlightcomputer.com/CF258.pdf"
+    ],
+    "source_type": "archived_manufacturer_product_copy",
+    "fields": {
+      "size_class_in": {
+        "value": "8–9",
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": "Not inferred from model number."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "arms": 4,
+          "center": 2,
+          "fc_cover": 1
+        },
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "3K twill carbon fiber",
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://www.highlightcomputer.com/CF258.pdf",
+        "note": "Historical listing; production end date unavailable."
+      }
+    }
+  },
+  {
+    "id": "f1_5",
+    "name": "F1-5 with iPDB and Mobius plate",
+    "sources": [
+      "https://www.asiatees.com/display?brand=&id=120280&model=All"
+    ],
+    "source_type": "retailer_factory_description",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://www.asiatees.com/display?brand=&id=120280&model=All",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "arms": 4
+        },
+        "source": "https://www.asiatees.com/display?brand=&id=120280&model=All",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": "https://www.asiatees.com/display?brand=&id=120280&model=All",
+        "note": "216 g is package mass; excluded."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "discontinued",
+        "source": "https://www.asiatees.com/display?brand=&id=120280&model=All",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "f1_6",
+    "name": "F1-6 with iPDB and Mobius plate",
+    "sources": [
+      "https://cdn.asiatees.com/article?Armattan-F1-6-Build-Guide-And-Review=&id=2682"
+    ],
+    "source_type": "firsthand_build",
+    "fields": {
+      "size_class_in": {
+        "value": 6,
+        "source": "https://cdn.asiatees.com/article?Armattan-F1-6-Build-Guide-And-Review=&id=2682",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "arms": 4,
+          "top": 1.5,
+          "bottom_center": 1.5
+        },
+        "source": "https://cdn.asiatees.com/article?Armattan-F1-6-Build-Guide-And-Review=&id=2682",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber",
+        "source": "https://cdn.asiatees.com/article?Armattan-F1-6-Build-Guide-And-Review=&id=2682",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://cdn.asiatees.com/article?Armattan-F1-6-Build-Guide-And-Review=&id=2682",
+        "note": "Historical build; production end date unavailable."
+      }
+    }
+  },
+  {
+    "id": "f1_5_acro",
+    "name": "F1-5 Acro",
+    "sources": [
+      "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/"
+    ],
+    "source_type": "firsthand_build",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "arms": 5
+        },
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 115,
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": "Author's frame-only measurement."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "bottom",
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber",
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": "Historical build; production end date unavailable."
+      }
+    }
+  },
+  {
+    "id": "f1_6_acro",
+    "name": "F1-6 Acro",
+    "sources": [
+      "https://rotorbuilds.com/build/416/"
+    ],
+    "source_type": "firsthand_build",
+    "fields": {
+      "size_class_in": {
+        "value": 6,
+        "source": "https://rotorbuilds.com/build/416/",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": "X",
+        "source": "https://rotorbuilds.com/build/416/",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://rotorbuilds.com/build/416/",
+        "note": "Documented 2016 build; production end date unavailable."
+      }
+    }
+  },
+  {
+    "id": "fusion_5",
+    "name": "Fusion 5 limited prototype",
+    "sources": [
+      "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/"
+    ],
+    "source_type": "firsthand_build",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 128,
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": "Includes pod; first-hand report."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "bottom",
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": ""
+      },
+      "material": {
+        "value": "moulded aluminum; carbon tubes; rubber",
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "limited_prototype",
+        "source": "https://oscarliang.com/armattan-f1-5-acro-vs-fusion-5/",
+        "note": "Author reports seven examples, no regular production confirmed."
+      }
+    }
+  },
+  {
+    "id": "armadillo_5",
+    "name": "Armadillo 5",
+    "sources": [
+      "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html"
+    ],
+    "source_type": "retailer_manufacturer_copy",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 223,
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": ""
+      },
+      "layout": {
+        "value": "Hybrid H",
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "arms": 4,
+          "center": 1.5,
+          "top": 1.5,
+          "bottom": 1.5,
+          "vertical": 2
+        },
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": "38 mm standoffs listed; deck datum not defined."
+      },
+      "mass_g": {
+        "value": 109,
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "strap included; position unspecified",
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; aluminum standoffs",
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://www.getfpv.com/armattan-armadillo-5v-12v-red.html",
+        "note": "Historical listing; discontinued not asserted from stock status."
+      }
+    }
+  },
+  {
+    "id": "scx_200",
+    "name": "SCX-200 Armattan Lite",
+    "sources": [
+      "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html"
+    ],
+    "source_type": "retailer_manufacturer_copy",
+    "fields": {
+      "size_class_in": {
+        "value": 5,
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 200,
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": ""
+      },
+      "layout": {
+        "value": "True X",
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "arms": 4,
+          "top": 1.5,
+          "bottom_center": 2,
+          "vtx": 2,
+          "camera": 2
+        },
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": "30 mm standoffs listed; not equated to deck height."
+      },
+      "mass_g": {
+        "value": 89,
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": "Retailer lists 19/21 mm but original HS1177 references conflict; missing."
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber",
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://fpvracing.ch/de/frames/1712-373-armattan-scx-200-5-fpv-racing-frame.html",
+        "note": "Historical Armattan Lite; no discontinued date verified."
+      }
+    }
+  },
+  {
+    "id": "scx_hd",
+    "name": "SCX-HD",
+    "sources": [
+      "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d"
+    ],
+    "source_type": "retailer_manufacturer_copy",
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 220,
+        "source": "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d",
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4
+        },
+        "source": "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 103.3751,
+        "source": "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d",
+        "note": "Unrounded value as published; accuracy not independently verified."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://www.pinoyfpv.com/store/index.php?main_page=index&manufacturers_id=13&page=1&sort=2d",
+        "note": "Historical listing; no end-of-production date verified."
+      }
+    }
+  },
+  {
+    "id": "cnc_355",
+    "name": "CNC 355",
+    "sources": [
+      "https://sc-journal.com/view/1880987/armattan-cnc-355-assembly-manual-5/"
+    ],
+    "source_type": "rehosted_assembly_manual",
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1880987/armattan-cnc-355-assembly-manual-5/",
+        "note": "No spacing inferred from model name."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1880987/armattan-cnc-355-assembly-manual-5/",
+        "note": "Manual translation labels steel arms and carbon plates; original material specification unresolved."
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1880987/armattan-cnc-355-assembly-manual-5/",
+        "note": "Historical manual; production status unknown."
+      }
+    }
+  },
+  {
+    "id": "tilt_hexa",
+    "name": "TILT Hexacopter",
+    "sources": [
+      "https://sc-journal.com/view/1880985/armattan-tilt-assembly-instructions-5/"
+    ],
+    "source_type": "rehosted_assembly_manual",
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": "Hexacopter",
+        "source": "https://sc-journal.com/view/1880985/armattan-tilt-assembly-instructions-5/",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1880985/armattan-tilt-assembly-instructions-5/",
+        "note": "45 mm body mounts in manual; datum unspecified."
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1880985/armattan-tilt-assembly-instructions-5/",
+        "note": "Historical manual; production status unknown."
+      }
+    }
+  },
+  {
+    "id": "tilt_r",
+    "name": "TILT-R",
+    "sources": [
+      "https://sc-journal.com/view/1880984/armattan-tilt-r-assembly-manual-8/"
+    ],
+    "source_type": "rehosted_assembly_manual",
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1880984/armattan-tilt-r-assembly-manual-8/",
+        "note": "Historical manual; production status unknown."
+      }
+    }
+  },
+  {
+    "id": "mini_fpv_tricopter",
+    "name": "Mini FPV Tricopter",
+    "sources": [
+      "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/"
+    ],
+    "source_type": "rehosted_assembly_manual",
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": "Tricopter",
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 1,
+          "top": 1,
+          "arms": 3,
+          "camera": 1
+        },
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": "Manual lists multiple positions; complete options not recovered."
+      },
+      "material": {
+        "value": "carbon fiber; G10 camera plate; printed tail mechanism (tri)",
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": "Manual v01 dated 2014-06-21; production status unknown."
+      }
+    }
+  },
+  {
+    "id": "mini_fpv_vtail",
+    "name": "Mini FPV Vtail",
+    "sources": [
+      "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/"
+    ],
+    "source_type": "rehosted_assembly_manual",
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": "Vtail",
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 1,
+          "top": 1,
+          "arms": 3,
+          "camera": 1
+        },
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": "Manual lists multiple positions; complete options not recovered."
+      },
+      "material": {
+        "value": "carbon fiber; G10 camera plate; printed tail mechanism (tri)",
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": "Manual v01 dated 2014-06-21; production status unknown."
+      }
+    }
+  },
+  {
+    "id": "mini_fpv_quadcopter",
+    "name": "Mini FPV Quadcopter",
+    "sources": [
+      "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/"
+    ],
+    "source_type": "rehosted_assembly_manual",
+    "fields": {
+      "size_class_in": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "layout": {
+        "value": "Quadcopter",
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 1,
+          "top": 1,
+          "arms": 3,
+          "camera": 1
+        },
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": "Manual lists multiple positions; complete options not recovered."
+      },
+      "material": {
+        "value": "carbon fiber; G10 camera plate; printed tail mechanism (tri)",
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": "https://sc-journal.com/view/1534022/armattan-tricopter-assembly-manual-11/",
+        "note": "Manual v01 dated 2014-06-21; production status unknown."
+      }
+    }
+  },
+  {
+    "id": "fpv_rev2_tilt",
+    "name": "FPV Rev 2 TILT",
+    "sources": [
+      "https://rotorbuilds.com/build/119"
+    ],
+    "source_type": "firsthand_build",
+    "fields": {
+      "size_class_in": {
+        "value": 10,
+        "source": "https://rotorbuilds.com/build/119",
+        "note": "Build uses 10 inch props; rated limit not established."
+      },
+      "wheelbase_mm": {
+        "value": null,
+        "source": "https://rotorbuilds.com/build/119",
+        "note": "453 in build title is not accepted as a measured spacing."
+      },
+      "layout": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "material": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "lifecycle": {
+        "value": "discontinued",
+        "source": "https://rotorbuilds.com/build/119",
+        "note": ""
+      }
+    }
+  },
+  {
+    "id": "chameleon_og_6",
+    "name": "Chameleon OG 6",
+    "sources": [
+      "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html"
+    ],
+    "source_type": "retailer_manufacturer_copy",
+    "fields": {
+      "size_class_in": {
+        "value": 6,
+        "source": "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html",
+        "note": ""
+      },
+      "wheelbase_mm": {
+        "value": 252,
+        "source": "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html",
+        "note": ""
+      },
+      "layout": {
+        "value": "Freestyle Bus",
+        "source": "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html",
+        "note": ""
+      },
+      "lateral_longitudinal_ratio": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "plate_thickness_mm": {
+        "value": {
+          "main": 4,
+          "top": 2,
+          "camera_braces": 1.5,
+          "cage": 4
+        },
+        "source": "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html",
+        "note": ""
+      },
+      "stack_height_mm": {
+        "value": 20,
+        "source": "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html",
+        "note": ""
+      },
+      "deck_height_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "mass_g": {
+        "value": 125,
+        "source": "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html",
+        "note": "approx."
+      },
+      "motor_mount_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "camera_width_mm": {
+        "value": null,
+        "source": null,
+        "note": ""
+      },
+      "battery_mount": {
+        "value": "top",
+        "source": "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html",
+        "note": ""
+      },
+      "material": {
+        "value": "carbon fiber; 6061 aluminum cage",
+        "source": "https://www.getfpv.com/armattan-chameleon-6-fpv-frame-orange.html",
+        "note": ""
+      },
+      "lifecycle": {
+        "value": null,
+        "source": null,
+        "note": ""
+      }
+    }
+  }
+]
