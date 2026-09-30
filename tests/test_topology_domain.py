@@ -134,6 +134,23 @@ def test_preserve_cuts_are_explicit_and_new_hardware_overlap_is_rejected(domain)
         build_design_domain(parameters)
 
 
+def test_tool_access_prevents_blind_antenna_caps_and_camera_voxel_slivers(domain):
+    regions = {region["name"]: region for region in domain["regions"]}
+    antenna = regions["antenna_bore"]
+    assert antenna["center_mm"][2] + antenna["height_mm"] / 2 > 32
+    antenna_access = regions["antenna_insertion_access"]
+    assert antenna_access.get("rasterize", True)
+    assert antenna_access["center_mm"][2] - antenna_access["height_mm"] / 2 == pytest.approx(10)
+    assert regions["camera_screw_axis"]["height_mm"] == pytest.approx(32)
+    for sign in (-1, 1):
+        lug = regions[f"camera_mount_{sign}"]
+        access = regions[f"camera_tool_access_{sign}"]
+        lug_outer = sign * lug["center_mm"][0] + lug["height_mm"] / 2
+        access_inner = sign * access["center_mm"][0] - access["height_mm"] / 2
+        assert lug_outer == access_inner == pytest.approx(16)
+        assert access.get("rasterize", True)
+
+
 @pytest.mark.parametrize("override", [{"grid": {"spacing_mm": [4, 0, 4]}}, {"grid": {"shape": [3.5, 32, 8]}}, {"grid": {"axis_order": "zyx"}}, {"manufacturing": {"minimum_feature_mm": 1.5}}])
 def test_invalid_grid_or_manufacturing_inputs_are_rejected(override):
     parameters = reference_parameters()

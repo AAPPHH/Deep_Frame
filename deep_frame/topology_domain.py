@@ -177,7 +177,12 @@ def _component_regions(parameters, settings, grid):
         width, length = settings["camera_contact_width_mm"], settings["camera_contact_length_mm"]
         regions.append(_box(f"camera_impact_contact_{sign}", "preserve", [x - width / 2, f["camera_y_mm"] - length / 2, f["cage_height_mm"] - depth], [x + width / 2, f["camera_y_mm"] + length / 2, f["cage_height_mm"]], "Two local protective impact contacts, without a predefined cage", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
         regions.append(_cylinder(f"camera_mount_{sign}", "preserve", [x, f["camera_y_mm"], camera_mount_z(parameters)], 4.0, width, "Local camera screw lug; no prescribed connecting wall", axis="x", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
-    regions.append(_cylinder("camera_screw_axis", "forbidden", [0, f["camera_y_mm"], camera_mount_z(parameters)], f["camera_screw_diameter_mm"] / 2, camera_width + 2 * settings["camera_contact_width_mm"] + 20, "Camera side screw and screwdriver access", axis="x", rasterize=False))
+    lug_end = camera_width / 2 + settings["camera_contact_width_mm"]
+    regions.append(_cylinder("camera_screw_axis", "forbidden", [0, f["camera_y_mm"], camera_mount_z(parameters)], f["camera_screw_diameter_mm"] / 2, 2 * lug_end, "Camera screw bore limited to exact mounting lugs", axis="x", rasterize=False))
+    for sign in (-1, 1):
+        end = upper[0] + 1 if sign > 0 else origin[0] - 1
+        length = abs(end - sign * lug_end)
+        regions.append(_cylinder(f"camera_tool_access_{sign}", "forbidden", [(end + sign * lug_end) / 2, f["camera_y_mm"], camera_mount_z(parameters)], settings["camera_tool_radius_mm"], length, "Conservative outboard screwdriver corridor; no subvoxel cut through free material", axis="x"))
     camera_box = components["camera"]["shape"].bounding_box()
     regions.append(_box("camera_front_access", "forbidden", [camera_box.min.X - clearance, camera_box.max.Y, camera_box.min.Z - clearance], [camera_box.max.X + clearance, upper[1] + 1, camera_box.max.Z + clearance], "Unobstructed camera front, insertion and lens field corridor"))
     for name in ("xt30", "balancer"):
@@ -186,7 +191,9 @@ def _component_regions(parameters, settings, grid):
         regions.append(_box(name + "_contact", "preserve", [position[0] - width / 2, position[1] - length / 2 - depth, 0], [position[0] + width / 2, position[1] + length / 2 + depth, position[2]], "Local connector seat with exposed retention ends for tie or adhesive", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
         regions.append(_box(name + "_plug_access", "forbidden", [position[0] - width / 2 - clearance, position[1] - length / 2 - clearance, position[2]], [position[0] + width / 2 + clearance, position[1] + length / 2 + clearance, upper[2] + 1], "Top insertion and removal corridor for disconnected connector"))
     regions.append(_cylinder("antenna_contact", "preserve", [0, -f["antenna_y_mm"], f["antenna_holder_height_mm"] / 2], f["antenna_bore_mm"] / 2 + 2, f["antenna_holder_height_mm"], "Local antenna retention eyelet, not a prescribed tail", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
-    regions.append(_cylinder("antenna_bore", "forbidden", [0, -f["antenna_y_mm"], f["antenna_holder_height_mm"] / 2], f["antenna_bore_mm"] / 2, f["antenna_holder_height_mm"] + 2, "VTX antenna bore and axial assembly access", rasterize=False))
+    regions.append(_cylinder("antenna_bore", "forbidden", [0, -f["antenna_y_mm"], upper[2] / 2], f["antenna_bore_mm"] / 2, upper[2] + 2, "VTX antenna through bore continuing above every design cell", rasterize=False))
+    antenna_access_height = upper[2] + 1 - f["antenna_holder_height_mm"]
+    regions.append(_cylinder("antenna_insertion_access", "forbidden", [0, -f["antenna_y_mm"], f["antenna_holder_height_mm"] + antenna_access_height / 2], f["antenna_bore_mm"] / 2, antenna_access_height, "Conservative antenna insertion corridor above the exact retention eyelet"))
     regions.append(_box("aio_side_assembly_access", "forbidden", [0, -c["aio15"]["length_mm"] / 2 - clearance, placements["aio15"]["position"][2]], [upper[0] + 1, c["aio15"]["length_mm"] / 2 + clearance, placements["aio15"]["position"][2] + c["aio15"]["stack_height_mm"] + clearance], "AIO insertion/removal through right side with connectors unplugged"))
     regions.append(_box("balance_lead_routing", "forbidden", [f["connector_offset_x_mm"] - 2, -f["connector_y_mm"], 8], [f["connector_offset_x_mm"] + 2, -c["aio15"]["length_mm"] / 2, 12], "Accessible balance and power lead corridor; provisional connector routing"))
     return regions, placements, components
