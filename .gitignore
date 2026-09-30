@@ -19,3 +19,4 @@ env/
 *.[sS][tT][lL]
 /exports/frame_v0.json
 /exports/topology/
+/exports/topology_solver_*/
