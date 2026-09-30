@@ -257,7 +257,7 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
     manifest["constraint_interpretation"] = "Predeclared Phase-1 engineering screens; neither flightworthiness nor real-print crash strength is certified."
     manifest["selection_policy"] = "Feasible five-objective Pareto set; selected candidate minimizes mass_ratio + 1/stiffness_ratio + 1/frequency_ratio + displacement_ratio + stress_ratio."
     baseline_record = manifest.get("baseline")
-    if not baseline_record or not _valid_artifacts(baseline_record, directory):
+    if not baseline_record or "fea.json" not in baseline_record.get("artifacts", {}) or not _valid_artifacts(baseline_record, directory):
         baseline_dir = directory / "baseline"
         baseline_dir.mkdir(exist_ok=True)
         baseline_settings = deepcopy(fea_settings)
@@ -275,7 +275,8 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
         baseline_record = {"result": baseline_result, "artifacts": artifacts}
         manifest["baseline"] = baseline_record
         _save(manifest_path, manifest)
-    baseline = baseline_record["result"]
+    baseline = json.loads((directory / baseline_record["artifacts"]["fea.json"]["path"]).read_text(encoding="utf-8"))
+    baseline_record["result"] = baseline
     try:
         _verify_cases(baseline, comparison_cases)
     except ValueError as error:
@@ -310,7 +311,10 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
         for index, threshold in enumerate(config["density_thresholds"]):
             candidate_id = variant_name + f"_t{index:02d}"
             previous = next((entry for entry in manifest["candidates"] if entry["id"] == candidate_id), None)
-            if previous and _valid_artifacts(previous, directory):
+            if previous and "record" in previous.get("artifacts", {}) and _valid_artifacts(previous, directory):
+                canonical = json.loads((directory / previous["artifacts"]["record"]["path"]).read_text(encoding="utf-8"))
+                canonical["artifacts"]["record"] = previous["artifacts"]["record"]
+                manifest["candidates"] = [entry for entry in manifest["candidates"] if entry["id"] != candidate_id] + [canonical]
                 continue
             candidate_dir = directory / "candidates" / candidate_id
             candidate_dir.mkdir(parents=True, exist_ok=True)
@@ -320,13 +324,13 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
             try:
                 solid = reconstructor(deepcopy(domain), result["density"].copy(), deepcopy(reconstruction_settings))
                 current["reconstruction"] = deepcopy(getattr(solid, "topology_report", {}))
-                current["checks"] = validator(solid, deepcopy(domain), deepcopy(reconstruction_settings))
-                if not current["checks"].get("passed", False):
-                    raise ValueError("Geometry/manufacturing validation failed: " + "; ".join(current["checks"].get("violations", [])))
                 current["frame_mass_g"] = float(solid.volume * domain["material"]["density_g_cm3"] / 1000)
                 export_step(solid, candidate_dir / "geometry.step")
                 export_stl(solid, candidate_dir / "geometry.stl")
                 current["artifacts"].update({name: _artifact(candidate_dir / name, directory) for name in ("geometry.step", "geometry.stl")})
+                current["checks"] = validator(solid, deepcopy(domain), deepcopy(reconstruction_settings))
+                if not current["checks"].get("passed", False):
+                    raise ValueError("Geometry/manufacturing validation failed: " + "; ".join(current["checks"].get("violations", [])))
                 if current["frame_mass_g"] > config["relative_constraints"]["frame_mass_ratio_max"] * baseline["frame_mass_g"]:
                     current["stage"] = "mass_constraint"
                     raise ValueError("Exact CAD frame mass exceeds the predeclared baseline-relative limit")
