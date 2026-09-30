@@ -22,6 +22,7 @@ DEFAULT_SETTINGS = {
     "minimum_design_density": 1e-3,
     "case_weights": {},
     "max_runtime_s": None,
+    "interface_node_policy": "allowed_adjacent",
 }
 
 
@@ -45,6 +46,8 @@ def _settings(settings):
         raise ValueError("Invalid density projection settings")
     if result["max_runtime_s"] is not None and (not np.isfinite(result["max_runtime_s"]) or result["max_runtime_s"] <= 0):
         raise ValueError("max_runtime_s must be positive or None")
+    if result["interface_node_policy"] not in ("allowed_adjacent", "preserve_adjacent"):
+        raise ValueError("Invalid topology interface_node_policy")
     return result
 
 
@@ -200,7 +203,7 @@ def optimize_topology(domain, settings):
         if np.count_nonzero(mapping.preserve) >= target:
             raise ValueError("The volume budget must exceed the preserve-cell volume")
         design = mapping.initial(target)
-        system = HexElasticity(domain)
+        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"])
         scales = None
         converged = False
         stop_reason = "max_iterations"
