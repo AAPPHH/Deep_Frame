@@ -99,6 +99,10 @@ def test_loads_mass_and_fair_local_fixture_contract(domain):
     for case in cases.values():
         for fixture in case["fixed_regions"]:
             assert fixture["max_mm"][2] < 0.1
+    weights = domain["optimizer_settings"]["case_weights"]
+    primary = sum(value for name, value in weights.items() if not name.startswith("connection_"))
+    auxiliary = sum(value for name, value in weights.items() if name.startswith("connection_"))
+    assert primary / (primary + auxiliary) == pytest.approx(0.9)
 
 
 def test_parameters_are_copied_and_metadata_is_json_safe(domain):
@@ -117,6 +121,17 @@ def test_additional_forbidden_regions_change_free_material(domain):
     changed = build_design_domain(parameters)
     assert changed["allowed"].sum() < domain["allowed"].sum()
     assert np.all(changed["allowed"] <= domain["allowed"])
+
+
+def test_preserve_cuts_are_explicit_and_new_hardware_overlap_is_rejected(domain):
+    declared = domain["metadata"]["declared_preserve_subtractions"]
+    assert declared
+    by_name = {region["name"]: region for region in domain["regions"]}
+    assert all(by_name[pair["forbidden"]]["allow_preserve_subtraction"] for pair in declared)
+    parameters = reference_parameters()
+    parameters["topology"] = {"additional_regions": [{"name": "bad_component", "role": "forbidden", "kind": "box", "min_mm": [-16, -16, 0], "max_mm": [-10, -10, 4], "purpose": "Conflicting new hardware"}]}
+    with pytest.raises(ValueError, match="Undeclared preserve/forbidden overlap"):
+        build_design_domain(parameters)
 
 
 @pytest.mark.parametrize("override", [{"grid": {"spacing_mm": [4, 0, 4]}}, {"grid": {"shape": [3.5, 32, 8]}}, {"grid": {"axis_order": "zyx"}}, {"manufacturing": {"minimum_feature_mm": 1.5}}])
