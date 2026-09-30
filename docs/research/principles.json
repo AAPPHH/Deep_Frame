@@ -1,0 +1,158 @@
+[
+  {
+    "id": "wide_x",
+    "name": "Breiter Motorabstand als Layoutparameter",
+    "scale_independent": true,
+    "adopted": true,
+    "frame_ids": [
+      "gecko_3"
+    ],
+    "rationale": "Dimensionsloses Verhaeltnis112/82 ist uebertragbar; Radstand wird mit 65-mm-Props und Nutzlast neu bestimmt.",
+    "sources": [
+      "https://armattanquads.com/products/gecko-3"
+    ]
+  },
+  {
+    "id": "deck_load_path",
+    "name": "Akkuauflage ueber tragende Struktur an Hauptplatte und Armwurzeln koppeln",
+    "scale_independent": true,
+    "adopted": true,
+    "frame_ids": [
+      "tadpole_2_5",
+      "tadpole_hd_3",
+      "gecko_3"
+    ],
+    "rationale": "Decklasten muessen um die Elektronik in die Arme gelangen. v0 ersetzt verschraubte Kaefig-/Heckpfosten durch zwei durchgehende Waende; das ist eine eigene Druckkonstruktion.",
+    "sources": [
+      "https://armattanquads.com/products/tadpole",
+      "https://armattanquads.com/products/tadpole-hd",
+      "https://armattanquads.com/products/gecko-3"
+    ]
+  },
+  {
+    "id": "camera_cage",
+    "name": "Kamera innerhalb vorgelagerter Schutzstruktur",
+    "scale_independent": true,
+    "adopted": true,
+    "frame_ids": [
+      "tadpole_2_5",
+      "gecko_3",
+      "marmotte_5_standard"
+    ],
+    "rationale": "Kontakt zuerst am Kaefig statt an der Optik ist in jeder Groesse sinnvoll; keine Titanform oder definierte Sollbruchstelle wird kopiert.",
+    "sources": [
+      "https://armattanquads.com/products/tadpole",
+      "https://armattanquads.com/products/gecko-3",
+      "https://armattanquads.com/products/marmotte"
+    ]
+  },
+  {
+    "id": "functional_voids",
+    "name": "Material nach Lastpfad und Bauraum verteilen",
+    "scale_independent": true,
+    "adopted": true,
+    "frame_ids": [
+      "odonata_40mm",
+      "tadpole_2_5"
+    ],
+    "rationale": "Fenster entfernen Material abseits der tragenden Randstege; PA6-CF-Querschnitte muessen separat geprueft werden.",
+    "sources": [
+      "https://armattanquads.com/products/odonata-1",
+      "https://armattanquads.com/products/tadpole"
+    ]
+  },
+  {
+    "id": "tail_routing",
+    "name": "Antenne und Akkuleitungen kontrolliert aus dem Propellerraum fuehren",
+    "scale_independent": true,
+    "adopted": true,
+    "frame_ids": [
+      "odonata_40mm",
+      "gecko_3",
+      "tadpole_2_5"
+    ],
+    "rationale": "Zugentlastung und Freigang sind auch bei2.5Zoll erforderlich; v0 modelliert Heckkanal und Steckerhuellen, noch keine flexiblen Kabel.",
+    "sources": [
+      "https://armattanquads.com/products/odonata-1",
+      "https://armattanquads.com/products/gecko-3",
+      "https://armattanquads.com/products/tadpole"
+    ]
+  },
+  {
+    "id": "component_driven",
+    "name": "Deck und Montagebereich nach Elektronik auslegen",
+    "scale_independent": true,
+    "adopted": true,
+    "frame_ids": [
+      "tadpole_hd_3",
+      "gecko_3"
+    ],
+    "rationale": "Der HD-Ausbau aendert Bauraum statt nur Propellergroesse. AIO15, Lux und63-mm-Akku bestimmen eigene v0-Abmessungen.",
+    "sources": [
+      "https://armattanquads.com/products/tadpole-hd",
+      "https://armattanquads.com/products/gecko-3"
+    ]
+  },
+  {
+    "id": "replaceable_arms",
+    "name": "Demontierbare Arme mit Klemmung und mehreren Schrauben",
+    "scale_independent": false,
+    "adopted": false,
+    "frame_ids": [
+      "badger_5",
+      "rooster_5"
+    ],
+    "rationale": "Bei groesseren Frames rechtfertigen Crashenergie und Reparaturkosten die Befestigungsmasse; beim angefragten Monolith entfaellt diese Reparaturstufe.",
+    "sources": [
+      "https://armattanquads.com/products/badger-1",
+      "https://armattanquads.com/products/rooster-1"
+    ]
+  },
+  {
+    "id": "metal_cage",
+    "name": "Separater Titan-Kaefig und biegbare Aluminium-Cam-Saver",
+    "scale_independent": false,
+    "adopted": false,
+    "frame_ids": [
+      "gecko_3",
+      "marmotte_5_standard"
+    ],
+    "rationale": "Mehrteilige Metallbauweise braucht Schraubensitze und Mindestquerschnitte; auf einen kleinen PA6-CF-Druck nicht geometrisch oder werkstoffseitig skalierbar.",
+    "sources": [
+      "https://armattanquads.com/products/gecko-3",
+      "https://armattanquads.com/products/marmotte"
+    ]
+  },
+  {
+    "id": "carbon_thickness",
+    "name": "CFK-Plattendicken und Carbon-Grade direkt uebernehmen",
+    "scale_independent": false,
+    "adopted": false,
+    "frame_ids": [
+      "tadpole_2_5",
+      "marmotte_5_space_grade",
+      "badger_5"
+    ],
+    "rationale": "CFK-Laminat, Druckanisotropie und Hebellaenge unterscheiden sich.1.5-4-mm-Carbonwerte sind Referenzkennwerte, keine PA6-CF-Festigkeitsfreigabe.",
+    "sources": [
+      "https://armattanquads.com/products/tadpole",
+      "https://armattanquads.com/products/marmotte",
+      "https://armattanquads.com/products/badger-1"
+    ]
+  },
+  {
+    "id": "repair_economics",
+    "name": "Lebenslange Ersatzteilgarantie als Crashkonzept",
+    "scale_independent": false,
+    "adopted": false,
+    "frame_ids": [
+      "odonata_40mm",
+      "gecko_3"
+    ],
+    "rationale": "Lite-Ausnahme und Mehrteilreparatur zeigen produktspezifische Kostenlogik. v0 ist selbst nachdruckbar, bei strukturellem Riss komplett zu ersetzen.",
+    "sources": [
+      "https://armattanquads.com/products/odonata-1",
+      "https://armattanquads.com/products/gecko-3"
+    ]
+  }
+]
