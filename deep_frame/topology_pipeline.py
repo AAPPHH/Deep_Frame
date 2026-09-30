@@ -285,6 +285,7 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
     except ValueError as error:
         manifest.update(status="failed", diagnostics=["Baseline verification: " + str(error)], elapsed_s=perf_counter() - started)
         _save(manifest_path, manifest)
+        _save(Path(config["output_dir"]).resolve() / "latest.json", {"manifest": str(manifest_path), "input_sha256": fingerprint, "status": manifest["status"], "selected_id": None})
         return manifest
     for variant in config["optimizer_variants"]:
         variant_name = variant["name"]
