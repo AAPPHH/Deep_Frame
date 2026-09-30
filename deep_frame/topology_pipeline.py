@@ -2,7 +2,9 @@ import hashlib
 import inspect
 import json
 import math
+import platform
 import subprocess
+import sys
 from copy import deepcopy
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -122,7 +124,7 @@ def _provenance(functions, fea_settings, real_evaluator):
         dirty = bool(subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=source_dir, capture_output=True, text=True, check=True, timeout=10).stdout.strip())
     except (OSError, subprocess.SubprocessError):
         revision, dirty = None, None
-    result = {"packages": packages, "source_sha256": sources, "callbacks": {name: _callable_identity(function) for name, function in functions.items()}, "git_revision": revision, "git_tracked_dirty": dirty}
+    result = {"packages": packages, "python_version": sys.version, "platform": platform.platform(), "source_sha256": sources, "callbacks": {name: _callable_identity(function) for name, function in functions.items()}, "git_revision": revision, "git_tracked_dirty": dirty}
     if real_evaluator:
         result["solver"] = solver_identity(fea_settings)
     return result
@@ -255,6 +257,7 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
     manifest["verification_load_cases"] = comparison_cases
     manifest["comparison_policy"] = "Same material, point masses, physical selectors, loads and mesh settings for v0 and every candidate; additional attachment proof loads remain in the SIMP record."
     manifest["constraint_interpretation"] = "Predeclared Phase-1 engineering screens; neither flightworthiness nor real-print crash strength is certified."
+    manifest["seed_interpretation"] = "Reserved explicit seed for interchangeable generators; current uniform-initialized SIMP and threshold schedule are deterministic and do not sample random numbers."
     manifest["selection_policy"] = "Feasible five-objective Pareto set; selected candidate minimizes mass_ratio + 1/stiffness_ratio + 1/frequency_ratio + displacement_ratio + stress_ratio."
     baseline_record = manifest.get("baseline")
     if not baseline_record or "fea.json" not in baseline_record.get("artifacts", {}) or not _valid_artifacts(baseline_record, directory):
