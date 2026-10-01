@@ -1,3 +1,4 @@
+import hashlib
 import json
 import math
 import os
@@ -6,11 +7,17 @@ import shutil
 import subprocess
 import sys
 import time
+from copy import deepcopy
+from importlib.metadata import version
 from pathlib import Path
 from tempfile import mkdtemp
 
 import numpy as np
-from build123d import export_step
+
+if __name__ != "__main__":
+    from build123d import export_step
+
+    from deep_frame.frame import assembly_placements, build_components, build_geometry, motor_positions
 
 
 def resolve_solver(settings):
@@ -35,6 +42,7 @@ def _run(command, directory, timeout, threads, log_path):
     environment.update({"OMP_NUM_THREADS": str(threads), "CCX_NPROC_RESULTS": str(threads),
                         "CCX_NPROC_STIFFNESS": str(threads), "CCX_NPROC_EQUATION_SOLVER": str(threads),
                         "NUMBER_OF_CPUS": str(threads)})
+    environment["PYTHONPATH"] = os.pathsep.join(filter(None, [str(Path(__file__).resolve().parents[1]), environment.get("PYTHONPATH")]))
     flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
     with Path(log_path).open("w", encoding="utf-8") as log:
         completed = subprocess.run(command, cwd=directory, stdout=log, stderr=subprocess.STDOUT, env=environment, timeout=timeout, creationflags=flags)
@@ -276,7 +284,7 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         request = {"step_path": str(step_path), "output_dir": str(directory), "settings": settings}
         request_path = directory / "mesh_request.json"
         request_path.write_text(json.dumps(request), encoding="utf-8")
-        _run([sys.executable, str(Path(__file__).with_name("fea_mesh.py")), str(request_path)], directory, settings.get("mesh_timeout_s", 180), settings.get("threads", 2), directory / "gmsh.log")
+        _run([sys.executable, "-m", "deep_frame.fea", str(request_path)], directory, settings.get("mesh_timeout_s", 180), settings.get("threads", 2), directory / "gmsh.log")
         nodes, elements = _read_mesh(directory / "mesh.inp")
         result["mesh"] = json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8"))
         result["mesh"]["node_count"] = len(nodes)
@@ -327,3 +335,187 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         result["artifacts"]["result"] = str(directory / "result.json")
         (directory / "result.json").write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     return result
+
+
+def generate_mesh(request_path):
+    import gmsh
+
+    request = json.loads(Path(request_path).read_text(encoding="utf-8"))
+    settings = request["settings"]
+    destination = Path(request["output_dir"])
+    gmsh.initialize()
+    try:
+        gmsh.option.setNumber("General.Terminal", 0)
+        gmsh.option.setNumber("General.NumThreads", settings.get("mesh_threads", 1))
+        gmsh.option.setNumber("Mesh.MeshSizeMax", settings["mesh_size_mm"])
+        gmsh.option.setNumber("Mesh.MeshSizeMin", settings.get("mesh_min_size_mm", 0.0))
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", settings.get("mesh_curvature_points", 12))
+        gmsh.option.setNumber("Mesh.Algorithm3D", 1)
+        gmsh.option.setNumber("Mesh.RandomSeed", 1)
+        second_order_linear = settings.get("mesh_second_order_linear", False)
+        high_order_optimize = settings.get("mesh_high_order_optimize", 0)
+        if not isinstance(second_order_linear, bool) or high_order_optimize not in (0, 1, 2, 3, 4):
+            raise ValueError("Explicit boolean mesh_second_order_linear and optimization mode 0..4 required")
+        gmsh.option.setNumber("Mesh.SecondOrderLinear", int(second_order_linear))
+        gmsh.model.add("frame")
+        gmsh.model.occ.importShapes(request["step_path"])
+        gmsh.model.occ.synchronize()
+        volumes = gmsh.model.getEntities(3)
+        if len(volumes) != 1:
+            raise ValueError("The STEP input must contain exactly one volume")
+        gmsh.model.addPhysicalGroup(3, [volumes[0][1]], name="FRAME")
+        gmsh.model.mesh.generate(3)
+        gmsh.model.mesh.setOrder(2)
+        if high_order_optimize in (2, 3):
+            gmsh.model.mesh.optimize("HighOrderElastic")
+        if high_order_optimize in (1, 2):
+            gmsh.model.mesh.optimize("HighOrder")
+        if high_order_optimize == 4:
+            gmsh.model.mesh.optimize("HighOrderFastCurving")
+        types, tags, _ = gmsh.model.mesh.getElements(3)
+        if list(types) != [11] or not len(tags[0]):
+            raise ValueError("The volume mesh must consist of C3D10 tetrahedra")
+        quality = gmsh.model.mesh.getElementQualities(tags[0], "minDetJac")
+        if not np.all(np.isfinite(quality)) or np.min(quality) <= 0:
+            raise ValueError("The mesh contains a non-positive Jacobian")
+        gmsh.write(str(destination / "mesh.inp"))
+        gmsh.write(str(destination / "mesh.msh"))
+        metadata = {
+            "gmsh_version": gmsh.__version__,
+            "element_type": "C3D10",
+            "element_count": len(tags[0]),
+            "minimum_jacobian_mm3": float(np.min(quality)),
+            "mesh_size_mm": settings["mesh_size_mm"],
+            "second_order_linear": second_order_linear,
+            "high_order_optimize": high_order_optimize,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes" if second_order_linear else "quadratic boundary nodes projected to CAD",
+        }
+        (destination / "mesh_metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+    finally:
+        gmsh.finalize()
+
+
+def _box(minimum, maximum):
+    return {"kind": "box", "min_mm": list(minimum), "max_mm": list(maximum)}
+
+
+def _digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
+
+
+def solver_identity(settings):
+    executable = resolve_solver(settings)
+    flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+    completed = subprocess.run([executable, "-v"], capture_output=True, text=True, timeout=10, creationflags=flags)
+    match = re.search(r"Version\s+([\d.]+)", completed.stdout + completed.stderr)
+    if not match:
+        raise RuntimeError("CalculiX version could not be identified")
+    return {
+        "solver_path": executable,
+        "calculix_version": match.group(1),
+        "calculix_sha256": hashlib.sha256(Path(executable).read_bytes()).hexdigest(),
+        "gmsh_version": version("gmsh"),
+        "build123d_version": version("build123d"),
+        "ocp_version": version("cadquery-ocp-novtk"),
+    }
+
+
+def prepare_frame_case(parameters, fea_config=None, integration_config=None):
+    fea = deepcopy(fea_config if fea_config is not None else parameters["fea"])
+    integration = deepcopy(integration_config if integration_config is not None else parameters["integration"])
+    frame = parameters["frame"]
+    if parameters["material"]["density_g_cm3"] != fea["material"]["density_g_cm3"]:
+        raise ValueError("Geometry and FEA material densities must agree")
+    for key, value in integration.items():
+        if isinstance(value, (int, float)) and (not math.isfinite(value) or (value <= 0 and key != "battery_attachment_y_mm")):
+            raise ValueError(f"Integration setting {key} must be finite and positive")
+    for key in ("central_fixture_fraction", "camera_upper_height_fraction", "camera_length_fraction"):
+        if integration[key] > 1:
+            raise ValueError(f"Integration setting {key} must not exceed one")
+    tolerance = integration["selection_tolerance_mm"]
+    motors = motor_positions(parameters)
+    pad_half = frame["motor_pad_radius_mm"] + integration["motor_pad_margin_mm"]
+    motor_fixtures = [_box((x - pad_half, y - pad_half, -tolerance), (x + pad_half, y + pad_half, tolerance)) for x, y in motors.values()]
+    fraction = integration["central_fixture_fraction"]
+    central_fixture = _box(
+        (-frame["body_width_mm"] * fraction / 2, -frame["body_length_mm"] * fraction / 2, -tolerance),
+        (frame["body_width_mm"] * fraction / 2, frame["body_length_mm"] * fraction / 2, tolerance),
+    )
+    x, y = motors[integration["arm_tip_motor"]]
+    arm_region = _box((x - pad_half, y - pad_half, frame["arm_height_mm"] - tolerance), (x + pad_half, y + pad_half, frame["arm_height_mm"] + tolerance))
+    deck_half_width = frame["deck_width_mm"] / 2 + integration["battery_attachment_margin_mm"]
+    band_half_width = integration["battery_attachment_band_width_mm"] / 2
+    band_y = integration["battery_attachment_y_mm"]
+    deck_region = _box(
+        (-deck_half_width, band_y - band_half_width, frame["deck_top_mm"] - tolerance),
+        (deck_half_width, band_y + band_half_width, frame["deck_top_mm"] + tolerance),
+    )
+    camera_half_width = (parameters["components"]["camera"]["width_mm"] + 2 * frame["camera_side_clearance_mm"] + 2 * frame["minimum_wall_mm"]) / 2
+    camera_half_length = frame["cage_length_mm"] * integration["camera_length_fraction"] / 2
+    camera_region = _box(
+        (-camera_half_width - tolerance, frame["camera_y_mm"] - camera_half_length, frame["cage_height_mm"] * (1 - integration["camera_upper_height_fraction"])),
+        (camera_half_width + tolerance, frame["camera_y_mm"] + camera_half_length, frame["cage_height_mm"] + tolerance),
+    )
+    battery = build_components(parameters, assembly_placements(parameters))["battery"]
+    mass = {
+        "name": "battery",
+        "mass_g": battery["mass_g"],
+        "position_mm": list(battery["center_of_mass_mm"]),
+        "attachment_region": deck_region,
+    }
+    impact = mass["mass_g"] / 1000 * integration["standard_gravity_m_s2"] * integration["battery_impact_g_factor"]
+    load_cases = [
+        {"name": "arm_tip", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": arm_region, "force_n": [0.0, 0.0, -integration["arm_tip_force_n"]]}]},
+        {"name": "battery_impact", "analysis": "static", "fixed_regions": motor_fixtures, "loads": [{"region": deck_region, "force_n": [0.0, 0.0, -impact]}]},
+        {"name": "camera_side", "analysis": "static", "fixed_regions": motor_fixtures, "loads": [{"region": camera_region, "force_n": [integration["camera_side_force_n"], 0.0, 0.0]}]},
+        {"name": "modes", "analysis": "modal", "fixed_regions": motor_fixtures},
+    ]
+    fea["settings"]["stiffness_load_case"] = "arm_tip"
+    result = {
+        "material": fea["material"],
+        "point_masses": [mass],
+        "load_cases": load_cases,
+        "settings": fea["settings"],
+        "integration": integration,
+        "mass_scope": "frame plus battery point mass; motors, props, camera and AIO excluded from FEA",
+        "fixture_model": "arm: central base bottom rim fixed; other cases: four motor pad bottom surfaces fixed",
+        "coupling_model": "battery COM rigidly coupled to a narrow transverse band of the deck rails; local patch deformation suppressed; no battery rotational inertia",
+        "impact_model": "equivalent static force, not a transient impact or crash strength prediction",
+    }
+    return json.loads(json.dumps(result, allow_nan=False))
+
+
+class FrameEvaluator:
+    def __init__(self, reference_parameters, fea_config=None, integration_config=None):
+        self.fea_config = deepcopy(fea_config if fea_config is not None else reference_parameters["fea"])
+        self.integration_config = deepcopy(integration_config if integration_config is not None else reference_parameters["integration"])
+        self.toolchain = solver_identity(self.fea_config["settings"])
+        self.fea_config["settings"]["solver_path"] = self.toolchain["solver_path"]
+        reference_case = prepare_frame_case(reference_parameters, self.fea_config, self.integration_config)
+        physical_settings = {key: value for key, value in self.fea_config["settings"].items() if key not in ("work_dir", "solver_path")}
+        directory = Path(__file__).resolve().parent
+        sources = {name: hashlib.sha256((directory / name).read_text(encoding="utf-8").encode()).hexdigest() for name in ("fea.py", "frame.py")}
+        self.evaluation_contract = {
+            "model_version": self.integration_config["model_version"],
+            "material": self.fea_config["material"],
+            "integration": self.integration_config,
+            "settings": physical_settings,
+            "reference_point_masses": reference_case["point_masses"],
+            "reference_load_cases": reference_case["load_cases"],
+            "toolchain": {key: value for key, value in self.toolchain.items() if key != "solver_path"},
+            "source_sha256": sources,
+        }
+        self.evaluation_id = self.integration_config["model_version"] + ":" + _digest(self.evaluation_contract)
+
+    def __call__(self, parameters):
+        model = prepare_frame_case(parameters, self.fea_config, self.integration_config)
+        solid = build_geometry(parameters)
+        result = evaluate(solid, model["material"], model["point_masses"], model["load_cases"], model["settings"])
+        result["evaluation_id"] = self.evaluation_id
+        result["model_inputs"] = model
+        result["evaluation_contract"] = deepcopy(self.evaluation_contract)
+        return json.loads(json.dumps(result, allow_nan=False))
+
+
+if __name__ == "__main__":
+    generate_mesh(sys.argv[1])

@@ -5,9 +5,6 @@ import math
 from copy import deepcopy
 from pathlib import Path
 
-import optuna
-from optuna.trial import TrialState
-
 
 CONSTRAINT_METRICS = {
     "mass_ratio_max": ("mass_g", "max"),
@@ -189,6 +186,8 @@ def _prepare_storage(storage):
 
 
 def _validate_contract(reference_parameters, search_space, settings):
+    import optuna
+
     for path, specification in search_space.items():
         _get(reference_parameters, path)
         if "choices" in specification:
@@ -221,6 +220,9 @@ def _validate_contract(reference_parameters, search_space, settings):
 
 
 def _optimize(reference_parameters, search_space, evaluator, validator, settings):
+    import optuna
+    from optuna.trial import TrialState
+
     _validate_contract(reference_parameters, search_space, settings)
     contract = _json_copy({
         "version": 1,
@@ -343,9 +345,27 @@ def _optimize(reference_parameters, search_space, evaluator, validator, settings
 
 
 def optimize(reference_parameters, search_space, evaluator, validator, settings):
+    import optuna
+
     previous_verbosity = optuna.logging.get_verbosity()
     optuna.logging.set_verbosity(optuna.logging.ERROR)
     try:
         return _optimize(_json_copy(reference_parameters), _json_copy(search_space), evaluator, validator, _json_copy(settings))
     finally:
         optuna.logging.set_verbosity(previous_verbosity)
+
+
+def show_candidates(candidates, build_geometry, show=None, viewer_settings=None):
+    if show is None:
+        from ocp_vscode import show
+    if not candidates:
+        raise ValueError("At least one Pareto candidate is required")
+    shapes = []
+    names = []
+    for candidate in candidates:
+        if candidate.get("outcome") != "valid":
+            raise ValueError("Only valid candidates can be displayed")
+        shapes.append(build_geometry(deepcopy(candidate["parameters"])))
+        names.append(f"Trial {candidate['number']}")
+    show(*shapes, names=names, **(viewer_settings or {}))
+    return {"displayed_trials": [candidate["number"] for candidate in candidates]}

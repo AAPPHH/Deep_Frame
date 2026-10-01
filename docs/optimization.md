@@ -1,6 +1,6 @@
 # Parametrische Optimierung
 
-`deep_frame.optimization.optimize(reference_parameters, search_space, evaluator, validator, settings)` arbeitet ausschliesslich mit Dictionaries. Der Kern importiert weder build123d noch FEA. Der Austausch zwischen Geometrie, Solver und Optimierer folgt [interfaces.md](interfaces.md). Die Beispielkonfiguration steht in `deep_frame/optimization_config.py`; `requirements-optimization.txt` fixiert Optuna 5.0.0. Installation in der jeweiligen Umgebung:
+`deep_frame.optimization.optimize(reference_parameters, search_space, evaluator, validator, settings)` arbeitet ausschliesslich mit Dictionaries. Der Kern importiert weder build123d noch FEA. Der Austausch zwischen Geometrie, Solver und Optimierer folgt [interfaces.md](interfaces.md). Die Beispielkonfiguration steht in `OPTIMIZATION_CONFIG` und `SEARCH_SPACE` von `deep_frame/config.py`; `requirements-optimization.txt` fixiert Optuna 5.0.0. Installation in der jeweiligen Umgebung:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-optimization.txt
@@ -45,7 +45,7 @@ Der Seed macht einen ununterbrochenen Lauf mit gleichem Trial-Budget reproduzier
 
 ## Viewer und analytische Abnahme
 
-`deep_frame.optimization_viewer.show_candidates(candidates, build_geometry, show=None, viewer_settings=None)` ist ein separater Adapter. Er rekonstruiert ausschliesslich gueltige Parameter-Dicts ueber die injizierte Geometriefunktion und zeigt sie mit Trial-Namen im OCP CAD Viewer an. Der Kern bleibt ohne Viewer-Abhaengigkeit. Fuer einen direkten Vergleich gleicher Koordinaten koennen die einzelnen Trial-Objekte im Viewer ein- und ausgeblendet werden.
+`deep_frame.optimization.show_candidates(candidates, build_geometry, show=None, viewer_settings=None)` ist ein separater Adapter im selben Modul; `ocp_vscode` wird erst in dieser Funktion importiert. Er rekonstruiert ausschliesslich gueltige Parameter-Dicts ueber die injizierte Geometriefunktion und zeigt sie mit Trial-Namen im OCP CAD Viewer an. Der Kern bleibt ohne Viewer-Abhaengigkeit. Fuer einen direkten Vergleich gleicher Koordinaten koennen die einzelnen Trial-Objekte im Viewer ein- und ausgeblendet werden.
 
 Der Abnahmetest verwendet einen einseitig eingespannten Euler-Bernoulli-Balken mit 10 × 3 mm Querschnitt, 1 N Endkraft, 3,4 GPa Modul und 1090 kg/m³ Dichte. Diese Werte sind Testkonstanten, keine zusaetzliche Materialfreigabe. Bei variabler Laenge L von 40 bis 100 mm gilt Masse proportional L, Steifigkeit proportional 1/L³ und erste Eigenfrequenz proportional 1/L². Damit dominiert L = 40 mm jedes laengere Design und ist das bekannte gemeinsame Optimum aller drei Ziele. Ohne vorgegebenen Gewinner findet der feste Seed in 30 Trials genau dieses Optimum. Gegen L = 100 mm betragen die erwarteten Verhaeltnisse 0,4 fuer Masse, 15,625 fuer Steifigkeit und 6,25 fuer Frequenz. Die Toleranz fuer die diskrete Optimumslaenge betraegt 10⁻¹² mm; die analytischen Kennwertverhaeltnisse verwenden die numerische pytest-Approximation.
 

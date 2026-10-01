@@ -27,8 +27,7 @@ from OCP.collections import List_TopoDS_Shape
 from rtree import index as rtree_index
 from scipy.ndimage import generate_binary_structure, label
 
-from deep_frame.topology_geometry import _compound, _volume, region_shape
-from deep_frame.topology_validation import _primitive_wall_checks
+from deep_frame.topology_geometry import _compound, _primitive_wall_checks, _volume, region_shape
 
 
 SURFACE_VALIDATION_SETTINGS = {

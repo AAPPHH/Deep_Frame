@@ -51,3 +51,17 @@ Vor der unabhaengigen FEA muessen exakte Preserve-/Forbidden-Geometrie, Komponen
 `density` ist das physische Feld, `design_density` das ungefilterte Optimierungsfeld. Der externe Persistenzadapter speichert beide nach Bedarf als NPZ; fuer Reproduktion aus Domain und Settings reicht die deterministische uniforme Initialisierung. `summary` und `history` enthalten Settings, Methodik, Materialeinheiten, Gitter-/Freiheitsgradzahlen, Auswahlabweichungen, normalisierte Fallgewichte, Anfangscompliances, Einzelcompliances pro Iteration, Ziel, Dichtesumme, Aenderung, Restfehler, Zeit und Konvergenzstatus. Finalwerte enthalten Dichtevolumen/-masse sowie Verschiebungs-/Spannungs-/Steifigkeitsdiagnostik pro statischem Fall. Die unabhaengigen CAD-/FEA-Ergebnisse werden getrennt davon gespeichert.
 
 Noch nicht enthalten sind garantierte globale Optimalitaet, automatische Netzkonvergenz, adaptive Gitter, robuste erosion/dilation-Optimierung, orientierte Druckanisotropie, Supportvolumen-Minimierung, Ermuedung, nichtlineare Aufprallphysik und Spannungs-/Eigenfrequenzgradienten im inneren SIMP-Loop. Die Methode kann lokale Optima und graue Zwischenmaterialien erzeugen; unterschiedliche Volumenbudgets, Lastgewichte und Schwellen liefern unterschiedliche Kandidaten. Fehlerhafte oder nicht verifizierbare Kandidaten bleiben als solche erhalten.
+
+## Optionaler GPU-Loeser
+
+Der Hex8-Solver waehlt das lineare Gleichungssystem ueber `settings.linear_solver`. Standard ist `cpu_superlu` mit SciPy SuperLU. `cuda_cudss` faktorisiert und loest die reduzierten symmetrisch positiv definiten Systeme mit mehreren rechten Seiten in FP64 ueber NVIDIA cuDSS 0.8; der Adapter `CudaDirectSolver` liegt im selben Modul `deep_frame/topology_optimization.py`. CuPy und die cuDSS-Bibliothek werden erst bei dieser Auswahl geladen. Ohne die optionale Umgebung aus `requirements-gpu.txt` scheitert nur `cuda_cudss`; die CPU-Standardeinstellung benoetigt keine GPU-Pakete. Assembly, Gradienten, Filter, Projektion und OC-Update bleiben auf der CPU und sind fuer beide Loeser identisch.
+
+Jede Einspanngruppe besitzt ein eigenes cuDSS-Objekt. Die Symbolanalyse wird nur bei identischem Matrixmuster wiederverwendet; jede Neuanalyse wird gezaehlt und mit den Geraete-/Versionsangaben unter `summary.system` (`linear_solver`, `gpu_symbolic_reanalyses`, `gpu_solver_details`) gespeichert. Nach jedem GPU-Solve berechnet die CPU den Residualvektor der identischen Steifigkeitsmatrix; die Grenze betraegt `1e-8` statt `1e-4` im CPU-Pfad. Ein GPU-Fehler fuehrt zu `status: failed`, es gibt keinen stillen Rueckfall auf die CPU.
+
+Messungen, Hardware, Gleichheitsnachweise und der laengere 708-Update-Lauf stehen in [workstation_gpu.md](validation/workstation_gpu.md). Mit den zusammengefassten Studienwerkzeugen lauten die dort dokumentierten Aufrufe aus dem Repository mit dem GPU-Interpreter; Ausgabeverzeichnisse muessen neu sein:
+
+```powershell
+$gpuPython = 'C:\clones\Deep_Frame-gpu\.venv\Scripts\python.exe'
+& $gpuPython -m tools.gpu_benchmark benchmark --source docs/validation/workstation_density_study/grid8over3_iter150 --output exports/topology/gpu_replay/three_updates
+& $gpuPython -m tools.topology_study run --directory exports/topology/gpu_replay/grid8over3_gpu1000 --shape 51 48 12 --max-iterations 1000 --max-runtime-s 1200 --change-tolerance 0.005 --linear-solver cuda_cudss
+```

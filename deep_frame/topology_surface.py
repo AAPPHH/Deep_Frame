@@ -15,8 +15,7 @@ from scipy.ndimage import distance_transform_edt, gaussian_filter, grey_opening,
 from scipy.interpolate import PchipInterpolator
 from skimage.measure import marching_cubes
 
-from .topology_geometry import region_shape
-from .topology_domain import region_bounds, region_contains
+from .topology_geometry import region_bounds, region_contains, region_shape
 
 
 class SurfaceReconstructionError(ValueError):

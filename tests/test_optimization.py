@@ -5,8 +5,7 @@ from copy import deepcopy
 
 import pytest
 
-from deep_frame.optimization import EvaluationFailure, check_printability, optimize
-from deep_frame.optimization_viewer import show_candidates
+from deep_frame.optimization import EvaluationFailure, check_printability, optimize, show_candidates
 
 
 def beam_result(parameters):

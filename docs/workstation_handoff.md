@@ -2,7 +2,7 @@
 
 Phase 1 ist ein geeigneter abgeschlossener Zwischenstand. Der eingefrorene Quellstand ist [Tag `phase1-workstation-2026-09-30`](https://github.com/AAPPHH/Deep_Frame/tree/phase1-workstation-2026-09-30), Commit `938bbdfc42a8ca04887fdc494fd6b0c4b5cb6061`. Der vollstaendige akzeptierte Lauf heisst `2cd7bcbc15b67fc7`.
 
-**Freigabestatus:** 124 Tests bestanden; ein gueltiger Kandidat `default_t00`, fuenf verworfene Kandidaten; alle vorab festgelegten Geometrie-, Fertigungs- und mechanischen Grenzen erfuellt. 45 SIMP-Updates enden am Iterationslimit, ohne formale Dichtekonvergenz. Der akzeptierte Frame wiegt 58.5318 g. Details stehen im Quellpaket unter `docs/topology_phase1.md`. Dieser Stand wird zur Uebergabe nicht weiter optimiert.
+**Freigabestatus:** 124 Tests bestanden; ein gueltiger Kandidat `default_t00`, fuenf verworfene Kandidaten; alle vorab festgelegten Geometrie-, Fertigungs- und mechanischen Grenzen erfuellt. 45 SIMP-Updates enden am Iterationslimit, ohne formale Dichtekonvergenz. Der akzeptierte Frame wiegt 58.5318 g. Details stehen im Quellpaket unter `docs/topology_phase1.md`; im aktuellen Stand ist dieser Bericht Teil von [topology_pipeline.md](topology_pipeline.md#phase-1-freie-klassische-3d-topologieoptimierung). Dieser Stand wird zur Uebergabe nicht weiter optimiert.
 
 ## Paket und Integritaet
 
@@ -64,7 +64,7 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -B -c "from deep_frame.fea_config import FEA_CONFIG; from deep_frame.integration import solver_identity; print(solver_identity(FEA_CONFIG['settings']))"
 ```
 
-Der vorhandene Windows-Installer laedt das dokumentierte CalculiX-2.22-Archiv und prueft dessen Hash. Die letzten drei Befehle pruefen Pakete, native Imports und Solveridentitaet; sie starten keine neue Optimierung oder FEA. OCP CAD Viewer in VS Code ist fuer interaktive Ansichten erforderlich, fuer die Rechenpipeline nicht.
+Der vorhandene Windows-Installer laedt das dokumentierte CalculiX-2.22-Archiv und prueft dessen Hash. Die letzten drei Befehle pruefen Pakete, native Imports und Solveridentitaet; sie starten keine neue Optimierung oder FEA. OCP CAD Viewer in VS Code ist fuer interaktive Ansichten erforderlich, fuer die Rechenpipeline nicht. Die Befehle gelten fuer den eingefrorenen Tag `phase1-workstation-2026-09-30`; im aktuellen Stand lautet die Identitaetspruefung `from deep_frame.config import FEA_CONFIG; from deep_frame.fea import solver_identity`.
 
 ## Linux-Hinweise
 
@@ -87,7 +87,7 @@ python3.13 -m venv .venv
 
 Eine neue Maschine erzeugt normalerweise einen **neuen Run-Fingerprint**, auch bei unveraenderten Parametern: Solverpfad und Binary-Hash, Python-Version, Plattform, Pakete und tatsaechliche Quellbytes gehen in die Provenienz ein. Git-Zeilenenden koennen sich zwischen Windows und Linux ebenfalls unterscheiden. Exaktes Resume ist nur bei identischer Provenienz und intakten Artefakten moeglich; ein neuer Run ist sonst das vorgesehene Verhalten. Den archivierten akzeptierten Lauf als unveraenderte Referenz behalten.
 
-Nach dem Umzug zuerst die vollstaendige Testsuite bewusst starten (`.venv/Scripts/python.exe -m pytest -q` unter Windows, `.venv/bin/python -m pytest -q` unter Linux); sie enthaelt echte Solvertests. Danach ist der naechste fachliche Schritt eine feinere Designraumdiskretisierung, eine separate FEA-Netzkonvergenzstudie und mehr SIMP-Iterationsbudget. Lastfaelle, Vergleichsgrenzen und Referenz dabei explizit festhalten. Einstellungen stehen in den vorhandenen Dicts in `deep_frame/topology_config.py`, `deep_frame/fea_config.py` und `run_topology.py`; der bewusste Start erfolgt mit der jeweiligen venv-Python-Datei und `run_topology.py`. Weder dieses Paket noch seine Pruefung startet diese Arbeiten automatisch.
+Nach dem Umzug zuerst die vollstaendige Testsuite bewusst starten (`.venv/Scripts/python.exe -m pytest -q` unter Windows, `.venv/bin/python -m pytest -q` unter Linux); sie enthaelt echte Solvertests. Danach ist der naechste fachliche Schritt eine feinere Designraumdiskretisierung, eine separate FEA-Netzkonvergenzstudie und mehr SIMP-Iterationsbudget. Lastfaelle, Vergleichsgrenzen und Referenz dabei explizit festhalten. Einstellungen stehen in den vorhandenen Dicts in `deep_frame/topology_config.py`, `deep_frame/fea_config.py` und `run_topology.py`; der bewusste Start erfolgt mit der jeweiligen venv-Python-Datei und `run_topology.py`. Im aktuellen Stand liegen diese Dicts als `TOPOLOGY_CONFIG` und `FEA_CONFIG` in `deep_frame/config.py` sowie als `PIPELINE_CONFIG` in `deep_frame/topology_pipeline.py`; der Start erfolgt dort mit `run.py topology`. Weder dieses Paket noch seine Pruefung startet diese Arbeiten automatisch.
 
 ## Abgeschlossene Workstation-Fortsetzung
 
