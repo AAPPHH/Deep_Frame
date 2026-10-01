@@ -9,13 +9,11 @@ from OCP.BRep import BRep_Tool
 
 from deep_frame.config import CONFIG
 
-
 def build_smoke_body(config: dict) -> Part:
     dimensions = tuple(config[key] for key in ("length_mm", "width_mm", "thickness_mm"))
     if not all(isfinite(value) and value > 0 for value in dimensions):
         raise ValueError("Dimensions must be finite and greater than zero.")
     return Box(*dimensions, align=(Align.CENTER, Align.CENTER, Align.MIN))
-
 
 def export_body(body: Part, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -23,11 +21,9 @@ def export_body(body: Part, path: Path) -> Path:
         raise RuntimeError(f"STL export failed: {path}")
     return path
 
-
 def _positive(spec: dict, *keys: str) -> None:
     if not all(isfinite(spec[key]) and spec[key] > 0 for key in keys):
         raise ValueError(f"Component dimensions must be finite and positive: {keys}")
-
 
 def _box(spec: dict, height_key: str = "height_mm"):
     _positive(spec, "width_mm", "length_mm", height_key)
@@ -37,7 +33,6 @@ def _box(spec: dict, height_key: str = "height_mm"):
         spec[height_key],
         align=(Align.CENTER, Align.CENTER, Align.MIN),
     )
-
 
 def _mount_holes(spec: dict) -> list[tuple[float, float, float]]:
     _positive(spec, "mount_pitch_mm", "screw_diameter_mm")
@@ -49,13 +44,11 @@ def _mount_holes(spec: dict) -> list[tuple[float, float, float]]:
         raise ValueError("Mount layout must be square or bolt_circle.")
     return [(x, y, 0.0) for x in (-half_pitch, half_pitch) for y in (-half_pitch, half_pitch)]
 
-
 def _drill(shape, holes: list, diameter: float, height: float):
     for hole in holes:
         tool = Cylinder(diameter / 2, height + 2, align=(Align.CENTER, Align.CENTER, Align.MIN))
         shape = shape - tool.moved(Location((hole[0], hole[1], -1.0)))
     return shape
-
 
 def _record(shape, spec: dict, kind: str, holes: list | None = None) -> dict:
     mass = spec["mass_g"]
@@ -72,7 +65,6 @@ def _record(shape, spec: dict, kind: str, holes: list | None = None) -> dict:
         "mass_scope": spec.get("mass_scope", "component"),
     }
 
-
 def build_component_prototypes(config: dict) -> dict:
     specs = config["components"]
     aio = specs["aio15"]
@@ -81,7 +73,6 @@ def build_component_prototypes(config: dict) -> dict:
     if aio["mount_pitch_mm"] + aio["screw_diameter_mm"] >= min(aio["width_mm"], aio["length_mm"]):
         raise ValueError("AIO mounting holes must remain within the board envelope.")
     aio_shape = _drill(aio_shape, aio_holes, aio["screw_diameter_mm"], aio["stack_height_mm"])
-
     camera = specs["camera"]
     camera_shape = _box(camera)
     if not isfinite(camera["tilt_deg"]):
@@ -90,7 +81,6 @@ def build_component_prototypes(config: dict) -> dict:
         Axis((0, 0, camera["height_mm"] / 2), (1, 0, 0)), camera["tilt_deg"]
     )
     camera_shape = camera_shape.translate(Vector(0, 0, -camera_shape.bounding_box().min.Z))
-
     motor = specs["motor"]
     _positive(motor, "diameter_mm", "height_mm", "screw_clearance_mm")
     motor_holes = _mount_holes(motor)
@@ -100,7 +90,6 @@ def build_component_prototypes(config: dict) -> dict:
         raise ValueError("Motor screw clearance must fit the screw diameter.")
     motor_shape = Cylinder(motor["diameter_mm"] / 2, motor["height_mm"], align=(Align.CENTER, Align.CENTER, Align.MIN))
     motor_shape = _drill(motor_shape, motor_holes, motor["screw_clearance_mm"], motor["height_mm"])
-
     prop = specs["prop"]
     _positive(prop, "diameter_mm", "thickness_mm")
     prop_shape = Cylinder(prop["diameter_mm"] / 2, prop["thickness_mm"], align=(Align.CENTER, Align.CENTER, Align.MIN))
@@ -117,7 +106,6 @@ def build_component_prototypes(config: dict) -> dict:
     }
     result["camera"]["tilt_deg"] = camera["tilt_deg"]
     return result
-
 
 def build_components(config: dict, placements: dict | None = None) -> dict:
     prototypes = build_component_prototypes(config)
@@ -141,7 +129,6 @@ def build_components(config: dict, placements: dict | None = None) -> dict:
         }
     return result
 
-
 def motor_positions(config: dict) -> dict:
     frame = config["frame"]
     ratio = frame["lateral_longitudinal_ratio"]
@@ -154,7 +141,6 @@ def motor_positions(config: dict) -> dict:
         "rear_right": (lateral / 2, -longitudinal / 2),
     }
 
-
 def mount_positions(config: dict) -> dict:
     components = config["components"]
     aio_pitch = components["aio15"]["mount_pitch_mm"]
@@ -165,21 +151,17 @@ def mount_positions(config: dict) -> dict:
         holes[name] = [(x + dx, y + dy) for dx, dy, _ in _mount_holes(components["motor"])]
     return holes
 
-
 def box_at(width, length, height, x=0, y=0, z=0):
     return Pos(x, y, z) * Box(width, length, height, align=(Align.CENTER, Align.CENTER, Align.MIN))
 
-
 def cylinder_at(radius, height, x=0, y=0, z=0):
     return Pos(x, y, z) * Cylinder(radius, height, align=(Align.CENTER, Align.CENTER, Align.MIN))
-
 
 def camera_mount_z(config: dict) -> float:
     camera = config["components"]["camera"]
     tilt = radians(camera["tilt_deg"])
     extent = abs(camera["height_mm"] * cos(tilt)) + abs(camera["length_mm"] * sin(tilt))
     return config["frame"]["base_thickness_mm"] + config["frame"]["camera_bottom_clearance_mm"] + extent / 2
-
 
 def structural_margins(config: dict) -> dict:
     f = config["frame"]
@@ -205,7 +187,6 @@ def structural_margins(config: dict) -> dict:
         "strap_end_web": f["deck_length_mm"] / 2 - f["strap_slot_y_mm"] - f["strap_slot_length_mm"] / 2,
     }
 
-
 def build_frame(config: dict) -> Solid:
     f = config["frame"]
     c = config["components"]
@@ -222,7 +203,6 @@ def build_frame(config: dict) -> Solid:
         raise ValueError("The AIO does not fit between the deck walls.")
     if deck_z <= base + f["aio_standoff_mm"] + c["aio15"]["stack_height_mm"] + f["component_clearance_mm"]:
         raise ValueError("The deck leaves insufficient AIO stack space.")
-
     frame = box_at(f["body_width_mm"], f["body_length_mm"], base)
     frame -= box_at(f["base_window_mm"], f["base_window_mm"], base + 2, z=-1)
     for x, y in motor_positions(config).values():
@@ -232,24 +212,20 @@ def build_frame(config: dict) -> Solid:
         angle = degrees(atan2(y - root_y, x - root_x))
         arm = Pos((x + root_x) / 2, (y + root_y) / 2, 0) * Rot(0, 0, angle) * Box(length, f["arm_width_mm"], f["arm_height_mm"], align=(Align.CENTER, Align.CENTER, Align.MIN))
         frame += arm + cylinder_at(f["motor_pad_radius_mm"], f["arm_height_mm"], x, y)
-
     for x, y in mount_positions(config)["aio15"]:
         radius = c["aio15"]["screw_diameter_mm"] / 2 + f["hole_clearance_mm"] / 2 + wall
         frame += cylinder_at(radius, base + f["aio_standoff_mm"], x, y)
-
     wall_x = f["deck_width_mm"] / 2 - wall / 2
     for sign in (-1, 1):
         support = box_at(wall, f["support_length_mm"], deck_z - base, sign * wall_x, z=base)
         support -= box_at(wall + 2, f["wall_window_length_mm"], f["wall_window_height_mm"], sign * wall_x, z=f["wall_window_bottom_mm"])
         frame += support
-
     deck = box_at(f["deck_width_mm"], f["deck_length_mm"], f["deck_thickness_mm"], z=deck_z)
     deck -= box_at(f["deck_window_width_mm"], f["deck_window_length_mm"], f["deck_thickness_mm"] + 2, z=deck_z - 1)
     for sx in (-1, 1):
         for sy in (-1, 1):
             deck -= box_at(f["strap_slot_width_mm"], f["strap_slot_length_mm"], f["deck_thickness_mm"] + 2, sx * f["strap_slot_x_mm"], sy * f["strap_slot_y_mm"], deck_z - 1)
     frame += deck
-
     camera_width = c["camera"]["width_mm"] + 2 * f["camera_side_clearance_mm"]
     cage_width = camera_width + 2 * wall
     camera_y = f["camera_y_mm"]
@@ -260,7 +236,6 @@ def build_frame(config: dict) -> Solid:
         frame += box_at(cage_width, wall, wall, y=camera_y + sign * (f["cage_length_mm"] - wall) / 2, z=f["cage_height_mm"] - wall)
     camera_mount = Pos(0, camera_y, camera_mount_z(config)) * Rot(0, 90, 0) * Cylinder(f["camera_screw_diameter_mm"] / 2, cage_width + 2)
     frame -= camera_mount
-
     tail = box_at(f["tail_width_mm"], f["tail_length_mm"], base, y=-f["tail_y_mm"])
     tail -= box_at(f["tail_window_width_mm"], f["tail_window_length_mm"], base + 2, y=-f["tail_window_y_mm"], z=-1)
     frame += tail
@@ -271,23 +246,19 @@ def build_frame(config: dict) -> Solid:
         for sign in (-1, 1):
             frame += box_at(wall, length, f["connector_holder_height_mm"], x + sign * (inner_width + wall) / 2, -f["connector_y_mm"])
         frame += box_at(inner_width + 2 * wall, wall, f["connector_holder_height_mm"], x, -f["connector_y_mm"] + (length - wall) / 2)
-
     antenna = box_at(f["antenna_bore_mm"] + 2 * wall, f["antenna_bore_mm"] + 2 * wall, f["antenna_holder_height_mm"], y=-f["antenna_y_mm"])
     frame += antenna
     frame -= cylinder_at(f["antenna_bore_mm"] / 2, f["antenna_holder_height_mm"] + 2, y=-f["antenna_y_mm"], z=-1)
     frame -= box_at(f["cable_slot_width_mm"], wall + 2, f["cable_slot_height_mm"], f["connector_offset_x_mm"], -f["connector_y_mm"] + c["balancer"]["length_mm"] / 2 + wall / 2, base)
-
     for name, positions in mount_positions(config).items():
         screw = c["aio15"]["screw_diameter_mm"] if name == "aio15" else c["motor"]["screw_diameter_mm"]
         for x, y in positions:
             frame -= cylinder_at((screw + f["hole_clearance_mm"]) / 2, base + f["aio_standoff_mm"] + f["arm_height_mm"] + 2, x, y, -1)
     for x, y in motor_positions(config).values():
         frame -= cylinder_at(f["motor_shaft_hole_mm"] / 2, f["arm_height_mm"] + 2, x, y, -1)
-
     if not frame.is_valid or len(frame.solids()) != 1:
         raise ValueError("The frame must be one valid solid.")
     return frame.solids()[0]
-
 
 def assembly_placements(config: dict) -> dict:
     f = config["frame"]
@@ -304,13 +275,11 @@ def assembly_placements(config: dict) -> dict:
         placements[f"prop_{name}"] = {"prototype": "prop", "position": (x, y, f["arm_height_mm"] + c["motor"]["height_mm"] + f["prop_motor_gap_mm"])}
     return placements
 
-
 def intersection_shape(first, second):
     intersection = first.intersect(second)
     if isinstance(intersection, list):
         return Compound(children=intersection)
     return intersection
-
 
 def assembly_mass_properties(frame, components: dict, density_g_cm3: float) -> dict:
     if not isfinite(density_g_cm3) or density_g_cm3 <= 0:
@@ -336,7 +305,6 @@ def assembly_mass_properties(frame, components: dict, density_g_cm3: float) -> d
         "model": "exact CAD volume integrals, homogeneous component equivalent envelopes, parallel-axis theorem",
     }
 
-
 def battery_prop_overlap(config: dict, components: dict) -> dict:
     battery = config["components"]["battery"]
     center = components["battery"]["center_of_mass_mm"]
@@ -354,7 +322,6 @@ def battery_prop_overlap(config: dict, components: dict) -> dict:
         "battery_area_mm2": float(footprint.volume),
         "definition": "union of all prop swept disks projected along z, divided by battery top-view area",
     }
-
 
 def collision_and_clearance(config: dict, frame, components: dict) -> dict:
     shapes = {"frame": frame} | {name: part["shape"] for name, part in components.items()}
@@ -382,7 +349,6 @@ def collision_and_clearance(config: dict, frame, components: dict) -> dict:
             violations.append("clearance:" + name)
     return {"passed": not violations, "pairs": distances, "collisions": collisions, "violations": violations}
 
-
 def mount_checks(config: dict, frame) -> dict:
     expected = mount_positions(config)
     surfaces = [face for face in frame.faces() if face.geom_type == GeomType.CYLINDER and face.radius is not None and abs(face.axis_of_rotation.direction.Z) > 0.999]
@@ -396,7 +362,6 @@ def mount_checks(config: dict, frame) -> dict:
             checks.append({"position_mm": [x, y], "diameter_mm": 2 * radius, "passed": bool(matching)})
         groups[name] = checks
     return {"passed": all(check["passed"] for group in groups.values() for check in group), "groups": groups}
-
 
 def check_assembly(config: dict) -> dict:
     try:
@@ -419,18 +384,14 @@ def check_assembly(config: dict) -> dict:
     except (ValueError, KeyError, TypeError) as error:
         return {"passed": False, "violations": ["geometry:" + str(error)], "checks": {"error": str(error)}}
 
-
 def reference_parameters() -> dict:
     return deepcopy({key: value for key, value in CONFIG.items() if key != "stl_path"})
-
 
 def build_geometry(parameters: dict) -> Solid:
     return build_frame(parameters)
 
-
 def validate_geometry(parameters: dict) -> dict:
     return check_assembly(parameters)
-
 
 def assembly_scene(parameters: dict) -> dict:
     frame = build_geometry(parameters)
@@ -450,10 +411,8 @@ def assembly_scene(parameters: dict) -> dict:
         alphas.append(1.0)
     return {"shapes": shapes, "names": names, "colors": colors, "alphas": alphas, "collisions": results["collisions"]}
 
-
 def show_assembly(parameters: dict) -> dict:
     from ocp_vscode import port_check, show
-
     port = parameters["viewer_port"]
     if not port_check(port):
         raise ConnectionError(f"Start OCP CAD Viewer in VS Code on port {port}.")

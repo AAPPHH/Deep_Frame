@@ -29,7 +29,6 @@ from scipy.ndimage import generate_binary_structure, label
 
 from deep_frame.topology_geometry import _compound, _primitive_wall_checks, _volume, region_shape
 
-
 SURFACE_VALIDATION_SETTINGS = {
     "boolean_fuzzy_mm": 1e-7,
     "volume_tolerance_mm3": 1e-5,
@@ -50,19 +49,16 @@ SURFACE_VALIDATION_SETTINGS = {
     "maximum_free_axis_fraction_ratio": 0.5,
 }
 
-
 class _UnresolvedCSG(RuntimeError):
     def __init__(self, report):
         self.report = report
         super().__init__("Independent CAD operation is unresolved: " + report["operation"])
-
 
 class _InvalidNativeMesh(ValueError):
     def __init__(self, reason, triangle_ids=()):
         indices = [int(index) for index in triangle_ids]
         self.report = {"reason": reason, "invalid_triangle_count": len(indices), "invalid_triangle_ids_first_100": indices[:100], "faces_removed": 0}
         super().__init__(reason + ": " + str(indices[:100]))
-
 
 def _checked_csg(operation_name, first, *others, fuzzy_mm=1e-7):
     started = perf_counter()
@@ -111,7 +107,6 @@ def _checked_csg(operation_name, first, *others, fuzzy_mm=1e-7):
     finally:
         report["elapsed_s"] = perf_counter() - started
 
-
 def _settings(changes):
     settings = deepcopy(SURFACE_VALIDATION_SETTINGS)
     unknown = set(changes) - set(settings)
@@ -134,7 +129,6 @@ def _settings(changes):
         if settings[name] > 0.5:
             raise ValueError("Frozen surface reduction gates cannot be weakened")
     return settings
-
 
 def _absolute_tessellation(shape, tolerance, angle):
     copied = Shape.cast(BRepBuilderAPI_Copy(shape.wrapped, True, False).Shape())
@@ -171,7 +165,6 @@ def _absolute_tessellation(shape, tolerance, angle):
               "cache_policy": "Fresh BRepBuilderAPI_Copy with copied geometry and no mesh; polygonal caches cleared only on this copy; native Poly_Triangulation extracted directly without build123d remeshing"}
     return vertices, triangles, report
 
-
 def _face_tessellation(face, settings):
     failures = []
     for refinement in range(5):
@@ -184,7 +177,6 @@ def _face_tessellation(face, settings):
         except (AttributeError, RuntimeError, ValueError) as error:
             failures.append(type(error).__name__ + ": " + str(error))
     raise ValueError("Final CAD face cannot be triangulated after five explicit local refinements: " + str(failures))
-
 
 def _native_mesh(vertices, faces, native_face_triangle_counts=None):
     points, indices = np.asarray(vertices, dtype=np.float64), np.asarray(faces)
@@ -255,7 +247,6 @@ def _native_mesh(vertices, faces, native_face_triangle_counts=None):
     mesh.metadata["native_triangle_preservation"] = {"native_triangle_count": len(indices), "retained_triangle_count": len(mesh.faces), "positive_area_faces_removed": 0, "exact_repeated_coordinate_simplices_removed": int(zero_simplices.sum()), "removed_zero_simplex_native_triangle_ids": np.flatnonzero(zero_simplices).tolist(), "unreferenced_vertices_compacted": unused_vertex_count, "coordinate_movement_mm": 0.0, "vertex_identification": "Exactly equal float64 coordinate triples only; no tolerance welding", "minimum_triangle_area_mm2": float(areas.min()), "exact_cross_product_fallback_triangle_ids": kept[exact_indices].tolist(), "normal_method": "Raw cross products; exact rational cross fallback near arithmetic cancellation; component-scaled normalization without an absolute area cutoff; explicit normal cache verified through mesh.face_normals", "finite_positive_area_faces": True, "unit_normals_verified": True}
     return mesh
 
-
 def _mesh(solid, settings):
     failures = []
     for refinement in range(5):
@@ -273,7 +264,6 @@ def _mesh(solid, settings):
         except (AttributeError, RuntimeError, ValueError) as error:
             failures.append({**report, "deflection_mm": tolerance, "error": type(error).__name__ + ": " + str(error)})
     raise ValueError("Final CAD cannot be triangulated after five explicit whole-shape refinements: " + str(failures))
-
 
 def _prescribed_triangles(triangles, normals, domain, settings):
     fixed = np.zeros(len(triangles), dtype=bool)
@@ -307,7 +297,6 @@ def _prescribed_triangles(triangles, normals, domain, settings):
         else:
             raise ValueError("Unsupported prescribed surface primitive")
     return fixed
-
 
 def _strict_selected_pair_certificates(triangles, selected):
     chosen = np.asarray(selected, dtype=np.int64)
@@ -356,7 +345,6 @@ def _strict_selected_pair_certificates(triangles, selected):
         report["reason"] = type(error).__name__ + ": " + str(error)
     return report
 
-
 def _self_intersection_screen(mesh):
     started = perf_counter()
     vertices = np.ascontiguousarray(mesh.vertices, dtype="<f8")
@@ -397,7 +385,6 @@ def _self_intersection_screen(mesh):
     report["elapsed_s"] = perf_counter() - started
     return report
 
-
 def surface_metrics(mesh, domain, settings=None):
     settings = _settings(settings or {})
     fixed = _prescribed_triangles(mesh.triangles, mesh.face_normals, domain, settings)
@@ -425,7 +412,6 @@ def surface_metrics(mesh, domain, settings=None):
         "settings": {key: settings[key] for key in ("prescribed_surface_tolerance_mm", "axis_normal_angle_deg", "sharp_edge_angle_deg", "source_plane_tolerance_mm", "tessellation_mm", "tessellation_angle_rad")},
     }
 
-
 def _triangle_samples(triangle, spacing):
     pending = [triangle]
     while pending:
@@ -439,7 +425,6 @@ def _triangle_samples(triangle, spacing):
             middle = (item[longest] + item[following]) / 2
             pending.append(np.array([item[longest], middle, item[other]]))
             pending.append(np.array([middle, item[following], item[other]]))
-
 
 class _CadRayIndex:
     def __init__(self, solid):
@@ -460,7 +445,6 @@ class _CadRayIndex:
         self.intersectors = {}
         self.query_count = self.box_candidates = self.exact_face_queries = 0
         self.build_elapsed_s = perf_counter() - started
-
     def intersections(self, point, direction, lower, upper, *, nearest=True, with_faces=False):
         point, direction = np.asarray(tuple(point)), np.asarray(tuple(direction))
         direction = direction / np.linalg.norm(direction)
@@ -504,7 +488,6 @@ class _CadRayIndex:
                 if lower < value <= upper:
                     hits.append((candidate, value) if with_faces else value)
         return hits
-
     def origin_is_resolved(self, point, direction, source_face):
         hits = self.intersections(point, direction, -self.tolerance, self.tolerance, nearest=False, with_faces=True)
         source = []
@@ -514,14 +497,12 @@ class _CadRayIndex:
             if not any(abs(parameter - other) <= 1e-12 for other in source):
                 source.append(parameter)
         return len(source) == 1
-
     def report(self):
         return {"cad_face_count": len(self.faces), "index_build_elapsed_s": self.build_elapsed_s,
                 "query_count": self.query_count, "segment_aabb_candidates": self.box_candidates,
                 "exact_face_queries_after_ray_box_cull": self.exact_face_queries,
                 "loaded_face_intersectors": len(self.intersectors), "intersection_tolerance_mm": self.tolerance,
                 "method": "Rtree of original CAD face bounds computed without triangulation and expanded by CAD tolerances; exact ray-box cull; OCP intersections on every surviving original CAD face"}
-
 
 def _wall_screen(solid, minimum, settings, progress=None):
     started = perf_counter()
@@ -597,7 +578,6 @@ def _wall_screen(solid, minimum, settings, progress=None):
         completed_faces += 1
     return report(True)
 
-
 def _accessibility(solid, domain, settings, progress=None):
     started = perf_counter()
     lower = np.asarray(domain["grid"]["origin_mm"], dtype=float)
@@ -632,7 +612,6 @@ def _accessibility(solid, domain, settings, progress=None):
     cavities = max(0, len(solid.shells()) - 1)
     return {"passed": not trapped and not cavities and not unresolved, "closed_cad_cavities": cavities, "trapped_void_cells": trapped, "unresolved_columns": unresolved, "grid_spacing_mm": spacing, "grid_shape": shape.tolist(), "occupied_cells": int(occupied.sum()), "spatial_index": ray_index.report(), "elapsed_s": perf_counter() - started, "method": "Fresh final-CAD exact vertical intersection pairs rasterized at cell centers, then six-connected exterior void flood fill plus closed CAD shell count", "limitations": "Finite geometric access screen; passages narrower than the grid may close numerically. Actual support generation, tool reach and support removal require slicer/physical review."}
 
-
 def _intersection_volume(first, second, fuzzy_mm=1e-7):
     if first is None or second is None:
         return 0.0
@@ -641,7 +620,6 @@ def _intersection_volume(first, second, fuzzy_mm=1e-7):
         return 0.0
     return float(_volume(_checked_csg("common", first, second, fuzzy_mm=fuzzy_mm)))
 
-
 def _preserve_neighborhood(solid, outer, settings):
     lower, upper = np.asarray(tuple(outer.bounding_box().min)), np.asarray(tuple(outer.bounding_box().max))
     padding = max(settings["attachment_offsets_mm"]) + settings["attachment_probe_depth_mm"]
@@ -649,7 +627,6 @@ def _preserve_neighborhood(solid, outer, settings):
     crop = Pos(*(lower - padding - guard)) * Box(*(upper - lower + 2 * (padding + guard)), align=(Align.MIN, Align.MIN, Align.MIN))
     local = _compound(_checked_csg("common", solid, crop, fuzzy_mm=settings["boolean_fuzzy_mm"]))
     return local, {"method": "Exact CAD intersection with preserve AABB expanded in every direction to contain every attachment slab", "padding_mm": padding, "inclusion_guard_mm": guard, "crop_min_mm": (lower - padding - guard).tolist(), "crop_max_mm": (upper + padding + guard).tolist(), "required_min_mm": (lower - padding).tolist(), "required_max_mm": (upper + padding).tolist(), "all_slabs_contained": True}
-
 
 def _attachment_screen(solid, outer, region, manufacturing, settings):
     lower, upper = np.asarray(tuple(outer.bounding_box().min)), np.asarray(tuple(outer.bounding_box().max))
@@ -668,7 +645,6 @@ def _attachment_screen(solid, outer, region, manufacturing, settings):
         levels.append({"offset_mm": offset, "sections_mm2": sections, "summed_area_mm2": sum(sections.values())})
     minimum = region.get("attachment_area_min_mm2", manufacturing["minimum_attachment_area_mm2"])
     return {"passed": bool(levels) and all(level["summed_area_mm2"] + 1e-6 >= minimum for level in levels), "minimum_required_area_mm2": minimum, "levels": levels, "method": "Summed mean areas in six slabs outside the exact preserve AABB at all prescribed offsets", "limitations": "Local attachment/near-junction screen; not a global minimum load-path cross-section proof. Independent FEA remains required."}
-
 
 def _validate_surface(solid, domain: dict, settings: dict, *, reference_solid=None, progress=None) -> dict:
     settings = _settings(settings)
@@ -785,7 +761,6 @@ def _validate_surface(solid, domain: dict, settings: dict, *, reference_solid=No
         elif not value["passed"]:
             violations.append(key)
     return {"passed": not violations, "violations": violations, "checks": checks, "surface_metrics": metrics, "material_change": change, "settings": settings, "acceptance_scope": "Geometry screens only. Independent mechanical verification and final actual-geometry render/section review remain mandatory."}
-
 
 def validate_surface(solid, domain: dict, settings: dict, *, reference_solid=None, progress=None) -> dict:
     settings = _settings(settings)

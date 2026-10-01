@@ -11,7 +11,6 @@ from deep_frame.config import CONFIG, FEA_CONFIG
 from deep_frame.fea import FrameEvaluator, _run, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, build_geometry, intersection_shape, motor_positions, reference_parameters
 
-
 def beam_inputs(directory):
     solid = Box(80, 8, 4, align=(Align.MIN, Align.CENTER, Align.CENTER)).solid()
     fixed = {"kind": "box", "min_mm": [-0.01, -5, -3], "max_mm": [0.01, 5, 3]}
@@ -23,7 +22,6 @@ def beam_inputs(directory):
         {"name": "modes", "analysis": "modal", "fixed_regions": [fixed]},
     ]
     return solid, deepcopy(FEA_CONFIG["material"]), cases, settings, tip
-
 
 @pytest.fixture(scope="module")
 def beam_results(tmp_path_factory):
@@ -37,7 +35,6 @@ def beam_results(tmp_path_factory):
     assert loaded["status"] == "ok", loaded["diagnostics"]
     return unloaded, loaded
 
-
 def analytical_beam(tip_mass_kg=0):
     length, width, height = 0.080, 0.008, 0.004
     young, density = 4430e6, 1090.0
@@ -45,10 +42,8 @@ def analytical_beam(tip_mass_kg=0):
     inertia = width * height ** 3 / 12
     mass = density * area * length
     ratio = tip_mass_kg / mass
-
     def characteristic(beta):
         return 1 + math.cos(beta) * math.cosh(beta) + ratio * beta * (math.cos(beta) * math.sinh(beta) - math.sin(beta) * math.cosh(beta))
-
     lower, upper = 0.01, 2.0
     for _ in range(60):
         middle = (lower + upper) / 2
@@ -58,7 +53,6 @@ def analytical_beam(tip_mass_kg=0):
             upper = middle
     frequency = middle ** 2 / (2 * math.pi) * math.sqrt(young * inertia / (density * area * length ** 4))
     return {"deflection_mm": length ** 3 / (3 * young * inertia) * 1000, "frequency_hz": frequency, "mass_g": mass * 1000}
-
 
 def test_real_gmsh_calculix_beam_matches_analytical_solution(beam_results):
     measured, _ = beam_results
@@ -74,7 +68,6 @@ def test_real_gmsh_calculix_beam_matches_analytical_solution(beam_results):
     assert measured["load_cases"]["modes"]["discarded_rigid_modes"] == 0
     json.dumps(measured, allow_nan=False)
 
-
 def test_real_point_mass_matches_tip_mass_beam_and_mass_sum(beam_results):
     bare, loaded = beam_results
     expected = analytical_beam(0.0015)
@@ -83,7 +76,6 @@ def test_real_point_mass_matches_tip_mass_beam_and_mass_sum(beam_results):
     assert loaded["mass_g"] == pytest.approx(bare["mass_g"] + 1.5)
     assert loaded["stiffness_n_per_mm"] == pytest.approx(bare["stiffness_n_per_mm"], rel=0.005)
     assert loaded["point_mass_coupling"][0]["position_mm"] == [80, 0, 0]
-
 
 def test_missing_solver_returns_failure_not_zero_measurements(tmp_path):
     solid, material, cases, settings, _ = beam_inputs(tmp_path)
@@ -96,7 +88,6 @@ def test_missing_solver_returns_failure_not_zero_measurements(tmp_path):
     assert "not found" in result["diagnostics"][0]
     json.dumps(result, allow_nan=False)
 
-
 def test_empty_load_selector_rejected_before_solver(tmp_path):
     solid, material, cases, settings, _ = beam_inputs(tmp_path)
     cases[0]["loads"][0]["region"] = {"kind": "box", "min_mm": [900, 0, 0], "max_mm": [901, 1, 1]}
@@ -105,14 +96,12 @@ def test_empty_load_selector_rejected_before_solver(tmp_path):
     assert "Empty node selector" in result["diagnostics"][0]
     assert not list(tmp_path.rglob("case_*.inp"))
 
-
 def test_unrestrained_fixture_is_rejected(tmp_path):
     solid, material, cases, settings, _ = beam_inputs(tmp_path)
     cases[1]["fixed_regions"] = []
     result = evaluate(solid, material, [], cases, settings)
     assert result["status"] == "invalid"
     assert "Fixture" in result["diagnostics"][0]
-
 
 def test_invalid_density_returns_json_safe_invalid_result(tmp_path):
     solid, material, cases, settings, _ = beam_inputs(tmp_path)
@@ -122,14 +111,12 @@ def test_invalid_density_returns_json_safe_invalid_result(tmp_path):
     assert result["mass_g"] is None
     json.dumps(result, allow_nan=False)
 
-
 def test_rigid_point_mass_patch_must_not_intersect_fixture(tmp_path):
     solid, material, cases, settings, _ = beam_inputs(tmp_path)
     masses = [{"name": "bad_mass", "mass_g": 1.5, "position_mm": [0, 0, 0], "attachment_region": cases[0]["fixed_regions"][0]}]
     result = evaluate(solid, material, masses, cases, settings)
     assert result["status"] == "invalid"
     assert "overlaps a fixed fixture" in result["diagnostics"][0]
-
 
 @pytest.mark.parametrize("options", [{"mesh_second_order_linear": True}, {"mesh_high_order_optimize": 2}])
 def test_opt_in_mesh_options_retain_real_beam_physics(tmp_path, options):
@@ -143,7 +130,6 @@ def test_opt_in_mesh_options_retain_real_beam_physics(tmp_path, options):
     assert result["mesh"]["minimum_jacobian_mm3"] > 0
     assert result["mesh"]["second_order_linear"] == options.get("mesh_second_order_linear", False)
     assert result["mesh"]["high_order_optimize"] == options.get("mesh_high_order_optimize", 0)
-
 
 @pytest.mark.parametrize("backend", ["SPOOLES", "PASTIX"])
 def test_explicit_backend_preserves_real_point_mass_beam_physics(tmp_path, backend, monkeypatch):
@@ -168,7 +154,6 @@ def test_explicit_backend_preserves_real_point_mass_beam_physics(tmp_path, backe
         assert "Using up to 1 cpu(s)" in log
     json.dumps(result, allow_nan=False)
 
-
 @pytest.mark.parametrize("backend", ["AUTO", "spooles", "PARDISO", "SPOOLES\n*STEP", float("nan"), float("inf")])
 def test_invalid_backend_is_rejected_before_mesh_or_solver(tmp_path, backend):
     directory = tmp_path / "must_not_be_created"
@@ -180,7 +165,6 @@ def test_invalid_backend_is_rejected_before_mesh_or_solver(tmp_path, backend):
     assert "linear_solver" in result["diagnostics"][0]
     assert not directory.exists()
     json.dumps(result, allow_nan=False)
-
 
 @pytest.mark.parametrize("threads", [0, -1, True, 1.5, float("nan"), "1"])
 def test_invalid_thread_count_is_json_safe_before_mesh_or_solver(tmp_path, threads):
@@ -194,7 +178,6 @@ def test_invalid_thread_count_is_json_safe_before_mesh_or_solver(tmp_path, threa
     assert not directory.exists()
     json.dumps(result, allow_nan=False)
 
-
 def test_requested_thread_count_overrides_inherited_native_thread_environment(tmp_path, monkeypatch):
     keys = ("OMP_NUM_THREADS", "CCX_NPROC_RESULTS", "CCX_NPROC_STIFFNESS",
             "CCX_NPROC_EQUATION_SOLVER", "NUMBER_OF_CPUS")
@@ -204,16 +187,13 @@ def test_requested_thread_count_overrides_inherited_native_thread_environment(tm
     content = _run([sys.executable, "-c", script], tmp_path, 10, 1, tmp_path / "environment.log")
     assert json.loads(content) == {key: "1" for key in keys}
 
-
 @pytest.fixture(scope="module")
 def frame():
     return build_geometry(reference_parameters())
 
-
 def selector_shape(selector):
     minimum, maximum = selector["min_mm"], selector["max_mm"]
     return Pos(*minimum) * Box(*(high - low for low, high in zip(minimum, maximum)), align=(Align.MIN, Align.MIN, Align.MIN))
-
 
 def test_reference_case_uses_actual_battery_center_and_physical_force():
     parameters = reference_parameters()
@@ -233,7 +213,6 @@ def test_reference_case_uses_actual_battery_center_and_physical_force():
     assert parameters == original
     json.dumps(model, allow_nan=False)
 
-
 def test_every_fixture_load_and_mass_selector_meets_real_frame(frame):
     model = prepare_frame_case(reference_parameters())
     regions = [model["point_masses"][0]["attachment_region"]]
@@ -251,7 +230,6 @@ def test_every_fixture_load_and_mass_selector_meets_real_frame(frame):
         for fixture in case["fixed_regions"]:
             assert fixture["max_mm"][2] < patch["min_mm"][2]
 
-
 def test_selectors_follow_changed_candidate_and_battery():
     parameters = reference_parameters()
     parameters["frame"].update(arm_height_mm=4.2, wheelbase_mm=140.0, deck_top_mm=30.0)
@@ -266,28 +244,23 @@ def test_selectors_follow_changed_candidate_and_battery():
     assert model["point_masses"][0]["position_mm"] == pytest.approx([0, 0, 36])
     assert cases["battery_impact"]["loads"][0]["force_n"][2] == pytest.approx(-0.040 * 9.80665 * 10)
 
-
 @pytest.fixture
 def toolchain(monkeypatch):
     identity = {"solver_path": "C:/test/ccx.exe", "calculix_version": "2.22", "calculix_sha256": "test-sha", "gmsh_version": "4.15.2", "build123d_version": "0.13.0", "ocp_version": "8.0.1.0.0"}
     monkeypatch.setattr("deep_frame.fea.solver_identity", lambda settings: deepcopy(identity))
     return identity
 
-
 def test_evaluator_callback_builds_candidate_and_passes_dict_model(monkeypatch, toolchain, frame):
     parameters = reference_parameters()
     calls = []
     builds = []
-
     def geometry(candidate):
         builds.append(deepcopy(candidate))
         return frame
-
     def solver(solid, material, masses, cases, settings):
         assert isinstance(solid, Solid)
         calls.append(deepcopy((material, masses, cases, settings)))
         return {"status": "failed", "mass_g": None, "eigenfrequencies_hz": [], "max_displacement_mm": None, "max_von_mises_mpa": None, "stiffness_n_per_mm": None, "load_cases": {}, "diagnostics": ["callback test"], "artifacts": {}}
-
     monkeypatch.setattr("deep_frame.fea.build_geometry", geometry)
     monkeypatch.setattr("deep_frame.fea.evaluate", solver)
     evaluator = FrameEvaluator(parameters)
@@ -301,7 +274,6 @@ def test_evaluator_callback_builds_candidate_and_passes_dict_model(monkeypatch, 
     assert result["evaluation_id"] == evaluator.evaluation_id
     assert result["model_inputs"]["load_cases"][0]["loads"][0]["region"]["max_mm"][2] == pytest.approx(4.21)
     json.dumps(result, allow_nan=False)
-
 
 def test_evaluation_contract_binds_physics_and_toolchain_but_not_workdir(toolchain):
     parameters = reference_parameters()
@@ -318,7 +290,6 @@ def test_evaluation_contract_binds_physics_and_toolchain_but_not_workdir(toolcha
     toolchain["calculix_version"] = "2.23"
     assert FrameEvaluator(parameters).evaluation_id != first.evaluation_id
 
-
 def test_central_config_exposes_all_subsystems_without_shapes_or_paths():
     parameters = reference_parameters()
     assert parameters["material"] == parameters["fea"]["material"]
@@ -329,7 +300,6 @@ def test_central_config_exposes_all_subsystems_without_shapes_or_paths():
         {"frame.arm_height_mm": 4.0, "frame.arm_width_mm": 6.7},
     ]
     json.dumps(parameters, allow_nan=False)
-
 
 def test_density_mismatch_cannot_silently_change_mass_scope():
     parameters = reference_parameters()

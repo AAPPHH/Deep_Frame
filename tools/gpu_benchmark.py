@@ -1,8 +1,3 @@
-"""CPU/GPU density solver tools: benchmark complete optimization updates and plot GPU evidence.
-
-Run from the repository root with ``python -m tools.gpu_benchmark {benchmark,plot} --help``.
-"""
-
 import argparse
 import hashlib
 import json
@@ -15,7 +10,6 @@ import numpy as np
 from deep_frame.topology_optimization import optimize_topology
 from deep_frame.topology_pipeline import _file_digest, _provenance, _save
 from tools.topology_study import verify_artifacts
-
 
 def compare(source, output, updates=3):
     source, output = Path(source).resolve(), Path(output).resolve()
@@ -49,7 +43,6 @@ def compare(source, output, updates=3):
                     _save(output / "status.json", {"status": "running", "backend": backend, **entry})
                     print(json.dumps({"backend": backend, "iteration": entry["iteration"],
                                       "elapsed_s": entry["elapsed_s"]}), flush=True)
-
                 started = perf_counter()
                 result = optimize_topology(domain, settings, progress_callback=progress)
                 result["wall_s"] = perf_counter() - started
@@ -88,7 +81,6 @@ def compare(source, output, updates=3):
         _save(output / "status.json", {"status": "failed", "error": str(error)})
         raise
 
-
 def benchmark_main(argv=None, prog=None):
     """Compare complete CPU/GPU optimization updates from verified physical inputs."""
     parser = argparse.ArgumentParser(prog=prog, description=benchmark_main.__doc__)
@@ -100,13 +92,10 @@ def benchmark_main(argv=None, prog=None):
     print(json.dumps(result), flush=True)
     return 0 if result["passed"] else 1
 
-
 def render(evidence, output):
     import matplotlib
-
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-
     evidence, output = Path(evidence), Path(output)
     run = evidence / "grid8over3_gpu1000"
     manifest = json.loads((run / "manifest.json").read_text())
@@ -144,7 +133,6 @@ def render(evidence, output):
                                        "image_sha256": _file_digest(output),
                                        "interpretation": "Actual stored convergence history and measured three-update wall time. No geometry or FEA acceleration claim."})
 
-
 def plot_main(argv=None, prog=None):
     """Plot the observed GPU optimization and complete CPU/GPU benchmark."""
     parser = argparse.ArgumentParser(prog=prog, description=plot_main.__doc__)
@@ -152,7 +140,6 @@ def plot_main(argv=None, prog=None):
     parser.add_argument("--output", default="docs/validation/workstation_gpu_convergence.png")
     arguments = parser.parse_args(argv)
     render(arguments.evidence, arguments.output)
-
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -162,7 +149,6 @@ def main(argv=None):
         commands.add_parser(name, help=function.__doc__.splitlines()[0], add_help=False)
     args, arguments = parser.parse_known_args(argv)
     return handlers[args.command](arguments, parser.prog + " " + args.command)
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

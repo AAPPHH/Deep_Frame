@@ -7,7 +7,6 @@ from build123d import GeomType, export_step, import_step
 from deep_frame.topology_geometry import _volume, region_shape
 from deep_frame.topology_surface import extract_density_surface, reconstruct_surface
 
-
 def sphere_domain():
     shape = (14, 14, 14)
     origin = np.array([-7.0, -7.0, -7.0])
@@ -19,7 +18,6 @@ def sphere_domain():
         "regions": [], "manufacturing": {"minimum_feature_mm": 2.0},
     }
     return domain, density
-
 
 def test_continuous_sphere_position_volume_fidelity_and_input_immutability():
     domain, density = sphere_domain()
@@ -34,7 +32,6 @@ def test_continuous_sphere_position_volume_fidelity_and_input_immutability():
     assert report["decimation_attempts"][-1]["passed"]
     assert report["decimation_attempts"][-1]["fidelity"]["maximum_sampled_deviation_mm"] <= 0.2
     assert settings == {"density_threshold": 0.5, "decimation_face_budgets": [500, 1000, 2000]}
-
 
 @pytest.mark.parametrize("opening_radius, constraint_mode", [(0.0, "embedded"), (0.5, "embedded"), (0.5, "cad_only"), (0.5, "envelope_only"), (0.5, "envelope_forbidden")])
 def test_exact_subgrid_bore_preserve_and_step_roundtrip(tmp_path, opening_radius, constraint_mode):
@@ -55,7 +52,6 @@ def test_exact_subgrid_bore_preserve_and_step_roundtrip(tmp_path, opening_radius
     assert imported.is_valid and len(imported.solids()) == 1
     assert imported.volume == pytest.approx(solid.volume, rel=1e-9)
 
-
 def test_disconnected_density_is_not_bridged():
     domain, density = sphere_domain()
     density[:] = 0
@@ -64,14 +60,12 @@ def test_disconnected_density_is_not_bridged():
     with pytest.raises(ValueError, match="not bridged"):
         extract_density_surface(domain, density, {"density_threshold": 0.5})
 
-
 @pytest.mark.parametrize("fusion_mode", ["direct", "preunion"])
 def test_disconnected_exact_preserve_is_not_bridged(fusion_mode):
     domain, density = sphere_domain()
     domain["regions"] = [{"name": "disconnected", "kind": "box", "role": "preserve", "min_mm": [5, 5, 5], "max_mm": [6, 6, 6]}]
     with pytest.raises(ValueError, match="Exact preserve union must yield exactly one valid solid, got 2"):
         reconstruct_surface(domain, density, {"density_threshold": 0.5, "preserve_fusion_mode": fusion_mode, "decimation_face_budgets": [500, 1000, 2000]})
-
 
 @pytest.mark.parametrize("interface_start", [3.8, 4.0])
 @pytest.mark.parametrize("fusion_mode", ["direct", "preunion"])
@@ -88,20 +82,16 @@ def test_required_preserve_can_attach_through_another_required_preserve(interfac
     if fusion_mode == "preunion":
         assert solid.surface_report["preserve_preunion"]["status"] == "passed"
 
-
 def test_reconstruction_uses_no_unprotected_overlap_booleans(monkeypatch):
     from build123d import Solid
-
     def forbidden_overlap(*args, **kwargs):
         raise AssertionError("Unprotected preliminary solid.intersect called")
-
     monkeypatch.setattr(Solid, "intersect", forbidden_overlap)
     domain, density = sphere_domain()
     domain["regions"] = [{"name": "mount", "role": "preserve", "kind": "box", "min_mm": [2, -0.5, -0.5], "max_mm": [4, 0.5, 0.5]}]
     solid = reconstruct_surface(domain, density, {"density_threshold": 0.5, "decimation_face_budgets": [500, 1000, 2000]})
     assert solid.is_valid and len(solid.solids()) == 1
     assert _volume(region_shape(domain["regions"][0]).cut(solid)) < 1e-7
-
 
 def test_existing_required_preserve_can_join_density_components():
     domain, density = sphere_domain()
@@ -114,12 +104,10 @@ def test_existing_required_preserve_can_join_density_components():
     assert len(solid.solids()) == 1 and solid.is_valid
     assert _volume(region_shape(domain["regions"][0]).cut(solid)) < 1e-7
 
-
 def test_inadequate_decimation_budget_is_rejected():
     domain, density = sphere_domain()
     with pytest.raises(ValueError, match="No decimation budget"):
         extract_density_surface(domain, density, {"density_threshold": 0.5, "decimation_face_budgets": [20], "maximum_surface_deviation_mm": 0.001})
-
 
 @pytest.mark.parametrize("changes", [{"interpolation_subdivisions": True}, {"maximum_surface_deviation_mm": float("nan")}, {"decimation_face_budgets": [100, 50]}, {"density_threshold": 1}, {"invented_smoothing": True}, {"boolean_fuzzy_value_mm": 0}, {"boolean_fuzzy_value_mm": float("inf")}, {"boolean_strategy": "build123d", "boolean_fuzzy_value_mm": 1e-5}, {"surface_constraint_mode": "invented"}, {"decimation_bounds_mode": "invented"}, {"preserve_fusion_mode": "invented"}, {"preserve_fusion_mode": "preunion", "boolean_strategy": "build123d"}])
 def test_bad_settings_fail_before_surface_generation(changes):
@@ -127,18 +115,15 @@ def test_bad_settings_fail_before_surface_generation(changes):
     with pytest.raises(ValueError):
         extract_density_surface(domain, density, changes)
 
-
 def test_density_mask_violation_is_rejected():
     domain, density = sphere_domain()
     domain["preserve"][7, 7, 7] = True
     with pytest.raises(ValueError, match="prescribed"):
         extract_density_surface(domain, density, {})
 
-
 @pytest.mark.parametrize("opening_method", ["distance", "grayscale"])
 def test_manufacturing_opening_removes_thin_material_and_restores_only_prescribes(opening_method):
     from deep_frame.topology_surface import _manufacturing_opening, _settings
-
     spacing = np.full(3, 0.25)
     origin = np.full(3, -4.0)
     axes = np.meshgrid(*[origin[i]+np.arange(33)*spacing[i] for i in range(3)], indexing="ij")
@@ -155,20 +140,18 @@ def test_manufacturing_opening_removes_thin_material_and_restores_only_prescribe
     assert report["opening_removed_sampled_volume_mm3"] > 0
     assert report["opening_added_sampled_volume_mm3"] == report["added_sampled_volume_mm3"] == 0
     assert report["missing_preserve_sampled_volume_mm3"] == 0
-    assert opened[30, 16, 16] <= 0  # The protruding 0.5-mm fin has no remaining material interior.
+    assert opened[30, 16, 16] <= 0
     assert report["preserve_restoration_stage"].startswith("Exact CAD union")
-    assert opened[16, 16, 16] < 0  # The analytic bore remains forbidden.
-
+    assert opened[16, 16, 16] < 0
 
 def test_touching_preserves_have_no_artificial_internal_zero_sheet():
     from deep_frame.topology_surface import _primitive_union_distance
-
     coordinates = np.arange(-3, 3.01, 0.5)
     axes = [coordinates.reshape(tuple(-1 if i == j else 1 for j in range(3))) for i in range(3)]
     boxes = [{"kind": "box", "min_mm": [-2, low, -2], "max_mm": [2, high, 2]} for low, high in ((-2, 0), (0, 2))]
     values, report = _primitive_union_distance(axes, boxes, (13, 13, 13), np.full(3, 0.5))
-    assert values[6, 6, 6] > 0.001  # Shared face is physically inside the union.
-    assert values[2, 6, 6] == 0.0  # Actual exterior face retains its zero level.
+    assert values[6, 6, 6] > 0.001
+    assert values[2, 6, 6] == 0.0
     assert values[1, 6, 6] < 0
     assert report["rectilinear_internal_zero_nodes_corrected"] == 49
     boxes[1]["min_mm"][1] = 0.0001
@@ -176,10 +159,8 @@ def test_touching_preserves_have_no_artificial_internal_zero_sheet():
     assert gapped[6, 6, 6] == 0.0
     assert gap_report["rectilinear_internal_zero_nodes_corrected"] == 0
 
-
 def test_cad_only_opening_excludes_analytic_imprints_and_keeps_forecast_separate():
     from deep_frame.topology_surface import _manufacturing_opening, _settings
-
     domain, density = sphere_domain()
     origin, spacing = np.full(3, -6.5), np.ones(3)
     before = density.copy()
@@ -205,10 +186,8 @@ def test_cad_only_opening_excludes_analytic_imprints_and_keeps_forecast_separate
     assert embedded[6, 6, 6] < 0
     assert not np.array_equal(embedded, opened)
 
-
 def test_envelope_only_opening_leaves_hardware_for_cad_and_clips_free_field():
     from deep_frame.topology_surface import _manufacturing_opening, _settings
-
     domain, density = sphere_domain()
     domain["grid"]["origin_mm"][2] = 0
     origin, spacing = np.full(3, -6.5), np.ones(3)
@@ -224,11 +203,9 @@ def test_envelope_only_opening_leaves_hardware_for_cad_and_clips_free_field():
     free, _ = _manufacturing_opening(density, origin, spacing, domain, {**config, "surface_constraint_mode": "cad_only"})
     assert free[6, 6, 6] > 0
 
-
 @pytest.mark.parametrize("rasterize", [False, True])
 def test_envelope_forbidden_opening_removes_cut_generated_free_ligament_without_preserve_imprints(rasterize):
     from deep_frame.topology_surface import _manufacturing_opening, _settings
-
     spacing, origin = np.full(3, 0.25), np.full(3, -4.0)
     x, y, z = np.meshgrid(*[np.arange(33)*0.25-4]*3, indexing="ij")
     density = np.clip(0.5+np.minimum.reduce([3-np.abs(x), 3-np.abs(y), 1.5-np.abs(z)]), 0, 1)
@@ -250,11 +227,9 @@ def test_envelope_forbidden_opening_removes_cut_generated_free_ligament_without_
     assert report["opening_added_sampled_volume_mm3"] == 0
     assert report["opening_removed_sampled_volume_mm3"] > 0
 
-
 @pytest.mark.parametrize("rasterize", [False, True])
 def test_free_forbidden_buffer_is_antiextensive_and_keeps_original_constraints(rasterize):
     from deep_frame.topology_surface import _manufacturing_opening, _settings
-
     spacing, origin = np.full(3, 0.25), np.full(3, -4.0)
     x, y, z = np.meshgrid(*[np.arange(33)*0.25-4]*3, indexing="ij")
     density = np.clip(0.5+3-np.sqrt(x*x+y*y+z*z), 0, 1)
@@ -278,7 +253,6 @@ def test_free_forbidden_buffer_is_antiextensive_and_keeps_original_constraints(r
     assert domain == domain_before
     np.testing.assert_array_equal(density, before)
 
-
 @pytest.mark.parametrize("changes", [{"free_forbidden_buffer_mm": -0.1}, {"free_forbidden_buffer_mm": float("nan")}, {"free_forbidden_buffer_mm": float("inf")}, {"free_forbidden_buffer_mm": True},
                                      {"free_forbidden_buffer_mm": 0.5, "manufacturing_opening_radius_mm": 0.5, "surface_constraint_mode": "embedded"},
                                      {"free_forbidden_buffer_mm": 0.5, "manufacturing_opening_radius_mm": 0.5, "surface_constraint_mode": "cad_only"},
@@ -286,10 +260,8 @@ def test_free_forbidden_buffer_is_antiextensive_and_keeps_original_constraints(r
                                      {"free_forbidden_buffer_mm": 0.5, "surface_constraint_mode": "envelope_forbidden"}])
 def test_invalid_free_forbidden_buffer_fails_before_extraction(changes):
     from deep_frame.topology_surface import _settings
-
     with pytest.raises(ValueError, match="free_forbidden_buffer_mm"):
         _settings(changes)
-
 
 def test_buffer_affects_free_field_but_final_preserve_and_bore_use_original_dimensions():
     domain, density = sphere_domain()
@@ -310,11 +282,9 @@ def test_buffer_affects_free_field_but_final_preserve_and_bore_use_original_dime
     for name, original in before_masks.items():
         np.testing.assert_array_equal(domain[name], original)
 
-
 def test_reference_bounds_projection_moves_only_vertices_and_preserves_valid_box():
     import trimesh
     from deep_frame.topology_surface import _project_reference_bounds, _mesh_intersections
-
     reference = trimesh.creation.box(extents=[2, 2, 2])
     expanded = trimesh.creation.box(extents=[2.2, 2.2, 2.2])
     original_vertices, original_faces = expanded.vertices.copy(), expanded.faces.copy()
@@ -330,11 +300,9 @@ def test_reference_bounds_projection_moves_only_vertices_and_preserves_valid_box
     assert report["net_volume_change_mm3"] == pytest.approx(8-2.2**3)
     assert report["degenerate_face_count"] == 0
 
-
 def test_reference_bounds_projection_rejects_collapsed_triangles_without_removing_them(monkeypatch):
     import trimesh
     import deep_frame.topology_surface as module
-
     outside = trimesh.creation.box()
     outside.apply_translation([20, 0, 0])
     monkeypatch.setattr(trimesh.Trimesh, "simplify_quadric_decimation", lambda *args, **kwargs: outside.copy())
@@ -348,11 +316,9 @@ def test_reference_bounds_projection_rejects_collapsed_triangles_without_removin
     assert "fidelity" not in attempt
     assert "degenerate triangles" in attempt["reason"]
 
-
 def test_boolean_dropping_the_main_body_is_rejected_even_when_output_is_valid(monkeypatch):
     from build123d import Box
     import deep_frame.topology_surface as module
-
     report = {"settings": module._settings({})}
     original, operand = Box(10, 10, 10), Box(1, 1, 1)
     monkeypatch.setattr(module, "_boolean", lambda *args: operand)
@@ -361,12 +327,10 @@ def test_boolean_dropping_the_main_body_is_rejected_even_when_output_is_valid(mo
     assert raised.value.shape is original
     assert report["failed_operation"]["volume_monotonicity_passed"] is False
 
-
 @pytest.mark.parametrize("warning", ["BOPAlgo_AlertAcquiredSelfIntersection", "BOPAlgo_AlertSolidBuilderUnusedFaces", "BOPAlgo_AlertNotSplittableEdge"])
 def test_plausible_boolean_volume_does_not_override_native_geometry_warnings(monkeypatch, warning):
     from build123d import Box
     import deep_frame.topology_surface as module
-
     original, result = Box(10, 10, 10), Box(10, 10, 10)
     result.boolean_warnings = [warning]
     monkeypatch.setattr(module, "_boolean", lambda *args: result)
@@ -376,24 +340,20 @@ def test_plausible_boolean_volume_does_not_override_native_geometry_warnings(mon
     assert report["failed_operation"]["blocking_warnings"] == [warning]
     assert report["exact_operations"][0]["warnings"] == [warning]
 
-
 @pytest.mark.parametrize("fuzzy_value", [1e-7, 1e-5])
 def test_native_boolean_owns_and_captures_warning_report(fuzzy_value):
     from build123d import Box, Pos
     import deep_frame.topology_surface as module
-
     result = module._boolean(Box(2, 2, 2), [Pos(1, 0, 0)*Box(2, 2, 2)], "fuse", "occt_serial", fuzzy_value)
     assert result.is_valid and len(result.solids()) == 1
     assert result.volume == pytest.approx(12)
     assert result.boolean_warnings == []
     assert result.boolean_fuzzy_value_mm == fuzzy_value
 
-
 @pytest.mark.parametrize("offset, components, volume", [(1, 1, 12), (4, 2, 16)])
 def test_preserve_preunion_keeps_all_overlapping_or_disjoint_components(offset, components, volume):
     from build123d import Box, Pos
     import deep_frame.topology_surface as module
-
     preserves = [({"name": "first"}, Box(2, 2, 2)), ({"name": "second"}, Pos(offset, 0, 0)*Box(2, 2, 2))]
     report, events = {"settings": module._settings({"preserve_fusion_mode": "preunion"})}, []
     union = module._preunion_preserves(preserves, report, events.append)
@@ -404,12 +364,10 @@ def test_preserve_preunion_keeps_all_overlapping_or_disjoint_components(offset, 
     assert events[-1]["shape"] is union
     assert events[-1]["stage"] == "Exact preserve preunion"
 
-
 @pytest.mark.parametrize("count", [0, 1])
 def test_preserve_preunion_empty_and_single_are_identities_without_native_booleans(monkeypatch, count):
     from build123d import Box
     import deep_frame.topology_surface as module
-
     monkeypatch.setattr(module, "_boolean", lambda *args: pytest.fail("An identity must not perform a Boolean"))
     original = Box(2, 2, 2)
     report = {"settings": module._settings({"preserve_fusion_mode": "preunion"})}
@@ -418,12 +376,10 @@ def test_preserve_preunion_empty_and_single_are_identities_without_native_boolea
     assert report["preserve_preunion"]["status"] == ("identity_single" if count else "identity_empty")
     assert module._settings({})["preserve_fusion_mode"] == "direct"
 
-
 @pytest.mark.parametrize("failure", ["error", "warning", "null", "invalid", "volume", "missing", "coverage_warning"])
 def test_preserve_preunion_native_failures_cannot_become_success(monkeypatch, failure):
     from build123d import Box, Pos, Face, Wire
     import deep_frame.topology_surface as module
-
     original = module._boolean
     first, second = Box(2, 2, 2), Pos(4, 0, 0)*Box(2, 2, 2)
     def injected(shape, tools, operation, *settings):
@@ -451,21 +407,17 @@ def test_preserve_preunion_native_failures_cannot_become_success(monkeypatch, fa
     if failure == "missing":
         assert report["preserve_preunion"]["coverage"][-1]["missing_volume_mm3"] == pytest.approx(8)
 
-
 def test_preserve_preunion_rejects_inward_original_solid():
     from build123d import Box, Shape
     import deep_frame.topology_surface as module
-
     inward = Shape.cast(Box(2, 2, 2).wrapped.Reversed())
     report = {"settings": module._settings({"preserve_fusion_mode": "preunion"})}
     with pytest.raises(module.SurfaceReconstructionError, match="positive outward"):
         module._preunion_preserves([({"name": "inward"}, inward)], report)
 
-
 def test_preserve_preunion_coverage_cannot_cancel_mixed_orientation_components(monkeypatch):
     from build123d import Box, Pos, Shape, Compound
     import deep_frame.topology_surface as module
-
     original = module._boolean
     positive = Box(2, 2, 2)
     negative = Shape.cast((Pos(10, 0, 0)*Box(2, 2, 2)).wrapped.Reversed())
@@ -481,7 +433,6 @@ def test_preserve_preunion_coverage_cannot_cancel_mixed_orientation_components(m
     assert coverage["missing_volume_mm3"] == pytest.approx(0, abs=1e-12)
     assert not coverage["component_orientation_passed"] and not coverage["passed"]
 
-
 def test_progress_keeps_failed_decimation_evidence():
     domain, density = sphere_domain()
     events = []
@@ -491,11 +442,9 @@ def test_progress_keeps_failed_decimation_evidence():
     assert events[-1]["mesh"] is not None
     assert events[-1]["report"]["decimation_attempts"][0]["passed"] is False
 
-
 @pytest.mark.parametrize("example", ["plane", "negative_sphere", "subgrid_negative_cavity", "zero_plateau", "isolated_zero", "zero_filament"])
 def test_internal_zero_rule_preserves_real_cavities_and_boundaries(example):
     from deep_frame.topology_surface import _regularize_internal_zero_nodes
-
     points = np.stack(np.meshgrid(*[np.arange(-4, 5)]*3, indexing="ij"), axis=-1)
     field = np.ones((9, 9, 9))
     if example == "plane":
@@ -516,21 +465,17 @@ def test_internal_zero_rule_preserves_real_cavities_and_boundaries(example):
     np.testing.assert_array_equal(corrected[original < 0], original[original < 0])
     np.testing.assert_array_equal(field, original)
 
-
 def test_closed_twisted_box_is_rejected_by_self_intersection_screen():
     import trimesh
     from deep_frame.topology_surface import _mesh_intersections
-
     mesh = trimesh.creation.box()
     mesh.vertices[mesh.vertices[:, 2] > 0, :2] *= -1
     assert mesh.is_watertight and mesh.is_winding_consistent and mesh.body_count == 1
     assert _mesh_intersections(mesh)["passed"] is False
 
-
 @pytest.mark.parametrize("settings", [{}, {"surface_constraint_mode": "cad_only", "manufacturing_opening_radius_mm": 0.25}, {"surface_constraint_mode": "envelope_forbidden", "manufacturing_opening_radius_mm": 0.25}])
 def test_negative_inner_shell_is_not_turned_into_positive_material(settings):
     from deep_frame.topology_surface import SurfaceReconstructionError
-
     domain, _ = sphere_domain()
     points = np.meshgrid(*[np.arange(14)-6.5]*3, indexing="ij")
     radius = np.sqrt(sum(axis**2 for axis in points))

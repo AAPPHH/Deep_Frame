@@ -12,11 +12,9 @@ from deep_frame.fea import evaluate
 from deep_frame.frame import reference_parameters
 from deep_frame.topology_geometry import build_design_domain, grid_centers, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
 
-
 @pytest.fixture(scope="module")
 def domain():
     return build_design_domain(reference_parameters())
-
 
 def test_domain_is_free_connected_3d_space_with_small_preserve_fraction(domain):
     assert domain["grid"]["shape"] == [34, 32, 8]
@@ -32,11 +30,9 @@ def test_domain_is_free_connected_3d_space_with_small_preserve_fraction(domain):
     assert len([region for region in domain["regions"] if region["role"] == "allowed"]) == 1
     assert domain["metadata"]["preserve_volume_mm3"] == domain["preserve"].sum() * 64.0
 
-
 def test_no_v0_shape_call_or_shape_parameter_dependency(monkeypatch, domain):
     def fail(*args, **kwargs):
         raise AssertionError("The free domain must not build a parametric frame")
-
     monkeypatch.setattr("deep_frame.frame.build_frame", fail)
     monkeypatch.setattr("deep_frame.frame.build_geometry", fail)
     monkeypatch.setattr("deep_frame.fea.build_geometry", fail)
@@ -45,7 +41,6 @@ def test_no_v0_shape_call_or_shape_parameter_dependency(monkeypatch, domain):
     changed = build_design_domain(parameters)
     assert np.array_equal(changed["allowed"], domain["allowed"])
     assert np.array_equal(changed["preserve"], domain["preserve"])
-
 
 def test_exact_keepouts_include_hardware_props_holes_and_assembly_access(domain):
     names = {region["name"] for region in domain["regions"]}
@@ -56,7 +51,6 @@ def test_exact_keepouts_include_hardware_props_holes_and_assembly_access(domain)
     assert sum(name.startswith("strap_access_") for name in names) == 4
     assert all(not region.get("rasterize", True) for region in domain["regions"] if "motor_screw_" in region["name"] or region["name"].startswith("aio_screw_"))
     assert domain["manufacturing"]["supports_allowed"]
-
 
 def test_forbidden_overlap_is_conservative_but_support_contact_is_permitted():
     grid = {"origin_mm": [0, 0, 0], "spacing_mm": [4, 4, 4], "shape": [3, 2, 2]}
@@ -69,7 +63,6 @@ def test_forbidden_overlap_is_conservative_but_support_contact_is_permitted():
     assert not np.any(masks["allowed"][:2, :, 1])
     assert np.all(masks["allowed"][2, :, 1])
 
-
 def test_conservative_cylinder_raster_uses_cell_box_distance():
     grid = {"origin_mm": [0, 0, 0], "spacing_mm": [4, 4, 4], "shape": [3, 2, 2]}
     regions = [
@@ -80,7 +73,6 @@ def test_conservative_cylinder_raster_uses_cell_box_distance():
     assert masks["forbidden"][:2, :, 1].all()
     assert not masks["forbidden"][:, :, 0].any()
 
-
 def test_every_required_attachment_has_preserved_optimization_cells(domain):
     centers = grid_centers(domain["grid"])
     for region in domain["regions"]:
@@ -89,7 +81,6 @@ def test_every_required_attachment_has_preserved_optimization_cells(domain):
             assert region["attachment_area_min_mm2"] > 0
             assert region["minimum_wall_mm"] >= 2
     assert label(domain["preserve"])[1] > 8
-
 
 def test_loads_mass_and_fair_local_fixture_contract(domain):
     cases = {case["name"]: case for case in domain["load_cases"]}
@@ -108,7 +99,6 @@ def test_loads_mass_and_fair_local_fixture_contract(domain):
     auxiliary = sum(value for name, value in weights.items() if name.startswith("connection_"))
     assert primary / (primary + auxiliary) == pytest.approx(0.9)
 
-
 def test_parameters_are_copied_and_metadata_is_json_safe(domain):
     parameters = reference_parameters()
     original = deepcopy(parameters)
@@ -118,14 +108,12 @@ def test_parameters_are_copied_and_metadata_is_json_safe(domain):
     assert parameters["material"]["density_g_cm3"] != 10
     json.dumps({key: value for key, value in domain.items() if not isinstance(value, np.ndarray)}, allow_nan=False)
 
-
 def test_additional_forbidden_regions_change_free_material(domain):
     parameters = reference_parameters()
     parameters["topology"] = {"additional_regions": [{"name": "user_keepout", "role": "forbidden", "kind": "box", "min_mm": [-40, -20, 0], "max_mm": [-24, -4, 8], "purpose": "User defined component space"}]}
     changed = build_design_domain(parameters)
     assert changed["allowed"].sum() < domain["allowed"].sum()
     assert np.all(changed["allowed"] <= domain["allowed"])
-
 
 def test_preserve_cuts_are_explicit_and_new_hardware_overlap_is_rejected(domain):
     declared = domain["metadata"]["declared_preserve_subtractions"]
@@ -136,7 +124,6 @@ def test_preserve_cuts_are_explicit_and_new_hardware_overlap_is_rejected(domain)
     parameters["topology"] = {"additional_regions": [{"name": "bad_component", "role": "forbidden", "kind": "box", "min_mm": [-16, -16, 0], "max_mm": [-10, -10, 4], "purpose": "Conflicting new hardware"}]}
     with pytest.raises(ValueError, match="Undeclared preserve/forbidden overlap"):
         build_design_domain(parameters)
-
 
 def test_tool_access_prevents_blind_antenna_caps_and_camera_voxel_slivers(domain):
     regions = {region["name"]: region for region in domain["regions"]}
@@ -154,14 +141,12 @@ def test_tool_access_prevents_blind_antenna_caps_and_camera_voxel_slivers(domain
         assert lug_outer == access_inner == pytest.approx(16)
         assert access.get("rasterize", True)
 
-
 @pytest.mark.parametrize("override", [{"grid": {"spacing_mm": [4, 0, 4]}}, {"grid": {"shape": [3.5, 32, 8]}}, {"grid": {"axis_order": "zyx"}}, {"manufacturing": {"minimum_feature_mm": 1.5}}])
 def test_invalid_grid_or_manufacturing_inputs_are_rejected(override):
     parameters = reference_parameters()
     parameters["topology"] = override
     with pytest.raises(ValueError):
         build_design_domain(parameters)
-
 
 def spatial_loop():
     mask = np.zeros((16, 16, 10), dtype=bool)
@@ -181,7 +166,6 @@ def spatial_loop():
     }
     return domain, mask.astype(float)
 
-
 def test_nonplanar_density_reconstructs_exact_volume_and_closed_exports(tmp_path):
     domain, field = spatial_loop()
     solid = reconstruct_topology(domain, field, {})
@@ -195,7 +179,6 @@ def test_nonplanar_density_reconstructs_exact_volume_and_closed_exports(tmp_path
     assert len(import_step(tmp_path / "free.step").solids()) == 1
     mesh = trimesh.load_mesh(tmp_path / "free.stl")
     assert mesh.is_volume and mesh.body_count == 1
-
 
 def test_exact_preserved_mount_bore_survives_subvoxel_reconstruction():
     domain, field = spatial_loop()
@@ -211,7 +194,6 @@ def test_exact_preserved_mount_bore_survives_subvoxel_reconstruction():
     assert result["checks"]["preserve"]["mount"]["missing_volume_mm3"] < 1e-6
     assert solid.volume == pytest.approx(float(field.sum()) * 64 - np.pi * 1.1**2 * 8)
 
-
 def test_greedy_cuboids_cover_each_voxel_once():
     rng = np.random.default_rng(18)
     mask = rng.random((7, 8, 9)) > 0.6
@@ -220,7 +202,6 @@ def test_greedy_cuboids_cover_each_voxel_once():
         counts[tuple(slice(first, last) for first, last in zip(start, stop))] += 1
     np.testing.assert_array_equal(counts, mask.astype(int))
 
-
 def test_disconnected_required_mounts_are_rejected_without_bridging():
     domain, field = spatial_loop()
     field[0, 0, 0] = 1
@@ -228,7 +209,6 @@ def test_disconnected_required_mounts_are_rejected_without_bridging():
     domain["preserve"][2, 2, 1] = True
     with pytest.raises(ValueError, match="Disconnected required"):
         reconstruct_topology(domain, field, {"remove_unanchored_islands": True})
-
 
 def test_optional_unanchored_island_removal_is_explicit_and_logged():
     domain, field = spatial_loop()
@@ -240,7 +220,6 @@ def test_optional_unanchored_island_removal_is_explicit_and_logged():
     solid = reconstruct_topology(domain, field, {"remove_unanchored_islands": True})
     assert solid.topology_report["repairs"] == [{"method": "remove_unanchored_islands", "removed_voxels": 1, "removed_components": 1}]
     np.testing.assert_array_equal(field, original)
-
 
 def test_unresolved_minimum_feature_and_thin_mount_ligament_are_invalid():
     domain, field = spatial_loop()
@@ -256,13 +235,11 @@ def test_unresolved_minimum_feature_and_thin_mount_ligament_are_invalid():
     result = validate_topology(solid, domain, {})
     assert "preserve:thin_mount" in result["violations"]
 
-
 def test_nonconservative_hardware_keepout_mask_is_rejected():
     domain, field = spatial_loop()
     domain["regions"] = [{"name": "hardware", "kind": "box", "role": "forbidden", "purpose": "component clearance", "min_mm": [8.1, 8.1, 4.1], "max_mm": [9, 9, 5]}]
     with pytest.raises(ValueError, match="Nonconservative"):
         reconstruct_topology(domain, field, {})
-
 
 def test_exact_subvoxel_box_cut_cannot_hide_a_half_millimeter_web():
     domain, field = spatial_loop()
@@ -274,7 +251,6 @@ def test_exact_subvoxel_box_cut_cannot_hide_a_half_millimeter_web():
     assert rays["minimum_measured_mm"] < 1
     assert rays["thin_sample_count"] > 0
 
-
 def test_inaccessible_closed_support_cavity_is_rejected():
     domain, field = spatial_loop()
     field[:] = 1
@@ -285,7 +261,6 @@ def test_inaccessible_closed_support_cavity_is_rejected():
     access = result["checks"]["supports"]["accessibility"]
     assert access["closed_cad_cavities"] == 1
     assert access["trapped_void_voxels"] == 100
-
 
 def test_nonplanar_reconstruction_reaches_independent_gmsh_and_calculix(tmp_path):
     domain, field = spatial_loop()
@@ -306,7 +281,6 @@ def test_nonplanar_reconstruction_reaches_independent_gmsh_and_calculix(tmp_path
     assert result["eigenfrequencies_hz"][0] > 0
     assert result["mass_g"] == pytest.approx(21.34656)
 
-
 def diagonal_contact_field():
     domain, _ = spatial_loop()
     shape = (5, 5, 2)
@@ -316,7 +290,6 @@ def diagonal_contact_field():
     for x, y in [(1, 1), (1, 0), (2, 0), (3, 0), (3, 1), (3, 2), (2, 2)]:
         field[x, y, :] = 1
     return domain, field
-
 
 def test_optional_manifold_repair_is_density_guided_and_logged():
     domain, field = diagonal_contact_field()
@@ -330,7 +303,6 @@ def test_optional_manifold_repair_is_density_guided_and_logged():
     assert repairs[0]["density_before"] == 0.3
     assert sum(item["added_volume_mm3"] for item in repairs) > 0
 
-
 def test_manifold_repair_never_fills_forbidden_cells_or_exceeds_limit():
     domain, field = diagonal_contact_field()
     with pytest.raises(ValueError, match="maximum_repair_voxels"):
@@ -340,7 +312,6 @@ def test_manifold_repair_never_fills_forbidden_cells_or_exceeds_limit():
     domain["forbidden"] = ~domain["allowed"]
     with pytest.raises(ValueError, match="forbidden cells"):
         reconstruct_topology(domain, field, {"repair_manifold_voxels": True, "maximum_repair_voxels": 100})
-
 
 def test_build_plate_face_alone_does_not_require_support():
     domain, field = spatial_loop()

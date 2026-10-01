@@ -15,14 +15,11 @@ from deep_frame.config import TOPOLOGY_CONFIG
 from deep_frame.fea import prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, camera_mount_z, motor_positions, mount_positions
 
-
 def _box(name, role, minimum, maximum, purpose, **extra):
     return {"name": name, "role": role, "kind": "box", "min_mm": list(minimum), "max_mm": list(maximum), "purpose": purpose, **extra}
 
-
 def _cylinder(name, role, center, radius, height, purpose, axis="z", **extra):
     return {"name": name, "role": role, "kind": "cylinder", "center_mm": list(center), "radius_mm": float(radius), "height_mm": float(height), "axis": axis, "purpose": purpose, **extra}
-
 
 def region_bounds(region):
     if region["kind"] == "box":
@@ -31,7 +28,6 @@ def region_bounds(region):
     half[{"x": 0, "y": 1, "z": 2}[region.get("axis", "z")]] = region["height_mm"] / 2
     center = np.asarray(region["center_mm"], dtype=float)
     return center - half, center + half
-
 
 def _preserve_subtractions(regions):
     result = []
@@ -46,13 +42,11 @@ def _preserve_subtractions(regions):
                 result.append({"preserve": preserve["name"], "forbidden": forbidden["name"], "reason": forbidden["purpose"], "detection": "conservative positive AABB overlap; exact CSG subtraction governs geometry"})
     return result
 
-
 def _merge(defaults, changes):
     result = deepcopy(defaults)
     for key, value in changes.items():
         result[key] = _merge(result[key], value) if isinstance(value, dict) and isinstance(result.get(key), dict) else deepcopy(value)
     return result
-
 
 def grid_centers(grid):
     origin = np.asarray(grid["origin_mm"], dtype=float)
@@ -67,7 +61,6 @@ def grid_centers(grid):
     if grid.get("axis_order", "xyz") != "xyz" or grid.get("order", "C") != "C":
         raise ValueError("Grid must use xyz axes and C array order")
     return np.stack(np.meshgrid(*(origin[axis] + spacing[axis] * (np.arange(shape[axis]) + 0.5) for axis in range(3)), indexing="ij"), axis=-1)
-
 
 def region_contains(points, region, padding=0.0):
     points = np.asarray(points, dtype=float)
@@ -90,7 +83,6 @@ def region_contains(points, region, padding=0.0):
         delta = points - center
         return (np.linalg.norm(delta[..., radial], axis=-1) <= radius + np.linalg.norm(padding[radial]) + 1e-9) & (np.abs(delta[..., axis]) <= height / 2 + padding[axis] + 1e-9)
     raise ValueError(f"Unsupported region kind: {region['kind']}")
-
 
 def rasterize_regions(grid, regions):
     points = grid_centers(grid)
@@ -122,7 +114,6 @@ def rasterize_regions(grid, regions):
     if not masks["allowed"].any() or not (masks["allowed"] & ~masks["preserve"]).any():
         raise ValueError("The design domain needs allowed and freely optimizable cells")
     return masks
-
 
 def _component_regions(parameters, settings, grid):
     f, c = parameters["frame"], parameters["components"]
@@ -205,7 +196,6 @@ def _component_regions(parameters, settings, grid):
     regions.append(_box("balance_lead_routing", "forbidden", [f["connector_offset_x_mm"] - 2, -f["connector_y_mm"], 8], [f["connector_offset_x_mm"] + 2, -c["aio15"]["length_mm"] / 2, 12], "Accessible balance and power lead corridor; provisional connector routing"))
     return regions, placements, components
 
-
 def _connection_cases(regions, model, force):
     if force <= 0:
         return []
@@ -225,7 +215,6 @@ def _connection_cases(regions, model, force):
         selector = {"kind": "box", "min_mm": list(minimum), "max_mm": list(maximum)}
         cases.append({"name": "connection_" + name, "analysis": "static", "fixed_regions": deepcopy(fixtures), "loads": [{"region": selector, "force_n": [0.0, 0.0, -force]}], "purpose": "Small declared attachment proof load; enforces mechanically connected required interface"})
     return cases
-
 
 def build_design_domain(parameters):
     settings = _merge(TOPOLOGY_CONFIG, parameters.get("topology", {}))
@@ -313,7 +302,6 @@ def build_design_domain(parameters):
         },
     }
 
-
 def region_shape(region):
     if region["kind"] == "box":
         lower = np.asarray(region["min_mm"], dtype=float)
@@ -329,7 +317,6 @@ def region_shape(region):
         return Pos(*region["center_mm"]) * Rot(*rotation) * Cylinder(radius, height)
     raise ValueError("Unsupported region primitive: " + str(region.get("kind")))
 
-
 def _volume(shape):
     if shape is None:
         return 0.0
@@ -337,10 +324,8 @@ def _volume(shape):
         return sum(item.volume for item in shape)
     return shape.volume
 
-
 def _compound(shape):
     return Compound(children=shape) if isinstance(shape, list) else shape
-
 
 def _greedy_boxes(mask, order=(0, 1, 2)):
     remaining = np.transpose(np.asarray(mask, dtype=bool), order).copy()
@@ -360,11 +345,9 @@ def _greedy_boxes(mask, order=(0, 1, 2)):
         result.append((start[reverse], stop[reverse]))
     return result
 
-
 def voxel_boxes(mask):
     alternatives = [_greedy_boxes(mask, order) for order in permutations(range(3))]
     return min(alternatives, key=len)
-
 
 def _ambiguous_cells(mask):
     for axis in range(3):
@@ -392,7 +375,6 @@ def _ambiguous_cells(mask):
             return cells, "diagonal_vertex_contact"
     return [], None
 
-
 def _repair_manifold_cells(occupied, domain, density, settings):
     allowed = np.asarray(domain["allowed"], dtype=bool)
     repaired = occupied.copy()
@@ -413,7 +395,6 @@ def _repair_manifold_cells(occupied, domain, density, settings):
         selected = min(candidates, key=lambda index: (-float(density[index]), index))
         repaired[selected] = True
         repairs.append({"method": "density_guided_local_manifold_fill", "cause": cause, "cell_xyz": [int(value) for value in selected], "material_before": 0, "material_after": 1, "density_before": float(density[selected]), "density_after": 1.0, "added_volume_mm3": volume})
-
 
 def threshold_field(domain, density, settings):
     grid = domain["grid"]
@@ -448,7 +429,6 @@ def threshold_field(domain, density, settings):
         occupied, changes = _repair_manifold_cells(occupied, domain, field, settings)
         repairs.extend(changes)
     return occupied, {"method": "conservative_voxel_threshold_greedy_cuboids", "density_threshold": threshold, "occupied_voxels": int(np.sum(occupied)), "connectivity": 6, "repairs": repairs}
-
 
 def reconstruct_topology(domain: dict, density, settings: dict) -> Solid:
     started = perf_counter()
@@ -491,10 +471,8 @@ def reconstruct_topology(domain: dict, density, settings: dict) -> Solid:
     solid.topology_occupied = occupied.copy()
     return solid
 
-
 def validate_topology(solid, domain: dict, settings: dict) -> dict:
     return _validate_topology(solid, domain, settings)
-
 
 def _attachment_sections(solid, outer, depth):
     bounds = outer.bounding_box()
@@ -510,7 +488,6 @@ def _attachment_sections(solid, outer, depth):
             slab = Pos(*start) * Box(*extent, align=(Align.MIN, Align.MIN, Align.MIN))
             sections[f"{'xyz'[axis]}{'-' if side == -1 else '+'}"] = _volume(solid.intersect(slab)) / depth
     return sections
-
 
 def _primitive_wall_checks(region, forbidden, minimum):
     checks = {}
@@ -553,7 +530,6 @@ def _primitive_wall_checks(region, forbidden, minimum):
             checks["bore_ligament:" + first["name"] + ":" + second["name"]] = distance - first["radius_mm"] - second["radius_mm"]
     return {"margins_mm": checks, "minimum_mm": minimum, "passed": all(value >= minimum - 1e-6 for value in checks.values())}
 
-
 def _wall_ray_screen(solid, minimum):
     measurements = []
     thin = []
@@ -592,7 +568,6 @@ def _wall_ray_screen(solid, minimum):
             unresolved.append(face_index)
     return {"method": "exact inward CAD normal rays, nine UV samples per face with projected largest-triangle fallback", "minimum_required_mm": minimum, "minimum_measured_mm": min(measurements) if measurements else None, "ray_count": len(measurements), "thin_samples": thin[:30], "thin_sample_count": len(thin), "unresolved_faces": unresolved, "passed": bool(measurements) and not thin and not unresolved, "limitations": "Finite surface sampling is a geometric screen, not a proof of global minimum thickness between samples"}
 
-
 def _support_accessibility(solid, occupied):
     cavities = max(0, len(solid.shells()) - 1)
     if occupied is None:
@@ -601,7 +576,6 @@ def _support_accessibility(solid, occupied):
     labels, _ = label(background, generate_binary_structure(3, 1))
     inaccessible = int(np.sum(background & (labels != labels[0, 0, 0])))
     return {"closed_cad_cavities": cavities, "trapped_void_voxels": inaccessible, "passed": cavities == 0 and inaccessible == 0, "method": "closed-shell cavity count plus face-connected flood fill from padded exterior", "limitations": "Coarse accessibility screen; support-tool reach and removal through narrow exact passages need slicer/physical review"}
-
 
 def _validate_topology(solid, domain: dict, settings: dict) -> dict:
     violations = []

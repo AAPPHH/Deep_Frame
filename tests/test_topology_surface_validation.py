@@ -14,10 +14,8 @@ from OCP.gp import gp_Dir, gp_Lin, gp_Pnt
 from deep_frame.topology_surface_validation import SURFACE_VALIDATION_SETTINGS, _CadRayIndex, _accessibility, _attachment_screen, _intersection_volume, _mesh, _prescribed_triangles, _preserve_neighborhood, _self_intersection_screen, _settings, _wall_screen, surface_metrics, validate_surface
 from deep_frame import topology_surface_validation as validation
 
-
 def domain():
     return {"grid": {"origin_mm": [-8, -8, -8], "spacing_mm": [2, 2, 2], "shape": [8, 8, 8]}, "regions": [], "manufacturing": {"nozzle_width_mm": 0.4, "minimum_wall_nozzles": 5, "minimum_feature_mm": 2, "minimum_attachment_area_mm2": 4, "supports_allowed": True, "build_direction": [0, 0, 1]}}
-
 
 def native_geometry_and_cache_signature(shape):
     digest = sha256()
@@ -38,13 +36,11 @@ def native_geometry_and_cache_signature(shape):
             digest.update(np.asarray([triangle.Get() for triangle in poly.Triangles()], dtype="<i8").tobytes())
     return digest.hexdigest()
 
-
 def maximum_cylinder_chord_deflection(vertices, faces, radius):
     triangles = np.asarray(vertices)[np.asarray(faces)]
     side = triangles[np.ptp(triangles[:, :, 2], axis=1) > 1e-8]
     midpoints = (side + np.roll(side, -1, axis=1)) / 2
     return float(np.max(radius - np.linalg.norm(midpoints[:, :, :2], axis=2)))
-
 
 @pytest.mark.parametrize("radius", [1, 10, 100])
 def test_absolute_cad_deflection_is_scale_independent_for_whole_shape_and_wall_face(radius):
@@ -67,7 +63,6 @@ def test_absolute_cad_deflection_is_scale_independent_for_whole_shape_and_wall_f
     assert tolerance == 0.03 and failures == []
     assert native_geometry_and_cache_signature(solid) == before
 
-
 def test_absolute_tessellation_keeps_uncached_input_and_native_rigid_transform():
     solid = Pos(3, 4, 5) * Rot(20, 35, 15) * Box(2, 4, 6)
     assert all(BRep_Tool.Triangulation_s(face.wrapped, TopLoc_Location()) is None for face in solid.faces())
@@ -79,7 +74,6 @@ def test_absolute_tessellation_keeps_uncached_input_and_native_rigid_transform()
     assert np.max(np.min(np.linalg.norm(mesh.vertices[:, None, :] - native_vertices[None, :, :], axis=2), axis=1)) < 1e-12
     assert native_geometry_and_cache_signature(solid) == before
 
-
 def test_wall_report_records_absolute_face_tessellation_without_changing_physical_sampling():
     result = _wall_screen(Box(4, 4, 4), 2, _settings({}))
     assert result["passed"] and result["complete"]
@@ -88,7 +82,6 @@ def test_wall_report_records_absolute_face_tessellation_without_changing_physica
     assert result["tessellation"]["deflection_mode"] == "absolute_mm"
     assert result["tessellation"]["used_deflection_face_counts"] == {"0.03": 6}
     assert not result["tessellation"]["input_cache_reused"]
-
 
 def test_real_native_positive_sliver_is_preserved_closed_with_unit_normal_at_face_zero():
     vertices = np.array([[56.090258081750825, -32.45107194235511, 4.000023782246933], [56.09021101619348, -32.45106162751226, 4.000047563798097], [56.090305147242, -32.45108225749, 4.0], [56.09, -32.45, 5.0]])
@@ -104,7 +97,6 @@ def test_real_native_positive_sliver_is_preserved_closed_with_unit_normal_at_fac
     assert mesh.metadata["native_triangle_preservation"]["minimum_triangle_area_mm2"] == pytest.approx(1.861525714847333e-14, rel=1e-6, abs=0)
     assert mesh.metadata["native_triangle_preservation"]["positive_area_faces_removed"] == 0
     assert mesh.metadata["native_triangle_preservation"]["exact_repeated_coordinate_simplices_removed"] == 0
-
 
 @pytest.mark.parametrize("kind", ["zero", "duplicate", "repeated", "invalid_index", "nonfinite"])
 def test_invalid_native_triangles_fail_with_diagnostics_instead_of_deletion(kind):
@@ -125,7 +117,6 @@ def test_invalid_native_triangles_fail_with_diagnostics_instead_of_deletion(kind
     assert caught.value.report["faces_removed"] == 0
     assert caught.value.report["reason"]
 
-
 def test_exact_identification_does_not_merge_nearby_distinct_native_vertices():
     vertices = np.array([[0., 0., 0.], [1., 0., 0.], [1., 1e-10, 0.], [0., 0., 0.]])
     faces = np.array([[3, 1, 2]])
@@ -133,7 +124,6 @@ def test_exact_identification_does_not_merge_nearby_distinct_native_vertices():
     assert len(mesh.vertices) == 3
     assert np.array_equal(mesh.triangles, vertices[faces])
     assert mesh.face_normals[0] == pytest.approx([0, 0, 1])
-
 
 def test_zero_area_native_face_fails_validation_without_refinement_or_silent_drop(monkeypatch):
     calls = []
@@ -146,7 +136,6 @@ def test_zero_area_native_face_fails_validation_without_refinement_or_silent_dro
     assert result["violations"] == ["topology:surface_tessellation_failed"]
     assert result["checks"]["topology"]["native_mesh_diagnostic"]["invalid_triangle_ids_first_100"] == [0]
 
-
 def test_only_exact_repeated_coordinate_simplices_are_logged_without_hiding_a_hole():
     vertices = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [0., 0., 0.]])
     mesh = validation._native_mesh(vertices, np.array([[0, 1, 2], [0, 3, 1]]), [2])
@@ -156,7 +145,6 @@ def test_only_exact_repeated_coordinate_simplices_are_logged_without_hiding_a_ho
     with pytest.raises(validation._InvalidNativeMesh, match="coverage"):
         validation._native_mesh(vertices, np.array([[0, 1, 2], [0, 3, 1]]), [1, 1])
 
-
 def test_sphere_pole_zero_simplices_are_logged_and_positive_surface_stays_closed():
     mesh = _mesh(Sphere(4), _settings({}))
     record = mesh.metadata["native_triangle_preservation"]
@@ -165,12 +153,10 @@ def test_sphere_pole_zero_simplices_are_logged_and_positive_surface_stays_closed
     assert record["exact_repeated_coordinate_simplices_removed"] > 0
     assert record["retained_triangle_count"] + record["exact_repeated_coordinate_simplices_removed"] == record["native_triangle_count"]
 
-
 def test_exact_collinearity_cannot_become_positive_area_from_scaled_edge_rounding():
     vertices = np.array([[0., 0., 0.], [3., 7., 13.], [9., 21., 39.]])
     with pytest.raises(validation._InvalidNativeMesh, match="exactly collinear"):
         validation._native_mesh(vertices, [[0, 1, 2]])
-
 
 def test_zero_simplex_orphan_vertex_does_not_inflate_closed_body_count():
     box = trimesh.creation.box(extents=[4, 4, 4])
@@ -183,11 +169,9 @@ def test_zero_simplex_orphan_vertex_does_not_inflate_closed_body_count():
     assert mesh.metadata["native_triangle_preservation"]["unreferenced_vertices_compacted"] == 1
     assert mesh.metadata["native_triangle_preservation"]["exact_repeated_coordinate_simplices_removed"] == 1
 
-
 def disjoint_real_native_pair():
     vertices = np.array([[-18.66864304847, -4.883609670952, 0.001001911567877], [-12.751777026374823, -9.55000049340984, 0.0010338142340638077], [-12.863989121397593, -9.552030881918494, 0.0010332121516310963], [-18.66824315489, -1.747172369733, 0.001001811687905], [-12.527484307643602, -9.557745817348632, 0.00103501807747591], [-12.63956274552688, -9.551906253277675, 0.001034416456265861]])
     return trimesh.Trimesh(vertices=vertices, faces=[[0, 1, 2], [3, 4, 5]], process=False)
-
 
 def test_real_native_meshlab_false_positive_requires_exact_all_pair_certificate():
     mesh = disjoint_real_native_pair()
@@ -202,14 +186,12 @@ def test_real_native_meshlab_false_positive_requires_exact_all_pair_certificate(
     assert refined["certificates"][0]["strictly_disjoint"]
     assert result["input_mesh_unchanged"] and result["native_mesh_unchanged"]
 
-
 def test_real_crossing_selects_both_faces_and_exact_refinement_cannot_accept():
     mesh = trimesh.Trimesh(vertices=[[-1, -1, 0], [1, -1, 0], [0, 1, 0], [0, -0.5, -1], [0, -0.5, 1], [0, 0.5, 0]], faces=[[0, 1, 2], [3, 4, 5]], process=False)
     result = _self_intersection_screen(mesh)
     assert result["complete"] and not result["passed"]
     assert result["self_intersecting_faces_first_100"] == [0, 1]
     assert result["exact_selected_pair_refinement"]["unresolved_pairs"] == [[0, 1]]
-
 
 @pytest.mark.parametrize("count", [1, 17])
 def test_exact_si_refinement_single_selection_and_computation_cap_fail_closed(count):
@@ -218,7 +200,6 @@ def test_exact_si_refinement_single_selection_and_computation_cap_fail_closed(co
     assert not result["passed"] and not result["complete"]
     assert not result["certificates"]
 
-
 def test_exact_si_refinement_must_certify_every_pair_and_cannot_accept_contact():
     first = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]])
     triangles = np.array([first, first + [5, 5, 0], first + [-1, 0, 0]])
@@ -226,7 +207,6 @@ def test_exact_si_refinement_must_certify_every_pair_and_cannot_accept_contact()
     assert result["complete"] and not result["passed"]
     assert result["pair_count_required"] == 3 and len(result["certificates"]) == 2
     assert result["unresolved_pairs"] == [[0, 2]]
-
 
 def test_exact_si_refinement_nonfinite_input_and_unpinned_library_fail_closed(monkeypatch):
     mesh = disjoint_real_native_pair()
@@ -241,13 +221,11 @@ def test_exact_si_refinement_nonfinite_input_and_unpinned_library_fail_closed(mo
     assert result["self_intersecting_face_count"] == 2
     assert not result["exact_selected_pair_refinement"]["complete"]
 
-
 def test_exact_projection_separation_needs_no_coplanarity_assumption():
     triangles = np.array([[[0., 0., 0.], [1., 0., 0.], [0., 1., 0.]], [[2., 0., -1.], [3., 0., 1.], [2., 1., 2.]]])
     result = validation._strict_selected_pair_certificates(triangles, [0, 1])
     assert result["passed"] and result["complete"]
     assert result["certificates"][0]["projection_axes"] == [0, 1]
-
 
 def test_exact_si_predicate_error_cannot_turn_selection_into_acceptance(monkeypatch):
     class BrokenExactArithmetic:
@@ -259,14 +237,12 @@ def test_exact_si_predicate_error_cannot_turn_selection_into_acceptance(monkeypa
     assert not result["passed"] and not result["complete"]
     assert "injected" in result["reason"]
 
-
 @pytest.mark.parametrize("fuzzy_mm", [1e-7, 1e-5])
 def test_native_verified_empty_difference_is_distinct_from_csg_failure(fuzzy_mm):
     result = validation._checked_csg("cut", Box(2, 2, 2), Box(4, 4, 4), fuzzy_mm=fuzzy_mm)
     assert result.is_valid
     assert len(result.solids()) == len(result.faces()) == 0
     assert validation._volume(result) == 0
-
 
 @pytest.mark.parametrize("severity", ["warning", "error"])
 def test_native_alert_on_empty_difference_cannot_be_a_zero_volume_pass(monkeypatch, severity):
@@ -278,7 +254,6 @@ def test_native_alert_on_empty_difference_cannot_be_a_zero_volume_pass(monkeypat
                 self.AddWarning(alert)
             else:
                 self.AddError(alert)
-
     monkeypatch.setattr(validation, "BOPAlgo_BOP", AlertedOperation)
     events = []
     result = validate_surface(Box(2, 2, 2), domain(), {}, progress=events.append)
@@ -290,17 +265,14 @@ def test_native_alert_on_empty_difference_cannot_be_a_zero_volume_pass(monkeypat
     assert not any("volume" in key for key in diagnostic)
     assert events[-1]["status"] == "unresolved"
 
-
 def test_null_native_result_without_alert_is_unresolved_not_empty(monkeypatch):
     class NullOperation(BOPAlgo_BOP):
         def Shape(self):
             return TopoDS_Shape()
-
     monkeypatch.setattr(validation, "BOPAlgo_BOP", NullOperation)
     with pytest.raises(validation._UnresolvedCSG, match="unresolved") as caught:
         validation._checked_csg("cut", Box(2, 2, 2), Box(4, 4, 4))
     assert "null" in caught.value.report["reason"]
-
 
 def test_explicit_boolean_numerics_are_reported_without_changing_physical_criteria():
     result = validate_surface(Sphere(4), domain(), {"boolean_fuzzy_mm": 1e-5}, reference_solid=Box(10, 10, 10))
@@ -309,7 +281,6 @@ def test_explicit_boolean_numerics_are_reported_without_changing_physical_criter
     assert result["numerical_method"]["default_boolean_fuzzy_mm"] == 1e-7
     assert {key: value for key, value in result["settings"].items() if key != "boolean_fuzzy_mm"} == {key: value for key, value in SURFACE_VALIDATION_SETTINGS.items() if key != "boolean_fuzzy_mm"}
 
-
 def test_final_bulge_outside_envelope_cannot_hide_behind_voxel_metadata():
     solid = Pos(7, 0, 0) * Box(4, 4, 4)
     solid.topology_report = {"minimum_voxel_feature_mm": 4}
@@ -317,7 +288,6 @@ def test_final_bulge_outside_envelope_cannot_hide_behind_voxel_metadata():
     result = validate_surface(solid, domain(), {})
     assert "envelope" in result["violations"]
     assert result["checks"]["envelope"]["outside_grid_box_mm3"] == pytest.approx(16)
-
 
 def test_final_geometry_preserve_and_keepout_are_checked_without_source_reports():
     specification = domain()
@@ -330,7 +300,6 @@ def test_final_geometry_preserve_and_keepout_are_checked_without_source_reports(
     assert "preserve:mount" in result["violations"]
     assert "forbidden:clearance" in result["violations"]
 
-
 def test_physical_face_sampling_detects_local_thin_web_on_large_face():
     solid = Box(12, 12, 4).cut(Pos(4, 0, 1.25) * Box(2, 2, 2.5))
     result = _wall_screen(solid, 2, _settings({}))
@@ -338,7 +307,6 @@ def test_physical_face_sampling_detects_local_thin_web_on_large_face():
     assert result["minimum_measured_mm"] < 1.6
     assert result["thin_sample_count"] > 0
     assert result["maximum_sample_triangle_edge_mm"] == 1
-
 
 def test_closed_cavity_detected_from_final_cad_despite_stale_occupancy():
     solid = Box(12, 12, 12).cut(Box(4, 4, 4))
@@ -348,14 +316,12 @@ def test_closed_cavity_detected_from_final_cad_despite_stale_occupancy():
     assert result["closed_cad_cavities"] == 1
     assert result["trapped_void_cells"] == 64
 
-
 def test_finite_prescribed_boundary_does_not_exclude_protruding_triangle():
     specification = domain()
     specification["regions"] = [{"kind": "box", "role": "preserve", "name": "mount", "min_mm": [-1, -1, 0], "max_mm": [1, 1, 2]}]
     triangles = np.array([[[-4, -0.5, 2], [4, -0.5, 2], [0, 0.5, 2]], [[-0.5, -0.5, 2], [0.5, -0.5, 2], [0, 0.5, 2]]])
     mask = _prescribed_triangles(triangles, np.array([[0, 0, 1], [0, 0, 1]]), specification, _settings({}))
     assert mask.tolist() == [False, True]
-
 
 def test_coplanar_tessellation_edges_do_not_count_as_roughness():
     mesh = trimesh.creation.box(extents=[4, 4, 4])
@@ -364,7 +330,6 @@ def test_coplanar_tessellation_edges_do_not_count_as_roughness():
     assert first["free_sharp_edge_length_mm"] == pytest.approx(48)
     for key in ("free_surface_area_mm2", "free_sharp_edge_length_mm", "free_axis_normal_area_fraction"):
         assert first[key] == pytest.approx(refined[key])
-
 
 def test_equal_mass_can_still_have_large_material_relocation():
     reference = Box(4, 4, 4)
@@ -377,7 +342,6 @@ def test_equal_mass_can_still_have_large_material_relocation():
     assert change["symmetric_difference_volume_mm3"] == pytest.approx(32)
     assert "surface_maturity" in result["violations"]
 
-
 def test_continuous_sphere_passes_surface_and_wall_screens_without_voxel_data():
     reference = Box(10, 10, 10)
     result = validate_surface(Sphere(4), domain(), {}, reference_solid=reference)
@@ -387,20 +351,17 @@ def test_continuous_sphere_passes_surface_and_wall_screens_without_voxel_data():
     assert result["checks"]["features"]["rays_clear_through_upper_bound"] == result["checks"]["features"]["ray_count"]
     assert result["checks"]["surface_maturity"]["passed"]
 
-
 def test_tangent_material_difference_with_native_orientation_warning_is_unresolved():
     result = validate_surface(Sphere(4), domain(), {}, reference_solid=Box(8, 8, 8))
     assert result["violations"] == ["csg:unresolved"]
     assert "BOPAlgo_AlertUnableToOrientTheShape" in result["checks"]["csg"]["native_alerts"]["warnings"]
     assert "material_change" not in result
 
-
 def test_invalid_and_weakened_criteria_fail_before_geometry_work():
     for changes in ({"wall_sample_spacing_mm": float("nan")}, {"maximum_wall_samples": True}, {"maximum_free_axis_fraction_ratio": 0.8}, {"maximum_void_columns": 0.1}, {"misspelled_tolerance": 1}):
         with pytest.raises(ValueError):
             validate_surface(None, domain(), changes)
     assert SURFACE_VALIDATION_SETTINGS["maximum_free_axis_fraction_ratio"] == 0.5
-
 
 def test_exact_local_crop_contains_outermost_slab_and_preserves_all_sections():
     solid = Box(12, 4, 4).fuse(Box(4, 12, 4), Box(4, 4, 12))
@@ -416,7 +377,6 @@ def test_exact_local_crop_contains_outermost_slab_and_preserves_all_sections():
     assert global_result["passed"] == local_result["passed"]
     assert _intersection_volume(solid, Pos(20, 0, 0) * Box(4, 4, 4)) == 0
 
-
 @pytest.mark.parametrize("thickness", [1.5, 1.99998, 1.999995, 2.0, 2.000005, 2.00002])
 def test_bounded_exact_cad_index_preserves_thickness_decision_at_tolerance_boundary(thickness):
     solid = Box(4, 4, thickness)
@@ -431,7 +391,6 @@ def test_bounded_exact_cad_index_preserves_thickness_decision_at_tolerance_bound
         assert min(actual) == pytest.approx(expected, abs=1e-8)
     else:
         assert not actual
-
 
 @pytest.mark.parametrize("shape,point,direction", [
     ("sphere", (0, 0, 1), (np.sqrt(1 - 0.001 ** 2), 0, -0.001)),
@@ -450,13 +409,11 @@ def test_cad_index_keeps_grazing_curved_and_face_boundary_intersections(shape, p
     if expected:
         assert min(actual) == pytest.approx(min(expected), abs=1e-8)
 
-
 def test_incomplete_bounded_screen_cannot_pass():
     result = _wall_screen(Sphere(3), 2, _settings({"maximum_wall_samples": 2}))
     assert not result["passed"]
     assert not result["complete"]
     assert result["reason"] == "wall sample budget exceeded"
-
 
 def test_inward_oriented_closed_valid_solid_fails_topology_screen():
     solid = Box(4, 4, 4)
@@ -470,7 +427,6 @@ def test_inward_oriented_closed_valid_solid_fails_topology_screen():
     assert not result["passed"]
     assert result["violations"] == ["topology:closed_manifold_single_solid"]
 
-
 def test_spatial_index_retains_all_entry_exit_pairs_for_curves_and_cavities():
     for solid in (Sphere(3), Box(8, 8, 8).cut(Box(4, 4, 4))):
         index = _CadRayIndex(solid)
@@ -483,7 +439,6 @@ def test_spatial_index_retains_all_entry_exit_pairs_for_curves_and_cavities():
             actual = sorted(index.intersections(point, (0, 0, 1), 0, 20, nearest=False))
             assert actual == pytest.approx(expected, abs=1e-8)
 
-
 def test_micro_sliver_inside_legacy_origin_exclusion_cannot_pass_as_clear():
     solid = Box(4, 4, 1e-6)
     assert solid.is_valid and solid.volume > 1e-5
@@ -493,14 +448,12 @@ def test_micro_sliver_inside_legacy_origin_exclusion_cannot_pass_as_clear():
     assert result["thin_sample_count"] > 0
     assert result["ray_origin_exclusion_mm"] == 1e-7
 
-
 def test_origin_guard_rejects_ambiguous_face_edge_even_when_long_ray_is_clear():
     solid = Box(4, 4, 4)
     index = _CadRayIndex(solid)
     source = next(i for i, face in enumerate(index.faces) if face.center().Z == pytest.approx(2))
     assert index.origin_is_resolved((0, 0, 2), (0, 0, -1), source)
     assert not index.origin_is_resolved((2, 0, 2), (-1, 0, 0), source)
-
 
 def test_closed_consistent_positive_volume_single_body_can_self_intersect():
     mesh = trimesh.creation.box(extents=(4, 4, 4))
@@ -514,7 +467,6 @@ def test_closed_consistent_positive_volume_single_body_can_self_intersect():
     assert result["self_intersecting_face_count"] > 0
     assert result["input_mesh_unchanged"]
     assert np.array_equal(vertices, mesh.vertices) and np.array_equal(faces, mesh.faces)
-
 
 @pytest.mark.parametrize("kind", ["box", "cylinder"])
 def test_valid_cad_box_and_cylinder_pass_self_intersection_screen(kind):

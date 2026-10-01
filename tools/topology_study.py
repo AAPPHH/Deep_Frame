@@ -1,8 +1,3 @@
-"""Density study tools: run bounded experiments, summarize verified evidence and plot histories.
-
-Run from the repository root with ``python -m tools.topology_study {run,summarize,plot} --help``.
-"""
-
 import argparse
 import hashlib
 import json
@@ -19,7 +14,6 @@ from deep_frame.topology_geometry import build_design_domain
 from deep_frame.topology_optimization import _settings, optimize_topology
 from deep_frame.topology_pipeline import _file_digest, _provenance, _save
 
-
 def study_parameters(shape):
     shape = np.asarray(shape, dtype=int)
     if shape.shape != (3,) or np.any(shape < 1):
@@ -29,7 +23,6 @@ def study_parameters(shape):
     parameters = reference_parameters()
     parameters["topology"] = {"grid": {"shape": shape.tolist(), "spacing_mm": (extent / shape).tolist()}}
     return parameters
-
 
 def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu"):
     directory = Path(directory).resolve()
@@ -71,7 +64,6 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
                 _save(status_path, {"status": "optimizing", "pid": os.getpid(), **entry})
                 print(json.dumps({"event": "iteration", **{key: entry[key] for key in
                                  ("iteration", "final_evaluation", "objective", "maximum_design_change", "elapsed_s")}}), flush=True)
-
             result = optimize_topology(domain, settings, progress_callback=progress)
         arrays = {**masks, "density": result["density"]}
         if "design_density" in result:
@@ -106,7 +98,6 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
                             "elapsed_s": perf_counter() - started})
         raise
 
-
 def run_main(argv=None, prog=None):
     """Bounded, observable density experiments; each invocation starts uniformly.
 
@@ -124,10 +115,8 @@ def run_main(argv=None, prog=None):
     status = run_study(args.directory, args.shape, args.max_iterations, args.change_tolerance, args.max_runtime_s, args.linear_solver)
     return 0 if status == "ok" else 1
 
-
 def read_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
-
 
 def verify_artifacts(directory, artifacts, required):
     directory = Path(directory).resolve()
@@ -140,14 +129,12 @@ def verify_artifacts(directory, artifacts, required):
         if path.stat().st_size != evidence["size_bytes"] or _file_digest(path) != evidence["sha256"]:
             raise ValueError(f"Corrupt evidence artifact: {path}")
 
-
 def verify_frozen_reference(directory):
     acceptance = read_json(Path(directory) / "acceptance.json")
     if acceptance["status"] != "ok":
         raise ValueError("Frozen reference has no successful acceptance")
     verify_artifacts(directory, acceptance["versioned_artifacts"],
                      ("optimization.json", "fields.npz", "run_manifest.json"))
-
 
 def verify_comparable_settings(reference, studied):
     permitted = {"max_iterations", "minimum_iterations", "change_tolerance", "max_runtime_s"}
@@ -157,18 +144,14 @@ def verify_comparable_settings(reference, studied):
     if studied["minimum_iterations"] != min(reference["minimum_iterations"], studied["max_iterations"]):
         raise ValueError("Minimum iteration count changed beyond short benchmark adjustment")
 
-
 def field_comparison(first, second):
-    """Exact piecewise-constant voxel overlap on the common subdivision."""
     common_shape = np.lcm(first["density"].shape, second["density"].shape)
     if int(np.prod(common_shape)) > 2_000_000:
         raise ValueError("Common comparison subdivision exceeds the 2 million cell limit")
-
     def expand(array):
         for axis, count in enumerate(common_shape):
             array = np.repeat(array, int(count // array.shape[axis]), axis=axis)
         return array
-
     delta = expand(second["density"]) - expand(first["density"])
     first_allowed, second_allowed = expand(first["allowed"]), expand(second["allowed"])
     common_allowed = first_allowed & second_allowed
@@ -180,7 +163,6 @@ def field_comparison(first, second):
             "rms_density_common_free": float(np.sqrt(np.mean(delta[common_free] ** 2))),
             "maximum_density_difference": float(np.max(np.abs(delta))),
             "allowed_mask_disagreement_fraction_of_box": float(np.mean(first_allowed != second_allowed))}
-
 
 def summarize(root, names, output):
     reference_dir = Path("docs/validation/topology_phase1")
@@ -274,7 +256,6 @@ def summarize(root, names, output):
     _save(output, report)
     return report
 
-
 def summarize_main(argv=None, prog=None):
     """Verify completed density experiments and summarize their numerical evidence."""
     parser = argparse.ArgumentParser(prog=prog, description=summarize_main.__doc__)
@@ -285,13 +266,10 @@ def summarize_main(argv=None, prog=None):
     result = summarize(options.root, options.runs, options.output)
     print(json.dumps({"studies": [study["name"] for study in result["studies"]], "output": options.output}))
 
-
 def plot(root, names, output):
     import matplotlib
-
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-
     reference_dir = Path("docs/validation/topology_phase1")
     verify_frozen_reference(reference_dir)
     reference = read_json(reference_dir / "optimization.json")["summary"]
@@ -333,7 +311,6 @@ def plot(root, names, output):
     figure.savefig(output, dpi=160)
     plt.close(figure)
 
-
 def plot_main(argv=None, prog=None):
     """Plot stored density histories using the same frozen compliance normalization."""
     parser = argparse.ArgumentParser(prog=prog, description=plot_main.__doc__)
@@ -343,7 +320,6 @@ def plot_main(argv=None, prog=None):
     arguments = parser.parse_args(argv)
     plot(arguments.root, arguments.runs, arguments.output)
 
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -352,7 +328,6 @@ def main(argv=None):
         commands.add_parser(name, help=function.__doc__.splitlines()[0], add_help=False)
     args, arguments = parser.parse_known_args(argv)
     return handlers[args.command](arguments, parser.prog + " " + args.command)
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

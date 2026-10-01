@@ -6,7 +6,6 @@ from scipy.sparse import csr_matrix
 
 from deep_frame.topology_optimization import DensityMap, HexElasticity, _settings, elasticity_matrix, hexahedron_matrices, optimize_topology, regular_grid
 
-
 def beam_domain(shape=(10, 5, 5), spacing=(2.0, 2.0, 2.0)):
     extent = np.array(shape) * spacing
     fixture = {"kind": "box", "min_mm": [-0.01, -0.01, -0.01], "max_mm": [0.01, extent[1] + 0.01, extent[2] + 0.01]}
@@ -28,7 +27,6 @@ def beam_domain(shape=(10, 5, 5), spacing=(2.0, 2.0, 2.0)):
         ],
     }
 
-
 def test_hex8_rigid_modes_patch_energy_and_consistent_mass():
     spacing = (2.0, 3.0, 4.0)
     stiffness, mass, strain = hexahedron_matrices(spacing, 0.3)
@@ -48,7 +46,6 @@ def test_hex8_rigid_modes_patch_energy_and_consistent_mass():
         rigid[axis::3] = 1
         assert rigid @ mass @ rigid == pytest.approx(np.prod(spacing), rel=1e-12)
 
-
 def test_hex8_cantilever_deflection_and_frequency_against_euler_bernoulli():
     domain = beam_domain((24, 4, 4), (2.0, 1.5, 1.5))
     system = HexElasticity(domain)
@@ -62,7 +59,6 @@ def test_hex8_cantilever_deflection_and_frequency_against_euler_bernoulli():
     assert result["loads"][0]["directional_displacement_mm"] == pytest.approx(expected_deflection, rel=0.08)
     assert frequency == pytest.approx(expected_frequency, rel=0.05)
     assert system.diagnostics()["independent_fixtures"] == 1
-
 
 def test_simp_and_filter_sensitivity_matches_finite_difference():
     domain = beam_domain((5, 3, 3), (2.0, 2.0, 2.0))
@@ -85,7 +81,6 @@ def test_simp_and_filter_sensitivity_matches_finite_difference():
     assert derivative @ direction == pytest.approx(finite_difference, rel=2e-5, abs=1e-10)
     assert volume_derivative @ direction == pytest.approx((np.sum(plus) - np.sum(minus)) / (2 * step), rel=1e-7)
 
-
 def test_free_three_dimensional_optimization_reduces_compliance_and_preserves_masks():
     domain = beam_domain()
     domain["allowed"][4:6, 2, 2] = False
@@ -104,7 +99,6 @@ def test_free_three_dimensional_optimization_reduces_compliance_and_preserves_ma
     assert domain["load_cases"] == original["load_cases"]
     assert all(entry["maximum_relative_residual"] < 1e-4 for entry in result["history"])
 
-
 def test_optimizer_is_deterministic_and_reports_iteration_limit():
     domain = beam_domain((6, 3, 3))
     settings = {"volume_fraction": 0.7, "filter_radius_mm": 3.0, "max_iterations": 3, "change_tolerance": 1e-12}
@@ -116,17 +110,14 @@ def test_optimizer_is_deterministic_and_reports_iteration_limit():
     assert first["summary"]["stop_reason"] == "max_iterations"
     assert first["summary"]["objective_final"] == second["summary"]["objective_final"]
 
-
 def test_progress_callback_reports_iterations_without_mutating_solver_history():
     domain = beam_domain((6, 3, 3))
     settings = {"volume_fraction": 0.7, "filter_radius_mm": 3.0, "max_iterations": 3, "change_tolerance": 1e-12}
     observed = []
-
     def progress(entry):
         observed.append(deepcopy(entry))
         entry["compliances_n_mm"].clear()
         entry["objective"] = -1
-
     result = optimize_topology(domain, settings, progress_callback=progress)
     plain = optimize_topology(domain, settings)
     assert result["status"] == "ok"
@@ -137,14 +128,12 @@ def test_progress_callback_reports_iterations_without_mutating_solver_history():
     assert np.array_equal(result["density"], plain["density"])
     assert result["summary"]["objective_final"] == plain["summary"]["objective_final"]
 
-
 @pytest.mark.parametrize("settings", [{"volume_fraction": 0.1}, {"volume_fraction": float("nan")}, {"penalization": 0}, {"case_weights": {"missing": 1}}, {"max_iterations": 0}])
 def test_invalid_settings_and_impossible_preserve_budget_fail_cleanly(settings):
     result = optimize_topology(beam_domain(), settings)
     assert result["status"] == "invalid"
     assert result["diagnostics"]
     assert result["summary"] == {}
-
 
 def test_invalid_masks_and_empty_selectors_fail_cleanly():
     domain = beam_domain()
@@ -158,7 +147,6 @@ def test_invalid_masks_and_empty_selectors_fail_cleanly():
     assert result["status"] == "invalid"
     assert "Empty topology node selector" in result["diagnostics"][0]
 
-
 def test_thin_box_expansion_is_bounded_and_reported():
     domain = beam_domain()
     domain["load_cases"][0]["loads"][0]["region"] = {"kind": "box", "min_mm": [19.99, 0, 4.99], "max_mm": [20.01, 10, 5.01]}
@@ -168,13 +156,11 @@ def test_thin_box_expansion_is_bounded_and_reported():
     assert expansions[0]["expansion_each_side_mm"] == [1.0, 1.0, 1.0]
     assert expansions[0]["case"] == "tip"
 
-
 def test_modal_point_mass_requires_independent_calculix():
     domain = beam_domain((4, 3, 3))
     domain["point_masses"] = [{"name": "battery", "mass_g": 37}]
     with pytest.raises(ValueError, match="independent CalculiX"):
         HexElasticity(domain).elastic_frequencies(np.ones(36), "modes")
-
 
 def test_forbidden_only_nodes_receive_no_load_and_no_ghost_stiffness():
     domain = beam_domain((6, 4, 4))
@@ -191,7 +177,6 @@ def test_forbidden_only_nodes_receive_no_load_and_no_ghost_stiffness():
     assert system.diagnostics()["selector_filtering"]
     assert system.solve(domain["allowed"].astype(float))["tip"]["compliance_n_mm"] > 0
 
-
 def test_preserved_interface_policy_excludes_unattached_free_load_nodes():
     domain = beam_domain((6, 5, 5))
     domain["preserve"][-1] = False
@@ -204,7 +189,6 @@ def test_preserved_interface_policy_excludes_unattached_free_load_nodes():
     assert system.diagnostics()["selector_filtering"][0]["removed_nonpreserve_interface_nodes"] == 32
     assert np.sum(force, axis=0) == pytest.approx([0.0, 0.0, -1.0])
 
-
 @pytest.fixture
 def cuda_solver():
     cupy = pytest.importorskip("cupy")
@@ -212,9 +196,7 @@ def cuda_solver():
         pytest.skip("CUDA device is unavailable")
     pytest.importorskip("nvidia.cu12")
     from deep_frame.topology_optimization import CudaDirectSolver
-
     return CudaDirectSolver
-
 
 def test_linear_backend_is_explicit_and_cpu_is_default():
     assert _settings({})["linear_solver"] == "cpu_superlu"
@@ -223,14 +205,11 @@ def test_linear_backend_is_explicit_and_cpu_is_default():
     result = optimize_topology(beam_domain(), {"linear_solver": "fake_gpu"})
     assert result["status"] == "invalid"
 
-
 @pytest.mark.parametrize("failure", [RuntimeError, MemoryError])
 def test_cuda_unavailable_reports_failure_without_cpu_fallback(monkeypatch, failure):
     from deep_frame import topology_optimization as topology_gpu
-
     def unavailable(*args, **kwargs):
         raise failure("CUDA unavailable in controlled test")
-
     monkeypatch.setattr(topology_gpu, "CudaDirectSolver", unavailable)
     result = optimize_topology(beam_domain((5, 3, 3)), {"volume_fraction": 0.65,
                                "filter_radius_mm": 3.1, "linear_solver": "cuda_cudss"})
@@ -238,13 +217,10 @@ def test_cuda_unavailable_reports_failure_without_cpu_fallback(monkeypatch, fail
     assert result["diagnostics"] == ["CUDA unavailable in controlled test"]
     assert result["history"] == []
 
-
 def test_cleanup_diagnostic_preserves_original_solver_error(monkeypatch):
     from deep_frame import topology_optimization as topology_gpu
-
     def unavailable(*args, **kwargs):
         raise RuntimeError("primary failure")
-
     monkeypatch.setattr(topology_gpu, "CudaDirectSolver", unavailable)
     monkeypatch.setattr(HexElasticity, "close", lambda self: ["secondary cleanup failure"])
     result = optimize_topology(beam_domain((5, 3, 3)), {"volume_fraction": 0.65,
@@ -252,20 +228,16 @@ def test_cleanup_diagnostic_preserves_original_solver_error(monkeypatch):
     assert result["status"] == "failed"
     assert result["diagnostics"] == ["primary failure", "secondary cleanup failure"]
 
-
 def test_cleanup_checks_statuses_after_failed_synchronization():
     import ctypes
     from types import SimpleNamespace
     from deep_frame.topology_optimization import CudaDirectSolver
-
     def failed_sync():
         raise RuntimeError("device sync failure")
-
     calls = []
     def destroy(handle):
         calls.append(handle.value)
         return 6
-
     solver = object.__new__(CudaDirectSolver)
     solver.closed = False
     solver.cleanup_errors = []
@@ -277,7 +249,6 @@ def test_cleanup_checks_statuses_after_failed_synchronization():
     assert errors == ["CUDA cleanup synchronization: device sync failure", "cudssMatrixDestroy failed with cuDSS status 6"]
     assert solver.close() == errors
     assert calls == [123]
-
 
 def test_gpu_structural_zero_storage_preserves_exact_cpu_matrix():
     domain = beam_domain((6, 3, 3))
@@ -293,7 +264,6 @@ def test_gpu_structural_zero_storage_preserves_exact_cpu_matrix():
         patterns.append((actual.indptr, actual.indices))
     assert np.array_equal(patterns[0][0], patterns[1][0])
     assert np.array_equal(patterns[0][1], patterns[1][1])
-
 
 def test_cuda_direct_multi_rhs_updates_and_rejects_changed_structure(cuda_solver):
     matrix = csr_matrix([[4., 1.], [1., 3.]])
@@ -311,7 +281,6 @@ def test_cuda_direct_multi_rhs_updates_and_rejects_changed_structure(cuda_solver
     with pytest.raises(RuntimeError, match="closed"):
         solver.solve(matrix, rhs)
 
-
 def test_cuda_device_factorization_error_is_not_accepted(cuda_solver):
     matrix = csr_matrix([[1., 2.], [2., 1.]])
     solver = cuda_solver(matrix, np.ones((2, 1)))
@@ -320,7 +289,6 @@ def test_cuda_device_factorization_error_is_not_accepted(cuda_solver):
             solver.solve(matrix, np.ones((2, 1)))
     finally:
         solver.close()
-
 
 def test_cuda_gradient_filter_and_three_updates_match_cpu(cuda_solver):
     domain = beam_domain((5, 3, 3))

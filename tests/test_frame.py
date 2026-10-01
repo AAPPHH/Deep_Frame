@@ -12,25 +12,20 @@ from OCP.BRep import BRep_Tool
 from deep_frame.config import COMPONENT_DEFAULTS, CONFIG
 from deep_frame.frame import assembly_mass_properties, assembly_scene, battery_prop_overlap, build_component_prototypes, build_components, build_geometry, build_smoke_body, camera_mount_z, collision_and_clearance, export_body, mount_positions, reference_parameters, structural_margins, validate_geometry
 
-
 @pytest.mark.parametrize("dimensions", [(30.0, 20.0, 3.0), (12.5, 8.0, 1.5)])
 def test_body_and_stl(tmp_path, dimensions):
     config = CONFIG | dict(zip(("length_mm", "width_mm", "thickness_mm"), dimensions))
     body = build_smoke_body(config)
-
     assert body.is_valid
     assert len(body.solids()) == 1
     assert body.volume == pytest.approx(np.prod(dimensions))
-
     path = export_body(body, tmp_path / "exports" / "smoke.stl")
     mesh = trimesh.load_mesh(path)
-
     assert mesh.is_volume
     assert mesh.body_count == 1
     np.testing.assert_allclose(mesh.extents, dimensions)
     assert mesh.bounds[0, 2] == pytest.approx(0.0)
     assert mesh.volume == pytest.approx(body.volume)
-
 
 @pytest.mark.parametrize("key", ["length_mm", "width_mm", "thickness_mm"])
 @pytest.mark.parametrize("value", [0.0, -1.0, float("nan"), float("inf")])
@@ -38,11 +33,9 @@ def test_invalid_dimensions(key, value):
     with pytest.raises(ValueError, match="Dimensions"):
         build_smoke_body(CONFIG | {key: value})
 
-
 @pytest.fixture(scope="module")
 def frame():
     return build_geometry(reference_parameters())
-
 
 def test_frame_is_one_closed_solid_and_printable_mesh(frame, tmp_path):
     assert isinstance(frame, Solid)
@@ -51,7 +44,6 @@ def test_frame_is_one_closed_solid_and_printable_mesh(frame, tmp_path):
     mesh = trimesh.load_mesh(export_body(frame, tmp_path / "frame.stl"))
     assert mesh.is_volume and mesh.body_count == 1
     assert mesh.bounds[0, 2] == pytest.approx(0)
-
 
 def test_mount_cylinders_have_the_expected_world_axes(frame):
     parameters = reference_parameters()
@@ -67,7 +59,6 @@ def test_mount_cylinders_have_the_expected_world_axes(frame):
         else:
             assert np.linalg.norm(np.array(points[0]) - points[2]) == pytest.approx(9)
 
-
 def test_reference_parameters_are_independent_and_json_serializable():
     parameters = reference_parameters()
     json.dumps(parameters, allow_nan=False)
@@ -76,13 +67,11 @@ def test_reference_parameters_are_independent_and_json_serializable():
     for key, value in reference_parameters()["frame"].items():
         assert reference_parameters()["default_sources"][key]["value"] == value
 
-
 def test_camera_mount_height_follows_tilt():
     parameters = reference_parameters()
     for tilt in [0, 20, 35]:
         parameters["components"]["camera"]["tilt_deg"] = tilt
         assert camera_mount_z(parameters) == pytest.approx(4.5 + 7 * (cos(radians(tilt)) + sin(radians(tilt))))
-
 
 def test_frame_remains_parametric_for_wheelbase_ratio_and_arm_dimensions():
     parameters = reference_parameters()
@@ -93,7 +82,6 @@ def test_frame_remains_parametric_for_wheelbase_ratio_and_arm_dimensions():
     expected_width = 140 * 1.2 / sqrt(1 + 1.2**2) + 19
     assert shape.bounding_box().size.X == pytest.approx(expected_width)
 
-
 def test_minimum_wall_rule_includes_shaft_and_mount_window_ligaments():
     parameters = reference_parameters()
     assert min(structural_margins(parameters).values()) >= 2 - 1e-7
@@ -101,11 +89,9 @@ def test_minimum_wall_rule_includes_shaft_and_mount_window_ligaments():
     with pytest.raises(ValueError, match="wall"):
         build_geometry(parameters)
 
-
 @pytest.fixture
 def component_config():
     return {"components": deepcopy(COMPONENT_DEFAULTS)}
-
 
 def test_component_envelopes_and_mass(component_config):
     component_config["components"]["camera"]["tilt_deg"] = 0.0
@@ -130,7 +116,6 @@ def test_component_envelopes_and_mass(component_config):
     assert parts["xt30"]["mass_g"] == parts["balancer"]["mass_g"] == 0
     assert parts["xt30"]["mass_scope"] == parts["balancer"]["mass_scope"] == "already_in_battery"
 
-
 @pytest.mark.parametrize("name,diameter_key", [("aio15", "screw_diameter_mm"), ("motor", "screw_clearance_mm")])
 def test_mount_holes_have_configured_axes_and_diameters(component_config, name, diameter_key):
     spec = component_config["components"][name]
@@ -144,7 +129,6 @@ def test_mount_holes_have_configured_axes_and_diameters(component_config, name, 
     expected = sorted((x, y) for x in (-half_side, half_side) for y in (-half_side, half_side))
     np.testing.assert_allclose(axes, expected, atol=1e-6)
     np.testing.assert_allclose(sorted(tuple(round(value, 6) for value in hole[:2]) for hole in part["mount_holes"]), expected, atol=1e-6)
-
 
 def test_dimensions_mounts_and_camera_tilt_respond_to_config(component_config):
     specs = component_config["components"]
@@ -166,7 +150,6 @@ def test_dimensions_mounts_and_camera_tilt_respond_to_config(component_config):
     np.testing.assert_allclose(tuple(parts["camera"]["shape"].bounding_box().size), (16.0, extent, extent), atol=1e-6)
     assert parts["camera"]["center_of_mass_mm"][2] == pytest.approx(extent / 2, abs=1e-6)
 
-
 def test_placement_transforms_geometry_mass_center_and_mount_axes(component_config):
     component_config["components"]["motor"].update(mount_layout="square", diameter_mm=16.0)
     parts = build_components(component_config, {
@@ -178,7 +161,6 @@ def test_placement_transforms_geometry_mass_center_and_mount_axes(component_conf
     np.testing.assert_allclose(parts["front_motor"]["mount_holes"][0], (44.5, 25.5, 3))
     assert parts["front_motor"]["shape"].distance_to(parts["rear_motor"]["shape"]) > 0
 
-
 def test_bolt_circle_is_distinct_from_square_mount(component_config):
     spec = component_config["components"]["motor"]
     spec.update(mount_layout="bolt_circle", diameter_mm=14.2)
@@ -189,7 +171,6 @@ def test_bolt_circle_is_distinct_from_square_mount(component_config):
     spec["mount_layout"] = "square"
     with pytest.raises(ValueError, match="within the motor"):
         build_component_prototypes(component_config)
-
 
 @pytest.mark.parametrize("name,key,value", [
     ("aio15", "stack_height_mm", 0),
@@ -204,11 +185,9 @@ def test_invalid_component_values_are_rejected(component_config, name, key, valu
     with pytest.raises(ValueError):
         build_component_prototypes(component_config)
 
-
 @pytest.fixture(scope="module")
 def default_result():
     return validate_geometry(reference_parameters())
-
 
 def test_default_configuration_passes_and_results_are_json_serializable(default_result):
     assert default_result["passed"], default_result["violations"]
@@ -222,7 +201,6 @@ def test_default_configuration_passes_and_results_are_json_serializable(default_
     np.testing.assert_allclose(tensor, tensor.T, atol=1e-7)
     assert min(np.linalg.eigvalsh(tensor)) > 0
 
-
 def test_small_wheelbase_generates_true_prop_collisions():
     parameters = reference_parameters()
     parameters["frame"]["wheelbase_mm"] = 100
@@ -231,7 +209,6 @@ def test_small_wheelbase_generates_true_prop_collisions():
     collisions = result["checks"]["clearances"]["collisions"]
     assert any(all(part.startswith("prop_") for part in collision["parts"]) for collision in collisions)
     assert result["checks"]["battery_prop_overlap"]["percent_of_battery_area"] > 0
-
 
 def test_support_contacts_never_allow_positive_intersection_volume():
     parameters = reference_parameters()
@@ -243,7 +220,6 @@ def test_support_contacts_never_allow_positive_intersection_volume():
     assert not result["passed"]
     assert result["pairs"]["frame:battery"]["intersection_mm3"] == pytest.approx(100)
 
-
 def test_cad_mass_and_parallel_axis_tensor_match_two_boxes():
     frame = Box(10, 20, 30)
     components = {"box": {"shape": Box(10, 20, 30).translate((40, 0, 0)), "mass_g": 6.0}}
@@ -251,7 +227,6 @@ def test_cad_mass_and_parallel_axis_tensor_match_two_boxes():
     assert result["mass_g"] == pytest.approx(12)
     np.testing.assert_allclose(result["center_of_mass_mm"], [20, 0, 0], atol=1e-8)
     np.testing.assert_allclose(result["inertia_tensor_g_mm2"], np.diag([1300, 5800, 5300]), atol=1e-7)
-
 
 def test_projected_battery_overlap_matches_half_circle_area():
     parameters = reference_parameters()
@@ -264,7 +239,6 @@ def test_projected_battery_overlap_matches_half_circle_area():
     assert result["area_mm2"] == pytest.approx(pi * 32.5**2 / 2)
     assert result["percent_of_battery_area"] == pytest.approx(100 * pi / 8)
 
-
 def test_collision_viewer_scene_contains_red_intersection_solids():
     parameters = reference_parameters()
     parameters["frame"]["wheelbase_mm"] = 100
@@ -274,9 +248,7 @@ def test_collision_viewer_scene_contains_red_intersection_solids():
     assert len(red) == len(scene["collisions"])
     assert all(name.startswith("COLLISION") and shape.volume > 1e-6 for name, shape in red)
 
-
 RESEARCH = Path(__file__).resolve().parents[1] / "docs" / "research"
-
 
 def test_reference_inventory_and_cell_provenance():
     rows = json.loads((RESEARCH / "armattan_frames.json").read_text(encoding="utf-8"))
@@ -295,7 +267,6 @@ def test_reference_inventory_and_cell_provenance():
             else:
                 assert field["note"]
 
-
 def test_only_scale_independent_principles_are_adopted():
     principles = json.loads((RESEARCH / "principles.json").read_text(encoding="utf-8"))
     rows = json.loads((RESEARCH / "armattan_frames.json").read_text(encoding="utf-8"))
@@ -305,7 +276,6 @@ def test_only_scale_independent_principles_are_adopted():
         assert set(principle["frame_ids"]) <= ids
         assert not principle["adopted"] or principle["scale_independent"]
     assert any(not item["scale_independent"] for item in principles)
-
 
 def test_defaults_reference_existing_frames_and_adopted_principles():
     defaults = json.loads((RESEARCH / "design_defaults.json").read_text(encoding="utf-8"))

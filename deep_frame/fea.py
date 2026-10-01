@@ -16,9 +16,7 @@ import numpy as np
 
 if __name__ != "__main__":
     from build123d import export_step
-
     from deep_frame.frame import assembly_placements, build_components, build_geometry, motor_positions
-
 
 def resolve_solver(settings):
     explicit = settings.get("solver_path") or os.environ.get("CALCULIX_PATH")
@@ -36,7 +34,6 @@ def resolve_solver(settings):
         return str(candidates[0].resolve())
     raise FileNotFoundError("CalculiX missing: set solver_path or CALCULIX_PATH, or install in .venv/calculix")
 
-
 def _run(command, directory, timeout, threads, log_path):
     environment = os.environ.copy()
     environment.update({"OMP_NUM_THREADS": str(threads), "CCX_NPROC_RESULTS": str(threads),
@@ -50,7 +47,6 @@ def _run(command, directory, timeout, threads, log_path):
     if completed.returncode or re.search(r"\*ERROR|\*FATAL", content, re.IGNORECASE):
         raise RuntimeError(f"External tool failed ({completed.returncode}); log: {log_path}; {content[-1200:]}")
     return content
-
 
 def _read_mesh(path):
     nodes = {}
@@ -78,13 +74,11 @@ def _read_mesh(path):
         raise ValueError("Mesh references missing nodes")
     nodes = {node: nodes[node] for node in sorted(used)}
     parents = {node: node for node in nodes}
-
     def root(node):
         while parents[node] != node:
             parents[node] = parents[parents[node]]
             node = parents[node]
         return node
-
     for element in elements.values():
         anchor = root(element[0])
         for node in element[1:]:
@@ -93,13 +87,11 @@ def _read_mesh(path):
         raise ValueError("Disconnected volume mesh")
     return nodes, elements
 
-
 def _vector(value, label):
     result = np.asarray(value, dtype=float)
     if result.shape != (3,) or not np.all(np.isfinite(result)):
         raise ValueError(f"{label} must contain three finite numbers")
     return result
-
 
 def _select(nodes, selector):
     if selector.get("kind") != "box":
@@ -113,13 +105,11 @@ def _select(nodes, selector):
         raise ValueError(f"Empty node selector: {selector}")
     return selected
 
-
 def _set_lines(kind, name, values):
     data = [f"*{kind},{kind}={name}"]
     values = list(values)
     data.extend(",".join(str(v) for v in values[start:start + 16]) for start in range(0, len(values), 16))
     return data
-
 
 def _mass_lines(nodes, elements, point_masses):
     lines = []
@@ -142,7 +132,6 @@ def _mass_lines(nodes, elements, point_masses):
         coupling_info.append({"name": mass["name"], "mass_g": mass["mass_g"], "position_mm": list(mass["position_mm"]), "attachment_nodes": len(selected), "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"})
     return lines, coupling_info
 
-
 def _model_lines(nodes, elements, material, point_masses):
     lines = ["*HEADING", "Deep Frame linear elastic analysis", "*NODE"]
     lines.extend(f"{node}," + ",".join(f"{v:.12g}" for v in xyz) for node, xyz in nodes.items())
@@ -152,7 +141,6 @@ def _model_lines(nodes, elements, material, point_masses):
     lines.extend(["*MATERIAL,NAME=PRINT", "*ELASTIC", f"{material['young_modulus_mpa']:.12g},{material['poisson_ratio']:.12g}", "*DENSITY", f"{material['density_g_cm3'] * 1e-9:.12g}", "*SOLID SECTION,ELSET=FRAME,MATERIAL=PRINT"])
     mass_lines, information = _mass_lines(nodes, elements, point_masses)
     return lines + mass_lines, information
-
 
 def _case_lines(nodes, case, settings):
     fixed = sorted({node for region in case["fixed_regions"] for node in _select(nodes, region)})
@@ -187,7 +175,6 @@ def _case_lines(nodes, case, settings):
     lines.append("*END STEP")
     return lines, load_nodes, len(fixed)
 
-
 def _numeric_lines(content, header, columns):
     results = []
     active = False
@@ -212,7 +199,6 @@ def _numeric_lines(content, header, columns):
         raise RuntimeError(f"Missing or non-finite CalculiX output: {header}")
     return np.asarray(results)
 
-
 def _static_result(content, load_nodes):
     displacement_data = _numeric_lines(content, "displacements (", 4)
     stress_data = _numeric_lines(content, "stresses (", 8)
@@ -228,7 +214,6 @@ def _static_result(content, load_nodes):
         loading.append({"node_count": len(selected), "force_n": force.tolist(), "mean_displacement_mm": mean.tolist(), "directional_displacement_mm": directional, "stiffness_n_per_mm": float(np.linalg.norm(force) / directional)})
     return {"analysis": "static", "max_displacement_mm": float(np.max(np.linalg.norm(displacement_data[:, 1:], axis=1))), "max_von_mises_mpa": float(np.max(von_mises)), "loads": loading, "stiffness_n_per_mm": loading[0]["stiffness_n_per_mm"] if len(loading) == 1 else None}
 
-
 def _modal_result(content, settings):
     values = _numeric_lines(content, "E I G E N V A L U E", 5)
     frequencies = values[:, 3]
@@ -239,7 +224,6 @@ def _modal_result(content, settings):
     if np.any(values[:, 1] < -1e-6):
         raise RuntimeError("Negative modal eigenvalue")
     return {"analysis": "modal", "eigenfrequencies_hz": elastic, "discarded_rigid_modes": int(np.sum(frequencies <= cutoff)), "fixture": "all translations fixed on selected nodes"}
-
 
 def _validate(solid, material, point_masses, load_cases, settings):
     if settings.get("linear_solver") not in (None, "SPOOLES", "PASTIX"):
@@ -265,7 +249,6 @@ def _validate(solid, material, point_masses, load_cases, settings):
         if not math.isfinite(mass["mass_g"]) or mass["mass_g"] <= 0:
             raise ValueError("Point masses must be finite and positive")
         _vector(mass["position_mm"], "position_mm")
-
 
 def evaluate(solid, material, point_masses, load_cases, settings):
     start = time.monotonic()
@@ -336,10 +319,8 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         (directory / "result.json").write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     return result
 
-
 def generate_mesh(request_path):
     import gmsh
-
     request = json.loads(Path(request_path).read_text(encoding="utf-8"))
     settings = request["settings"]
     destination = Path(request["output_dir"])
@@ -394,14 +375,11 @@ def generate_mesh(request_path):
     finally:
         gmsh.finalize()
 
-
 def _box(minimum, maximum):
     return {"kind": "box", "min_mm": list(minimum), "max_mm": list(maximum)}
 
-
 def _digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
-
 
 def solver_identity(settings):
     executable = resolve_solver(settings)
@@ -418,7 +396,6 @@ def solver_identity(settings):
         "build123d_version": version("build123d"),
         "ocp_version": version("cadquery-ocp-novtk"),
     }
-
 
 def prepare_frame_case(parameters, fea_config=None, integration_config=None):
     fea = deepcopy(fea_config if fea_config is not None else parameters["fea"])
@@ -484,7 +461,6 @@ def prepare_frame_case(parameters, fea_config=None, integration_config=None):
     }
     return json.loads(json.dumps(result, allow_nan=False))
 
-
 class FrameEvaluator:
     def __init__(self, reference_parameters, fea_config=None, integration_config=None):
         self.fea_config = deepcopy(fea_config if fea_config is not None else reference_parameters["fea"])
@@ -506,7 +482,6 @@ class FrameEvaluator:
             "source_sha256": sources,
         }
         self.evaluation_id = self.integration_config["model_version"] + ":" + _digest(self.evaluation_contract)
-
     def __call__(self, parameters):
         model = prepare_frame_case(parameters, self.fea_config, self.integration_config)
         solid = build_geometry(parameters)
@@ -515,7 +490,6 @@ class FrameEvaluator:
         result["model_inputs"] = model
         result["evaluation_contract"] = deepcopy(self.evaluation_contract)
         return json.loads(json.dumps(result, allow_nan=False))
-
 
 if __name__ == "__main__":
     generate_mesh(sys.argv[1])

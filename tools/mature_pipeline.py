@@ -1,8 +1,3 @@
-"""Mature topology pipeline: density run orchestration, continuous geometry study and surface rendering.
-
-Run from the repository with the local venv Python: ``tools/mature_pipeline.py {run,geometry,render} --help``.
-"""
-
 import argparse
 from copy import deepcopy
 import hashlib
@@ -33,7 +28,6 @@ from deep_frame.topology_geometry import region_shape
 from deep_frame.topology_pipeline import _merge, _provenance, _verify_cases, compare_to_baseline
 from tools.workstation_study import load_source
 
-
 def save(path, data):
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_text(json.dumps(data, indent=2, allow_nan=False)+"\n", encoding="utf-8")
@@ -45,7 +39,6 @@ def save(path, data):
             if getattr(error, "winerror", None) not in (5, 32, 33) or attempt == 20:
                 raise
             time.sleep(0.05)
-
 
 def execute(command, cwd, logfile, timeout):
     started = time.perf_counter()
@@ -75,7 +68,6 @@ def execute(command, cwd, logfile, timeout):
                 process.wait(timeout=15)
     return {**report, "runtime_s": time.perf_counter()-started,
             "log_sha256": hashlib.sha256(logfile.read_bytes()).hexdigest()}
-
 
 def run_parse_args(argv=None, prog=None):
     parser = argparse.ArgumentParser(prog=prog, description=run_main.__doc__)
@@ -134,7 +126,6 @@ def run_parse_args(argv=None, prog=None):
         parser.error("Use finite positive budgets, grid dimensions greater than one and thresholds/tolerance in (0,1)")
     return args
 
-
 def verify_geometry(directory):
     manifest = read(directory / "manifest.json")
     if manifest["status"] != "complete":
@@ -180,7 +171,6 @@ def verify_geometry(directory):
     if any(manifest.get(key) != value for key, value in expected.items()):
         raise ValueError("Geometry acceptance summary disagrees with verified candidate evidence")
     return manifest
-
 
 def run_main(argv=None, prog=None):
     """Run uniform-start density optimization and automatic continuous CAD/FEA selection."""
@@ -280,17 +270,13 @@ def run_main(argv=None, prog=None):
     print(json.dumps(report), flush=True)
     return 0 if report["overall_acceptance"] else (2 if report["status"] == "complete" else 1)
 
-
 def read(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
-
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
-
 def write(path, data):
-    """Atomically replace progress files so observers never read partial JSON."""
     path = Path(path)
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_text(json.dumps(data, indent=2, allow_nan=False) + "\n", encoding="utf-8")
@@ -303,12 +289,10 @@ def write(path, data):
                 raise
             time.sleep(0.05)
 
-
 def artifacts(directory):
     return {p.relative_to(directory).as_posix(): {"sha256": digest(p), "size_bytes": p.stat().st_size}
             for p in sorted(directory.rglob("*")) if p.is_file()
             and not (p.parent == directory and p.name in ("record.json", "manifest.json", "status.json"))}
-
 
 def acceptance(records, complete):
     accepted = [record for record in records if record.get("status") == "accepted"
@@ -321,9 +305,7 @@ def acceptance(records, complete):
     return {"accepted_count": len(accepted), "selected_id": selected["id"] if complete and selected else None,
             "overall_acceptance": bool(complete and accepted)}
 
-
 def save_geometry_evidence(directory, stage, report, shape=None, mesh=None):
-    """Keep exact diagnostic CAD/mesh even when reconstruction cannot return a final solid."""
     directory.mkdir(parents=True, exist_ok=True)
     stem = re.sub(r"[^a-zA-Z0-9_-]+", "_", stage)
     result = {"stage": stage, "report": report, "artifacts": {}, "errors": []}
@@ -341,7 +323,6 @@ def save_geometry_evidence(directory, stage, report, shape=None, mesh=None):
     write(directory / (stem + ".json"), result)
     return result
 
-
 def export_final_mesh(solid, candidate, validator, settings):
     mesh = validator._mesh(solid, validator._settings(settings))
     mesh.export(candidate / "geometry.stl")
@@ -352,11 +333,9 @@ def export_final_mesh(solid, candidate, validator, settings):
     write(candidate / "final_mesh.json", report)
     return report
 
-
 def run_candidate(candidate, record, domain, density, reconstruction, validator, validation_settings,
                   reference, baseline_solid, baseline_mass, baseline, settings, constraints, geometry_only, progress):
     from deep_frame.topology_surface import reconstruct_surface
-
     record["status"] = "reconstructing"
     progress({"stage": "reconstructing"})
     solid = reconstruct_surface(domain, density, {**reconstruction, "density_threshold": record["threshold"]}, progress=progress)
@@ -382,7 +361,6 @@ def run_candidate(candidate, record, domain, density, reconstruction, validator,
               and record["validation"].get("checks", {}).get("surface_maturity", {}).get("passed") is True)
     record["status"] = "geometry_valid" if passed else "geometry_invalid"
     progress({"stage": "validation_finished", "passed": passed})
-    # Validation evidence must exist before an STL failure can reject the candidate.
     try:
         record["final_mesh"] = export_final_mesh(imported, candidate, validator, validation_settings)
     except Exception as error:
@@ -414,10 +392,8 @@ def run_candidate(candidate, record, domain, density, reconstruction, validator,
     record["status"] = "accepted" if record["comparison"]["passed"] else "mechanically_rejected"
     return baseline
 
-
 def run_study(args):
     from deep_frame.topology_surface import reconstruct_surface
-
     source, output = args.source.resolve(), args.output.resolve()
     if output.exists() and any(output.iterdir()):
         raise ValueError("A new empty output directory is required; old evidence is never overwritten")
@@ -434,7 +410,6 @@ def run_study(args):
     write(output / "status.json", {"status": "running", "stage": "preparing"})
     try:
         from deep_frame import topology_surface_validation as validator
-
         if not args.reference_step.is_file():
             raise ValueError("A reference STEP file is required for surface maturity")
         load_source(source)
@@ -500,7 +475,6 @@ def run_study(args):
             candidate.mkdir(parents=True)
             record = {"id": candidate.name, "threshold": threshold, "status": "reconstructing", "diagnostics": []}
             event_count = 0
-
             def progress(event):
                 nonlocal event_count
                 event_count += 1
@@ -517,7 +491,6 @@ def run_study(args):
                 write(output / "status.json", {"status": "running", "candidate_status": record["status"], **event})
                 if event["elapsed_s"] >= args.study_timeout_s:
                     raise TimeoutError("Geometry study runtime budget exceeded at " + event["stage"])
-
             try:
                 baseline = run_candidate(candidate, record, domain, density, reconstruction, validator, validation_settings,
                                          reference, baseline_solid, baseline_mass, baseline, settings,
@@ -549,7 +522,6 @@ def run_study(args):
     write(output / "status.json", {key: manifest[key] for key in ("status", "stage", "accepted_count", "selected_id", "overall_acceptance", "runtime_s")}
           | ({"error": manifest["error"]} if "error" in manifest else {}))
     return manifest
-
 
 def parse_args(argv=None, prog=None):
     parser = argparse.ArgumentParser(prog=prog, description=geometry_main.__doc__)
@@ -597,14 +569,11 @@ def parse_args(argv=None, prog=None):
         parser.error("A positive free forbidden buffer requires envelope_forbidden and a positive manufacturing opening radius")
     return args
 
-
 def geometry_main(argv=None, prog=None):
     """Reconstruct density surfaces, validate final STEP CAD and mechanically screen candidates."""
     return 0 if run_study(parse_args(argv, prog))["status"] == "complete" else 1
 
-
 def face_colors(normals, elevation, azimuth):
-    """Flat Lambert/Blinn shading of existing triangles, without vertex averaging."""
     elev, azim = np.deg2rad([elevation, azimuth])
     view = np.asarray([np.cos(elev) * np.cos(azim), np.cos(elev) * np.sin(azim), np.sin(elev)])
     light = view + np.asarray([-0.4, -0.3, 0.5 if elevation >= 0 else -0.5])
@@ -618,10 +587,8 @@ def face_colors(normals, elevation, azimuth):
     base = np.asarray([0.24, 0.62, 0.76])
     return np.clip(intensity[:, None] * base + highlight[:, None], 0, 1)
 
-
 def draw_view(axis, mesh, lower, upper, elevation, azimuth, title):
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-
     axis.add_collection3d(Poly3DCollection(mesh.triangles, facecolors=face_colors(mesh.face_normals, elevation, azimuth),
                                          edgecolors="none", linewidths=0, antialiased=False, zsort="average"))
     axis.set(xlim=(lower[0], upper[0]), ylim=(lower[1], upper[1]), zlim=(lower[2], upper[2]),
@@ -641,25 +608,20 @@ def draw_view(axis, mesh, lower, upper, elevation, azimuth, title):
         axis.set_zticks([])
         axis.set_zlabel("")
 
-
 def section_paths(shape, plane, coordinates):
     sliced = section(shape, section_by=plane)
     paths = [np.asarray([tuple(point) for point in edge.positions(deflection=0.01)])[:, coordinates]
              for edge in sliced.edges()]
     return sliced, paths
 
-
 def render_main(argv=None, prog=None):
     """Render the reimported STEP and exact strap sections without geometry smoothing."""
     import matplotlib
-
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection, PolyCollection
     from matplotlib.lines import Line2D
-
     from deep_frame.topology_surface_validation import _mesh, _settings
-
     parser = argparse.ArgumentParser(prog=prog, description=render_main.__doc__)
     parser.add_argument("--step", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -764,7 +726,6 @@ def render_main(argv=None, prog=None):
     record["status"] = "complete"
     journal("complete")
 
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -773,7 +734,6 @@ def main(argv=None):
         commands.add_parser(name, help=function.__doc__.splitlines()[0], add_help=False)
     args, arguments = parser.parse_known_args(argv)
     return handlers[args.command](arguments, parser.prog + " " + args.command)
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -17,7 +17,6 @@ from skimage.measure import marching_cubes
 
 from .topology_geometry import region_bounds, region_contains, region_shape
 
-
 class SurfaceReconstructionError(ValueError):
     def __init__(self, message, report, shape=None, mesh=None):
         super().__init__(message)
@@ -25,23 +24,19 @@ class SurfaceReconstructionError(ValueError):
         self.shape = shape
         self.mesh = mesh
 
-
 def _progress(callback, stage, report, **artifacts):
     if callback is not None:
         callback({"stage": stage, "report": report, **artifacts})
-
 
 def _positive(value, name, zero=False):
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value) or (value < 0 if zero else value <= 0):
         raise ValueError(name + " must be finite and " + ("nonnegative" if zero else "positive"))
     return float(value)
 
-
 def _integer(value, name):
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise ValueError(name + " must be a positive integer")
     return value
-
 
 def _settings(settings):
     result = {
@@ -103,7 +98,6 @@ def _settings(settings):
     result["decimation_face_budgets"] = budgets
     return result
 
-
 def _domain_field(domain, density):
     grid = domain["grid"]
     if grid.get("axis_order") != "xyz" or grid.get("order") != "C":
@@ -124,25 +118,20 @@ def _domain_field(domain, density):
         raise ValueError("Density violates prescribed preserve or forbidden masks")
     return field, origin, spacing
 
-
 def _mesh_summary(mesh):
     return {"vertices": len(mesh.vertices), "faces": len(mesh.faces), "bodies": int(mesh.body_count),
             "euler_number": int(mesh.euler_number),
             "watertight": bool(mesh.is_watertight), "consistent_winding": bool(mesh.is_winding_consistent),
             "volume_mm3": float(mesh.volume), "area_mm2": float(mesh.area)}
 
-
 def _one_mesh(mesh):
     return bool(mesh.is_watertight and mesh.is_winding_consistent and mesh.body_count == 1 and mesh.volume > 0)
-
 
 def _closed_oriented_mesh(mesh):
     return bool(mesh.is_watertight and mesh.is_winding_consistent and mesh.volume > 0)
 
-
 def _mesh_intersections(mesh):
     import pymeshlab
-
     mesh_set = pymeshlab.MeshSet()
     mesh_set.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
     mesh_set.apply_filter("compute_selection_by_self_intersections_per_face")
@@ -154,12 +143,10 @@ def _mesh_intersections(mesh):
         report.update(face_indices=selected.tolist(), bounds_mm=[points.min(axis=0).tolist(), points.max(axis=0).tolist()])
     return report
 
-
 def _statistics(values):
     return {"max": float(np.max(values)), "p50": float(np.percentile(values, 50)),
             "p95": float(np.percentile(values, 95)), "p99": float(np.percentile(values, 99)),
             "mean": float(np.mean(values))}
-
 
 def _directed_fidelity(source, target, batch_size):
     triangles = source.triangles
@@ -177,7 +164,6 @@ def _directed_fidelity(source, target, batch_size):
     return {"sample_count": len(points), "surface_distance_mm": _statistics(distances),
             "normal_sample_count": len(source.faces), "normal_angle_deg": _statistics(angles)}
 
-
 def measure_surface_fidelity(reference, approximation, batch_size=1000):
     started = perf_counter()
     forward = _directed_fidelity(reference, approximation, batch_size)
@@ -188,9 +174,7 @@ def measure_surface_fidelity(reference, approximation, batch_size=1000):
             "maximum_sampled_deviation_mm": max(forward["surface_distance_mm"]["max"], reverse["surface_distance_mm"]["max"]),
             "relative_volume_change": float(approximation.volume/reference.volume-1), "runtime_s": perf_counter()-started}
 
-
 def _primitive_inside_distance(axes, region):
-    
     if region["kind"] == "box":
         values = [np.minimum(axes[i]-region["min_mm"][i], region["max_mm"][i]-axes[i]) for i in range(3)]
         return np.minimum(np.minimum(values[0], values[1]), values[2])
@@ -200,14 +184,10 @@ def _primitive_inside_distance(axes, region):
     return np.minimum(region["radius_mm"]-radial_distance,
                       region["height_mm"]/2-np.abs(axes[axis]-region["center_mm"][axis]))
 
-
 def _primitive_union_distance(axes, regions, shape, sample_spacing):
     values = np.full(shape, -np.inf)
     for region in regions:
         np.maximum(values, _primitive_inside_distance(axes, region), out=values)
-    
-    
-    
     boxes = [region for region in regions if region["kind"] == "box"]
     indices = np.argwhere(np.abs(values) < 1e-8) if len(boxes) > 1 else np.empty((0, 3), dtype=int)
     corrected = 0
@@ -215,8 +195,6 @@ def _primitive_union_distance(axes, regions, shape, sample_spacing):
     if len(indices):
         points = np.column_stack([axes[i].ravel()[indices[:, i]] for i in range(3)])
         interior = np.ones(len(points), dtype=bool)
-        
-        
         for region in boxes:
             for coordinate in range(3):
                 for boundary in (region["min_mm"][coordinate], region["max_mm"][coordinate]):
@@ -239,13 +217,7 @@ def _primitive_union_distance(axes, regions, shape, sample_spacing):
     return values, {"rectilinear_internal_zero_nodes_corrected": corrected, "interior_probe_half_width_mm": epsilon, "coincident_plane_tolerance_mm": 1e-8,
                     "method": "For zero-valued box-union nodes, all 26 adjacent sign cells are inside the exact primitive union; only these interior scalar values are made positive."}
 
-
 def _manufacturing_opening(sampled, sample_origin, sample_spacing, domain, config):
-    
-
-
-
-
     radius = config["manufacturing_opening_radius_mm"]
     threshold = config["density_threshold"]
     gradient = np.sqrt(sum(value**2 for value in np.gradient(sampled, *sample_spacing)))
@@ -293,8 +265,6 @@ def _manufacturing_opening(sampled, sample_origin, sample_spacing, domain, confi
         offsets = np.meshgrid(*[np.arange(-n, n+1)*sample_spacing[i] for i, n in enumerate(extents)], indexing="ij")
         footprint = sum(axis**2 for axis in offsets) <= radius**2+1e-12
         opened = grey_opening(implicit, footprint=footprint, mode="constant", cval=float(implicit.min()-2*radius))
-        
-        
         if np.any(opened > implicit+1e-9):
             raise ValueError("Grayscale opening unexpectedly added implicit material")
         np.minimum(opened, implicit, out=opened)
@@ -322,9 +292,6 @@ def _manufacturing_opening(sampled, sample_origin, sample_spacing, domain, confi
               "preserve_missing_before_opening_sampled_volume_mm3": int(np.count_nonzero(required & ~occupied))*voxel_volume,
               "preserve_missing_after_opening_sampled_volume_mm3": int(np.count_nonzero(required & ~opened_occupied))*voxel_volume,
               "limitation": "Sampled physical-space opening is not an analytic CAD minimum-thickness proof; exact final CAD validation remains mandatory."}
-    
-    
-    
     restored = np.minimum(np.minimum(np.maximum(opened, preserves), -forbidden), envelope)
     after = restored > 0
     report.update(after_components_6_neighbor=int(label(after)[1]),
@@ -336,7 +303,6 @@ def _manufacturing_opening(sampled, sample_origin, sample_spacing, domain, confi
                   diagnostic_constraints_removed_from_opened_sampled_volume_mm3=int(np.count_nonzero(opened_occupied & ~after))*voxel_volume,
                   preserve_restoration_stage="Exact CAD union after density-surface decimation; after-restoration samples above are diagnostic only")
     return opened, report
-
 
 def _regularize_internal_zero_nodes(field, level, origin=None, spacing=None, domain=None):
     output = field.copy()
@@ -367,13 +333,11 @@ def _regularize_internal_zero_nodes(field, level, origin=None, spacing=None, dom
         report["changed_world_mm"] = [(origin+np.asarray(index)*spacing).tolist() for index in changed]
     return output, report
 
-
 def _contour_mesh(field, level, sample_spacing, sample_origin):
     vertices, faces, _, _ = marching_cubes(field, level, spacing=sample_spacing, allow_degenerate=False)
     mesh = trimesh.Trimesh(vertices=vertices+sample_origin, faces=faces, process=True)
     trimesh.repair.fix_normals(mesh, multibody=False)
     return mesh
-
 
 def _project_reference_bounds(mesh, reference):
     bounds = np.asarray(reference.bounds)
@@ -396,7 +360,6 @@ def _project_reference_bounds(mesh, reference):
               "within_reference_aabb": bool(np.all(output.vertices >= bounds[0]) and np.all(output.vertices <= bounds[1])),
               "acceptance_scope": "This operation grants no acceptance; closed orientation, topology, self-intersections and complete fidelity/volume gates must be checked on the projected mesh."}
     return output, report
-
 
 def extract_density_surface(domain, density, settings, *, progress=None):
     started = perf_counter()
@@ -430,10 +393,6 @@ def extract_density_surface(domain, density, settings, *, progress=None):
     level = config["density_threshold"]
     if config["manufacturing_opening_radius_mm"]:
         sampled, opening_report = _manufacturing_opening(sampled, origin-spacing/2, spacing/subdivisions, domain, config)
-        
-        
-        
-        
         level = 0.001
         opening_report["nominal_implicit_contour_level_mm"] = level
         opening_report["contour_level_limitation"] = "Density divided by local gradient only approximates signed distance; the nominal positive level is not a uniform physical offset guarantee."
@@ -502,7 +461,6 @@ def extract_density_surface(domain, density, settings, *, progress=None):
     report["surface_extraction_s"] = perf_counter()-started
     return selected, report
 
-
 def _single_solid(shape, label, report=None, previous=None):
     if isinstance(shape, list):
         shape = Compound(children=shape)
@@ -520,7 +478,6 @@ def _single_solid(shape, label, report=None, previous=None):
             raise SurfaceReconstructionError(message, report, previous)
         raise ValueError(label + f" must yield exactly one valid solid, got {count}")
     return shape.solids()[0]
-
 
 def _boolean(shape, tools, operation_name, strategy, fuzzy_value_mm=1e-7):
     if strategy == "build123d":
@@ -548,7 +505,6 @@ def _boolean(shape, tools, operation_name, strategy, fuzzy_value_mm=1e-7):
     result.boolean_fuzzy_value_mm = operation.FuzzyValue()
     return result
 
-
 def _checked_operation(solid, operands, operation, label, report, progress):
     started = perf_counter()
     before_volume = solid.volume
@@ -573,7 +529,6 @@ def _checked_operation(solid, operands, operation, label, report, progress):
     _progress(progress, label, report, shape=output)
     return output
 
-
 def _solid_set_status(shape):
     solids = list(shape.solids())
     states = []
@@ -587,7 +542,6 @@ def _solid_set_status(shape):
             "infinite_point_classifications": [str(state) for state in states],
             "positive_outward_components": bool(solids) and all(volume > 0 for volume in volumes) and all(state == TopAbs_OUT for state in states)}
 
-
 def _preunion_preserves(preserves, report, progress=None):
     started = perf_counter()
     config = report["settings"]
@@ -598,12 +552,10 @@ def _preunion_preserves(preserves, report, progress=None):
            "operations": [], "coverage": []}
     report["preserve_preunion"] = row
     _progress(progress, "Exact preserve preunion started", report)
-
     def fail(message, shape=None):
         row.update(status="failed", reason=message, runtime_s=perf_counter()-started)
         report["failed_operation"] = {"name": "Exact preserve preunion", "reason": message}
         raise SurfaceReconstructionError("Exact preserve preunion: "+message, report, shape)
-
     def native(first, operands, operation, name):
         operation_started = perf_counter()
         item = {"name": name, "operation": operation, "fuzzy_value_mm": config["boolean_fuzzy_value_mm"]}
@@ -617,7 +569,6 @@ def _preunion_preserves(preserves, report, progress=None):
         if result is None or result.wrapped is None or result.wrapped.IsNull() or item["warnings"]:
             fail(name+" has unresolved native warnings or null output", first)
         return result
-
     if not preserves:
         row.update(status="identity_empty", runtime_s=perf_counter()-started)
         _progress(progress, "Exact preserve preunion", report)
@@ -655,7 +606,6 @@ def _preunion_preserves(preserves, report, progress=None):
     row.update(status="identity_single" if len(preserves) == 1 else "passed", coverage_s=perf_counter()-coverage_started, runtime_s=perf_counter()-started)
     _progress(progress, "Exact preserve preunion", report, shape=canonical)
     return canonical
-
 
 def _reconstruct_selected(domain, mesh, report, *, progress=None):
     started = perf_counter()
@@ -708,9 +658,7 @@ def _reconstruct_selected(domain, mesh, report, *, progress=None):
     solid.surface_report = report
     return solid
 
-
 def reconstruct_surface(domain, density, settings, *, progress=None):
-    
     started = perf_counter()
     config = _settings(settings)
     attempts = []

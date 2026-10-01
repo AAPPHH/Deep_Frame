@@ -5,7 +5,6 @@ import math
 from copy import deepcopy
 from pathlib import Path
 
-
 CONSTRAINT_METRICS = {
     "mass_ratio_max": ("mass_g", "max"),
     "stiffness_ratio_min": ("stiffness_n_per_mm", "min"),
@@ -14,14 +13,11 @@ CONSTRAINT_METRICS = {
     "stress_ratio_max": ("max_von_mises_mpa", "max"),
 }
 
-
 class EvaluationFailure(RuntimeError):
     pass
 
-
 def _json_copy(value):
     return json.loads(json.dumps(value, allow_nan=False))
-
 
 def _get(parameters, path):
     value = parameters
@@ -32,7 +28,6 @@ def _get(parameters, path):
         raise ValueError(f"Missing parameter path: {path}") from error
     return value
 
-
 def _set(parameters, path, value):
     keys = path.split(".")
     parent = parameters
@@ -40,14 +35,12 @@ def _set(parameters, path, value):
         parent = parent[key]
     parent[keys[-1]] = value
 
-
 def _number(value, name, positive=False):
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be a finite number")
     if not math.isfinite(value) or (value <= 0 if positive else value < 0):
         raise ValueError(f"{name} must be {'positive' if positive else 'nonnegative'} and finite")
     return float(value)
-
 
 def check_printability(parameters, settings):
     nozzle = _number(settings["nozzle_width_mm"], "nozzle_width_mm", True)
@@ -74,7 +67,6 @@ def check_printability(parameters, settings):
     violations = [name for name, check in checks.items() if not check["passed"]]
     return {"passed": not violations, "violations": violations, "checks": checks}
 
-
 def _precheck(parameters, validator, printability):
     printed = check_printability(parameters, printability)
     if not printed["passed"]:
@@ -92,7 +84,6 @@ def _precheck(parameters, validator, printability):
         "geometry": geometry,
     }
 
-
 def _evaluate(parameters, evaluator):
     result = _json_copy(evaluator(deepcopy(parameters)))
     if result.get("status") != "ok":
@@ -108,7 +99,6 @@ def _evaluate(parameters, evaluator):
         raise EvaluationFailure("Sorted positive elastic eigenfrequencies are required")
     metrics["first_frequency_hz"] = frequencies[0]
     return {"result": result, "metrics": metrics}
-
 
 def _constraints(metrics, baseline, factors):
     checks = {}
@@ -131,21 +121,17 @@ def _constraints(metrics, baseline, factors):
         }
     return checks
 
-
 def _objectives(metrics):
     return [metrics["mass_g"], metrics["stiffness_n_per_mm"], metrics["first_frequency_hz"]]
-
 
 def _dominates(first, second):
     left = [first[0], -first[1], -first[2]]
     right = [second[0], -second[1], -second[2]]
     return all(a <= b for a, b in zip(left, right)) and any(a < b for a, b in zip(left, right))
 
-
 def _pareto(trials):
     valid = [trial for trial in trials if trial["outcome"] == "valid" and trial["state"] == "COMPLETE" and all(check["passed"] for check in trial["constraints"].values())]
     return [trial for trial in valid if not any(_dominates(other["objectives"], trial["objectives"]) for other in valid)]
-
 
 def _export(result, output_dir):
     directory = Path(output_dir).resolve()
@@ -171,7 +157,6 @@ def _export(result, output_dir):
     Path(artifacts["result_json"]).write_text(json.dumps(result, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     return _json_copy(result)
 
-
 def _prepare_storage(storage):
     if not isinstance(storage, str) or not storage:
         raise ValueError("Persistent storage URL is required")
@@ -184,10 +169,8 @@ def _prepare_storage(storage):
         return "sqlite:///" + path.as_posix()
     return storage
 
-
 def _validate_contract(reference_parameters, search_space, settings):
     import optuna
-
     for path, specification in search_space.items():
         _get(reference_parameters, path)
         if "choices" in specification:
@@ -218,11 +201,9 @@ def _validate_contract(reference_parameters, search_space, settings):
             if not valid:
                 raise ValueError(f"Initial candidate outside distribution: {path}={value}")
 
-
 def _optimize(reference_parameters, search_space, evaluator, validator, settings):
     import optuna
     from optuna.trial import TrialState
-
     _validate_contract(reference_parameters, search_space, settings)
     contract = _json_copy({
         "version": 1,
@@ -265,7 +246,6 @@ def _optimize(reference_parameters, search_space, evaluator, validator, settings
     baseline = reference["metrics"]
     for candidate in settings.get("initial_candidates", []):
         study.enqueue_trial(candidate, user_attrs={"initial_candidate": True}, skip_if_exists=True)
-
     def objective(trial):
         parameters = deepcopy(reference_parameters)
         for path, specification in search_space.items():
@@ -304,7 +284,6 @@ def _optimize(reference_parameters, search_space, evaluator, validator, settings
         ) if better]
         trial.set_user_attr("improved_objectives", improved)
         return values
-
     study.optimize(objective, n_trials=settings["n_trials"], catch=(EvaluationFailure,), show_progress_bar=False)
     trials = []
     for trial in study.trials:
@@ -343,17 +322,14 @@ def _optimize(reference_parameters, search_space, evaluator, validator, settings
     }
     return _export(result, settings["output_dir"])
 
-
 def optimize(reference_parameters, search_space, evaluator, validator, settings):
     import optuna
-
     previous_verbosity = optuna.logging.get_verbosity()
     optuna.logging.set_verbosity(optuna.logging.ERROR)
     try:
         return _optimize(_json_copy(reference_parameters), _json_copy(search_space), evaluator, validator, _json_copy(settings))
     finally:
         optuna.logging.set_verbosity(previous_verbosity)
-
 
 def show_candidates(candidates, build_geometry, show=None, viewer_settings=None):
     if show is None:

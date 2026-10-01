@@ -12,7 +12,6 @@ from scipy.sparse import coo_matrix
 from scipy.sparse.linalg import eigsh, splu
 from scipy.spatial import cKDTree
 
-
 def _library():
     try:
         import cupy
@@ -65,7 +64,6 @@ def _library():
         function.restype = integer
     return cupy, library, directories, installed
 
-
 class CudaDirectSolver:
     def __init__(self, matrix, rhs):
         self.handles = {}
@@ -80,7 +78,6 @@ class CudaDirectSolver:
             if issues and isinstance(error, Exception):
                 raise RuntimeError(str(error) + "; cleanup: " + "; ".join(issues)) from error
             raise
-
     def _initialize(self, matrix, rhs):
         self.cp, self.library, self.dll_directories, self.version = _library()
         self.timings = []
@@ -113,16 +110,13 @@ class CudaDirectSolver:
             self._create(name, "cudssMatrixCreateDn", array.shape[0], array.shape[1], array.shape[0],
                          array.data.ptr, 1, 0)
         self.analysis_s = self._execute(3)
-
     def _call(self, name, *arguments):
         status = getattr(self.library, name)(*arguments)
         if status:
             raise RuntimeError(f"{name} failed with cuDSS status {status}")
-
     def _create(self, name, function, *arguments):
         self.handles[name] = ctypes.c_void_p()
         self._call(function, ctypes.byref(self.handles[name]), *arguments)
-
     def _execute(self, phase):
         self.stream.synchronize()
         started = perf_counter()
@@ -136,7 +130,6 @@ class CudaDirectSolver:
         if info.value:
             raise RuntimeError(f"cuDSS device error {info.value} in phase {phase}")
         return perf_counter() - started
-
     def solve(self, matrix, rhs):
         if self.closed:
             raise RuntimeError("cuDSS solver is closed")
@@ -157,12 +150,10 @@ class CudaDirectSolver:
                              "transfer_factor_solve_s": perf_counter() - started,
                              "device_free_bytes_after_solve": available, "device_total_bytes": total})
         return solution
-
     def same_structure(self, matrix):
         matrix = matrix.tocsr()
         matrix.sort_indices()
         return matrix.shape == self.shape and np.array_equal(matrix.indptr, self.indptr) and np.array_equal(matrix.indices, self.indices)
-
     def diagnostics(self):
         device = self.cp.cuda.runtime.getDeviceProperties(self.cp.cuda.Device().id)
         name = device["name"]
@@ -173,7 +164,6 @@ class CudaDirectSolver:
                 "precision": "float64", "numeric_factorization": "GPU Cholesky, hybrid execution disabled",
                 "analysis_s": self.analysis_s, "shape": list(self.shape), "nnz": len(self.indices),
                 "solves": self.timings}
-
     def close(self):
         if getattr(self, "closed", True):
             return getattr(self, "cleanup_errors", []).copy()
@@ -187,7 +177,6 @@ class CudaDirectSolver:
                 self._call(function, *arguments)
             except Exception as error:
                 self.cleanup_errors.append(str(error))
-
         for name in ("matrix", "solution", "rhs"):
             handle = self.handles.get(name)
             if handle and handle.value:
@@ -210,19 +199,16 @@ class CudaDirectSolver:
         for name in ("row_device", "column_device", "values_device", "rhs_device", "solution_device"):
             setattr(self, name, None)
         return self.cleanup_errors.copy()
-
     def __del__(self):
         try:
             self.close()
         except Exception:
             pass
 
-
 _CORNERS = np.array([
     [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
     [0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1],
 ], dtype=np.int32)
-
 
 def elasticity_matrix(poisson_ratio):
     if not np.isfinite(poisson_ratio) or not -1 < poisson_ratio < 0.5:
@@ -232,7 +218,6 @@ def elasticity_matrix(poisson_ratio):
     np.fill_diagonal(matrix[:3, :3], 1 - poisson_ratio)
     matrix[3:, 3:] = np.eye(3) * (1 - 2 * poisson_ratio) / 2
     return matrix / ((1 + poisson_ratio) * (1 - 2 * poisson_ratio))
-
 
 def hexahedron_matrices(spacing_mm, poisson_ratio):
     spacing = np.asarray(spacing_mm, dtype=float)
@@ -266,7 +251,6 @@ def hexahedron_matrices(spacing_mm, poisson_ratio):
         strain_matrices.append(strain)
     return stiffness, mass, np.asarray(strain_matrices)
 
-
 def regular_grid(grid):
     shape = np.asarray(grid["shape"], dtype=int)
     spacing = np.asarray(grid["spacing_mm"], dtype=float)
@@ -287,7 +271,6 @@ def regular_grid(grid):
     dofs = (3 * connectivity[:, :, None] + np.arange(3)[None, None, :]).reshape(-1, 24)
     return points, connectivity, dofs
 
-
 def select_nodes(points, region):
     if region.get("kind") != "box":
         raise ValueError("Topology node selectors must be boxes")
@@ -299,7 +282,6 @@ def select_nodes(points, region):
     if not len(selected):
         raise ValueError(f"Empty topology node selector: {region}")
     return selected
-
 
 class HexElasticity:
     def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu"):
@@ -374,7 +356,6 @@ class HexElasticity:
             self.cases.append(compiled)
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
-
     def _select(self, region, case_name, role):
         try:
             selected = select_nodes(self.points, region)
@@ -400,11 +381,9 @@ class HexElasticity:
             if len(nodes) < len(selected):
                 self._record_filter(selected, nodes, expanded, case_name, role)
             return nodes
-
     def _record_filter(self, selected, nodes, region, case_name, role):
         allowed_count = len(np.intersect1d(selected, self.active_nodes, assume_unique=True))
         self.selector_filtering.append({"case": case_name, "role": role, "selector": region, "removed_forbidden_only_nodes": len(selected) - allowed_count, "removed_nonpreserve_interface_nodes": allowed_count - len(nodes), "selected_nodes": len(nodes)})
-
     def matrix(self, moduli):
         moduli = np.asarray(moduli, dtype=float).ravel()
         if len(moduli) != self.nelem or np.any(moduli <= 0) or not np.all(np.isfinite(moduli)):
@@ -418,7 +397,6 @@ class HexElasticity:
             stiffness.data = (stiffness.data + transpose.data) * 0.5
             return stiffness
         return (stiffness + stiffness.T) * 0.5
-
     def solve(self, physical_density, penalization=3.0, min_stiffness_ratio=1e-6, metrics=False):
         density = np.asarray(physical_density, dtype=float).ravel()
         if density.size != self.nelem or not np.all(np.isfinite(density)) or np.any(density < 0) or np.any(density > 1):
@@ -467,7 +445,6 @@ class HexElasticity:
                     result.update(self._metrics(displacement, element_displacement, moduli, case))
                 results[case["name"]] = result
         return results
-
     def _metrics(self, displacement, element_displacement, moduli, case):
         nodal = displacement.reshape(-1, 3)
         loads = []
@@ -482,7 +459,6 @@ class HexElasticity:
             von_mises = np.sqrt(0.5 * ((xx - yy) ** 2 + (yy - zz) ** 2 + (zz - xx) ** 2) + 3 * (xy ** 2 + yz ** 2 + xz ** 2))
             stress_maximum = max(stress_maximum, float(np.max(von_mises)))
         return {"max_displacement_mm": float(np.max(np.linalg.norm(nodal, axis=1))), "max_von_mises_mpa": stress_maximum, "loads": loads, "stiffness_n_per_mm": loads[0]["stiffness_n_per_mm"] if len(loads) == 1 else None}
-
     def elastic_frequencies(self, physical_density, case_name, number=3, penalization=3.0, min_stiffness_ratio=1e-6):
         if self.domain.get("point_masses"):
             raise ValueError("Point-mass modal coupling is verified by independent CalculiX, not the voxel surrogate")
@@ -502,16 +478,13 @@ class HexElasticity:
         if np.any(eigenvalues <= 0) or not np.all(np.isfinite(eigenvalues)):
             raise RuntimeError("Invalid voxel modal eigenvalues")
         return (np.sqrt(np.sort(eigenvalues)) / (2 * np.pi)).tolist()
-
     def close(self):
         errors = []
         for solver in self.gpu_solvers.values():
             errors.extend(solver.close())
         return errors
-
     def diagnostics(self):
         return json.loads(json.dumps({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]}, allow_nan=False))
-
 
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,
@@ -530,7 +503,6 @@ DEFAULT_SETTINGS = {
     "interface_node_policy": "allowed_adjacent",
     "linear_solver": "cpu_superlu",
 }
-
 
 def _settings(settings):
     result = deepcopy(DEFAULT_SETTINGS)
@@ -558,7 +530,6 @@ def _settings(settings):
         raise ValueError("Invalid topology linear_solver")
     return result
 
-
 def validate_masks(domain):
     shape = tuple(domain["grid"]["shape"])
     masks = []
@@ -573,7 +544,6 @@ def validate_masks(domain):
     if not np.any(allowed & ~preserve):
         raise ValueError("The design domain has no free material cells")
     return allowed, preserve, forbidden
-
 
 class DensityMap:
     def __init__(self, domain, settings):
@@ -595,7 +565,6 @@ class DensityMap:
         self.sums[self.forbidden] = 1
         if np.any(self.sums <= 0):
             raise ValueError("Density filter contains an empty allowed-cell neighborhood")
-
     def physical(self, design):
         design = np.asarray(design, dtype=float).ravel()
         if design.size != self.n or not np.all(np.isfinite(design)) or np.any(design < 0) or np.any(design > 1):
@@ -614,12 +583,10 @@ class DensityMap:
         physical[self.forbidden] = 0
         derivative[~self.free] = 0
         return np.clip(physical, 0, 1), derivative
-
     def pullback(self, sensitivity, projection_derivative):
         result = np.asarray(self.filter.T @ (np.asarray(sensitivity).ravel() * projection_derivative / self.sums)).ravel()
         result[~self.free] = 0
         return result
-
     def initial(self, target):
         design = np.zeros(self.n)
         design[self.preserve] = 1
@@ -638,7 +605,6 @@ class DensityMap:
         design[self.free] = lower
         return design
 
-
 def _oc_update(design, objective_derivative, volume_derivative, mapping, target, settings):
     free = mapping.free
     if np.any(volume_derivative[free] <= 0) or not np.all(np.isfinite(objective_derivative[free])):
@@ -646,12 +612,10 @@ def _oc_update(design, objective_derivative, volume_derivative, mapping, target,
     ratios = np.maximum(1e-30, -objective_derivative[free] / volume_derivative[free])
     lower_density = np.maximum(settings["minimum_design_density"], design[free] - settings["move_limit"])
     upper_density = np.minimum(1.0, design[free] + settings["move_limit"])
-
     def proposal(multiplier):
         result = design.copy()
         result[free] = np.clip(design[free] * np.sqrt(ratios / max(multiplier, 1e-100)), lower_density, upper_density)
         return result
-
     upper = max(float(np.max(ratios)), 1e-12)
     for _ in range(100):
         if np.sum(mapping.physical(proposal(upper))[0]) <= target + 1e-9:
@@ -673,7 +637,6 @@ def _oc_update(design, objective_derivative, volume_derivative, mapping, target,
             break
     return candidate
 
-
 def _case_scaling(solutions, settings):
     supplied = settings["case_weights"]
     if set(supplied) - set(solutions):
@@ -684,7 +647,6 @@ def _case_scaling(solutions, settings):
     total = sum(weights.values())
     normalization = {name: result["compliance_n_mm"] for name, result in solutions.items()}
     return {name: weights[name] / total / normalization[name] for name in solutions}, normalization, {name: weight / total for name, weight in weights.items()}
-
 
 def _history_entry(iteration, physical, solutions, scales, change, elapsed, final=False):
     return {
@@ -697,7 +659,6 @@ def _history_entry(iteration, physical, solutions, scales, change, elapsed, fina
         "maximum_relative_residual": float(max(result["relative_residual"] for result in solutions.values())),
         "elapsed_s": elapsed,
     }
-
 
 def optimize_topology(domain, settings, *, progress_callback=None):
     started = perf_counter()

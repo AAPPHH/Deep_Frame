@@ -5,14 +5,12 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-
 CONFIG = {
     "url": "https://www.dhondt.de/calculix_2.22_4win.zip",
     "sha256": "a1f91281944c96d6cd914cc020421e8ae65973b3e15d055dc63a3e3e3066d281",
     "destination": Path(sys.prefix) / "calculix",
     "timeout_s": 60,
 }
-
 
 def install(config):
     if sys.prefix == sys.base_prefix:
@@ -29,7 +27,6 @@ def install(config):
         destination.mkdir(parents=True, exist_ok=True)
         archive.extractall(destination)
     return str(destination)
-
 
 if __name__ == "__main__":
     install(CONFIG)

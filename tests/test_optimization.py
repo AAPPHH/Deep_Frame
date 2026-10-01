@@ -7,7 +7,6 @@ import pytest
 
 from deep_frame.optimization import EvaluationFailure, check_printability, optimize, show_candidates
 
-
 def beam_result(parameters):
     beam = parameters["beam"]
     length = beam["length_mm"] / 1000
@@ -31,15 +30,12 @@ def beam_result(parameters):
         "artifacts": {},
     }
 
-
 def valid_geometry(parameters):
     return {"passed": True, "violations": [], "checks": {}}
-
 
 @pytest.fixture
 def reference():
     return {"beam": {"length_mm": 100.0, "width_mm": 10.0, "height_mm": 3.0, "wall_mm": 2.0}}
-
 
 @pytest.fixture
 def settings(tmp_path):
@@ -67,7 +63,6 @@ def settings(tmp_path):
         "initial_candidates": [],
     }
 
-
 def test_analytical_cantilever_finds_known_optimum(reference, settings):
     original_reference = deepcopy(reference)
     original_settings = deepcopy(settings)
@@ -90,7 +85,6 @@ def test_analytical_cantilever_finds_known_optimum(reference, settings):
         assert json.load(file) == result["pareto_front"]
     json.dumps(result, allow_nan=False)
 
-
 @pytest.mark.parametrize("path,value,outcome", [
     ("beam.wall_mm", 1.59, "rejected_printability"),
     ("beam.width_mm", 6.0, "rejected_printability"),
@@ -99,16 +93,13 @@ def test_analytical_cantilever_finds_known_optimum(reference, settings):
 def test_invalid_design_never_reaches_evaluator(reference, settings, path, value, outcome):
     evaluations = []
     validations = []
-
     def evaluator(parameters):
         evaluations.append(deepcopy(parameters))
         return beam_result(parameters)
-
     def validator(parameters):
         validations.append(deepcopy(parameters))
         passed = parameters["beam"]["length_mm"] >= 50.0
         return {"passed": passed, "violations": [] if passed else ["fixture"], "checks": {}}
-
     settings["n_trials"] = 1
     result = optimize(reference, {path: {"choices": [value]}}, evaluator, validator, settings)
     assert len(evaluations) == 1
@@ -118,7 +109,6 @@ def test_invalid_design_never_reaches_evaluator(reference, settings, path, value
     assert result["pareto_front"] == []
     assert result["status"] == "no_valid_design"
 
-
 def test_printability_boundary_and_root_section(reference, settings):
     reference["beam"]["wall_mm"] = 1.6
     assert check_printability(reference, settings["printability"])["passed"]
@@ -126,7 +116,6 @@ def test_printability_boundary_and_root_section(reference, settings):
     check = check_printability(reference, settings["printability"])
     assert not check["passed"]
     assert check["checks"]["section:root"]["measured_mm2"] == 18.0
-
 
 def test_constraints_preserve_original_reference_and_remove_infeasible_trials(reference, settings):
     settings["n_trials"] = 3
@@ -141,7 +130,6 @@ def test_constraints_preserve_original_reference_and_remove_infeasible_trials(re
             assert check["reference"] == result["reference"]["metrics"][check["metric"]]
     assert result["trials"][1]["constraints"]["mass_ratio_max"]["passed"] is False
     assert result["trials"][2]["constraints"]["stiffness_ratio_min"]["passed"] is False
-
 
 @pytest.mark.parametrize("failure", ["status", "exception", "nan", "zero_mode"])
 def test_failed_evaluation_never_enters_pareto(reference, settings, failure):
@@ -158,7 +146,6 @@ def test_failed_evaluation_never_enters_pareto(reference, settings, failure):
             if failure == "zero_mode":
                 result["eigenfrequencies_hz"] = [0.0]
         return result
-
     settings["n_trials"] = 1
     result = optimize(reference, {"beam.length_mm": {"choices": [40.0]}}, evaluator, valid_geometry, settings)
     assert result["trial_counts"]["evaluation_failed"] == 1
@@ -166,14 +153,11 @@ def test_failed_evaluation_never_enters_pareto(reference, settings, failure):
     assert result["pareto_front"] == []
     assert result["trials"][0]["diagnostics"]
 
-
 def test_persistent_resume_evaluates_reference_once_and_rejects_contract_change(reference, settings):
     evaluations = []
-
     def evaluator(parameters):
         evaluations.append(parameters["beam"]["length_mm"])
         return beam_result(parameters)
-
     settings["n_trials"] = 1
     space = {"beam.length_mm": {"choices": [40.0]}}
     first = optimize(reference, space, evaluator, valid_geometry, settings)
@@ -186,49 +170,38 @@ def test_persistent_resume_evaluates_reference_once_and_rejects_contract_change(
         optimize(reference, space, evaluator, valid_geometry, settings)
     assert evaluations == [100.0, 40.0, 40.0]
 
-
 def test_input_isolation_from_mutating_callbacks(reference, settings):
     original = deepcopy(reference)
-
     def evaluator(parameters):
         result = beam_result(parameters)
         parameters["beam"]["length_mm"] = -999
         return result
-
     def validator(parameters):
         parameters["beam"]["height_mm"] = -999
         return valid_geometry(parameters)
-
     settings["n_trials"] = 1
     result = optimize(reference, {"beam.length_mm": {"choices": [40.0]}}, evaluator, validator, settings)
     assert reference == original
     assert result["pareto_front"][0]["parameters"]["beam"]["height_mm"] == 3.0
     assert result["pareto_front"][0]["parameters"]["beam"]["length_mm"] == 40.0
 
-
 def test_failed_reference_prevents_trials(reference, settings):
     calls = []
-
     def evaluator(parameters):
         calls.append(parameters)
         return {"status": "failed", "diagnostics": ["unavailable"]}
-
     with pytest.raises(EvaluationFailure, match="Reference evaluation failed"):
         optimize(reference, {"beam.length_mm": {"choices": [40.0]}}, evaluator, valid_geometry, settings)
     assert calls == [reference]
 
-
 def test_viewer_adapter_rebuilds_only_valid_parameters(reference):
     candidate = {"number": 5, "outcome": "valid", "parameters": deepcopy(reference)}
     displayed = []
-
     def geometry(parameters):
         parameters["beam"]["height_mm"] = 999
         return "shape"
-
     def show(*shapes, **settings):
         displayed.append((shapes, settings))
-
     assert show_candidates([candidate], geometry, show, {"port": 3939}) == {"displayed_trials": [5]}
     assert displayed == [(("shape",), {"names": ["Trial 5"], "port": 3939})]
     assert candidate["parameters"] == reference

@@ -1,8 +1,3 @@
-"""Workstation evidence studies: FEA mesh refinement, candidate validation and geometry rendering.
-
-Run from the repository with the local venv Python: ``tools/workstation_study.py {mesh,candidates,render} --help``.
-"""
-
 import argparse
 from copy import deepcopy
 import hashlib
@@ -29,7 +24,6 @@ from deep_frame.topology_pipeline import (
 EVIDENCE = ROOT / "docs/validation/topology_phase1"
 DEFAULT_OUTPUT = ROOT / "exports/topology/workstation_20260930/mesh_study"
 
-
 SCREEN = {
     "stiffness_n_per_mm": 0.02,
     "max_displacement_mm": 0.02,
@@ -37,10 +31,8 @@ SCREEN = {
     "max_von_mises_mpa": 0.05,
 }
 
-
 def read(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
-
 
 def geometry_metrics(solid):
     bounds = solid.bounding_box()
@@ -51,7 +43,6 @@ def geometry_metrics(solid):
         "solids": len(solid.solids()),
         "is_valid": solid.is_valid,
     }
-
 
 def mesh_prepare(output, threads, linear_solver=None):
     previous_path = output / "preparation.json"
@@ -157,7 +148,6 @@ def mesh_prepare(output, threads, linear_solver=None):
     print(json.dumps({"prepared": str(output), "volumes_mm3": {name: item["volume_mm3"] for name, item in geometries.items()}, "validation_passed": validation["passed"]}), flush=True)
     return solids, record
 
-
 def verify_record(record, output, preparation):
     if record["study_input_sha256"] != preparation["study_input_sha256"]:
         raise ValueError("Conflicting mesh result identity")
@@ -174,7 +164,6 @@ def verify_record(record, output, preparation):
             raise ValueError("Recorded FEA differs from its hashed raw result")
     if record["status"] == "ok":
         _verify_cases(result, preparation["load_cases"])
-
 
 def summarize(output, preparation):
     rows = []
@@ -205,7 +194,6 @@ def summarize(output, preparation):
     summary = {"schema_version": "deep-frame-workstation-mesh-summary-v1", "study_input_sha256": preparation["study_input_sha256"], "preparation": "preparation.json", "preparation_sha256": _file_digest(output / "preparation.json"), "rows": rows, "successive_mesh_changes": changes, "same_mesh_comparisons": comparisons, "screen": SCREEN, "interpretation": preparation["screen_interpretation"]}
     _save(output / "summary.json", summary)
     return summary
-
 
 def mesh_main(argv=None, prog=None):
     """Reconstruct the archived density and independently refine its FEA mesh.
@@ -251,10 +239,8 @@ def mesh_main(argv=None, prog=None):
     summary = summarize(output, preparation)
     print(json.dumps({"summary": str(output / "summary.json"), "completed_evaluations": len(summary["rows"])}), flush=True)
 
-
 def physical_settings(settings):
     return {key: value for key, value in settings.items() if key != "work_dir"}
-
 
 def load_source(source):
     manifest = read(source / "manifest.json")
@@ -281,7 +267,6 @@ def load_source(source):
     if density.shape != tuple(domain["grid"]["shape"]) or not np.isfinite(density).all():
         raise ValueError("Invalid stored density field")
     return inputs, result, domain, density
-
 
 def prepare(source, output, linear_solver=None, threads=2):
     if linear_solver not in (None, "SPOOLES", "PASTIX") or not isinstance(threads, int) or threads < 1:
@@ -343,13 +328,11 @@ def prepare(source, output, linear_solver=None, threads=2):
         _save(path, record)
     return record, domain, density
 
-
 def persist(output, manifest, current):
     path = output / "candidates" / current["id"] / "record.json"
     _save(path, current)
     manifest["candidates"][current["id"]] = _artifact(path, output)
     _save(output / "manifest.json", manifest)
-
 
 def verify_raw_result(artifacts, result, output):
     artifact = artifacts.get("raw_fea_result.json")
@@ -361,7 +344,6 @@ def verify_raw_result(artifacts, result, output):
         raise ValueError("Raw FEA result failed its hash check")
     if read(output / artifact["path"]) != result:
         raise ValueError("Recorded FEA differs from the hashed raw result")
-
 
 def read_candidates(output, manifest, inputs=None, baseline=None):
     records = []
@@ -387,7 +369,6 @@ def read_candidates(output, manifest, inputs=None, baseline=None):
                 raise ValueError("Candidate acceptance disagrees with its mechanical comparison")
         records.append(record)
     return records
-
 
 def baseline_result(output, inputs, baseline_study):
     domain = inputs["domain"]
@@ -448,7 +429,6 @@ def baseline_result(output, inputs, baseline_study):
     _verify_cases(result, domain["comparison_load_cases"])
     return record
 
-
 def load_saved_baseline(output, manifest, inputs):
     artifact = manifest.get("baseline")
     if artifact is None:
@@ -461,7 +441,6 @@ def load_saved_baseline(output, manifest, inputs):
     if verified != saved:
         raise ValueError("Stored baseline evidence changed")
     return saved
-
 
 def run(source, output, geometry_only=False, baseline_study=None, linear_solver=None, threads=2):
     output.mkdir(parents=True, exist_ok=True)
@@ -555,7 +534,6 @@ def run(source, output, geometry_only=False, baseline_study=None, linear_solver=
     print(json.dumps({"event": "finished", "manifest": str(path), "status": manifest["status"], "selected_id": manifest["selected_id"]}), flush=True)
     return manifest
 
-
 def candidates_main(argv=None, prog=None):
     """Validate a completed density study against the original Phase-1 screens.
 
@@ -574,10 +552,8 @@ def candidates_main(argv=None, prog=None):
         args.baseline_study.resolve() if args.baseline_study else None,
         args.linear_solver, args.threads)
 
-
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
 
 def render_main(argv=None, prog=None):
     """Render actual v0, handoff and selected workstation STL files at one scale."""
@@ -668,7 +644,6 @@ def render_main(argv=None, prog=None):
     output.with_suffix(".json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
     print(json.dumps({"image": str(output), "manifest": str(output.with_suffix('.json')), "sources": len(sources)}))
 
-
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -677,7 +652,6 @@ def main(argv=None):
         commands.add_parser(name, help=function.__doc__.splitlines()[0], add_help=False)
     args, arguments = parser.parse_known_args(argv)
     return handlers[args.command](arguments, parser.prog + " " + args.command)
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

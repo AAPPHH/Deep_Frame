@@ -18,7 +18,6 @@ from deep_frame.frame import build_geometry
 from deep_frame.topology_geometry import build_design_domain, reconstruct_topology, validate_topology
 from deep_frame.topology_optimization import optimize_topology
 
-
 PIPELINE_CONFIG = {
     "output_dir": "exports/topology/phase1",
     "resume": True,
@@ -38,7 +37,6 @@ PIPELINE_CONFIG = {
     },
 }
 
-
 def _jsonable(value):
     if isinstance(value, dict):
         return {str(key): _jsonable(item) for key, item in value.items()}
@@ -52,14 +50,11 @@ def _jsonable(value):
         return str(value)
     return value
 
-
 def _encoded(value):
     return json.dumps(_jsonable(value), sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
 
-
 def _digest(value):
     return hashlib.sha256(_encoded(value)).hexdigest()
-
 
 def _save(path, value):
     path = Path(path)
@@ -68,17 +63,14 @@ def _save(path, value):
     temporary.write_text(json.dumps(_jsonable(value), indent=2, allow_nan=False), encoding="utf-8")
     temporary.replace(path)
 
-
 def _file_digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
 
 def _merge(base, override):
     result = deepcopy(base)
     for key, value in override.items():
         result[key] = _merge(result[key], value) if isinstance(value, dict) and isinstance(result.get(key), dict) else deepcopy(value)
     return result
-
 
 def _configuration(settings):
     config = _merge(PIPELINE_CONFIG, settings)
@@ -99,14 +91,12 @@ def _configuration(settings):
     _encoded(config)
     return config
 
-
 def _callable_identity(function):
     try:
         source = inspect.getsource(function)
     except (OSError, TypeError):
         source = repr(type(function))
     return {"name": function.__module__ + "." + getattr(function, "__qualname__", type(function).__qualname__), "source_sha256": hashlib.sha256(source.encode()).hexdigest()}
-
 
 def _provenance(functions, fea_settings, real_evaluator):
     packages = {}
@@ -127,7 +117,6 @@ def _provenance(functions, fea_settings, real_evaluator):
         result["solver"] = solver_identity(fea_settings)
     return result
 
-
 def _metrics(result):
     if result.get("status") != "ok":
         raise ValueError("Independent FEA did not complete successfully")
@@ -136,7 +125,6 @@ def _metrics(result):
     if any(not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0 for value in metrics.values()):
         raise ValueError("Independent FEA needs finite positive mass, stiffness, displacement, stress and frequency")
     return metrics
-
 
 def _verify_cases(result, expected):
     _metrics(result)
@@ -151,7 +139,6 @@ def _verify_cases(result, expected):
             values = [solved.get("max_displacement_mm"), solved.get("max_von_mises_mpa")]
         if not values or any(not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0 for value in values):
             raise ValueError("Independent FEA has missing or invalid metrics in case " + case["name"])
-
 
 def compare_to_baseline(result, baseline, constraints):
     candidate, reference = _metrics(result), _metrics(baseline)
@@ -172,7 +159,6 @@ def compare_to_baseline(result, baseline, constraints):
     score = ratios["frame_mass_ratio"] + 1 / ratios["stiffness_ratio"] + 1 / ratios["frequency_ratio"] + ratios["displacement_ratio"] + ratios["stress_ratio"]
     return {"passed": all(checks.values()), "checks": checks, "ratios": ratios, "limits": deepcopy(constraints), "candidate": candidate, "reference": reference, "selection_score": score}
 
-
 def _pareto(candidates):
     valid = [record for record in candidates if record["status"] == "ok"]
     values = {}
@@ -181,11 +167,9 @@ def _pareto(candidates):
         values[record["id"]] = np.array([metrics["frame_mass_g"], -metrics["stiffness_n_per_mm"], -metrics["first_frequency_hz"], metrics["max_displacement_mm"], metrics["max_von_mises_mpa"]])
     return [record["id"] for record in valid if not any(np.all(other <= values[record["id"]]) and np.any(other < values[record["id"]]) for key, other in values.items() if key != record["id"])]
 
-
 def _artifact(path, directory):
     path = Path(path)
     return {"path": str(path.relative_to(directory)).replace("\\", "/"), "sha256": _file_digest(path), "size_bytes": path.stat().st_size}
-
 
 def _fea_artifacts(result, directory):
     location = result.get("artifacts", {}).get("directory")
@@ -196,7 +180,6 @@ def _fea_artifacts(result, directory):
         raise ValueError("Independent FEA artifacts must remain inside the run directory")
     return {"raw_fea_" + str(path.relative_to(location)).replace("\\", "/"): _artifact(path, directory) for path in sorted(location.rglob("*")) if path.is_file()}
 
-
 def _valid_artifacts(record, directory):
     for artifact in record.get("artifacts", {}).values():
         if not isinstance(artifact, dict) or "sha256" not in artifact:
@@ -206,14 +189,12 @@ def _valid_artifacts(record, directory):
             return False
     return True
 
-
 def _save_fields(path, domain, result):
     arrays = {name: np.asarray(domain[name], dtype=bool) for name in ("allowed", "preserve", "forbidden")}
     arrays["density"] = np.asarray(result["density"], dtype=float)
     if result.get("design_density") is not None:
         arrays["design_density"] = np.asarray(result["design_density"], dtype=float)
     np.savez_compressed(path, **arrays)
-
 
 def run_topology(parameters, settings=None, *, domain_builder=build_design_domain, generator=optimize_topology, reconstructor=reconstruct_topology, validator=validate_topology, evaluator=evaluate, baseline_builder=build_geometry):
     started = perf_counter()
@@ -392,25 +373,19 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
     _save(Path(config["output_dir"]).resolve() / "latest.json", {"manifest": str(manifest_path), "input_sha256": fingerprint, "status": manifest["status"], "selected_id": manifest["selected_id"]})
     return manifest
 
-
 def _plot_modules():
     import matplotlib
-
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-
     return plt, Poly3DCollection
-
 
 def _preserve_shape(domain):
     from deep_frame.topology_geometry import region_shape
-
     shapes = [region_shape(region) for region in domain["regions"] if region["role"] == "preserve"]
     holes = [region_shape(region) for region in domain["regions"] if region["role"] == "forbidden"]
     shape = Compound(children=shapes)
     return shape.cut(*holes) if holes else shape
-
 
 def _mesh_axes(figure, slot, shape, color, title, grid, top=False):
     _, collection = _plot_modules()
@@ -432,7 +407,6 @@ def _mesh_axes(figure, slot, shape, color, title, grid, top=False):
         axis.set_zticks([])
         axis.set_zlabel("")
     return axis
-
 
 def render_topology_evidence(domain, density, reference_solid, candidate_solid, history, output_dir, label=""):
     plt, _ = _plot_modules()
@@ -459,7 +433,6 @@ def render_topology_evidence(domain, density, reference_solid, candidate_solid, 
     figure.savefig(image_path, dpi=160)
     plt.close(figure)
     result["geometry_comparison"] = str(image_path.resolve())
-
     grid = domain["grid"]
     origin, spacing, shape = np.asarray(grid["origin_mm"]), np.asarray(grid["spacing_mm"]), np.asarray(grid["shape"])
     layers = np.unique(np.linspace(0, shape[2] - 1, min(4, shape[2]), dtype=int))
@@ -478,7 +451,6 @@ def render_topology_evidence(domain, density, reference_solid, candidate_solid, 
     figure.savefig(image_path, dpi=160)
     plt.close(figure)
     result["density_slices"] = str(image_path.resolve())
-
     if history:
         iterations = [row["iteration"] for row in history]
         objective = [row["objective"] for row in history]
@@ -505,11 +477,9 @@ def render_topology_evidence(domain, density, reference_solid, candidate_solid, 
     (directory / "visualization_manifest.json").write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     return result
 
-
 def show_topology_comparison(reference_solid, candidate_solid, domain, port=3939):
     from build123d import Pos
     from ocp_vscode import port_check, show
-
     if not port_check(port):
         raise ConnectionError(f"Start OCP CAD Viewer in VS Code on port {port}.")
     width = domain["grid"]["shape"][0] * domain["grid"]["spacing_mm"][0]
@@ -518,7 +488,6 @@ def show_topology_comparison(reference_solid, candidate_solid, domain, port=3939
     names = ["v0 reference", "free topology candidate", "prescribed interfaces only"]
     show(*shapes, names=names, colors=["#7994ab", "#248c87", "#d98236"], port=port, progress="", timeit=False)
     return {"shown": names, "separation_mm": offset, "port": port}
-
 
 def render_saved_evidence(domain_path, field_path, reference_step, candidate_step, history_path, output_dir):
     domain = json.loads(Path(domain_path).read_text(encoding="utf-8"))

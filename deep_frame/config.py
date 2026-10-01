@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 COMPONENT_DEFAULTS = {
     "aio15": {
         "width_mm": 31.3,
@@ -88,7 +87,6 @@ COMPONENT_DEFAULTS = {
     },
 }
 
-
 FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'lateral_longitudinal_ratio': 1.3658536585365855,
  'minimum_wall_mm': 2.0,
@@ -141,7 +139,6 @@ FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'cable_slot_width_mm': 4.0,
  'cable_slot_height_mm': 3.0,
  'prop_motor_gap_mm': 2.0}
-
 
 FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                   'kind': 'design_assumption',
@@ -571,7 +568,6 @@ FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                                     'und2-mm-Mindestwand abgeleitete eigene '
                                     'Druckabmessung.'}}
 
-
 FEA_CONFIG = {
     "material": {
         "name": "PA6-CF, preliminary isotropic dry XY surrogate",
@@ -603,7 +599,6 @@ FEA_CONFIG = {
     },
 }
 
-
 INTEGRATION_CONFIG = {
     "model_version": "frame-v0-linear-fixtures-v1",
     "arm_tip_force_n": 1.0,
@@ -620,7 +615,6 @@ INTEGRATION_CONFIG = {
     "camera_upper_height_fraction": 0.25,
     "camera_length_fraction": 0.5,
 }
-
 
 OPTIMIZATION_CONFIG = {
     "n_trials": 6,
@@ -661,12 +655,10 @@ OPTIMIZATION_CONFIG = {
     ],
 }
 
-
 SEARCH_SPACE = {
     "frame.arm_height_mm": {"low": 3.8, "high": 4.4, "step": 0.2},
     "frame.arm_width_mm": {"low": 6.3, "high": 6.9, "step": 0.2},
 }
-
 
 TOPOLOGY_CONFIG = {
     "grid": {
@@ -719,7 +711,6 @@ TOPOLOGY_CONFIG = {
     },
     "additional_regions": [],
 }
-
 
 CONFIG = {
     "length_mm": 30.0,
