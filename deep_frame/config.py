@@ -755,6 +755,7 @@ IMPLICIT_CONFIG = {
     "fea_remesh_feature_deg": 40.0,
     "fea_remesh_max_surface_distance_mm": 0.05,
     "fea_refine_edge_mm": 1.0,
+    "fea_refine_max_surface_distance_mm": 0.01,
     "fea_merge_distance_mm": 0.05,
     "fea_t_vertex_ratio": 20.0,
     "fea_classify_angle_deg": 40.0,

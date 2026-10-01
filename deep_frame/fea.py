@@ -19,7 +19,7 @@ if __name__ != "__main__":
     from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS
     from deep_frame.frame import assembly_placements, build_components, build_geometry, motor_positions
     MESH_ATTEMPTS = IMPLICIT_KINDS["tet_attempts"][0]
-    MESH_KEYS = ("tet_attempts", "mesh_minimum_sicn", "mesh_boundary_deviation_mm", *(key for key in IMPLICIT_CONFIG if key.startswith("fea_")))
+    MESH_KEYS = ("tet_attempts", "mesh_minimum_sicn", "mesh_boundary_deviation_mm", "surface_deviation_mm", "relative_volume_change", *(key for key in IMPLICIT_CONFIG if key.startswith("fea_")))
 
 def resolve_solver(settings):
     explicit = settings.get("solver_path") or os.environ.get("CALCULIX_PATH")
@@ -329,6 +329,8 @@ def evaluate(solid, material, point_masses, load_cases, settings):
                 raise ValueError("A point-mass attachment region overlaps a fixed fixture")
         prepared = [(case, *_case_lines(nodes, case, settings)) for case in load_cases]
         result["frame_mass_g"] = float(solid.volume * material["density_g_cm3"] / 1000)
+        if _is_mesh(solid):
+            result["model_frame_mass_g"] = float(result["mesh"]["tet_volume_mm3"] * material["density_g_cm3"] / 1000)
         result["point_mass_g"] = float(sum(mass["mass_g"] for mass in point_masses))
         result["mass_g"] = result["frame_mass_g"] + result["point_mass_g"]
         for index, (case, lines, load_nodes, fixed_count) in enumerate(prepared):
@@ -378,7 +380,7 @@ def _prepare_surface(source, settings, refine):
     if refine:
         meshes.meshing_surface_subdivision_midpoint(iterations=64, threshold=pymeshlab.PureValue(settings["fea_refine_edge_mm"]))
     meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_remesh_iterations"], targetlen=pymeshlab.PureValue(settings["fea_remesh_target_mm"]), featuredeg=settings["fea_remesh_feature_deg"],
-                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_remesh_max_surface_distance_mm"]))
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_refine_max_surface_distance_mm" if refine else "fea_remesh_max_surface_distance_mm"]))
     meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(settings["fea_merge_distance_mm"]))
     meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)
     meshes.meshing_remove_null_faces()
@@ -426,9 +428,17 @@ def _boundary_report(gmsh, source, settings):
     boundary.remove_unreferenced_vertices()
     _, distance, _ = trimesh.proximity.closest_point(source, boundary.vertices)
     fidelity = surface_fidelity(source, boundary)
-    report = {"boundary_node_count": len(boundary.vertices), "boundary_node_deviation_mm": float(distance.max()), "boundary_fidelity": fidelity}
+    types, _, connectivity = gmsh.model.mesh.getElements(3)
+    if list(types) != [4]:
+        raise ValueError("The volume mesh must consist of linear tetrahedra before elevation")
+    corners = coordinates[lookup[connectivity[0].astype(np.int64)].reshape(-1, 4)]
+    volume = float(np.sum(np.einsum("ij,ij->i", corners[:, 1]-corners[:, 0], np.cross(corners[:, 2]-corners[:, 0], corners[:, 3]-corners[:, 0])))/6)
+    report = {"boundary_node_count": len(boundary.vertices), "boundary_node_deviation_mm": float(distance.max()), "boundary_fidelity": fidelity, "input_volume_mm3": float(source.volume), "tet_volume_mm3": volume,
+              "tet_volume_relative_change": volume/source.volume-1}
     if not distance.max() <= settings["mesh_boundary_deviation_mm"]:
         raise ValueError(f"Boundary nodes deviate {distance.max():.4g} mm from the input surface (limit {settings['mesh_boundary_deviation_mm']} mm)")
+    if not fidelity["maximum_sampled_deviation_mm"] <= settings["surface_deviation_mm"] or not abs(fidelity["relative_volume_change"]) <= settings["relative_volume_change"] or not abs(report["tet_volume_relative_change"]) <= settings["relative_volume_change"]:
+        raise ValueError(f"Tetrahedral body deviates {fidelity['maximum_sampled_deviation_mm']:.4g} mm and {report['tet_volume_relative_change']:.4%} in volume from the input surface (limits {settings['surface_deviation_mm']} mm, {settings['relative_volume_change']:.2%})")
     return report
 
 def generate_mesh(request_path):

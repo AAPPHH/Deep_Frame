@@ -8,7 +8,7 @@ import pytest
 import trimesh
 from build123d import Align, Box, Pos, Solid
 
-from deep_frame.config import CONFIG, FEA_CONFIG
+from deep_frame.config import CONFIG, FEA_CONFIG, IMPLICIT_CONFIG
 from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _read_mesh, _run, _select, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, build_geometry, intersection_shape, motor_positions, reference_parameters
 
@@ -351,8 +351,10 @@ def test_closed_triangle_mesh_beam_matches_analytical_solution(mesh_beam_results
     attempts = report["attempts"]
     assert attempts[-1]["status"] == "ok" and report["attempt"] == attempts[-1]["name"] and all(attempt["diagnostic"] for attempt in attempts[:-1])
     assert report["minimum_sicn"] >= 0.01 and report["elements_below_sicn"] == 0
-    assert report["boundary_node_deviation_mm"] <= 0.05
-    assert abs(report["boundary_fidelity"]["relative_volume_change"]) < 0.03
+    assert report["boundary_node_deviation_mm"] <= 0.05 and report["boundary_fidelity"]["maximum_sampled_deviation_mm"] <= IMPLICIT_CONFIG["surface_deviation_mm"]
+    assert abs(report["boundary_fidelity"]["relative_volume_change"]) <= IMPLICIT_CONFIG["relative_volume_change"] and abs(report["tet_volume_relative_change"]) <= IMPLICIT_CONFIG["relative_volume_change"]
+    assert report["tet_volume_relative_change"] == pytest.approx(report["boundary_fidelity"]["relative_volume_change"], abs=1e-9) and report["input_volume_mm3"] == pytest.approx(solid.volume, rel=1e-12)
+    assert measured["model_frame_mass_g"] == pytest.approx(report["tet_volume_mm3"] * 1.09e-3, rel=1e-12)
     if report["attempt"].startswith(("remesh", "refine")):
         assert report["prepared_surface"]["topology_passed"] and report["prepared_surface"]["self_intersections_passed"] and report["prepared_surface"]["folded_edges"] == 0
     json.dumps(measured, allow_nan=False)
@@ -378,6 +380,15 @@ def test_tetrahedral_mesher_failure_is_failure_with_recorded_attempts(tmp_path):
     assert not list(tmp_path.rglob("mesh.inp")) and not list(tmp_path.rglob("case_*.inp"))
     json.dumps(result, allow_nan=False)
 
+def test_tetrahedral_body_that_loses_input_volume_is_rejected(tmp_path):
+    _, material, cases, settings, _ = beam_inputs(tmp_path)
+    settings["tet_attempts"] = ["remesh_hxt"]
+    result = evaluate(cylinder_beam_mesh(), material, [], cylinder_cases(cases), settings)
+    assert result["status"] == "failed" and result["mass_g"] is None
+    attempt = result["mesh"]["attempts"][0]
+    assert attempt["status"] == "failed" and "Tetrahedral body deviates" in attempt["diagnostic"]
+    assert not list(tmp_path.rglob("case_*.inp"))
+
 def open_mesh():
     mesh = box_beam_mesh()
     return trimesh.Trimesh(mesh.vertices, mesh.faces[1:], process=False)
@@ -389,7 +400,7 @@ def inverted_mesh():
 @pytest.mark.parametrize("mesh, override, message", [
     (open_mesh, {}, "closed"), (inverted_mesh, {}, "closed"), (box_beam_mesh, {"tet_attempts": ["fTetWild"]}, "tet_attempts"),
     (box_beam_mesh, {"tet_attempts": []}, "tet_attempts"), (box_beam_mesh, {"mesh_minimum_sicn": 0.0}, "mesh_minimum_sicn"),
-    (box_beam_mesh, {"fea_remesh_target_mm": 0.0}, "fea_remesh_target_mm"), (box_beam_mesh, {"fea_remesh_iterations": 2.5}, "fea_remesh_iterations")])
+    (box_beam_mesh, {"fea_remesh_target_mm": 0.0}, "fea_remesh_target_mm"), (box_beam_mesh, {"relative_volume_change": 0.0}, "relative_volume_change"), (box_beam_mesh, {"fea_remesh_iterations": 2.5}, "fea_remesh_iterations")])
 def test_invalid_triangle_mesh_input_rejected_before_meshing(tmp_path, mesh, override, message):
     directory = tmp_path / "must_not_be_created"
     _, material, cases, settings, _ = beam_inputs(directory)
