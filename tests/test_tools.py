@@ -13,6 +13,7 @@ import trimesh
 
 import deep_frame
 from deep_frame import topology_pipeline, topology_surface
+from deep_frame.config import command_line, configure
 from deep_frame.topology_optimization import _settings
 from deep_frame.topology_pipeline import _artifact, _file_digest, _read, _save
 from deep_frame.topology_surface import SurfaceReconstructionError
@@ -21,7 +22,7 @@ from tools import implicit_study as implicit
 from tools import mature_pipeline as pipeline
 from tools import topology_study
 from tools import workstation_study as workstation
-from tools.topology_study import field_comparison, verify_artifacts, verify_comparable_settings, verify_frozen_reference
+from tools.topology_study import field_comparison, plot_gpu, verify_artifacts, verify_comparable_settings, verify_frozen_reference
 
 def test_comparison_rejects_changed_physical_filter_but_allows_iteration_budget():
     reference = _settings({})
@@ -31,6 +32,14 @@ def test_comparison_rejects_changed_physical_filter_but_allows_iteration_budget(
     studied["filter_radius_mm"] = 5.0
     with pytest.raises(ValueError, match="physics/settings"):
         verify_comparable_settings(reference, studied)
+
+def test_comparison_fills_projection_defaults_of_older_references():
+    legacy = {key: value for key, value in _settings({}).items() if key not in
+              ("projection", "robust_delta", "beta_schedule", "beta_interval", "beta_minimum_iterations",
+               "beta_change_tolerance", "move_limit_late", "move_limit_late_beta", "volume_target_relaxation", "objective_window", "gpu_solver_residency")}
+    verify_comparable_settings(legacy, _settings({"max_iterations": 300}))
+    with pytest.raises(ValueError, match="physics/settings"):
+        verify_comparable_settings(legacy, _settings({"projection": "robust", "beta_schedule": [1, 2, 4]}))
 
 def test_frozen_reference_verification_rejects_corrupted_fields(tmp_path):
     artifacts = {}
@@ -47,6 +56,23 @@ def test_frozen_reference_verification_rejects_corrupted_fields(tmp_path):
 def test_evidence_verification_requires_all_critical_artifact_entries(tmp_path):
     with pytest.raises(ValueError, match="Required evidence"):
         verify_artifacts(tmp_path, {}, ("inputs.json", "result.json", "fields.npz", "domain_masks.npz"))
+
+@pytest.mark.parametrize("cpu_key,gpu_key", [("cpu_superlu_wall_s", "cuda_cudss_wall_s"), ("cpu_wall_s", "gpu_wall_s")])
+def test_gpu_plot_reads_fresh_and_archived_benchmark_timings(tmp_path, cpu_key, gpu_key):
+    run = tmp_path / "grid8over3_gpu1000"
+    run.mkdir()
+    history = [{"iteration": index, "objective": 1 / index, "maximum_design_change": 0.5 / index, "final_evaluation": False}
+               for index in range(1, 26)]
+    _save(run / "result.json", {"history": history + [{"iteration": 26, "final_evaluation": True}]})
+    _save(run / "inputs.json", {})
+    np.savez_compressed(run / "fields.npz", density=np.zeros(1))
+    (run / "iterations.jsonl").write_text("{}\n", encoding="utf-8")
+    artifacts = {path.name: {"sha256": _file_digest(path), "size_bytes": path.stat().st_size} for path in run.iterdir()}
+    _save(run / "manifest.json", {"artifacts": artifacts})
+    (tmp_path / "three_updates").mkdir()
+    _save(tmp_path / "three_updates/comparison.json", {cpu_key: 12.0, gpu_key: 0.5, "speedup": 24.0})
+    plot_gpu(tmp_path, tmp_path / "plot.png")
+    assert _read(tmp_path / "plot.json")["image_sha256"] == _file_digest(tmp_path / "plot.png")
 
 def test_density_comparison_integrates_physical_overlap_between_resolutions():
     def fields(densities):
@@ -326,7 +352,7 @@ def test_orchestrator_saved_source_hash_mismatch_never_launches_subprocess(study
     report = _read(output / "run.json")
     assert code == 1 and report["status"] == "failed" and not report["overall_acceptance"]
     assert "artifact mismatch" in report["error"] and report["commands"]["density"] is None
-    assert report["configs"]["density"] is None and not (output / "density_config.json").exists()
+    assert report["schema_version"] == "deep-frame-mature-end-to-end-v3" and report["configs"]["density"] is None and not (output / "density_config.json").exists()
 
 @pytest.mark.parametrize("backend", ["cpu_superlu", "cuda_cudss"])
 def test_orchestrator_fresh_density_selects_backend_and_verified_geometry(study, monkeypatch, tmp_path, backend):
@@ -350,6 +376,8 @@ def test_orchestrator_fresh_density_selects_backend_and_verified_geometry(study,
     assert code == 0 and report["status"] == "complete" and report["overall_acceptance"]
     assert report["source_mode"] == "fresh_uniform" and report["source_artifacts_verified"]
     assert report["accepted_count"] == 1 and report["selected_id"] == "t00" and len(commands) == 2
+    assert report["schema_version"] == "deep-frame-mature-end-to-end-v3"
+    assert all(report["configs"][name]["sha256"] == _file_digest(output / (name + "_config.json")) for name in ("density", "geometry"))
 
 def test_orchestrator_routes_ledger_to_both_stages(study, monkeypatch, tmp_path):
     args, source, _, _ = study
@@ -894,3 +922,44 @@ def test_implicit_study_rejects_unknown_keys_and_used_output(tmp_path):
     (tmp_path / "used/old.json").write_text("{}", encoding="utf-8")
     with pytest.raises(ValueError, match="new empty output"):
         implicit.run_main({"source": str(tmp_path), "output": str(tmp_path / "used")})
+
+DEFAULTS = {"name": None, "count": 3, "scale": 1.0, "flag": False, "path": None, "mode": "a", "shape": [1, 2, 3], "items": ["x"]}
+KINDS = {"name": "text", "count": "int", "scale": "float", "flag": "flag", "path": "path", "mode": ("a", "b"),
+         "shape": ["int"] * 3, "items": ["text"]}
+
+def test_configure_converts_known_keys_and_keeps_defaults_untouched():
+    config = configure(DEFAULTS, KINDS, {"name": "n", "count": "5", "scale": 2, "flag": True, "path": "a/b", "mode": "b",
+                                         "shape": (4, 5, 6), "items": ["y", "z"]}, ("name",))
+    assert config == {"name": "n", "count": 5, "scale": 2.0, "flag": True, "path": Path("a/b"), "mode": "b",
+                      "shape": [4, 5, 6], "items": ["y", "z"]}
+    assert configure(DEFAULTS, KINDS, {}) == DEFAULTS and DEFAULTS["shape"] == [1, 2, 3]
+
+@pytest.mark.parametrize("overrides", [[1], "name", None, 3])
+def test_configure_rejects_non_object_overrides(overrides):
+    with pytest.raises(ValueError, match="JSON object"):
+        configure(DEFAULTS, KINDS, overrides)
+
+def test_configure_rejects_unknown_keys_and_missing_required():
+    with pytest.raises(ValueError, match="Unknown configuration keys: other, zeta"):
+        configure(DEFAULTS, KINDS, {"zeta": 1, "other": 2, "count": 1})
+    with pytest.raises(ValueError, match="Missing required configuration: name, path"):
+        configure(DEFAULTS, KINDS, {"count": 1}, ("name", "path"))
+
+@pytest.mark.parametrize("key, value", [("count", True), ("count", "5.5"), ("count", 5.5), ("count", None), ("scale", False),
+                                        ("scale", "fast"), ("scale", [1.0]), ("name", 3), ("flag", 1), ("flag", "true"),
+                                        ("path", 3), ("mode", "c"), ("mode", ["a"]), ("shape", [1, 2]), ("shape", [1, 2, "x"]),
+                                        ("shape", 3), ("items", []), ("items", "x"), ("items", [1])])
+def test_configure_rejects_wrong_types_and_invalid_choices(key, value):
+    with pytest.raises(ValueError, match="Invalid configuration value for " + key):
+        configure(DEFAULTS, KINDS, {key: value})
+
+@pytest.mark.parametrize("argv", [[], ["other"], ["run", "a.json", "b.json"]])
+def test_command_line_rejects_bad_invocations_with_usage(argv):
+    with pytest.raises(SystemExit, match=r"^usage: \{run,plot\} \[config.json\]$"):
+        command_line({"run": pytest.fail, "plot": pytest.fail}, argv)
+
+def test_command_line_passes_parsed_json_or_empty_overrides(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text('{"count": 4}', encoding="utf-8-sig")
+    assert command_line({"run": lambda overrides: overrides}, ["run", str(path)]) == {"count": 4}
+    assert command_line({"run": lambda overrides: overrides}, ["run"]) == {}

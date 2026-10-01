@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from scipy.sparse import csr_matrix
 
-from deep_frame.topology_optimization import DensityMap, HexElasticity, _settings, elasticity_matrix, hexahedron_matrices, optimize_topology, regular_grid
+from deep_frame.topology_optimization import DensityMap, HexElasticity, _oc_update, _settings, elasticity_matrix, hexahedron_matrices, optimize_topology, regular_grid
 
 def beam_domain(shape=(10, 5, 5), spacing=(2.0, 2.0, 2.0)):
     extent = np.array(shape) * spacing
@@ -128,7 +128,183 @@ def test_progress_callback_reports_iterations_without_mutating_solver_history():
     assert np.array_equal(result["density"], plain["density"])
     assert result["summary"]["objective_final"] == plain["summary"]["objective_final"]
 
-@pytest.mark.parametrize("settings", [{"volume_fraction": 0.1}, {"volume_fraction": float("nan")}, {"penalization": 0}, {"case_weights": {"missing": 1}}, {"max_iterations": 0}])
+def robust_map(beta, shape=(6, 4, 4), radius=2.6, **settings):
+    domain = beam_domain(shape, (1.0, 1.0, 1.0))
+    mapping = DensityMap(domain, _settings({"projection": "robust", "filter_radius_mm": radius, **settings}))
+    mapping.beta = beta
+    return domain, mapping
+
+def random_design(mapping, seed, low=0.2, high=0.8):
+    design = np.random.default_rng(seed).uniform(low, high, mapping.n)
+    design[mapping.preserve] = 1
+    return design
+
+@pytest.mark.parametrize("beta", [0.0, 1.0, 4.0])
+def test_single_projection_reproduces_legacy_formula_bitwise(beta):
+    domain = beam_domain((6, 4, 4), (1.0, 1.0, 1.0))
+    mapping = DensityMap(domain, _settings({"filter_radius_mm": 2.6, "projection_beta": beta, "projection_eta": 0.45}))
+    design = random_design(mapping, 3)
+    filtered = np.asarray(mapping.filter @ design).ravel() / mapping.sums
+    if beta:
+        denominator = np.tanh(beta * 0.45) + np.tanh(beta * 0.55)
+        expected = (np.tanh(beta * 0.45) + np.tanh(beta * (filtered - 0.45))) / denominator
+        derivative = beta * (1 - np.tanh(beta * (filtered - 0.45)) ** 2) / denominator
+    else:
+        expected, derivative = filtered.copy(), np.ones(mapping.n)
+    expected[mapping.preserve] = 1
+    derivative[~mapping.free] = 0
+    physical, projection = mapping.physical(design)
+    assert np.array_equal(physical, np.clip(expected, 0, 1))
+    assert np.array_equal(projection, derivative)
+    assert mapping.volume(design) == np.sum(physical)
+    fields, _ = mapping.fields(design)
+    assert list(fields) == ["intermediate"]
+    assert np.array_equal(fields["intermediate"][0], physical)
+
+@pytest.mark.parametrize("beta", [1.0, 8.0, 16.0])
+def test_robust_projection_derivatives_match_finite_differences(beta):
+    domain, mapping = robust_map(beta)
+    design = random_design(mapping, 7)
+    rng = np.random.default_rng(11)
+    direction = rng.normal(size=mapping.n)
+    direction[~mapping.free] = 0
+    direction /= np.linalg.norm(direction)
+    weights = rng.uniform(0.5, 1.5, mapping.n)
+    step = 1e-6
+    fields, _ = mapping.fields(design)
+    plus, _ = mapping.fields(design + step * direction)
+    minus, _ = mapping.fields(design - step * direction)
+    for name, (_, derivative) in fields.items():
+        expected = weights @ (plus[name][0] - minus[name][0]) / (2 * step)
+        assert mapping.pullback(weights, derivative) @ direction == pytest.approx(expected, rel=1e-6, abs=1e-9)
+    system = HexElasticity(domain)
+    design = random_design(mapping, 7, 0.6, 0.95)
+    fields, _ = mapping.fields(design)
+    gradient = mapping.pullback(system.solve(fields["eroded"][0])["tip"]["derivative"], fields["eroded"][1])
+    step = 1e-5
+    compliance = [system.solve(mapping.fields(design + sign * step * direction)[0]["eroded"][0])["tip"]["compliance_n_mm"] for sign in (1, -1)]
+    assert gradient @ direction == pytest.approx((compliance[0] - compliance[1]) / (2 * step), rel=1e-4, abs=1e-10)
+
+@pytest.mark.parametrize("beta", [1.0, 2.0, 8.0, 16.0, 64.0])
+def test_robust_fields_are_ordered_and_respect_masks(beta):
+    domain, mapping = robust_map(beta)
+    domain["allowed"][2:4, 1, 1] = False
+    domain["forbidden"] = ~domain["allowed"]
+    mapping = DensityMap(domain, mapping.settings)
+    mapping.beta = beta
+    for seed in range(3):
+        fields, filtered = mapping.fields(random_design(mapping, seed, 0.0, 1.0))
+        eroded, intermediate, dilated = (fields[name][0] for name in ("eroded", "intermediate", "dilated"))
+        assert np.all(eroded <= intermediate) and np.all(intermediate <= dilated)
+        for field, derivative in fields.values():
+            assert np.all(field[mapping.preserve] == 1) and np.all(field[mapping.forbidden] == 0)
+            assert np.all(derivative[~mapping.free] == 0)
+        assert np.all((filtered >= 0) & (filtered <= 1 + 1e-12))
+
+@pytest.mark.parametrize("beta", [32.0, 64.0])
+def test_high_beta_volume_derivative_stays_positive_and_oc_accepts_saturation(beta):
+    domain, mapping = robust_map(beta)
+    design = np.ones(mapping.n)
+    fields, filtered = mapping.fields(design)
+    legacy = beta * (1 - np.tanh(beta * (filtered - 0.25)) ** 2)
+    assert np.any(legacy[mapping.free] == 0)
+    assert np.all(fields["dilated"][1][mapping.free] > 0)
+    assert np.all(mapping.pullback(np.ones(mapping.n), fields["dilated"][1])[mapping.free] > 0)
+    design[mapping.free] = 0.3
+    saturated = mapping.pullback(np.ones(mapping.n), mapping.fields(design)[0]["dilated"][1])
+    saturated[np.flatnonzero(mapping.free)[::2]] = 0
+    objective = -np.ones(mapping.n)
+    target = 0.9 * mapping.volume(design)
+    candidate = _oc_update(design, objective, saturated, mapping, target, mapping.settings, 0.2)
+    assert np.all(np.isfinite(candidate)) and mapping.volume(candidate) <= target
+    saturated[np.flatnonzero(mapping.free)[0]] = -1e-9
+    with pytest.raises(RuntimeError, match="OC sensitivities"):
+        _oc_update(design, objective, saturated, mapping, target, mapping.settings, 0.2)
+
+def test_oc_bisection_hits_dilated_target_and_steps_toward_unreachable_targets():
+    _, mapping = robust_map(4.0)
+    design = random_design(mapping, 5)
+    fields, _ = mapping.fields(design)
+    objective = -np.random.default_rng(2).uniform(0.5, 1.5, mapping.n)
+    volume = mapping.pullback(np.ones(mapping.n), fields["dilated"][1])
+    target = 0.97 * mapping.volume(design)
+    candidate = _oc_update(design, objective, volume, mapping, target, mapping.settings, 0.2)
+    assert target * (1 - 1e-6) <= mapping.volume(candidate) <= target
+    assert np.max(np.abs(candidate - design)) <= 0.2 + 1e-15
+    lowest = _oc_update(design, objective, volume, mapping, 0.5 * mapping.volume(design), mapping.settings, 0.05)
+    expected = design.copy()
+    expected[mapping.free] = np.maximum(mapping.settings["minimum_design_density"], design[mapping.free] - 0.05)
+    assert np.array_equal(lowest, expected)
+
+ROBUST_RUN = {"projection": "robust", "volume_fraction": 0.4, "filter_radius_mm": 2.6, "move_limit": 0.12, "beta_schedule": [1, 2, 4],
+              "beta_interval": 6, "beta_minimum_iterations": 3, "move_limit_late": 0.03, "move_limit_late_beta": 4,
+              "volume_target_relaxation": 1.0, "minimum_iterations": 3, "max_iterations": 30}
+
+@pytest.mark.parametrize("rule", ["change", "interval"])
+def test_beta_continuation_switching_rules(rule):
+    settings = {**ROBUST_RUN, "beta_change_tolerance": 0.5 if rule == "change" else 1e-12, "change_tolerance": 0.5}
+    result = optimize_topology(beam_domain((8, 4, 4), (1.0, 1.0, 1.0)), settings)
+    assert result["status"] == "ok", result["diagnostics"]
+    updates = [entry for entry in result["history"] if not entry["final_evaluation"]]
+    betas = [entry["projection_beta"] for entry in updates]
+    level = 3 if rule == "change" else 6
+    assert betas == [1.0] * level + [2.0] * level + [4.0] * 3
+    assert result["summary"]["converged"] and result["summary"]["stop_reason"] == "change_tolerance"
+    assert all(entry["maximum_design_change"] < 0.5 for entry in updates)
+    assert [entry["move_limit"] for entry in updates] == [0.12] * (2 * level) + [0.03] * 3
+    assert all(entry["maximum_design_change"] <= 0.03 + 1e-15 for entry in updates[-3:])
+    assert result["summary"]["continuation"] == {"beta_schedule": [1.0, 2.0, 4.0], "beta_final": 4.0, "final_level_reached": True, "level_iterations_final": 3}
+
+def test_dilated_target_starts_each_level_at_the_dilated_volume_and_relaxes():
+    domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
+    settings = {**ROBUST_RUN, "volume_target_relaxation": 0.2, "max_iterations": 16, "change_tolerance": 1e-12, "beta_change_tolerance": 1e-12}
+    result = optimize_topology(domain, settings)
+    assert result["status"] == "ok", result["diagnostics"]
+    total = 0.4 * np.count_nonzero(domain["allowed"])
+    previous = None
+    for entry in result["history"][:-1]:
+        reference = entry["dilated_density_sum"] if previous is None or previous["projection_beta"] != entry["projection_beta"] else previous["dilated_volume_target"]
+        expected = reference + 0.2 * (total * entry["dilated_density_sum"] / entry["physical_density_sum"] - reference)
+        assert entry["dilated_volume_target"] == pytest.approx(expected, rel=1e-12)
+        previous = entry
+
+def test_objective_stall_ends_the_run_while_the_design_change_stays_at_the_move_limit():
+    settings = {**ROBUST_RUN, "volume_target_relaxation": 0.2, "objective_window": 3, "change_tolerance": 0.02, "beta_change_tolerance": 0.02, "max_iterations": 60}
+    result = optimize_topology(beam_domain((8, 4, 4), (1.0, 1.0, 1.0)), settings)
+    assert result["status"] == "ok", result["diagnostics"]
+    assert result["summary"]["converged"] and result["summary"]["stop_reason"] == "objective_stall"
+    updates = [entry for entry in result["history"] if not entry["final_evaluation"]]
+    for index, entry in enumerate(updates):
+        level = [other for other in updates[:index + 1] if other["projection_beta"] == entry["projection_beta"]][-3:]
+        objectives = [other["objective"] for other in level]
+        assert entry["objective_stall"] == (None if len(level) < 3 else pytest.approx((max(objectives) - min(objectives)) / min(objectives), rel=1e-12))
+    assert updates[-1]["objective_stall"] < 0.02 <= updates[-1]["maximum_design_change"]
+    assert updates[-1]["projection_beta"] == 4.0
+
+def test_robust_optimization_is_deterministic_and_reports_three_fields():
+    domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
+    settings = {**ROBUST_RUN, "max_iterations": 16, "change_tolerance": 1e-12}
+    first, second = optimize_topology(deepcopy(domain), settings), optimize_topology(deepcopy(domain), settings)
+    assert first["status"] == second["status"] == "ok", first["diagnostics"]
+    for key in ("density", "design_density", "eroded_density", "dilated_density", "filtered_density"):
+        assert np.array_equal(first[key], second[key])
+    assert [{key: value for key, value in entry.items() if key != "elapsed_s"} for entry in first["history"]] == [
+        {key: value for key, value in entry.items() if key != "elapsed_s"} for entry in second["history"]]
+    assert np.all(first["eroded_density"] <= first["density"]) and np.all(first["density"] <= first["dilated_density"])
+    for key in ("density", "eroded_density", "dilated_density"):
+        assert np.all(first[key][domain["preserve"]] == 1)
+    robust = first["summary"]["robust"]
+    assert robust["thresholds"] == {"eroded": 0.75, "intermediate": 0.5, "dilated": 0.25}
+    assert robust["eroded_volume_fraction"] < first["summary"]["volume_fraction"] < robust["dilated_volume_fraction"]
+    assert first["summary"]["volume_fraction"] == pytest.approx(0.4, rel=0.01)
+    eroded = HexElasticity(domain).solve(first["eroded_density"])
+    for name, value in first["history"][-1]["compliances_n_mm"].items():
+        assert value == pytest.approx(eroded[name]["compliance_n_mm"], rel=1e-12)
+
+@pytest.mark.parametrize("settings", [{"volume_fraction": 0.1}, {"volume_fraction": float("nan")}, {"penalization": 0}, {"case_weights": {"missing": 1}}, {"max_iterations": 0},
+                                      {"projection": "bogus"}, {"projection": "robust", "robust_delta": 0.5}, {"beta_schedule": [2, 1]}, {"beta_schedule": []},
+                                      {"move_limit_late": 0.0}, {"beta_interval": 0}, {"volume_target_relaxation": 0.0}, {"volume_target_relaxation": 1.5}, {"objective_window": 1},
+                                      {"gpu_solver_residency": "swap"}])
 def test_invalid_settings_and_impossible_preserve_budget_fail_cleanly(settings):
     result = optimize_topology(beam_domain(), settings)
     assert result["status"] == "invalid"
@@ -321,3 +497,34 @@ def test_cuda_gradient_filter_and_three_updates_match_cpu(cuda_solver):
     assert actual["status"] == reference["status"] == "ok"
     assert np.allclose(actual["density"], reference["density"], rtol=0, atol=1e-7)
     assert actual["summary"]["objective_final"] == pytest.approx(reference["summary"]["objective_final"], rel=1e-8)
+
+def test_cuda_robust_continuation_matches_cpu(cuda_solver):
+    domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
+    settings = {**ROBUST_RUN, "volume_fraction": 0.5, "beta_schedule": [1, 4], "beta_interval": 2, "beta_minimum_iterations": 2,
+                "max_iterations": 4, "change_tolerance": 1e-12, "move_limit_late_beta": 4}
+    reference = optimize_topology(deepcopy(domain), settings)
+    actual = optimize_topology(deepcopy(domain), {**settings, "linear_solver": "cuda_cudss"})
+    assert actual["status"] == reference["status"] == "ok", actual["diagnostics"]
+    assert [entry["projection_beta"] for entry in actual["history"]] == [1.0, 1.0, 4.0, 4.0, 4.0]
+    for key in ("density", "design_density", "eroded_density", "dilated_density"):
+        assert np.max(np.abs(actual[key] - reference[key])) < 1e-7
+    for cpu, gpu in zip(reference["history"], actual["history"], strict=True):
+        assert max(abs(gpu["compliances_n_mm"][name] / value - 1) for name, value in cpu["compliances_n_mm"].items()) < 1e-6
+    assert abs(actual["summary"]["objective_final"] / reference["summary"]["objective_final"] - 1) < 1e-6
+
+def test_cuda_transient_residency_releases_factors_and_matches_resident(cuda_solver):
+    domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
+    settings = {**ROBUST_RUN, "volume_fraction": 0.5, "beta_schedule": [1, 4], "beta_interval": 2, "beta_minimum_iterations": 2,
+                "max_iterations": 4, "change_tolerance": 1e-12, "move_limit_late_beta": 4, "linear_solver": "cuda_cudss"}
+    resident = optimize_topology(deepcopy(domain), settings)
+    transient = optimize_topology(deepcopy(domain), {**settings, "gpu_solver_residency": "transient"})
+    assert resident["status"] == transient["status"] == "ok", transient["diagnostics"]
+    for key in ("density", "design_density", "eroded_density", "dilated_density"):
+        assert np.allclose(transient[key], resident[key], rtol=0, atol=1e-12)
+    system = transient["summary"]["system"]
+    evaluations = len(transient["history"]) * system["independent_fixtures"]
+    assert system["gpu_transient_releases"] == evaluations == len(system["gpu_solver_details"])
+    assert resident["summary"]["system"]["gpu_transient_releases"] == 0
+    assert HexElasticity(domain, gpu_solver_residency="transient").solve(np.full(domain["allowed"].size, 0.5))["tip"]["compliance_n_mm"] > 0
+    with pytest.raises(ValueError, match="gpu_solver_residency"):
+        HexElasticity(domain, gpu_solver_residency="swap")

@@ -1,9 +1,10 @@
 import csv
-import hashlib
 import json
 import math
 from copy import deepcopy
 from pathlib import Path
+
+from deep_frame.config import _json_copy, _json_digest
 
 CONSTRAINT_METRICS = {
     "mass_ratio_max": ("mass_g", "max"),
@@ -15,9 +16,6 @@ CONSTRAINT_METRICS = {
 
 class EvaluationFailure(RuntimeError):
     pass
-
-def _json_copy(value):
-    return json.loads(json.dumps(value, allow_nan=False))
 
 def _get(parameters, path):
     value = parameters
@@ -215,7 +213,7 @@ def _optimize(reference_parameters, search_space, evaluator, validator, settings
         "seed": settings["seed"],
         "population_size": settings.get("population_size", 8),
     })
-    signature = hashlib.sha256(json.dumps(contract, sort_keys=True, allow_nan=False).encode()).hexdigest()
+    signature = _json_digest(contract)
     storage = _prepare_storage(settings["storage"])
     study = optuna.create_study(
         directions=["minimize", "maximize", "maximize"],

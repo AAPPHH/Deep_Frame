@@ -10,7 +10,8 @@ from build123d import Align, Box, Pos, Solid
 
 from deep_frame.config import CONFIG, FEA_CONFIG, IMPLICIT_CONFIG
 from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _read_mesh, _run, _select, evaluate, prepare_frame_case
-from deep_frame.frame import assembly_placements, build_components, build_geometry, intersection_shape, motor_positions, reference_parameters
+from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
+from tests.test_frame import frame
 
 def beam_inputs(directory):
     solid = Box(80, 8, 4, align=(Align.MIN, Align.CENTER, Align.CENTER)).solid()
@@ -184,10 +185,6 @@ def test_requested_thread_count_overrides_inherited_native_thread_environment(tm
     script = "import os,json; print(json.dumps({key:os.environ[key] for key in " + repr(keys) + "}))"
     content = _run([sys.executable, "-c", script], tmp_path, 10, 1, tmp_path / "environment.log")
     assert json.loads(content) == {key: "1" for key in keys}
-
-@pytest.fixture(scope="module")
-def frame():
-    return build_geometry(reference_parameters())
 
 def selector_shape(selector):
     minimum, maximum = selector["min_mm"], selector["max_mm"]
