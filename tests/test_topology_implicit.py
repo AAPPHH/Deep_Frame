@@ -3,7 +3,7 @@ from fractions import Fraction
 import numpy as np
 import pytest
 import trimesh
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import distance_transform_edt, gaussian_filter
 
 from deep_frame.topology_geometry import rasterize_regions, region_contains
 from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, build_field, capped_faces, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
@@ -164,7 +164,32 @@ def test_touching_mount_chain_builds_one_connected_field():
     assert report["status"] == "field_built" and report["witness"]["passed"] and report["density_witness"]["passed"] and report["opening_witness"]["passed"] and report["final_witness"]["passed"]
     assert report["final_witness"]["occupied_components_6"] == 1 and report["extension_guard"]["passed"]
     assert report["opening"]["components_after"] == 1
-    assert set(report["timings_s"]) >= {"extension", "upsample", "primitives", "witness", "reinit", "smoothing", "density_witness", "composition", "opening", "restore"}
+    assert set(report["timings_s"]) >= {"extension", "upsample", "primitives", "witness", "reinit", "smoothing", "density_witness", "composition", "opening", "ripple", "reopening", "restore"}
+    assert report["reopening"]["components_after"] == 1 and report["volumes_mm3"]["reopened"] <= report["volumes_mm3"]["ripple_smoothed"]
+    shell = field.primitives([region for region in domain["regions"] if region["role"] == "preserve"], 3.0)+0.3
+    assert reopening_flips(field, 1.35, shell > -report["settings"]["transition_radius_mm"]) == 0
+
+def reopening_flips(field, radius, exempt):
+    reopened = field.copy().reinitialize()
+    reopened.open(radius)
+    tolerance = float(field.spacing.max())**2/radius
+    return int(np.count_nonzero((field.values > tolerance) & (reopened.values <= 0) & ~exempt))
+
+def lip_field():
+    def values(x, y, z):
+        block = np.minimum(np.minimum(3-np.abs(z), 4-np.abs(y)), np.minimum(-x, x+6))
+        return np.maximum(block, np.where((np.abs(z) < 0.75) & (np.abs(y) < 2) & (x > 0) & (x < 6), -0.04, -np.inf))
+    return ImplicitField.from_function([-7.1, -5.1, -4.1], 0.2, (71, 52, 42), values)
+
+def test_ripple_lifted_thin_lip_is_removed_by_the_final_reopening():
+    field = lip_field()
+    lip = field.axes()[0].ravel() > 0.05
+    assert not np.any(field.values[lip] > 0)
+    field.smooth(0.25)
+    assert np.count_nonzero(field.values[lip] > 0) > 50
+    report = field.reinitialize().open(1.35)
+    assert not np.any(field.values[lip] > 0) and report["removed_volume_mm3"] > 0 and report["components_after"] == 1
+    assert field.values[20, 25, 20] > 2.5
 
 def test_ambiguous_cube_interior_vertex_is_kept_and_surface_stays_closed():
     cube = np.array([0.03667267, -0.02387328, -0.02498563, 0.03812484, 0.00452967, -0.04602556, -0.04827231, 0.02583875], dtype=np.float32).reshape(2, 2, 2)

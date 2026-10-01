@@ -315,7 +315,7 @@ class MeshAcceptance:
                 result["reason"] = "Too few free-zone samples; the deviation is not evaluable"
             return result
         free_zone = compare(field.values, near)
-        free_zone.update(passed=free_zone["evaluable"] and free_zone["maximum_deviation_mm"] <= config["surface_deviation_mm"], reference="processed field: smoothed density after composition, manufacturing opening and ripple smoothing, as extracted",
+        free_zone.update(passed=free_zone["evaluable"] and free_zone["maximum_deviation_mm"] <= config["surface_deviation_mm"], reference="processed field: smoothed density after composition, manufacturing opening, ripple smoothing and the final reopening, as extracted",
                          method="Bidirectional exact MeshLab nearest-surface distances between the final mesh and marching cubes of the processed field, the CAD-route density_isosurface definition, on free-zone samples beyond the preserve and constraint distances from every exact primitive and the envelope; grid lookups add half the sample diagonal")
         free_zone["density_diagnostic"] = compare(field.layers["reference"], near | modified)
         free_zone["density_diagnostic"].update(gated=False, reference="unextended, unsmoothed density minus threshold", method="Same distances against the raw density iso-surface, additionally outside the opening- or extension-modified samples dilated by the configured distance; recorded, not gated")

@@ -387,6 +387,16 @@ def build_field(domain, density, settings, progress=None):
     lap("witness")
     field.smooth(config["ripple_sigma_mm"])
     report["volumes_mm3"]["ripple_smoothed"] = field.volume()
+    lap("ripple")
+    if config["opening_radius_mm"]:
+        field.reinitialize(config["reinit_band_cells"])
+        before = field.values.copy()
+        report["reopening"] = field.open(config["opening_radius_mm"], config["reinit_band_cells"])
+        report["reopening"]["purpose"] = "the ripple smoothing lifts near-zero opening leftovers into sub-wall members; opening the smoothed field again makes the opening criterion the last free-field operation"
+        field.layers["opening_modified"] |= np.abs(field.values-before) > config["free_zone_opening_cells"]*float(field.spacing.max())
+        del before
+        report["volumes_mm3"]["reopened"] = field.volume()
+    lap("reopening")
     field.union(shell)
     del shell
     report["volumes_mm3"]["final"] = field.volume()
