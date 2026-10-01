@@ -1,5 +1,4 @@
 from copy import deepcopy
-import hashlib
 import importlib.metadata
 import json
 import math
@@ -24,8 +23,8 @@ from OCP.TopAbs import TopAbs_OUT
 from deep_frame.config import command_line, configure
 from deep_frame.fea import evaluate
 from deep_frame.frame import build_geometry
-from deep_frame.topology_geometry import region_shape
-from deep_frame.topology_pipeline import _merge, _provenance, _verify_cases, compare_to_baseline
+from deep_frame.topology_geometry import _merge, region_shape
+from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _verify_cases, compare_to_baseline
 from tools.workstation_study import load_source
 
 SURFACE_CONFIG = {"subdivisions": 4, "interpolation_method": "pchip", "thresholds": [0.20, 0.25, 0.30, 0.35, 0.40, 0.50],
@@ -56,18 +55,6 @@ RENDER_CONFIG = {"step": None, "output": None,
                  "validation": None}
 RENDER_KINDS = {"step": "path", "output": "path", "inputs": "path", "validation": "path"}
 
-def save(path, data):
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(json.dumps(data, indent=2, allow_nan=False)+"\n", encoding="utf-8")
-    for attempt in range(21):
-        try:
-            temporary.replace(path)
-            return
-        except OSError as error:
-            if getattr(error, "winerror", None) not in (5, 32, 33) or attempt == 20:
-                raise
-            time.sleep(0.05)
-
 def execute(command, cwd, logfile, timeout):
     started = time.perf_counter()
     report = {"command": command, "cwd": str(cwd), "timeout_s": timeout, "log": str(logfile)}
@@ -95,7 +82,7 @@ def execute(command, cwd, logfile, timeout):
                     process.kill()
                 process.wait(timeout=15)
     return {**report, "runtime_s": time.perf_counter()-started,
-            "log_sha256": hashlib.sha256(logfile.read_bytes()).hexdigest()}
+            "log_sha256": _file_digest(logfile)}
 
 def check_surface(config):
     if not math.isfinite(config["boolean_fuzzy_mm"]) or config["boolean_fuzzy_mm"] <= 0:
@@ -128,7 +115,7 @@ def run_config(overrides):
     return config
 
 def verify_geometry(directory):
-    manifest = read(directory / "manifest.json")
+    manifest = _read(directory / "manifest.json")
     if manifest["status"] != "complete":
         raise ValueError("Geometry study did not finish all requested candidates")
     if len(manifest["candidates"]) != len(manifest["thresholds"]):
@@ -140,9 +127,9 @@ def verify_geometry(directory):
         if not folder.is_relative_to(directory.resolve()):
             raise ValueError("Candidate directory escapes geometry evidence")
         path = folder / "record.json"
-        if digest(path) != candidate["record_sha256"]:
+        if _file_digest(path) != candidate["record_sha256"]:
             raise ValueError("Candidate record hash mismatch")
-        record = read(path)
+        record = _read(path)
         if (record["id"] in seen or record["id"] != candidate["id"] or record["status"] != candidate["status"]
                 or record["threshold"] != candidate["threshold"]):
             raise ValueError("Duplicate or inconsistent candidate identity")
@@ -150,18 +137,18 @@ def verify_geometry(directory):
         for name, expected in record["artifacts"].items():
             artifact = (folder / name).resolve()
             if (not artifact.is_relative_to(folder) or not artifact.is_file()
-                    or digest(artifact) != expected["sha256"] or artifact.stat().st_size != expected["size_bytes"]):
+                    or _file_digest(artifact) != expected["sha256"] or artifact.stat().st_size != expected["size_bytes"]):
                 raise ValueError("Candidate artifact mismatch: " + name)
         if record["status"] == "accepted":
             required = {"geometry.step", "geometry.stl", "final_mesh.json", "raw_fea_result.json"}
-            if not required.issubset(record["artifacts"]) or read(folder / "raw_fea_result.json") != record.get("fea"):
+            if not required.issubset(record["artifacts"]) or _read(folder / "raw_fea_result.json") != record.get("fea"):
                 raise ValueError("Accepted candidate lacks consistent hashed CAD/FEA evidence")
             baseline_path = directory / "baseline/raw_fea_result.json"
             baseline_artifact = manifest["artifacts"].get("baseline/raw_fea_result.json")
-            if (baseline_artifact is None or digest(baseline_path) != baseline_artifact["sha256"]
+            if (baseline_artifact is None or _file_digest(baseline_path) != baseline_artifact["sha256"]
                     or baseline_path.stat().st_size != baseline_artifact["size_bytes"]):
                 raise ValueError("Accepted candidate lacks a verified independent baseline")
-            baseline = read(baseline_path)
+            baseline = _read(baseline_path)
             _verify_cases(baseline, manifest["load_cases"])
             _verify_cases(record["fea"], manifest["load_cases"])
             comparison = compare_to_baseline(record["fea"], baseline, manifest["relative_constraints"])
@@ -192,7 +179,7 @@ def run_main(overrides):
         if values is not None:
             path = output / (name + "_config.json")
             write(path, values)
-            configs[name] = {"path": str(path), "sha256": digest(path), "values": values}
+            configs[name] = {"path": str(path), "sha256": _file_digest(path), "values": values}
     density_command = None if config["source"] else [str(config["density_python"].resolve()), "-m", "tools.topology_study", "run",
                                                      configs["density"]["path"]]
     geometry_command = [str(config["geometry_python"].resolve()), str(ROOT/"tools/mature_pipeline.py"), "geometry",
@@ -212,39 +199,39 @@ def run_main(overrides):
                           "maximum_wall_samples": config["maximum_wall_samples"],
                           "geometry_and_fea_process_s": config["geometry_timeout_s"], "mesh_per_run_s": config["mesh_timeout_s"],
                           "solver_per_case_s": config["solver_timeout_s"]},
-              "orchestrator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+              "orchestrator_sha256": _file_digest(__file__),
               "commands": {"density": density_command, "geometry": geometry_command}, "configs": configs, "stages": {}}
-    save(output/"run.json", report)
-    save(output/"status.json", {"status": "running", "stage": "preparing"})
+    write(output/"run.json", report)
+    write(output/"status.json", {"status": "running", "stage": "preparing"})
     try:
         for path in (config["geometry_python"], config["reference_step"]):
             if not path.is_file():
                 raise ValueError("Required file does not exist: " + str(path))
         shutil.copy2(config["reference_step"], output / "reference.step")
-        report["reference_step_sha256"] = hashlib.sha256((output / "reference.step").read_bytes()).hexdigest()
+        report["reference_step_sha256"] = _file_digest(output / "reference.step")
         if density_command is not None:
             if not config["density_python"].is_file() or not (config["density_workspace"] / "tools/topology_study.py").is_file():
                 raise ValueError("Density Python/workspace does not exist")
             report["stage"] = "density"
-            save(output/"run.json", report)
-            save(output/"status.json", {"status": "running", "stage": "density"})
+            write(output/"run.json", report)
+            write(output/"status.json", {"status": "running", "stage": "density"})
             print(json.dumps({"stage": "density", "directory": str(source)}), flush=True)
             report["stages"]["density"] = execute(density_command, config["density_workspace"].resolve(), output/"density.log", config["max_runtime_s"]+config["density_finalization_timeout_s"])
-            save(output/"run.json", report)
+            write(output/"run.json", report)
             if report["stages"]["density"]["returncode"] != 0:
                 raise RuntimeError("Density stage failed; inspect density.log and persisted stage evidence")
         else:
             report["stages"]["density"] = {"status": "reused", "directory": str(source)}
         source_inputs, _, _, _ = load_source(source)
         report["source_density_backend"] = source_inputs.get("settings", {}).get("linear_solver", "cpu_superlu")
-        report["density_manifest_sha256"] = hashlib.sha256((source / "manifest.json").read_bytes()).hexdigest()
+        report["density_manifest_sha256"] = _file_digest(source / "manifest.json")
         report["source_artifacts_verified"] = True
         report["stage"] = "geometry_and_fea"
-        save(output/"run.json", report)
-        save(output/"status.json", {"status": "running", "stage": "geometry_and_fea", "detail_status": "geometry/status.json"})
+        write(output/"run.json", report)
+        write(output/"status.json", {"status": "running", "stage": "geometry_and_fea", "detail_status": "geometry/status.json"})
         print(json.dumps({"stage": "geometry_and_fea", "directory": str(output/"geometry")}), flush=True)
         report["stages"]["geometry"] = execute(geometry_command, ROOT, output/"geometry.log", config["geometry_timeout_s"])
-        save(output/"run.json", report)
+        write(output/"run.json", report)
         if report["stages"]["geometry"]["returncode"] != 0:
             raise RuntimeError("Geometry stage failed; inspect geometry.log and persisted candidate evidence")
         geometry = verify_geometry(output / "geometry")
@@ -253,21 +240,15 @@ def run_main(overrides):
             raise ValueError("Geometry evidence changed the requested thresholds, density source or reference STEP")
         report.update(status="complete", stage="finished", overall_acceptance=bool(geometry["overall_acceptance"]),
                       selected_id=geometry["selected_id"], accepted_count=geometry["accepted_count"],
-                      geometry_manifest_sha256=hashlib.sha256((output/"geometry/manifest.json").read_bytes()).hexdigest())
+                      geometry_manifest_sha256=_file_digest(output/"geometry/manifest.json"))
     except Exception as error:
         report.update(status="failed", stage="failed", overall_acceptance=False, selected_id=None,
                       error=type(error).__name__+": "+str(error))
-    save(output/"run.json", report)
-    save(output/"status.json", {key: report[key] for key in ("status", "stage", "overall_acceptance", "accepted_count", "selected_id")}
-         | ({"error": report["error"]} if "error" in report else {}))
+    write(output/"run.json", report)
+    write(output/"status.json", {key: report[key] for key in ("status", "stage", "overall_acceptance", "accepted_count", "selected_id")}
+          | ({"error": report["error"]} if "error" in report else {}))
     print(json.dumps(report), flush=True)
     return 0 if report["overall_acceptance"] else (2 if report["status"] == "complete" else 1)
-
-def read(path):
-    return json.loads(Path(path).read_text(encoding="utf-8"))
-
-def digest(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 def write(path, data):
     path = Path(path)
@@ -283,7 +264,7 @@ def write(path, data):
             time.sleep(0.05)
 
 def artifacts(directory):
-    return {p.relative_to(directory).as_posix(): {"sha256": digest(p), "size_bytes": p.stat().st_size}
+    return {p.relative_to(directory).as_posix(): {"sha256": _file_digest(p), "size_bytes": p.stat().st_size}
             for p in sorted(directory.rglob("*")) if p.is_file()
             and not (p.parent == directory and p.name in ("record.json", "manifest.json", "status.json"))}
 
@@ -310,7 +291,7 @@ def save_geometry_evidence(directory, stage, report, shape=None, mesh=None):
             exporter(value, path)
             if not path.is_file() or not path.stat().st_size:
                 raise ValueError("Geometry export produced no data")
-            result["artifacts"][path.name] = {"sha256": digest(path), "size_bytes": path.stat().st_size}
+            result["artifacts"][path.name] = {"sha256": _file_digest(path), "size_bytes": path.stat().st_size}
         except Exception as error:
             result["errors"].append(type(error).__name__ + ": " + str(error))
     write(directory / (stem + ".json"), result)
@@ -320,7 +301,7 @@ def export_final_mesh(solid, candidate, validator, settings):
     mesh = validator._mesh(solid, validator._settings(settings))
     mesh.export(candidate / "geometry.stl")
     mesh.export(candidate / "geometry.ply")
-    report = {"source": "geometry.step imported final CAD", "source_step_sha256": digest(candidate / "geometry.step"),
+    report = {"source": "geometry.step imported final CAD", "source_step_sha256": _file_digest(candidate / "geometry.step"),
               "cad_geometry_modified": False, "tessellation": mesh.metadata["adaptive_tessellation"],
               "vertices": len(mesh.vertices), "faces": len(mesh.faces)}
     write(candidate / "final_mesh.json", report)
@@ -406,7 +387,7 @@ def run_study(config):
         if not config["reference_step"].is_file():
             raise ValueError("A reference STEP file is required for surface maturity")
         load_source(source)
-        source_manifest = read(source / "manifest.json")
+        source_manifest = _read(source / "manifest.json")
         snapshot = output / "density_source"
         snapshot.mkdir()
         for name in [*source_manifest["artifacts"], "manifest.json"]:
@@ -417,7 +398,7 @@ def run_study(config):
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(original, target)
         inputs, density_result, domain, density = load_source(snapshot)
-        historical = read(ROOT / "docs/validation/topology_phase1/inputs.json")
+        historical = _read(ROOT / "docs/validation/topology_phase1/inputs.json")
         for name in ("material", "point_masses", "comparison_load_cases"):
             if domain[name] != historical["domain"][name]:
                 raise ValueError("Physical comparison input changed: " + name)
@@ -447,9 +428,9 @@ def run_study(config):
         reference = import_step(output / "reference.step")
         if not reference.is_valid or len(reference.solids()) != 1 or reference.volume <= 0:
             raise ValueError("Reference STEP must be a valid single positive-volume solid")
-        manifest.update(source_manifest_sha256=digest(snapshot / "manifest.json"), density_status=density_result["status"],
+        manifest.update(source_manifest_sha256=_file_digest(snapshot / "manifest.json"), density_status=density_result["status"],
                         reconstruction_settings=reconstruction, validation_settings=validation_settings, fea_settings=settings,
-                        comparison_reference={"source": str(config["reference_step"].resolve()), "sha256": digest(output / "reference.step"), "volume_mm3": reference.volume},
+                        comparison_reference={"source": str(config["reference_step"].resolve()), "sha256": _file_digest(output / "reference.step"), "volume_mm3": reference.volume},
                         material=domain["material"], point_masses=domain["point_masses"], load_cases=domain["comparison_load_cases"],
                         packages={p: importlib.metadata.version(p) for p in ("build123d", "numpy", "scipy", "trimesh", "gmsh", "scikit-image", "fast-simplification", "rtree", "pymeshlab")},
                         source_artifacts=artifacts(provenance),
@@ -499,7 +480,7 @@ def run_study(config):
             write(candidate / "record.json", record)
             records.append(record)
             manifest["candidates"].append({"id": record["id"], "directory": candidate.relative_to(output).as_posix(),
-                                           "record_sha256": digest(candidate / "record.json"), "threshold": threshold, "status": record["status"]})
+                                           "record_sha256": _file_digest(candidate / "record.json"), "threshold": threshold, "status": record["status"]})
             manifest.update(acceptance(records, complete=False), stage="candidate_finished")
             write(output / "manifest.json", manifest)
             write(output / "status.json", {"status": "running", "stage": "candidate_finished", "candidate": record["id"], "candidate_status": record["status"]})
@@ -541,8 +522,8 @@ def face_colors(normals, elevation, azimuth):
     return np.clip(intensity[:, None] * base + highlight[:, None], 0, 1)
 
 def draw_view(axis, mesh, lower, upper, elevation, azimuth, title):
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-    axis.add_collection3d(Poly3DCollection(mesh.triangles, facecolors=face_colors(mesh.face_normals, elevation, azimuth),
+    _, polygons = _plot_modules()
+    axis.add_collection3d(polygons(mesh.triangles, facecolors=face_colors(mesh.face_normals, elevation, azimuth),
                                          edgecolors="none", linewidths=0, antialiased=False, zsort="average"))
     axis.set(xlim=(lower[0], upper[0]), ylim=(lower[1], upper[1]), zlim=(lower[2], upper[2]),
              xlabel="x / mm", ylabel="y / mm", zlabel="z / mm", title=title)
@@ -568,17 +549,15 @@ def section_paths(shape, plane, coordinates):
     return sliced, paths
 
 def render_main(overrides):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt, _ = _plot_modules()
     from matplotlib.collections import LineCollection, PolyCollection
     from matplotlib.lines import Line2D
     from deep_frame.topology_surface_validation import _mesh, _settings
     config = configure(RENDER_CONFIG, RENDER_KINDS, overrides, ("step", "output"))
     config["output"].mkdir(parents=True, exist_ok=True)
     started = perf_counter()
-    record = {"status": "running", "step": str(config["step"].resolve()), "step_sha256": digest(config["step"]),
-              "inputs_sha256": digest(config["inputs"]), "renderer_sha256": digest(Path(__file__)),
+    record = {"status": "running", "step": str(config["step"].resolve()), "step_sha256": _file_digest(config["step"]),
+              "inputs_sha256": _file_digest(config["inputs"]), "renderer_sha256": _file_digest(__file__),
               "rendering": "Fresh STEP import, whole-CAD adaptive tessellation, flat per-triangle normal shading, orthographic projection and metric axes; no geometry smoothing, decimation, hole filling, vertex-normal interpolation or remodeling",
               "section_method": "Exact CAD intersection with each named plane; section faces filled from their tessellation and CAD edges sampled to 0.01 mm deflection", "images": {}, "sections": []}
     def journal(stage):
@@ -604,19 +583,19 @@ def render_main(overrides):
     if not valid:
         label = "DIAGNOSE – Topologieprüfung fehlgeschlagen"
     if config["validation"]:
-        proof = json.loads(config["validation"].read_text(encoding="utf-8"))
+        proof = _read(config["validation"])
         expected = proof.get("sha256") or proof.get("provenance", {}).get("candidate_sha256")
         if expected != record["step_sha256"]:
             raise ValueError("Validation record must identify the rendered STEP by matching SHA256")
         validation = proof.get("validation", proof)
-        record["validation"] = {"path": str(config["validation"]), "sha256": digest(config["validation"]),
+        record["validation"] = {"path": str(config["validation"]), "sha256": _file_digest(config["validation"]),
                                 "passed": validation.get("passed", False), "violations": validation.get("violations", [])}
         if validation.get("passed", False) and valid:
             label = "Geometrie-Gates bestanden – mechanische Freigabe separat prüfen"
         else:
             label = "DIAGNOSE – Geometrie-Gates nicht bestanden"
     record["display_status"] = label
-    domain = json.loads(config["inputs"].read_text(encoding="utf-8"))["domain"]
+    domain = _read(config["inputs"])["domain"]
     lower = np.asarray(domain["grid"]["origin_mm"], dtype=float)
     upper = lower + np.asarray(domain["grid"]["shape"]) * np.asarray(domain["grid"]["spacing_mm"])
     lower, upper = np.minimum(lower, mesh.bounds[0]), np.maximum(upper, mesh.bounds[1])
@@ -625,7 +604,7 @@ def render_main(overrides):
         path = config["output"] / (name + ".png")
         figure.savefig(path, dpi=200, facecolor="white")
         plt.close(figure)
-        record["images"][name] = {"path": path.name, "sha256": digest(path)}
+        record["images"][name] = {"path": path.name, "sha256": _file_digest(path)}
         journal("saved " + name)
     views = [(28, -48, "Isometrie", "isometric"), (90, -90, "Draufsicht (+z)", "top"), (-90, -90, "Unterseite (−z)", "bottom")]
     for elev, azim, title, name in views:

@@ -15,10 +15,10 @@ from build123d import export_step, export_stl, import_step
 from deep_frame.config import command_line, configure
 from deep_frame.fea import evaluate
 from deep_frame.frame import build_geometry
-from deep_frame.topology_geometry import reconstruct_topology, validate_topology
+from deep_frame.topology_geometry import _merge, reconstruct_topology, validate_topology
 from deep_frame.topology_pipeline import (
-    _artifact, _digest, _fea_artifacts, _file_digest, _merge, _metrics, _pareto,
-    _plot_modules, _provenance, _save, _valid_artifacts, _verify_cases, compare_to_baseline,
+    _artifact, _digest, _fea_artifacts, _file_digest, _metrics, _pareto,
+    _plot_modules, _provenance, _read, _save, _valid_artifacts, _verify_cases, compare_to_baseline,
 )
 
 EVIDENCE = ROOT / "docs/validation/topology_phase1"
@@ -39,9 +39,6 @@ CANDIDATES_KINDS = {"source": "path", "output": "path", "baseline_study": "path"
 RENDER_CONFIG = {"output": ROOT / "docs/validation/workstation_geometry_comparison.png"}
 RENDER_KINDS = {"output": "path"}
 
-def read(path):
-    return json.loads(Path(path).read_text(encoding="utf-8"))
-
 def geometry_metrics(solid):
     bounds = solid.bounding_box()
     return {
@@ -56,7 +53,7 @@ def mesh_prepare(output, threads, linear_solver=None):
     previous_path = output / "preparation.json"
     if not previous_path.exists() and any(output.iterdir()):
         raise ValueError("A new study requires an empty output directory; preserve partial files and use a fresh directory")
-    acceptance = read(EVIDENCE / "acceptance.json")
+    acceptance = _read(EVIDENCE / "acceptance.json")
     checks = {}
     for name, expected in acceptance["versioned_artifacts"].items():
         path = EVIDENCE / name
@@ -67,7 +64,7 @@ def mesh_prepare(output, threads, linear_solver=None):
         }
     if not all(item["passed"] for item in checks.values()):
         raise ValueError("Historical evidence failed its stored SHA256/size check")
-    inputs = read(EVIDENCE / "inputs.json")
+    inputs = _read(EVIDENCE / "inputs.json")
     domain = deepcopy(inputs["domain"])
     mask_checks = {}
     with np.load(EVIDENCE / "fields.npz", allow_pickle=False) as fields:
@@ -82,7 +79,7 @@ def mesh_prepare(output, threads, linear_solver=None):
                 raise ValueError("Invalid archived mask: " + name)
             domain[name] = array
         density = fields["density"].copy()
-    reconstruction_settings = read(EVIDENCE / "candidate_record.json")["reconstruction_settings"]
+    reconstruction_settings = _read(EVIDENCE / "candidate_record.json")["reconstruction_settings"]
     print("Reconstructing the archived 45-iteration density", flush=True)
     candidate = reconstruct_topology(domain, density, reconstruction_settings)
     validation = validate_topology(candidate, domain, reconstruction_settings)
@@ -115,7 +112,7 @@ def mesh_prepare(output, threads, linear_solver=None):
         settings["linear_solver"] = linear_solver
     provenance = _provenance({"reconstructor": reconstruct_topology, "evaluator": evaluate,
                               "baseline_builder": build_geometry}, settings, True)
-    provenance["study_runner_sha256"] = _file_digest(Path(__file__))
+    provenance["study_runner_sha256"] = _file_digest(__file__)
     source_match = {name: digest == provenance["source_sha256"].get(name)
                     for name, digest in inputs["provenance"]["source_sha256"].items()}
     record = {
@@ -145,7 +142,7 @@ def mesh_prepare(output, threads, linear_solver=None):
     identity["provenance"] = {key: provenance[key] for key in ("packages", "python_version", "platform", "source_sha256", "solver", "study_runner_sha256")}
     record["study_input_sha256"] = _digest(identity)
     if previous_path.exists():
-        previous = read(previous_path)
+        previous = _read(previous_path)
         if previous["study_input_sha256"] != record["study_input_sha256"]:
             raise ValueError("Study provenance changed; choose a fresh output directory")
         for name in solids:
@@ -168,7 +165,7 @@ def verify_record(record, output, preparation):
         raw_result_path = Path(result["artifacts"]["result"])
         if not raw_result_path.resolve().is_relative_to(output):
             raise ValueError("Raw result escapes the study directory")
-        if read(raw_result_path) != result:
+        if _read(raw_result_path) != result:
             raise ValueError("Recorded FEA differs from its hashed raw result")
     if record["status"] == "ok":
         _verify_cases(result, preparation["load_cases"])
@@ -176,7 +173,7 @@ def verify_record(record, output, preparation):
 def summarize(output, preparation):
     rows = []
     for path in sorted((output / "results").glob("*/record.json")):
-        record = read(path)
+        record = _read(path)
         verify_record(record, output, preparation)
         row = {key: record[key] for key in ("geometry", "mesh_size_mm", "status")}
         row["record"] = str(path.relative_to(output)).replace("\\", "/")
@@ -197,7 +194,7 @@ def summarize(output, preparation):
     for size in sorted({row["mesh_size_mm"] for row in rows}, reverse=True):
         matching = {row["geometry"]: row for row in rows if row["mesh_size_mm"] == size and row["status"] == "ok"}
         if len(matching) == 2:
-            results = {name: read(output / row["record"])["result"] for name, row in matching.items()}
+            results = {name: _read(output / row["record"])["result"] for name, row in matching.items()}
             comparisons.append({"mesh_size_mm": size, **compare_to_baseline(results["candidate"], results["baseline"], preparation["relative_constraints"])})
     summary = {"schema_version": "deep-frame-workstation-mesh-summary-v1", "study_input_sha256": preparation["study_input_sha256"], "preparation": "preparation.json", "preparation_sha256": _file_digest(output / "preparation.json"), "rows": rows, "successive_mesh_changes": changes, "same_mesh_comparisons": comparisons, "screen": SCREEN, "interpretation": preparation["screen_interpretation"]}
     _save(output / "summary.json", summary)
@@ -218,7 +215,7 @@ def mesh_main(overrides):
             directory.mkdir(parents=True, exist_ok=True)
             path = directory / "record.json"
             if path.exists():
-                existing = read(path)
+                existing = _read(path)
                 verify_record(existing, output, preparation)
                 if existing["status"] == "ok":
                     print(f"Verified cached {name} mesh={size} mm", flush=True)
@@ -240,7 +237,7 @@ def physical_settings(settings):
     return {key: value for key, value in settings.items() if key != "work_dir"}
 
 def load_source(source):
-    manifest = read(source / "manifest.json")
+    manifest = _read(source / "manifest.json")
     if manifest["status"] != "ok":
         raise ValueError("Density study must have completed successfully")
     if not {"inputs.json", "result.json", "fields.npz", "domain_masks.npz"}.issubset(manifest["artifacts"]):
@@ -249,8 +246,8 @@ def load_source(source):
         path = source / name
         if not path.is_file() or _file_digest(path) != expected["sha256"] or path.stat().st_size != expected["size_bytes"]:
             raise ValueError("Density study artifact mismatch: " + name)
-    inputs = read(source / "inputs.json")
-    result = read(source / "result.json")
+    inputs = _read(source / "inputs.json")
+    result = _read(source / "result.json")
     if result["status"] != "ok":
         raise ValueError("Density result must have completed successfully")
     domain = deepcopy(inputs["domain"])
@@ -269,12 +266,12 @@ def prepare(source, output, linear_solver=None, threads=2):
     if linear_solver not in (None, "SPOOLES", "PASTIX") or not isinstance(threads, int) or threads < 1:
         raise ValueError("Use linear_solver None/SPOOLES/PASTIX and a positive thread count")
     inputs, result, domain, density = load_source(source)
-    acceptance = read(EVIDENCE / "acceptance.json")
+    acceptance = _read(EVIDENCE / "acceptance.json")
     for name, expected in acceptance["versioned_artifacts"].items():
         path = EVIDENCE / name
         if _file_digest(path) != expected["sha256"] or path.stat().st_size != expected["size_bytes"]:
             raise ValueError("Historical evidence changed: " + name)
-    historical = read(EVIDENCE / "inputs.json")
+    historical = _read(EVIDENCE / "inputs.json")
     baseline_parameters = {key: value for key, value in inputs["parameters"].items() if key != "topology"}
     historical_parameters = {key: value for key, value in historical["parameters"].items() if key != "topology"}
     if _digest(baseline_parameters) != _digest(historical_parameters):
@@ -317,7 +314,7 @@ def prepare(source, output, linear_solver=None, threads=2):
     record["input_sha256"] = fingerprint
     path = output / "inputs.json"
     if path.exists():
-        if read(path) != record:
+        if _read(path) != record:
             raise ValueError("Candidate study inputs/provenance changed; use a fresh output")
     else:
         if any(output.iterdir()):
@@ -339,7 +336,7 @@ def verify_raw_result(artifacts, result, output):
         return
     if not _valid_artifacts({"artifacts": {"raw_result": artifact}}, output):
         raise ValueError("Raw FEA result failed its hash check")
-    if read(output / artifact["path"]) != result:
+    if _read(output / artifact["path"]) != result:
         raise ValueError("Recorded FEA differs from the hashed raw result")
 
 def read_candidates(output, manifest, inputs=None, baseline=None):
@@ -347,7 +344,7 @@ def read_candidates(output, manifest, inputs=None, baseline=None):
     for name, artifact in manifest["candidates"].items():
         if not _valid_artifacts({"artifacts": {name: artifact}}, output):
             raise ValueError("Stored candidate record changed: " + name)
-        record = read(output / artifact["path"])
+        record = _read(output / artifact["path"])
         if not _valid_artifacts(record, output):
             raise ValueError("Stored candidate artifact changed: " + name)
         if "fea" in record:
@@ -371,7 +368,7 @@ def baseline_result(output, inputs, baseline_study):
     domain = inputs["domain"]
     if baseline_study is not None:
         preparation_path = baseline_study / "preparation.json"
-        preparation = read(preparation_path)
+        preparation = _read(preparation_path)
         if preparation["acceptance_sha256"] != inputs["historical_acceptance_sha256"]:
             raise ValueError("Shared baseline historical acceptance mismatch")
         if preparation["versioned_artifact_checks"]["inputs.json"]["sha256"] != inputs["historical_inputs_sha256"]:
@@ -385,7 +382,7 @@ def baseline_result(output, inputs, baseline_study):
             if preparation["provenance"][name] != inputs["provenance"][name]:
                 raise ValueError("Shared baseline provenance mismatch: " + name)
         record_path = baseline_study / "results/baseline_3p0mm/record.json"
-        record = read(record_path)
+        record = _read(record_path)
         if record["geometry"] != "baseline" or record["mesh_size_mm"] != 3.0 or record["study_input_sha256"] != preparation["study_input_sha256"]:
             raise ValueError("Shared baseline identity mismatch")
         if physical_settings(record["settings"]) != physical_settings(inputs["fea_settings"]):
@@ -393,7 +390,7 @@ def baseline_result(output, inputs, baseline_study):
         if not record["artifacts"] or not _valid_artifacts(record, baseline_study):
             raise ValueError("Shared baseline raw artifact mismatch")
         raw_result = record["artifacts"].get("raw_fea_result.json")
-        if raw_result is None or read(baseline_study / raw_result["path"]) != record["result"]:
+        if raw_result is None or _read(baseline_study / raw_result["path"]) != record["result"]:
             raise ValueError("Shared baseline record differs from hashed raw result")
         _verify_cases(record["result"], domain["comparison_load_cases"])
         if abs(record["result"]["frame_mass_g"] - inputs["baseline_reference_frame_mass_g"]) > 1e-7:
@@ -406,7 +403,7 @@ def baseline_result(output, inputs, baseline_study):
         }}
     path = output / "baseline/record.json"
     if path.exists():
-        record = read(path)
+        record = _read(path)
         if physical_settings(record["settings"]) != physical_settings(inputs["fea_settings"]):
             raise ValueError("Stored baseline FEA settings changed")
         if not record["artifacts"] or not _valid_artifacts(record, output):
@@ -432,7 +429,7 @@ def load_saved_baseline(output, manifest, inputs):
         return None
     if not _valid_artifacts({"artifacts": {"baseline": artifact}}, output):
         raise ValueError("Stored baseline record changed")
-    saved = read(output / artifact["path"])
+    saved = _read(output / artifact["path"])
     study = Path(saved["reuse"]["study_directory"]) if "reuse" in saved else None
     verified = baseline_result(output, inputs, study)
     if verified != saved:
@@ -443,7 +440,7 @@ def run(source, output, geometry_only=False, baseline_study=None, linear_solver=
     output.mkdir(parents=True, exist_ok=True)
     inputs, domain, density = prepare(source, output, linear_solver, threads)
     path = output / "manifest.json"
-    manifest = read(path) if path.exists() else {
+    manifest = _read(path) if path.exists() else {
         "schema_version": "deep-frame-workstation-candidate-results-v1",
         "input_sha256": inputs["input_sha256"], "status": "running", "candidates": {},
     }
@@ -537,29 +534,26 @@ def candidates_main(overrides):
         config["baseline_study"].resolve() if config["baseline_study"] else None,
         config["linear_solver"], config["threads"])
 
-def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
 def render_main(overrides):
     config = configure(RENDER_CONFIG, RENDER_KINDS, overrides)
     base = ROOT / "exports/topology/workstation_20260930"
     mesh_dir = base / "mesh_study"
     study_dir = base / "candidate_study/grid4_iter300"
-    preparation = read(mesh_dir / "preparation.json")
-    selection = read(study_dir / "manifest.json")
+    preparation = _read(mesh_dir / "preparation.json")
+    selection = _read(study_dir / "manifest.json")
     selected_id = selection["selected_id"]
     record_path = study_dir / "candidates" / selected_id / "record.json"
-    selected = read(record_path)
+    selected = _read(record_path)
     if selected["status"] != "ok" or not selected["comparison"]["passed"]:
         raise ValueError("Selected workstation candidate must have passed geometry and independent FEA")
-    old_fea = read(ROOT / "docs/validation/topology_phase1/candidate_fea.json")
-    baseline_fea = read(ROOT / "docs/validation/topology_phase1/baseline_fea.json")
+    old_fea = _read(ROOT / "docs/validation/topology_phase1/candidate_fea.json")
+    baseline_fea = _read(ROOT / "docs/validation/topology_phase1/baseline_fea.json")
     sources = [
         ("v0", mesh_dir, preparation["geometries"]["baseline"]["stl"], baseline_fea["frame_mass_g"], "Parametrische v0", "#7994ab"),
         ("handoff_45", mesh_dir, preparation["geometries"]["candidate"]["stl"], old_fea["frame_mass_g"], "Freie Referenz: 45 Updates, t = 0.20", "#b07849"),
         ("workstation_300", study_dir, selected["artifacts"]["stl"], selected["fea"]["frame_mass_g"], f"Workstation: 300 Updates, t = {selected['density_threshold']:.2f}", "#248c87"),
     ]
-    grid = read(ROOT / "docs/validation/topology_phase1/inputs.json")["domain"]["grid"]
+    grid = _read(ROOT / "docs/validation/topology_phase1/inputs.json")["domain"]["grid"]
     lower = np.asarray(grid["origin_mm"], dtype=float)
     size = np.asarray(grid["shape"]) * np.asarray(grid["spacing_mm"])
     upper = lower + size
@@ -572,15 +566,15 @@ def render_main(overrides):
         "axis_limits_mm": [lower.tolist(), upper.tolist()],
         "views": [{"elevation_deg": 28, "azimuth_deg": -45}, {"elevation_deg": 90, "azimuth_deg": -90}],
         "packages": {name: version(name) for name in ("numpy", "matplotlib", "trimesh")},
-        "renderer_sha256": digest(Path(__file__)),
+        "renderer_sha256": _file_digest(__file__),
         "selected_id": selected_id,
-        "selected_manifest_sha256": digest(study_dir / "manifest.json"),
-        "selected_record_sha256": digest(record_path),
+        "selected_manifest_sha256": _file_digest(study_dir / "manifest.json"),
+        "selected_record_sha256": _file_digest(record_path),
         "sources": [],
     }
     for index, (name, directory, expected, mass, title, color) in enumerate(sources):
         path = directory / expected["path"]
-        if digest(path) != expected["sha256"] or path.stat().st_size != expected["size_bytes"]:
+        if _file_digest(path) != expected["sha256"] or path.stat().st_size != expected["size_bytes"]:
             raise ValueError("STL source failed its recorded artifact hash: " + name)
         raw_mesh = trimesh.load_mesh(path, process=False)
         triangles = np.asarray(raw_mesh.triangles)
@@ -622,7 +616,7 @@ def render_main(overrides):
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, dpi=160)
     plt.close(figure)
-    manifest["image"] = {"path": str(output.relative_to(ROOT)).replace("\\", "/"), "sha256": digest(output), "size_bytes": output.stat().st_size}
+    manifest["image"] = {"path": str(output.relative_to(ROOT)).replace("\\", "/"), "sha256": _file_digest(output), "size_bytes": output.stat().st_size}
     output.with_suffix(".json").write_text(json.dumps(manifest, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
     print(json.dumps({"image": str(output), "manifest": str(output.with_suffix('.json')), "sources": len(sources)}))
 

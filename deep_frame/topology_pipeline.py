@@ -15,7 +15,7 @@ from build123d import Compound, export_step, export_stl, import_step
 
 from deep_frame.fea import evaluate, solver_identity
 from deep_frame.frame import build_geometry
-from deep_frame.topology_geometry import build_design_domain, reconstruct_topology, validate_topology
+from deep_frame.topology_geometry import _merge, build_design_domain, reconstruct_topology, validate_topology
 from deep_frame.topology_optimization import optimize_topology
 
 PIPELINE_CONFIG = {
@@ -63,14 +63,11 @@ def _save(path, value):
     temporary.write_text(json.dumps(_jsonable(value), indent=2, allow_nan=False), encoding="utf-8")
     temporary.replace(path)
 
+def _read(path):
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
 def _file_digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
-def _merge(base, override):
-    result = deepcopy(base)
-    for key, value in override.items():
-        result[key] = _merge(result[key], value) if isinstance(value, dict) and isinstance(result.get(key), dict) else deepcopy(value)
-    return result
 
 def _configuration(settings):
     config = _merge(PIPELINE_CONFIG, settings)
@@ -215,12 +212,12 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
     manifest_path = directory / "manifest.json"
     inputs_path = directory / "inputs.json"
     if inputs_path.is_file():
-        if _digest(json.loads(inputs_path.read_text(encoding="utf-8"))) != fingerprint:
+        if _digest(_read(inputs_path)) != fingerprint:
             raise ValueError("Immutable topology input record has been changed")
     else:
         _save(inputs_path, inputs)
     if config["resume"] and manifest_path.is_file():
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest = _read(manifest_path)
         if manifest.get("input_sha256") != fingerprint:
             raise ValueError("Existing topology run has conflicting input identity")
     else:
@@ -257,7 +254,7 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
         baseline_record = {"result": baseline_result, "artifacts": artifacts}
         manifest["baseline"] = baseline_record
         _save(manifest_path, manifest)
-    baseline = json.loads((directory / baseline_record["artifacts"]["fea.json"]["path"]).read_text(encoding="utf-8"))
+    baseline = _read(directory / baseline_record["artifacts"]["fea.json"]["path"])
     baseline_record["result"] = baseline
     try:
         _verify_cases(baseline, comparison_cases)
@@ -273,7 +270,7 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
         optimizer_dir.mkdir(parents=True, exist_ok=True)
         record = next((entry for entry in manifest["optimizations"] if entry["name"] == variant_name), None)
         if record and _valid_artifacts(record, directory):
-            result = json.loads((directory / record["artifacts"]["result"]["path"]).read_text(encoding="utf-8"))
+            result = _read(directory / record["artifacts"]["result"]["path"])
             with np.load(directory / record["artifacts"]["fields"]["path"], allow_pickle=False) as fields:
                 result["density"] = fields["density"].copy()
                 if "design_density" in fields:
@@ -296,7 +293,7 @@ def run_topology(parameters, settings=None, *, domain_builder=build_design_domai
             previous = next((entry for entry in manifest["candidates"] if entry["id"] == candidate_id), None)
             if previous and "record" in previous.get("artifacts", {}) and _valid_artifacts(previous, directory):
                 record_path = directory / previous["artifacts"]["record"]["path"]
-                canonical = json.loads(record_path.read_text(encoding="utf-8"))
+                canonical = _read(record_path)
                 if "fea" in canonical:
                     canonical["diagnostics"] = [message for message in canonical.get("diagnostics", []) if not message.startswith(("Failed mechanical screens:", "Cached verification:"))]
                     try:
@@ -490,11 +487,11 @@ def show_topology_comparison(reference_solid, candidate_solid, domain, port=3939
     return {"shown": names, "separation_mm": offset, "port": port}
 
 def render_saved_evidence(domain_path, field_path, reference_step, candidate_step, history_path, output_dir):
-    domain = json.loads(Path(domain_path).read_text(encoding="utf-8"))
+    domain = _read(domain_path)
     with np.load(field_path, allow_pickle=False) as data:
         for name in ("allowed", "preserve", "forbidden"):
             domain[name] = data[name].copy()
         density = data["density"].copy()
-    saved = json.loads(Path(history_path).read_text(encoding="utf-8"))
+    saved = _read(history_path)
     history = saved["history"] if isinstance(saved, dict) else saved
     return render_topology_evidence(domain, density, import_step(reference_step), import_step(candidate_step), history, output_dir)

@@ -11,7 +11,7 @@ from deep_frame.config import TOPOLOGY_CONFIG, command_line, configure
 from deep_frame.frame import reference_parameters
 from deep_frame.topology_geometry import build_design_domain
 from deep_frame.topology_optimization import _settings, optimize_topology
-from deep_frame.topology_pipeline import _file_digest, _provenance, _save
+from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save
 
 RUN_CONFIG = {"directory": None, "shape": [34, 32, 8], "max_iterations": 300, "change_tolerance": 0.005,
               "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu"}
@@ -113,9 +113,6 @@ def run_main(overrides):
                        config["max_runtime_s"], config["linear_solver"])
     return 0 if status == "ok" else 1
 
-def read_json(path):
-    return json.loads(Path(path).read_text(encoding="utf-8"))
-
 def verify_artifacts(directory, artifacts, required):
     directory = Path(directory).resolve()
     if not set(required).issubset(artifacts):
@@ -128,7 +125,7 @@ def verify_artifacts(directory, artifacts, required):
             raise ValueError(f"Corrupt evidence artifact: {path}")
 
 def verify_frozen_reference(directory):
-    acceptance = read_json(Path(directory) / "acceptance.json")
+    acceptance = _read(Path(directory) / "acceptance.json")
     if acceptance["status"] != "ok":
         raise ValueError("Frozen reference has no successful acceptance")
     verify_artifacts(directory, acceptance["versioned_artifacts"],
@@ -165,8 +162,8 @@ def field_comparison(first, second):
 def summarize(root, names, output):
     reference_dir = Path("docs/validation/topology_phase1")
     verify_frozen_reference(reference_dir)
-    reference = read_json(reference_dir / "optimization.json")
-    reference_manifest = read_json(reference_dir / "run_manifest.json")
+    reference = _read(reference_dir / "optimization.json")
+    reference_manifest = _read(reference_dir / "run_manifest.json")
     reference_fields = dict(np.load(reference_dir / "fields.npz", allow_pickle=False))
     reference_summary = reference["summary"]
     normalization = reference_summary["normalization_compliances_n_mm"]
@@ -186,13 +183,13 @@ def summarize(root, names, output):
     completed_fields = {}
     for name in names:
         directory = Path(root) / name
-        manifest = read_json(directory / "manifest.json")
+        manifest = _read(directory / "manifest.json")
         if manifest["status"] != "ok":
             raise ValueError(f"Study {name} has no successful manifest")
         verify_artifacts(directory, manifest["artifacts"],
                          ("inputs.json", "result.json", "fields.npz", "domain_masks.npz", "iterations.jsonl"))
-        result = read_json(directory / "result.json")
-        inputs = read_json(directory / "inputs.json")
+        result = _read(directory / "result.json")
+        inputs = _read(directory / "inputs.json")
         if result["status"] != "ok":
             raise ValueError(f"Study {name} did not produce an acceptable numerical result")
         summary, history = result["summary"], result["history"]
@@ -260,25 +257,23 @@ def summarize_main(overrides):
     print(json.dumps({"studies": [study["name"] for study in result["studies"]], "output": config["output"]}))
 
 def plot(root, names, output):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt, _ = _plot_modules()
     reference_dir = Path("docs/validation/topology_phase1")
     verify_frozen_reference(reference_dir)
-    reference = read_json(reference_dir / "optimization.json")["summary"]
+    reference = _read(reference_dir / "optimization.json")["summary"]
     normalization = reference["normalization_compliances_n_mm"]
     weights = reference["normalized_case_weights"]
     figure, axes = plt.subplots(1, 2, figsize=(11.5, 4.2), constrained_layout=True)
     for name in names:
         directory = Path(root) / name
-        manifest = read_json(directory / "manifest.json")
+        manifest = _read(directory / "manifest.json")
         if manifest["status"] != "ok":
             raise ValueError(f"Study {name} has no successful manifest")
         verify_artifacts(directory, manifest["artifacts"],
                          ("inputs.json", "result.json", "fields.npz", "domain_masks.npz", "iterations.jsonl"))
-        result = read_json(directory / "result.json")
+        result = _read(directory / "result.json")
         verify_comparable_settings(reference["settings"], result["summary"]["settings"])
-        inputs = read_json(directory / "inputs.json")
+        inputs = _read(directory / "inputs.json")
         history = result["history"]
         if any(set(entry["compliances_n_mm"]) != set(normalization) for entry in history):
             raise ValueError("Plot load-case keys disagree with frozen reference")

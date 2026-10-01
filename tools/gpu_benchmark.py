@@ -1,4 +1,3 @@
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -8,7 +7,7 @@ import numpy as np
 
 from deep_frame.config import command_line, configure
 from deep_frame.topology_optimization import optimize_topology
-from deep_frame.topology_pipeline import _file_digest, _provenance, _save
+from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save
 from tools.topology_study import verify_artifacts
 
 BENCHMARK_CONFIG = {"source": None, "output": None, "updates": 3}
@@ -20,11 +19,11 @@ def compare(source, output, updates=3):
     source, output = Path(source).resolve(), Path(output).resolve()
     if isinstance(updates, bool) or not 1 <= updates <= 3:
         raise ValueError("Benchmark must use one to three complete updates")
-    manifest = json.loads((source / "manifest.json").read_text())
+    manifest = _read(source / "manifest.json")
     if manifest["status"] != "ok":
         raise ValueError("Source density study is not successful")
     verify_artifacts(source, manifest["artifacts"], ("inputs.json", "fields.npz", "result.json", "domain_masks.npz"))
-    inputs = json.loads((source / "inputs.json").read_text())
+    inputs = _read(source / "inputs.json")
     domain = inputs["domain"]
     with np.load(source / "fields.npz", allow_pickle=False) as fields:
         for key in ("allowed", "preserve", "forbidden"):
@@ -78,7 +77,7 @@ def compare(source, output, updates=3):
         report["timing_scope"] = "Complete uniform-start optimization including initialization, assembly, transfer, synchronization, OC updates, gradients, final metrics and resource destruction. First interval includes GPU setup; final interval has no OC update."
         _save(output / "comparison.json", report)
         _save(output / "status.json", {"status": "ok" if report["passed"] else "failed"})
-        artifacts = {path.name: {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "size_bytes": path.stat().st_size}
+        artifacts = {path.name: {"sha256": _file_digest(path), "size_bytes": path.stat().st_size}
                      for path in output.iterdir() if path.is_file()}
         _save(output / "manifest.json", {"status": "ok" if report["passed"] else "failed", "artifacts": artifacts})
         return report
@@ -93,15 +92,13 @@ def benchmark_main(overrides):
     return 0 if result["passed"] else 1
 
 def render(evidence, output):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
+    plt, _ = _plot_modules()
     evidence, output = Path(evidence), Path(output)
     run = evidence / "grid8over3_gpu1000"
-    manifest = json.loads((run / "manifest.json").read_text())
+    manifest = _read(run / "manifest.json")
     verify_artifacts(run, manifest["artifacts"], ("inputs.json", "result.json", "fields.npz", "iterations.jsonl"))
-    result = json.loads((run / "result.json").read_text())
-    benchmark = json.loads((evidence / "three_updates/comparison.json").read_text())
+    result = _read(run / "result.json")
+    benchmark = _read(evidence / "three_updates/comparison.json")
     history = [entry for entry in result["history"] if not entry["final_evaluation"]]
     iteration = np.array([entry["iteration"] for entry in history])
     objective = np.array([entry["objective"] for entry in history])
