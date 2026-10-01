@@ -24,7 +24,8 @@ from deep_frame.config import command_line, configure
 from deep_frame.fea import evaluate
 from deep_frame.frame import build_geometry
 from deep_frame.topology_geometry import _merge, region_shape
-from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _verify_cases, candidate_entry, compare_to_baseline, log_run
+from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _verify_cases, candidate_entry, compare_to_baseline, log_run, run_log_path
+from tools.topology_study import density_entry
 from tools.workstation_study import load_source
 
 SURFACE_CONFIG = {"subdivisions": 4, "interpolation_method": "pchip", "thresholds": [0.20, 0.25, 0.30, 0.35, 0.40, 0.50],
@@ -43,11 +44,11 @@ SURFACE_KINDS = {"subdivisions": "int", "interpolation_method": ("pchip", "cubic
 RUN_CONFIG = {"output": None, "reference_step": None, "source": None, "density_python": Path(sys.executable),
               "density_workspace": ROOT, "geometry_python": Path(sys.executable), "shape": [51, 48, 12], "max_iterations": 1000,
               "max_runtime_s": 1200, "change_tolerance": 0.005, "density_backend": "cpu_superlu",
-              "density_finalization_timeout_s": 600, "geometry_timeout_s": 14400, **SURFACE_CONFIG}
+              "density_finalization_timeout_s": 600, "geometry_timeout_s": 14400, "run_log": None, **SURFACE_CONFIG}
 RUN_KINDS = {"output": "path", "reference_step": "path", "source": "path", "density_python": "path",
              "density_workspace": "path", "geometry_python": "path", "shape": ["int"] * 3, "max_iterations": "int",
              "max_runtime_s": "float", "change_tolerance": "float", "density_backend": ("cuda_cudss", "cpu_superlu"),
-             "density_finalization_timeout_s": "float", "geometry_timeout_s": "float", **SURFACE_KINDS}
+             "density_finalization_timeout_s": "float", "geometry_timeout_s": "float", "run_log": "path", **SURFACE_KINDS}
 GEOMETRY_CONFIG = {"source": None, "output": None, "reference_step": None, **SURFACE_CONFIG, "study_timeout_s": 14400, "run_log": None}
 GEOMETRY_KINDS = {"source": "path", "output": "path", "reference_step": "path", **SURFACE_KINDS, "study_timeout_s": "float", "run_log": "path"}
 RENDER_CONFIG = {"step": None, "output": None,
@@ -167,12 +168,13 @@ def run_main(overrides):
         raise ValueError("A new empty output directory is required")
     output.mkdir(parents=True, exist_ok=True)
     source = config["source"].resolve() if config["source"] else output / "density"
+    ledger = run_log_path(config["run_log"])
     stages = {"density": None if config["source"] else {
                   "directory": str(source), "shape": config["shape"], "max_iterations": config["max_iterations"],
                   "max_runtime_s": config["max_runtime_s"], "change_tolerance": config["change_tolerance"],
-                  "linear_solver": config["density_backend"]},
+                  "linear_solver": config["density_backend"], "run_log": str(ledger)},
               "geometry": {"source": str(source), "output": str(output / "geometry"), "reference_step": str(output / "reference.step"),
-                           **{key: config[key] for key in SURFACE_CONFIG}, "study_timeout_s": config["geometry_timeout_s"]}}
+                           **{key: config[key] for key in SURFACE_CONFIG}, "study_timeout_s": config["geometry_timeout_s"], "run_log": str(ledger)}}
     configs = {}
     for name, values in stages.items():
         configs[name] = None
@@ -199,7 +201,7 @@ def run_main(overrides):
                           "maximum_wall_samples": config["maximum_wall_samples"],
                           "geometry_and_fea_process_s": config["geometry_timeout_s"], "mesh_per_run_s": config["mesh_timeout_s"],
                           "solver_per_case_s": config["solver_timeout_s"]},
-              "orchestrator_sha256": _file_digest(__file__),
+              "orchestrator_sha256": _file_digest(__file__), "run_log": str(ledger),
               "commands": {"density": density_command, "geometry": geometry_command}, "configs": configs, "stages": {}}
     write(output/"run.json", report)
     write(output/"status.json", {"status": "running", "stage": "preparing"})
@@ -219,6 +221,10 @@ def run_main(overrides):
             report["stages"]["density"] = execute(density_command, config["density_workspace"].resolve(), output/"density.log", config["max_runtime_s"]+config["density_finalization_timeout_s"])
             write(output/"run.json", report)
             if report["stages"]["density"]["returncode"] != 0:
+                if not density_logged(ledger, source):
+                    status = "timed_out" if report["stages"]["density"].get("timed_out") else "failed"
+                    log_run(ledger, {**density_entry(source, config["shape"], config["max_iterations"], config["density_backend"], status,
+                                                     time.perf_counter()-report["stages"]["density"].get("runtime_s", 0.0)), "gpu_pool_mb": None})
                 raise RuntimeError("Density stage failed; inspect density.log and persisted stage evidence")
         else:
             report["stages"]["density"] = {"status": "reused", "directory": str(source)}
@@ -249,6 +255,10 @@ def run_main(overrides):
           | ({"error": report["error"]} if "error" in report else {}))
     print(json.dumps(report), flush=True)
     return 0 if report["overall_acceptance"] else (2 if report["status"] == "complete" else 1)
+
+def density_logged(ledger, directory):
+    lines = ledger.read_text(encoding="utf-8").splitlines() if ledger.is_file() else []
+    return any(entry.get("kind") == "density" and entry.get("run_dir") == str(directory) for entry in map(json.loads, filter(str.strip, lines)))
 
 def write(path, data):
     path = Path(path)

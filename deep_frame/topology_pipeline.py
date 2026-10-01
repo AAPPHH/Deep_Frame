@@ -108,10 +108,13 @@ def _git_state():
         revision, dirty = None, None
     return revision, dirty
 
+def run_log_path(path=None):
+    return Path(path or RUN_LOG).resolve()
+
 def log_run(path, entry):
     revision, dirty = _git_state()
     line = {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "git_commit": revision, "git_tracked_dirty": dirty, **entry}
-    path = Path(path or RUN_LOG)
+    path = run_log_path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as ledger:
         ledger.write(json.dumps(_jsonable(line), allow_nan=False)+"\n")

@@ -17,7 +17,7 @@ from deep_frame.fea import MESH_KEYS, evaluate
 from deep_frame.frame import build_geometry
 from deep_frame.topology_implicit import ImplicitError, build_implicit, export_mesh
 from deep_frame.topology_implicit_validation import ball_curvature, validate_implicit
-from deep_frame.topology_pipeline import RUN_LOG, _file_digest, _plot_modules, _provenance, _read, _save, _verify_cases, candidate_entry, compare_to_baseline, log_run
+from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save, _verify_cases, candidate_entry, compare_to_baseline, log_run, run_log_path
 from deep_frame.topology_surface_validation import surface_metrics
 from tools.mature_pipeline import acceptance, artifacts, baseline_fea, comparison_inputs, draw_view, save_provenance, snapshot_source
 from tools.workstation_study import load_source
@@ -336,11 +336,11 @@ def summarize(entries):
 
 def summarize_main(overrides):
     config = configure(SUMMARIZE_CONFIG, SUMMARIZE_KINDS, overrides, ("output",))
-    path = config["run_log"] or RUN_LOG
+    path = run_log_path(config["run_log"])
     entries = [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines() if line.strip()]
     if config["runs"] is not None:
         entries = [entry for entry in entries if entry["run_dir"] in config["runs"] or Path(entry["run_dir"]).name in config["runs"]]
-    _save(config["output"], {"run_log": str(Path(path).resolve()), "run_log_sha256": _file_digest(path), "runs": summarize(entries)})
+    _save(config["output"], {"run_log": str(path), "run_log_sha256": _file_digest(path), "runs": summarize(entries)})
     return 0
 
 def main(argv=None):

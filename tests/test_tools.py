@@ -351,6 +351,38 @@ def test_orchestrator_fresh_density_selects_backend_and_verified_geometry(study,
     assert report["source_mode"] == "fresh_uniform" and report["source_artifacts_verified"]
     assert report["accepted_count"] == 1 and report["selected_id"] == "t00" and len(commands) == 2
 
+def test_orchestrator_routes_ledger_to_both_stages(study, monkeypatch, tmp_path):
+    args, source, _, _ = study
+    output, ledger_path = tmp_path / "orchestrator", tmp_path / "routed" / "run_log.jsonl"
+    def execute(command, cwd, logfile, timeout):
+        if "tools.topology_study" in command:
+            shutil.copytree(source, output / "density")
+            assert _read(command[-1])["run_log"] == str(ledger_path.resolve())
+            topology_pipeline.log_run(_read(command[-1])["run_log"], {"kind": "density", "run_dir": str(output / "density"), "success": True, "status": "ok"})
+        else:
+            assert _read(command[-1])["run_log"] == str(ledger_path.resolve()) and pipeline.main(command[2:]) == 0
+        return {"returncode": 0}
+    monkeypatch.setattr(pipeline, "execute", execute)
+    assert pipeline.run_main({"output": str(output), "reference_step": str(args["reference_step"]), "thresholds": [0.3], "run_log": str(ledger_path)}) == 0
+    assert [(line["kind"], line.get("candidate")) for line in ledger(ledger_path)] == [("density", None), ("cad", "t00")]
+    assert _read(output / "run.json")["run_log"] == str(ledger_path.resolve()) and not (tmp_path / "default_run_log.jsonl").exists()
+
+@pytest.mark.parametrize("child_logged", [False, True])
+def test_orchestrator_logs_killed_density_stage_once(study, monkeypatch, tmp_path, child_logged):
+    args, _, _, _ = study
+    output, ledger_path = tmp_path / "orchestrator", tmp_path / "run_log.jsonl"
+    def execute(command, cwd, logfile, timeout):
+        assert "tools.topology_study" in command
+        if child_logged:
+            topology_pipeline.log_run(ledger_path, {"kind": "density", "run_dir": str(output / "density"), "success": False, "status": "failed"})
+        return {"returncode": None, "timed_out": True, "runtime_s": 5.0}
+    monkeypatch.setattr(pipeline, "execute", execute)
+    assert pipeline.run_main({"output": str(output), "reference_step": str(args["reference_step"]), "run_log": str(ledger_path)}) == 1
+    line, = ledger(ledger_path)
+    assert line["kind"] == "density" and not line["success"] and line["run_dir"] == str(output / "density")
+    assert line["status"] == ("failed" if child_logged else "timed_out")
+    assert child_logged or (line["failure_stage"] == "optimization" and line["runtime_s"] >= 5.0 and line["gpu_pool_mb"] is None)
+
 def test_orchestrator_does_not_trust_false_manifest_acceptance(study, monkeypatch, tmp_path):
     args, source, _, _ = study
     output = tmp_path / "orchestrator"
