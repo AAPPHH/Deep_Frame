@@ -33,7 +33,7 @@ def test_comparison_rejects_changed_physical_filter_but_allows_iteration_budget(
 def test_comparison_fills_projection_defaults_of_older_references():
     legacy = {key: value for key, value in _settings({}).items() if key not in
               ("projection", "robust_delta", "beta_schedule", "beta_interval", "beta_minimum_iterations",
-               "beta_change_tolerance", "move_limit_late", "move_limit_late_beta", "volume_update_interval")}
+               "beta_change_tolerance", "move_limit_late", "move_limit_late_beta", "volume_target_relaxation", "objective_window")}
     verify_comparable_settings(legacy, _settings({"max_iterations": 300}))
     with pytest.raises(ValueError, match="physics/settings"):
         verify_comparable_settings(legacy, _settings({"projection": "robust", "beta_schedule": [1, 2, 4]}))

@@ -238,7 +238,7 @@ def test_oc_bisection_hits_dilated_target_and_steps_toward_unreachable_targets()
 
 ROBUST_RUN = {"projection": "robust", "volume_fraction": 0.4, "filter_radius_mm": 2.6, "move_limit": 0.12, "beta_schedule": [1, 2, 4],
               "beta_interval": 6, "beta_minimum_iterations": 3, "move_limit_late": 0.03, "move_limit_late_beta": 4,
-              "volume_update_interval": 1, "minimum_iterations": 3, "max_iterations": 30}
+              "volume_target_relaxation": 1.0, "minimum_iterations": 3, "max_iterations": 30}
 
 @pytest.mark.parametrize("rule", ["change", "interval"])
 def test_beta_continuation_switching_rules(rule):
@@ -254,6 +254,32 @@ def test_beta_continuation_switching_rules(rule):
     assert [entry["move_limit"] for entry in updates] == [0.12] * (2 * level) + [0.03] * 3
     assert all(entry["maximum_design_change"] <= 0.03 + 1e-15 for entry in updates[-3:])
     assert result["summary"]["continuation"] == {"beta_schedule": [1.0, 2.0, 4.0], "beta_final": 4.0, "final_level_reached": True, "level_iterations_final": 3}
+
+def test_dilated_target_starts_each_level_at_the_dilated_volume_and_relaxes():
+    domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
+    settings = {**ROBUST_RUN, "volume_target_relaxation": 0.2, "max_iterations": 16, "change_tolerance": 1e-12, "beta_change_tolerance": 1e-12}
+    result = optimize_topology(domain, settings)
+    assert result["status"] == "ok", result["diagnostics"]
+    total = 0.4 * np.count_nonzero(domain["allowed"])
+    previous = None
+    for entry in result["history"][:-1]:
+        reference = entry["dilated_density_sum"] if previous is None or previous["projection_beta"] != entry["projection_beta"] else previous["dilated_volume_target"]
+        expected = reference + 0.2 * (total * entry["dilated_density_sum"] / entry["physical_density_sum"] - reference)
+        assert entry["dilated_volume_target"] == pytest.approx(expected, rel=1e-12)
+        previous = entry
+
+def test_objective_stall_ends_the_run_while_the_design_change_stays_at_the_move_limit():
+    settings = {**ROBUST_RUN, "volume_target_relaxation": 0.2, "objective_window": 3, "change_tolerance": 0.02, "beta_change_tolerance": 0.02, "max_iterations": 60}
+    result = optimize_topology(beam_domain((8, 4, 4), (1.0, 1.0, 1.0)), settings)
+    assert result["status"] == "ok", result["diagnostics"]
+    assert result["summary"]["converged"] and result["summary"]["stop_reason"] == "objective_stall"
+    updates = [entry for entry in result["history"] if not entry["final_evaluation"]]
+    for index, entry in enumerate(updates):
+        level = [other for other in updates[:index + 1] if other["projection_beta"] == entry["projection_beta"]][-3:]
+        objectives = [other["objective"] for other in level]
+        assert entry["objective_stall"] == (None if len(level) < 3 else pytest.approx((max(objectives) - min(objectives)) / min(objectives), rel=1e-12))
+    assert updates[-1]["objective_stall"] < 0.02 <= updates[-1]["maximum_design_change"]
+    assert updates[-1]["projection_beta"] == 4.0
 
 def test_robust_optimization_is_deterministic_and_reports_three_fields():
     domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
@@ -277,7 +303,7 @@ def test_robust_optimization_is_deterministic_and_reports_three_fields():
 
 @pytest.mark.parametrize("settings", [{"volume_fraction": 0.1}, {"volume_fraction": float("nan")}, {"penalization": 0}, {"case_weights": {"missing": 1}}, {"max_iterations": 0},
                                       {"projection": "bogus"}, {"projection": "robust", "robust_delta": 0.5}, {"beta_schedule": [2, 1]}, {"beta_schedule": []},
-                                      {"move_limit_late": 0.0}, {"beta_interval": 0}, {"volume_update_interval": 1.5}])
+                                      {"move_limit_late": 0.0}, {"beta_interval": 0}, {"volume_target_relaxation": 0.0}, {"volume_target_relaxation": 1.5}, {"objective_window": 1}])
 def test_invalid_settings_and_impossible_preserve_budget_fail_cleanly(settings):
     result = optimize_topology(beam_domain(), settings)
     assert result["status"] == "invalid"

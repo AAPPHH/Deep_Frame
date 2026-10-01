@@ -14,7 +14,7 @@ from deep_frame.topology_optimization import _settings, optimize_topology
 from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save
 
 OPTIMIZER_KINDS = {"filter_radius_mm": "float", "projection": ("single", "robust"), "beta_schedule": ["float"],
-                   "beta_interval": "int", "move_limit_late": "float", "volume_update_interval": "int"}
+                   "beta_interval": "int", "move_limit_late": "float", "volume_target_relaxation": "float"}
 RUN_CONFIG = {"directory": None, "shape": [34, 32, 8], "max_iterations": 300, "change_tolerance": 0.005,
               "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu", **dict.fromkeys(OPTIMIZER_KINDS)}
 RUN_KINDS = {"directory": "text", "shape": ["int"] * 3, "max_iterations": "int", "change_tolerance": "float",

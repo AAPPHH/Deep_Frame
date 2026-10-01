@@ -511,7 +511,8 @@ DEFAULT_SETTINGS = {
     "beta_change_tolerance": 0.01,
     "move_limit_late": None,
     "move_limit_late_beta": 8.0,
-    "volume_update_interval": 20,
+    "volume_target_relaxation": 0.2,
+    "objective_window": 10,
 }
 
 def _settings(settings):
@@ -543,9 +544,11 @@ def _settings(settings):
     delta = result["robust_delta"]
     if result["projection"] == "robust" and (not np.isfinite(delta) or delta <= 0 or not 0 < result["projection_eta"] - delta < result["projection_eta"] + delta < 1):
         raise ValueError("Robust projection thresholds must lie within (0, 1)")
-    for name in ("beta_interval", "beta_minimum_iterations", "volume_update_interval"):
+    for name in ("beta_interval", "beta_minimum_iterations"):
         if isinstance(result[name], bool) or int(result[name]) != result[name] or result[name] < 1:
             raise ValueError(f"{name} must be a positive integer")
+    if isinstance(result["objective_window"], bool) or int(result["objective_window"]) != result["objective_window"] or result["objective_window"] < 2:
+        raise ValueError("objective_window must be an integer of at least 2")
     result["beta_minimum_iterations"] = min(result["beta_minimum_iterations"], result["beta_interval"])
     if result["beta_schedule"] is not None:
         schedule = [float(beta) for beta in result["beta_schedule"]]
@@ -555,7 +558,8 @@ def _settings(settings):
     late = result["move_limit_late"]
     if late is not None and (not np.isfinite(late) or not 0 < late <= 1):
         raise ValueError("move_limit_late must be in (0, 1] or None")
-    if not np.isfinite(result["beta_change_tolerance"]) or result["beta_change_tolerance"] <= 0 or not np.isfinite(result["move_limit_late_beta"]):
+    relaxation = result["volume_target_relaxation"]
+    if not np.isfinite(result["beta_change_tolerance"]) or result["beta_change_tolerance"] <= 0 or not np.isfinite(result["move_limit_late_beta"]) or not np.isfinite(relaxation) or not 0 < relaxation <= 1:
         raise ValueError("Invalid beta continuation settings")
     return result
 
@@ -743,15 +747,16 @@ def optimize_topology(domain, settings, *, progress_callback=None):
         staged = mapping.robust or settings["beta_schedule"] is not None
         stiffness_name, volume_name = ("eroded", "dilated") if mapping.robust else ("intermediate", "intermediate")
         level = level_iterations = 0
-        since_update = None
         volume_target = target
+        stall = None
         for iteration in range(1, settings["max_iterations"] + 1):
             fields, _ = mapping.fields(design)
             physical = fields["intermediate"][0]
             density = physical.reshape(tuple(domain["grid"]["shape"]))
-            if mapping.robust and (since_update is None or since_update >= settings["volume_update_interval"]):
-                volume_target = target * float(np.sum(fields[volume_name][0]) / np.sum(physical))
-                since_update = 0
+            if mapping.robust:
+                dilated = float(np.sum(fields[volume_name][0]))
+                reference = dilated if level_iterations == 0 else volume_target
+                volume_target = reference + settings["volume_target_relaxation"] * (target * dilated / float(np.sum(physical)) - reference)
             solutions = system.solve(fields[stiffness_name][0], settings["penalization"], settings["min_stiffness_ratio"])
             if scales is None:
                 scales, normalization, weights = _case_scaling(solutions, settings)
@@ -764,22 +769,23 @@ def optimize_topology(domain, settings, *, progress_callback=None):
             change = float(np.max(np.abs(candidate - design)))
             history.append(_history_entry(iteration, physical, solutions, scales, change, perf_counter() - started))
             if staged:
-                history[-1].update(_stage_entry(mapping, fields, volume_target, move_limit))
+                recent = [entry["objective"] for entry in history[-min(level_iterations + 1, settings["objective_window"]):]]
+                stall = (max(recent) - min(recent)) / min(recent) if len(recent) == settings["objective_window"] else None
+                history[-1].update(_stage_entry(mapping, fields, volume_target, move_limit), objective_stall=stall)
+            measure = change if stall is None else min(change, stall)
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
             design = candidate
             level_iterations += 1
-            since_update = None if since_update is None else since_update + 1
             if level == len(schedule) - 1:
-                if level_iterations >= settings["minimum_iterations"] and change < settings["change_tolerance"]:
+                if level_iterations >= settings["minimum_iterations"] and measure < settings["change_tolerance"]:
                     converged = True
-                    stop_reason = "change_tolerance"
+                    stop_reason = "change_tolerance" if change < settings["change_tolerance"] else "objective_stall"
                     break
-            elif level_iterations >= settings["beta_interval"] or (level_iterations >= settings["beta_minimum_iterations"] and change < settings["beta_change_tolerance"]):
+            elif level_iterations >= settings["beta_interval"] or (level_iterations >= settings["beta_minimum_iterations"] and measure < settings["beta_change_tolerance"]):
                 level += 1
                 level_iterations = 0
                 mapping.beta = schedule[level]
-                since_update = None
             if settings["max_runtime_s"] is not None and perf_counter() - started >= settings["max_runtime_s"]:
                 stop_reason = "max_runtime_s"
                 break

@@ -716,7 +716,8 @@ TOPOLOGY_CONFIG = {
         "beta_change_tolerance": 0.01,
         "move_limit_late": None,
         "move_limit_late_beta": 8.0,
-        "volume_update_interval": 20,
+        "volume_target_relaxation": 0.2,
+        "objective_window": 10,
     },
     "reconstruction": {
         "density_threshold": 0.35,
