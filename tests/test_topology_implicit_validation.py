@@ -61,6 +61,19 @@ def test_prescribed_bore_web_tolerates_only_the_polygon_oversize():
     free = bore_block(4.5, 1.98)
     assert not free["passed"] and free["minimum_measured_mm"] == pytest.approx(1.98, abs=1e-9) and all(sample["position_mm"][0] >= 12-1e-9 for sample in free["thin_samples"])
 
+def test_capped_mount_leaves_no_shell_fin_beside_its_keepout():
+    regions = [box("m1", "preserve", [2, 3, 0], [6, 7, 6]), box("m2", "preserve", [24, 3, 0], [28, 7, 6]), box("cap", "forbidden", [1.8, 2.8, 6], [6.2, 7.2, 8])]
+    domain = make_domain((30, 10, 8), regions)
+    density = np.where(domain["preserve"], 1.0, 0.0)
+    density[6:24, 3:7, 1:5] = 1.0
+    density[domain["forbidden"]] = 0.0
+    mesh, report, field = build_implicit(domain, density, SMALL)
+    assert report["preserve_shell"]["capped"] == {"m1": ["cap"]} and report["final_witness"]["passed"]
+    near = (mesh.vertices[:, 0] < 7) & (mesh.vertices[:, 0] > 1)
+    assert mesh.vertices[near, 2].max() <= 6.0
+    walls = wall_screen(mesh, 2.0, SETTINGS, CONFIG["remesh_feature_deg"])
+    assert walls["complete"] and walls["unresolved_sample_count"] == 0 and walls["thin_sample_count"] == len(walls["thin_samples"]) and not [sample for sample in walls["thin_samples"] if sample["position_mm"][2] > 3]
+
 def acceptance(mesh, regions, shape=(20, 12, 8)):
     domain = make_domain(shape, regions)
     domain["manufacturing"] = TOPOLOGY_CONFIG["manufacturing"]

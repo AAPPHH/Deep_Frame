@@ -21,6 +21,7 @@ SIX = generate_binary_structure(3, 1)
 EXTENSIONS = ("none", "preserve", "preserve_forbidden")
 NONNEGATIVE = ("density_sigma_mm", "transition_radius_mm", "preserve_inflation_mm", "constraint_offset_mm", "opening_radius_mm", "ripple_sigma_mm")
 PROPAGATION_PASSES = 2
+INPUT_SNAP_MM = 1e-6
 GATE_MAXIMA = ("surface_deviation_mm", "relative_volume_change", "segment_tolerance_mm", "penetration_tolerance_mm", "penetration_sample_spacing_mm", "free_zone_preserve_mm", "free_zone_constraint_mm", "free_zone_modified_mm", "mesh_boundary_deviation_mm")
 GATE_MINIMA = ("free_zone_minimum_samples", "free_zone_opening_cells", "mesh_minimum_sicn")
 
@@ -64,6 +65,20 @@ def primitive_distance(axes, region):
     else:
         raise ValueError("Unsupported implicit primitive: " + str(region["kind"]))
     return -(np.sqrt(sum(np.maximum(value, 0)**2 for value in q))+np.minimum(reduce(np.maximum, q), 0))
+
+def _faces(region):
+    return range(3) if region["kind"] == "box" else (AXES[region.get("axis", "z")],) if region["kind"] == "cylinder" else ()
+
+def capped_faces(region, forbidden, distance):
+    low, high = region_bounds(region)
+    for cap in forbidden:
+        bottom, top = region_bounds(cap)
+        for axis in set(_faces(region)) & set(_faces(cap)):
+            footprint = dict(cap, min_mm=[-1e6 if i == axis else value for i, value in enumerate(bottom)], max_mm=[1e6 if i == axis else value for i, value in enumerate(top)]) if cap["kind"] == "box" else dict(cap, height_mm=2e6)
+            corners = np.array(list(product(*[(low[i], high[i]) if i != axis else (0.5*(bottom[i]+top[i]),) for i in range(3)])), dtype=float).T
+            for sign, level, face in ((1, high[axis], bottom[axis]), (-1, low[axis], top[axis])):
+                if 0 <= sign*(face-level) <= distance and primitive_distance(corners, footprint).min() >= 0:
+                    yield axis, float(level), sign, footprint
 
 def _slab(axis, start, stop):
     return tuple(slice(start, stop) if i == axis else slice(None) for i in range(3))
@@ -114,6 +129,19 @@ class ImplicitField:
             if window is not None:
                 np.maximum(values[window], primitive_distance(self.axes(window), region), out=values[window])
         return values
+
+    def shell(self, preserves, forbidden, inflation, pad):
+        values, caps = np.full(self.values.shape, -np.inf, dtype=np.float32), {}
+        for region in preserves:
+            window = self.window(region, pad)
+            if window is not None:
+                axes = self.axes(window)
+                part = primitive_distance(axes, region)+inflation
+                for axis, level, sign, footprint in capped_faces(region, forbidden, inflation):
+                    caps.setdefault(region["name"], []).append(footprint["name"])
+                    part = np.minimum(part, np.maximum(sign*(level-axes[axis])-inflation, primitive_distance(axes, footprint)-inflation))
+                np.maximum(values[window], part, out=values[window])
+        return values, {"inflation_mm": inflation, "capped": caps, "method": "preserve SDF inflated by the inflation distance; across a preserve face that a keep-out face caps within that distance the shell stays one inflation below the face plane, except inside the keep-out footprint eroded by the inflation, where the exact cut removes it transversally"}
 
     def _distance(self, window, points):
         total = None
@@ -311,7 +339,8 @@ def build_field(domain, density, settings, progress=None):
     pad = max(k, offset)+delta+3*float(field.spacing.max())
     preserves = [region for region in domain["regions"] if region["role"] == "preserve"]
     preserve = field.primitives(preserves, pad)
-    forbidden = field.primitives([region for region in domain["regions"] if region["role"] == "forbidden"], pad)
+    keepouts = [region for region in domain["regions"] if region["role"] == "forbidden"]
+    forbidden = field.primitives(keepouts, pad)
     envelope = field.primitives([{"kind": "box", "min_mm": origin, "max_mm": origin+spacing*np.asarray(domain["grid"]["shape"])}])
     report["primitive_pad_mm"] = pad
     lap("primitives")
@@ -343,8 +372,9 @@ def build_field(domain, density, settings, progress=None):
     lap("density_witness")
     if not report["density_witness"]["passed"]:
         raise ImplicitError("mount_disconnected", "Smoothed and opened density does not connect the required mounts; the smooth union may not create the connection", report)
-    preserve += np.float32(delta)
-    field.smooth_union(preserve, k).intersect(-forbidden-np.float32(offset)).intersect(envelope-np.float32(offset))
+    shell, report["preserve_shell"] = field.shell(preserves, keepouts, delta, pad)
+    np.maximum(preserve, shell, out=preserve)
+    field.smooth_union(shell, k).intersect(-forbidden-np.float32(offset)).intersect(envelope-np.float32(offset))
     report["volumes_mm3"]["composed"] = field.volume()
     lap("composition")
     field.reinitialize(config["reinit_band_cells"])
@@ -357,11 +387,12 @@ def build_field(domain, density, settings, progress=None):
     lap("witness")
     field.smooth(config["ripple_sigma_mm"])
     report["volumes_mm3"]["ripple_smoothed"] = field.volume()
-    field.union(preserve)
+    field.union(shell)
+    del shell
     report["volumes_mm3"]["final"] = field.volume()
     lap("restore")
     field.layers["reference"] = reference.values
-    _connected(field, report, "final_witness", field.values > 0, preserves, forbidden)
+    _connected(field, report, "final_witness", (field.values > 0) | (preserve > 0), preserves, forbidden)
     lap("witness")
     report["status"] = "field_built"
     _progress(progress, "field_built", report)
@@ -488,6 +519,9 @@ def _trimesh(body):
 def exact_booleans(mesh, domain, config):
     from manifold3d import Error, Manifold, OpType
     started = perf_counter()
+    planes = [(region, 1) for region in domain["regions"] if region["role"] in ("preserve", "forbidden")]+[(_envelope(domain), -1)]
+    mesh = mesh.copy()
+    snap = _snap_planes(mesh, planes, INPUT_SNAP_MM)
     body = _manifold(mesh)
     margin = float32_margin(domain)
     report = {"method": "manifold3d float64: (field mesh + union(preserves) - union(forbidden)) ^ envelope; box planes rounded to binary32 outward (preserve, forbidden) or inward (envelope), cylinders circumscribed polygons grown by the binary32 margin",
@@ -512,7 +546,8 @@ def exact_booleans(mesh, domain, config):
     report.update(status=str(body.status()), components=len(body.decompose()), genus=int(body.genus()), volume_mm3=body.volume(),
                   maximum_cylinder_oversize_mm=max((row["oversize_mm"] for row in report["cylinders"]), default=0.0), runtime_s=perf_counter()-started)
     mesh = _trimesh(body)
-    report["plane_snap"] = _snap_planes(mesh, [(region, 1) for region in domain["regions"] if region["role"] in ("preserve", "forbidden")]+[(_envelope(domain), -1)])
+    report["input_plane_snap"] = snap
+    report["plane_snap"] = _snap_planes(mesh, planes)
     report["float32"] = _round_float32(mesh, margin)
     report["passed"] = body.status() == Error.NoError and report["components"] == 1 and report["maximum_cylinder_oversize_mm"] <= config["segment_tolerance_mm"] and report["float32"]["passed"]
     return mesh, report
