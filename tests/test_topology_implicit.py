@@ -127,13 +127,43 @@ def test_disconnected_mount_is_rejected_not_bridged(gap):
     assert not witness["passed"] and len(witness["mount_components"]) == 2
     assert witness["preserves"]["m1"]["components"] == witness["preserves"]["m2"]["components"] != witness["preserves"]["m3"]["components"]
 
+def sliver_gap(value):
+    domain, density = chain_domain(1)
+    density[20, 5, 4] = value
+    return domain, density
+
+def sliver_neck():
+    domain, density = chain_domain(0)
+    density[9, 3:7, 2:6] = 0.0
+    density[9, 5, 4] = 0.4
+    return domain, density
+
+@pytest.mark.parametrize("case", [lambda: sliver_gap(0.36), lambda: sliver_gap(0.4), sliver_neck])
+def test_sub_resolution_density_sliver_is_rejected_not_bridged_by_smooth_union(case):
+    domain, density = case()
+    with pytest.raises(ImplicitError) as error:
+        build_implicit(domain, density, SMALL)
+    report = error.value.report
+    assert error.value.status == "mount_disconnected" and error.value.mesh is None
+    assert report["witness"]["passed"] and not report["density_witness"]["passed"] and "opening" not in report
+    assert len(report["density_witness"]["mount_components"]) == 2
+
+def test_opening_split_is_rejected_before_ripple_smoothing_can_reconnect_it():
+    domain, density = chain_domain(0)
+    domain["regions"].append(box("lid", "forbidden", [17, -1, 4.3], [20, 11, 9], rasterize=False))
+    with pytest.raises(ImplicitError) as error:
+        build_field(domain, density, SMALL)
+    report = error.value.report
+    assert error.value.status == "mount_disconnected" and report["density_witness"]["passed"]
+    assert report["opening"]["components_after"] == 2 and not report["opening_witness"]["passed"] and "final_witness" not in report
+
 def test_touching_mount_chain_builds_one_connected_field():
     domain, density = chain_domain(0)
     field, report = build_field(domain, density, SMALL)
-    assert report["status"] == "field_built" and report["witness"]["passed"] and report["final_witness"]["passed"]
+    assert report["status"] == "field_built" and report["witness"]["passed"] and report["density_witness"]["passed"] and report["opening_witness"]["passed"] and report["final_witness"]["passed"]
     assert report["final_witness"]["occupied_components_6"] == 1 and report["extension_guard"]["passed"]
     assert report["opening"]["components_after"] == 1
-    assert set(report["timings_s"]) >= {"extension", "upsample", "primitives", "witness", "reinit", "smoothing", "composition", "opening", "restore"}
+    assert set(report["timings_s"]) >= {"extension", "upsample", "primitives", "witness", "reinit", "smoothing", "density_witness", "composition", "opening", "restore"}
 
 def corner_domain():
     keepout = box("corner", "forbidden", [-1, -1, -1], [5.5, 5.5, 9])

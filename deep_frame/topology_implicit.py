@@ -245,6 +245,15 @@ def mount_witness(field, occupied, preserves, forbidden):
     return {"passed": passed, "occupied_components_6": count, "mount_components": used, "preserves": rows,
             "method": "6-connected labels of occupied samples; every sample strictly inside an exact preserve and outside all keep-outs must be occupied and all must share one label; nothing is bridged"}
 
+def _connected(field, report, name, occupied, preserves, forbidden):
+    witness = mount_witness(field, occupied, preserves, forbidden)
+    witness["single_component"] = witness["occupied_components_6"] == 1
+    report[name] = witness
+    if not witness["passed"]:
+        raise ImplicitError("mount_disconnected", "Field separates required mounts at " + name, report)
+    if not witness["single_component"]:
+        raise ImplicitError("field_disconnected", "Field has detached bodies at " + name + "; they are neither bridged nor removed", report)
+
 def build_field(domain, density, settings, progress=None):
     config = implicit_settings(settings)
     timings = {}
@@ -289,6 +298,14 @@ def build_field(domain, density, settings, progress=None):
     field.smooth(config["density_sigma_mm"]).reinitialize(config["reinit_band_cells"])
     report["volumes_mm3"]["smoothed"] = field.volume()
     lap("smoothing")
+    opened = field.copy()
+    report["density_opening"] = opened.open(config["opening_radius_mm"], config["reinit_band_cells"]) if config["opening_radius_mm"] else None
+    report["density_witness"] = mount_witness(opened, _composition(opened.values, preserve, forbidden, envelope), preserves, forbidden)
+    report["density_witness"]["method"] += "; evaluated on the smoothed density opened by the opening radius, before any smooth union, so only connections of structural width count"
+    del opened
+    lap("density_witness")
+    if not report["density_witness"]["passed"]:
+        raise ImplicitError("mount_disconnected", "Smoothed and opened density does not connect the required mounts; the smooth union may not create the connection", report)
     preserve += np.float32(delta)
     field.smooth_union(preserve, k).intersect(-forbidden-np.float32(offset)).intersect(envelope-np.float32(offset))
     report["volumes_mm3"]["composed"] = field.volume()
@@ -297,19 +314,15 @@ def build_field(domain, density, settings, progress=None):
     field.layers["pre_opening"] = field.values.copy()
     report["opening"] = field.open(config["opening_radius_mm"], config["reinit_band_cells"]) if config["opening_radius_mm"] else None
     lap("opening")
+    _connected(field, report, "opening_witness", (field.values > 0) | (preserve > 0), preserves, forbidden)
+    lap("witness")
     field.smooth(config["ripple_sigma_mm"])
     report["volumes_mm3"]["ripple_smoothed"] = field.volume()
     field.union(preserve)
     report["volumes_mm3"]["final"] = field.volume()
     lap("restore")
-    witness = mount_witness(field, field.values > 0, preserves, forbidden)
-    witness["single_component"] = witness["occupied_components_6"] == 1
-    report["final_witness"] = witness
     field.layers["reference"] = reference.values
-    if not witness["passed"]:
-        raise ImplicitError("mount_disconnected", "Final field separates required mounts", report)
-    if not witness["single_component"]:
-        raise ImplicitError("field_disconnected", "Final field has detached bodies; they are neither bridged nor removed", report)
+    _connected(field, report, "final_witness", field.values > 0, preserves, forbidden)
     lap("witness")
     report["status"] = "field_built"
     _progress(progress, "field_built", report)
