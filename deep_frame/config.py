@@ -715,6 +715,48 @@ TOPOLOGY_CONFIG = {
     "additional_regions": [],
 }
 
+IMPLICIT_CONFIG = {
+    "subdivisions": 10,
+    "interpolation_method": "pchip",
+    "thresholds": [0.25, 0.35],
+    "extensions": ["preserve", "preserve_forbidden"],
+    "density_sigma_mm": 0.4,
+    "transition_radius_mm": 2.0,
+    "preserve_inflation_mm": 0.3,
+    "constraint_offset_mm": 0.3,
+    "opening_radius_mm": 1.35,
+    "ripple_sigma_mm": 0.25,
+    "reinit_band_cells": 1.5,
+    "remesh_target_mm": 0.6,
+    "remesh_iterations": 5,
+    "remesh_feature_deg": 60.0,
+    "remesh_max_surface_distance_mm": 0.05,
+    "segment_tolerance_mm": 0.01,
+    "surface_deviation_mm": 0.20,
+    "relative_volume_change": 0.01,
+    "free_zone_preserve_mm": 3.0,
+    "free_zone_constraint_mm": 2.0,
+    "free_zone_minimum_samples": 1000,
+    "penetration_tolerance_mm": 1e-4,
+    "curvature_radius_mm": 1.0,
+    "curvature_samples": 5000,
+    "render_faces": 30000,
+    "tet_attempts": ["classify_hxt", "classify_delaunay", "direct_hxt"],
+    "mesh_minimum_sicn": 0.01,
+    "mesh_boundary_deviation_mm": 0.05,
+    "mesh_timeout_s": 900.0,
+    "solver_timeout_s": 900.0,
+    "candidate_timeout_s": 1800.0,
+}
+
+IMPLICIT_KINDS = {
+    **{key: "float" if isinstance(value, float) else "int" for key, value in IMPLICIT_CONFIG.items() if isinstance(value, (int, float))},
+    "interpolation_method": ("pchip", "cubic"),
+    "thresholds": ["float"],
+    "extensions": [("none", "preserve", "preserve_forbidden")],
+    "tet_attempts": [("classify_hxt", "classify_delaunay", "direct_hxt")],
+}
+
 CONFIG = {
     "length_mm": 30.0,
     "width_mm": 20.0,

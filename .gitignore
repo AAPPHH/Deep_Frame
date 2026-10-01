@@ -20,3 +20,4 @@ env/
 /exports/frame_v0.json
 /exports/topology/
 /exports/topology_solver_*/
+/exports/implicit/
