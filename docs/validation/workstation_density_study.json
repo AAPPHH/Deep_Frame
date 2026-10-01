@@ -1,0 +1,482 @@
+{
+  "schema_version": "deep-frame-workstation-density-comparison-v1",
+  "analysis_source_sha256": "03f8bd175a6dc3e3bf32ecaa4eda864145ed8b13545d16e3ae3e0495e2f5e975",
+  "frozen_reference": {
+    "run_id": "2cd7bcbc15b67fc7",
+    "iterations": 45,
+    "objective_final": 0.013326497619003118,
+    "converged": false,
+    "artifacts": {
+      "optimization.json": "199c658642980c81b14cc728ba6da734fe7e1d274c836f4e41fad322835070a9",
+      "fields.npz": "e9f188ab36bdef40fd6bcb45d9cc37ee7fafbf652a08ca7cf95b54f2faa113da",
+      "run_manifest.json": "4d6f9fbc3c9c3129a5683dbb300d2e295031e186364b38049cf948b6375f08a9"
+    }
+  },
+  "comparability": "Each own-normalized objective has its own initial compliance. Common-reference objectives use the frozen 4 mm initial compliances and weights. Grid refinement changes conservative masks, selected nodes and the absolute volume at a fixed allowed-volume fraction.",
+  "studies": [
+    {
+      "name": "grid4_iter300",
+      "directory": "exports/topology/workstation_20260930/density_study/grid4_iter300",
+      "manifest_sha256": "979dafb8e6d274d19599e73e9ebd0d3b12cb41eb1c117327001c5c9b28db885c",
+      "grid": {
+        "origin_mm": [
+          -68.0,
+          -64.0,
+          0.0
+        ],
+        "spacing_mm": [
+          4.0,
+          4.0,
+          4.0
+        ],
+        "shape": [
+          34,
+          32,
+          8
+        ],
+        "axis_order": "xyz",
+        "order": "C"
+      },
+      "all_physical_inputs_match_frozen_reference": true,
+      "all_optimizer_settings_match_except_stopping_controls": true,
+      "stopping_controls": {
+        "max_iterations": 300,
+        "minimum_iterations": 10,
+        "change_tolerance": 0.005,
+        "max_runtime_s": 1800.0
+      },
+      "summary": {
+        "iterations": 300,
+        "converged": false,
+        "stop_reason": "max_iterations",
+        "objective_final": 0.012964368307623084,
+        "elapsed_s": 820.2341375999968,
+        "volume_fraction": 0.0999999999415257,
+        "density_frame_mass_g": 40.75379197616951,
+        "gray_fraction_free": 0.1690710767065447
+      },
+      "domain_counts": {
+        "allowed_cells": 5842,
+        "preserve_cells": 158,
+        "forbidden_cells": 2862,
+        "free_cells": 5684
+      },
+      "domain_volumes_mm3": {
+        "allowed_volume_mm3": 373888.0,
+        "preserve_volume_mm3": 10112.0,
+        "forbidden_volume_mm3": 183168.0,
+        "free_volume_mm3": 363776.0
+      },
+      "maximum_design_change_last_update": 0.01439248403998189,
+      "maximum_residual_all_evaluations": 3.0784672939074047e-10,
+      "main_final_raw_compliances_n_mm": {
+        "arm_tip": 0.017920337225898378,
+        "battery_impact": 0.01177488552726732,
+        "camera_side": 0.010750727723178807
+      },
+      "objective_normalized_to_frozen_reference": 0.012964368307623084,
+      "snapshots_after_updates": {
+        "3": {
+          "objective_after_updates": 0.05217533768931437,
+          "main_raw_compliances_n_mm": {
+            "arm_tip": 0.07159024059381634,
+            "battery_impact": 0.04989754825451786,
+            "camera_side": 0.03728263195876909
+          },
+          "common_reference_objective": 0.05217533768931438
+        },
+        "45": {
+          "objective_after_updates": 0.013326497619004249,
+          "main_raw_compliances_n_mm": {
+            "arm_tip": 0.018121106520178662,
+            "battery_impact": 0.012257600759807601,
+            "camera_side": 0.010882564356797896
+          },
+          "common_reference_objective": 0.013326497619004249
+        },
+        "150": {
+          "objective_after_updates": 0.013207095003248149,
+          "main_raw_compliances_n_mm": {
+            "arm_tip": 0.017906408174123957,
+            "battery_impact": 0.01211493965856549,
+            "camera_side": 0.010921702410215115
+          },
+          "common_reference_objective": 0.01320709500324815
+        }
+      },
+      "relative_objective_change_last_25_updates": 0.002039635387133809,
+      "threshold_connectivity_before_reconstruction": [
+        {
+          "threshold": 0.2,
+          "occupied_cells": 789,
+          "face_connected_components": 1,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.25,
+          "occupied_cells": 696,
+          "face_connected_components": 1,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.3,
+          "occupied_cells": 631,
+          "face_connected_components": 2,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.35,
+          "occupied_cells": 610,
+          "face_connected_components": 4,
+          "components_touching_preserves": 2
+        },
+        {
+          "threshold": 0.4,
+          "occupied_cells": 586,
+          "face_connected_components": 7,
+          "components_touching_preserves": 2
+        },
+        {
+          "threshold": 0.5,
+          "occupied_cells": 526,
+          "face_connected_components": 13,
+          "components_touching_preserves": 3
+        }
+      ],
+      "density_vs_frozen_reference": {
+        "integration": "Exact piecewise-constant voxel overlap; equal physical envelope and origin.",
+        "common_subdivision_shape": [
+          34,
+          32,
+          8
+        ],
+        "rms_density_full_box": 0.028322209411942686,
+        "rms_density_common_allowed": 0.03457051063313939,
+        "rms_density_common_free": 0.03504770108279284,
+        "maximum_density_difference": 0.6544580606057537,
+        "allowed_mask_disagreement_fraction_of_box": 0.0
+      }
+    },
+    {
+      "name": "grid8over3_iter150",
+      "directory": "exports/topology/workstation_20260930/density_study/grid8over3_iter150",
+      "manifest_sha256": "3a5de12da73c29f264860333c6965224fd4eb284c283c25e25567cc5dfe06f6a",
+      "grid": {
+        "origin_mm": [
+          -68.0,
+          -64.0,
+          0.0
+        ],
+        "spacing_mm": [
+          2.6666666666666665,
+          2.6666666666666665,
+          2.6666666666666665
+        ],
+        "shape": [
+          51,
+          48,
+          12
+        ],
+        "axis_order": "xyz",
+        "order": "C"
+      },
+      "all_physical_inputs_match_frozen_reference": true,
+      "all_optimizer_settings_match_except_stopping_controls": true,
+      "stopping_controls": {
+        "max_iterations": 150,
+        "minimum_iterations": 10,
+        "change_tolerance": 0.005,
+        "max_runtime_s": 2400.0
+      },
+      "summary": {
+        "iterations": 79,
+        "converged": false,
+        "stop_reason": "max_runtime_s",
+        "objective_final": 0.012974775403183078,
+        "elapsed_s": 2440.3963626999903,
+        "volume_fraction": 0.0999999999927159,
+        "density_frame_mass_g": 42.21978547840615,
+        "gray_fraction_free": 0.15718360606515538
+      },
+      "domain_counts": {
+        "allowed_cells": 20426,
+        "preserve_cells": 443,
+        "forbidden_cells": 8950,
+        "free_cells": 19983
+      },
+      "domain_volumes_mm3": {
+        "allowed_volume_mm3": 387337.48148148146,
+        "preserve_volume_mm3": 8400.592592592591,
+        "forbidden_volume_mm3": 169718.5185185185,
+        "free_volume_mm3": 378936.8888888889
+      },
+      "maximum_design_change_last_update": 0.05987292388439713,
+      "maximum_residual_all_evaluations": 2.8048853810058935e-10,
+      "main_final_raw_compliances_n_mm": {
+        "arm_tip": 0.00914056886523143,
+        "battery_impact": 0.009098762400642757,
+        "camera_side": 0.006899007848664323
+      },
+      "objective_normalized_to_frozen_reference": 0.008741709289419669,
+      "snapshots_after_updates": {
+        "3": {
+          "objective_after_updates": 0.05674445373370643,
+          "main_raw_compliances_n_mm": {
+            "arm_tip": 0.039619475656777474,
+            "battery_impact": 0.04007806311794865,
+            "camera_side": 0.028815044303970153
+          },
+          "common_reference_objective": 0.03822352449695538
+        },
+        "45": {
+          "objective_after_updates": 0.013092947626373362,
+          "main_raw_compliances_n_mm": {
+            "arm_tip": 0.009215698951200706,
+            "battery_impact": 0.009239317832289689,
+            "camera_side": 0.006923213073070526
+          },
+          "common_reference_objective": 0.008821938065010108
+        }
+      },
+      "relative_objective_change_last_25_updates": 0.005560825812398917,
+      "threshold_connectivity_before_reconstruction": [
+        {
+          "threshold": 0.2,
+          "occupied_cells": 3075,
+          "face_connected_components": 1,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.25,
+          "occupied_cells": 2748,
+          "face_connected_components": 1,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.3,
+          "occupied_cells": 2465,
+          "face_connected_components": 1,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.35,
+          "occupied_cells": 2269,
+          "face_connected_components": 3,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.4,
+          "occupied_cells": 2074,
+          "face_connected_components": 3,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.5,
+          "occupied_cells": 1780,
+          "face_connected_components": 6,
+          "components_touching_preserves": 2
+        }
+      ],
+      "density_vs_frozen_reference": {
+        "integration": "Exact piecewise-constant voxel overlap; equal physical envelope and origin.",
+        "common_subdivision_shape": [
+          102,
+          96,
+          24
+        ],
+        "rms_density_full_box": 0.15331958991171804,
+        "rms_density_common_allowed": 0.1317930030162759,
+        "rms_density_common_free": 0.11651740566882801,
+        "maximum_density_difference": 1.0,
+        "allowed_mask_disagreement_fraction_of_box": 0.06775088507625272
+      }
+    },
+    {
+      "name": "grid4_matched79",
+      "directory": "exports/topology/workstation_20260930/density_study/grid4_matched79",
+      "manifest_sha256": "1493721be54f77bce114b81d82f2910d3aa6663ea9d9096a62be42486b31c24e",
+      "grid": {
+        "origin_mm": [
+          -68.0,
+          -64.0,
+          0.0
+        ],
+        "spacing_mm": [
+          4.0,
+          4.0,
+          4.0
+        ],
+        "shape": [
+          34,
+          32,
+          8
+        ],
+        "axis_order": "xyz",
+        "order": "C"
+      },
+      "all_physical_inputs_match_frozen_reference": true,
+      "all_optimizer_settings_match_except_stopping_controls": true,
+      "stopping_controls": {
+        "max_iterations": 79,
+        "minimum_iterations": 10,
+        "change_tolerance": 0.005,
+        "max_runtime_s": 600.0
+      },
+      "summary": {
+        "iterations": 79,
+        "converged": false,
+        "stop_reason": "max_iterations",
+        "objective_final": 0.013235222318857503,
+        "elapsed_s": 187.58530049999536,
+        "volume_fraction": 0.09999999995136212,
+        "density_frame_mass_g": 40.75379198017823,
+        "gray_fraction_free": 0.17258972554539057
+      },
+      "domain_counts": {
+        "allowed_cells": 5842,
+        "preserve_cells": 158,
+        "forbidden_cells": 2862,
+        "free_cells": 5684
+      },
+      "domain_volumes_mm3": {
+        "allowed_volume_mm3": 373888.0,
+        "preserve_volume_mm3": 10112.0,
+        "forbidden_volume_mm3": 183168.0,
+        "free_volume_mm3": 363776.0
+      },
+      "maximum_design_change_last_update": 0.02051488110795724,
+      "maximum_residual_all_evaluations": 3.0784672939074047e-10,
+      "main_final_raw_compliances_n_mm": {
+        "arm_tip": 0.018005247568636695,
+        "battery_impact": 0.012104228269243544,
+        "camera_side": 0.010939643185663652
+      },
+      "objective_normalized_to_frozen_reference": 0.013235222318857504,
+      "snapshots_after_updates": {
+        "3": {
+          "objective_after_updates": 0.05217533768931437,
+          "main_raw_compliances_n_mm": {
+            "arm_tip": 0.07159024059381634,
+            "battery_impact": 0.04989754825451786,
+            "camera_side": 0.03728263195876909
+          },
+          "common_reference_objective": 0.05217533768931438
+        },
+        "45": {
+          "objective_after_updates": 0.013326497619004249,
+          "main_raw_compliances_n_mm": {
+            "arm_tip": 0.018121106520178662,
+            "battery_impact": 0.012257600759807601,
+            "camera_side": 0.010882564356797896
+          },
+          "common_reference_objective": 0.013326497619004249
+        }
+      },
+      "relative_objective_change_last_25_updates": 0.0049076793811393404,
+      "threshold_connectivity_before_reconstruction": [
+        {
+          "threshold": 0.2,
+          "occupied_cells": 801,
+          "face_connected_components": 1,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.25,
+          "occupied_cells": 706,
+          "face_connected_components": 1,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.3,
+          "occupied_cells": 639,
+          "face_connected_components": 3,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.35,
+          "occupied_cells": 612,
+          "face_connected_components": 5,
+          "components_touching_preserves": 1
+        },
+        {
+          "threshold": 0.4,
+          "occupied_cells": 581,
+          "face_connected_components": 13,
+          "components_touching_preserves": 2
+        },
+        {
+          "threshold": 0.5,
+          "occupied_cells": 511,
+          "face_connected_components": 12,
+          "components_touching_preserves": 3
+        }
+      ],
+      "density_vs_frozen_reference": {
+        "integration": "Exact piecewise-constant voxel overlap; equal physical envelope and origin.",
+        "common_subdivision_shape": [
+          34,
+          32,
+          8
+        ],
+        "rms_density_full_box": 0.010276404081430799,
+        "rms_density_common_allowed": 0.012543531876356259,
+        "rms_density_common_free": 0.012716675214614706,
+        "maximum_density_difference": 0.31429677723681965,
+        "allowed_mask_disagreement_fraction_of_box": 0.0
+      }
+    }
+  ],
+  "pairwise_density_comparisons": [
+    {
+      "first": "grid4_iter300",
+      "second": "grid8over3_iter150",
+      "same_update_count": false,
+      "same_grid": false,
+      "integration": "Exact piecewise-constant voxel overlap; equal physical envelope and origin.",
+      "common_subdivision_shape": [
+        102,
+        96,
+        24
+      ],
+      "rms_density_full_box": 0.15486114423207298,
+      "rms_density_common_allowed": 0.13454005936892588,
+      "rms_density_common_free": 0.12002257824248021,
+      "maximum_density_difference": 1.0,
+      "allowed_mask_disagreement_fraction_of_box": 0.06775088507625272
+    },
+    {
+      "first": "grid4_iter300",
+      "second": "grid4_matched79",
+      "same_update_count": false,
+      "same_grid": true,
+      "integration": "Exact piecewise-constant voxel overlap; equal physical envelope and origin.",
+      "common_subdivision_shape": [
+        34,
+        32,
+        8
+      ],
+      "rms_density_full_box": 0.02472369061060296,
+      "rms_density_common_allowed": 0.03017810498865566,
+      "rms_density_common_free": 0.030594665323619916,
+      "maximum_density_difference": 0.6832522235757662,
+      "allowed_mask_disagreement_fraction_of_box": 0.0
+    },
+    {
+      "first": "grid8over3_iter150",
+      "second": "grid4_matched79",
+      "same_update_count": true,
+      "same_grid": false,
+      "integration": "Exact piecewise-constant voxel overlap; equal physical envelope and origin.",
+      "common_subdivision_shape": [
+        102,
+        96,
+        24
+      ],
+      "rms_density_full_box": 0.1535405956316345,
+      "rms_density_common_allowed": 0.13218348284268658,
+      "rms_density_common_free": 0.1170501687777523,
+      "maximum_density_difference": 1.0,
+      "allowed_mask_disagreement_fraction_of_box": 0.06775088507625272
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "deep_frame/topology_gpu.py": {
+    "baseline_sha256": null,
+    "integrated_sha256": "24c609122ef1b4303abf1eb622dd2d097f2e5859c39af097e052837d81fac8f2"
+  },
+  "deep_frame/topology_elasticity.py": {
+    "baseline_sha256": "a0e26d16e183fb0fcef84b629b7203118995f5552a0cfcf4a9d4572286dead34",
+    "integrated_sha256": "f1db32180b470663613a7c9b9a4f4ef107ee3ecba206abeaffb707996815e257"
+  },
+  "deep_frame/topology_optimization.py": {
+    "baseline_sha256": "98d68ef590ecebcaf8cdfd2a58cb5bd0893132d3be640ffb5357cbb1da59ff16",
+    "integrated_sha256": "4eeb65fc5e1188426a149d9051c76af6c0468515505cf1bc27ee6ac774635706"
+  },
+  "tests/test_topology_gpu.py": {
+    "baseline_sha256": null,
+    "integrated_sha256": "ed2582d1f910630c95b85a1e7ac88cc3d497dcc790ad76e970cc0d8f7eabe6b5"
+  },
+  "requirements-gpu.txt": {
+    "baseline_sha256": null,
+    "integrated_sha256": "ac4a9eeae20f35ae5781171bec4d69fe756b435914080c761d9791c5e102bb6d"
+  },
+  "tools/run_topology_study.py": {
+    "baseline_sha256": "322b91d11ffa4c35ce9ac2dd83705ecec9300fa9cdd8f7195dc90a69865d4fa4",
+    "integrated_sha256": "422e4388f6fbdbcd83a1347bf1453fcdd8ec6880d3844c0605e21e8427af47bd"
+  },
+  "tools/benchmark_topology_gpu.py": {
+    "baseline_sha256": null,
+    "integrated_sha256": "def233501a937397c91192b5176825598809ae1f20a17b429682a60f38fa0fe2"
+  }
+}

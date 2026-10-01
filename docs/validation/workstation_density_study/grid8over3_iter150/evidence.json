@@ -1,0 +1,32 @@
+{
+  "schema_version": "deep-frame-density-compact-evidence-v1",
+  "source_directory": "exports/topology/workstation_20260930/density_study/grid8over3_iter150",
+  "source_manifest_sha256": "3a5de12da73c29f264860333c6965224fd4eb284c283c25e25567cc5dfe06f6a",
+  "artifacts": {
+    "domain_masks.npz": {
+      "sha256": "98af04af56de2f0babd68a81a7397869651fb03d3e2547a3dc6705ac5b58ae58",
+      "size_bytes": 2094
+    },
+    "fields.npz": {
+      "sha256": "62cb51803e60f1a834c3e3da83c2e2ae6e85e50e201e030191a5e095e381a72b",
+      "size_bytes": 61208
+    },
+    "inputs.json": {
+      "sha256": "bcaf929377dc20ddf072e0542f49c85e4a9825b2d474462519223a59ee231f5b",
+      "size_bytes": 146691
+    },
+    "iterations.jsonl": {
+      "sha256": "76f246812e732fbe88ce7d317d6dedb87827a5c83e85285461a7c2e2d2ff3c7d",
+      "size_bytes": 104546
+    },
+    "result.json": {
+      "sha256": "85aa6ca8e1ca0b32cb73cacd7cd262a2ed0e50736831c71e01d6561cc61a06ff",
+      "size_bytes": 201043
+    },
+    "manifest.json": {
+      "sha256": "3a5de12da73c29f264860333c6965224fd4eb284c283c25e25567cc5dfe06f6a",
+      "size_bytes": 853
+    }
+  },
+  "scope": "Complete compact density-run evidence; external FEA and source archives are stored separately."
+}

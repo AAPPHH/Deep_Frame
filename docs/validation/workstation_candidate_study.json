@@ -1,0 +1,3077 @@
+{
+  "schema_version": "deep-frame-workstation-candidate-validation-v1",
+  "study_directory": "exports/topology/workstation_20260930/candidate_study/grid4_iter300",
+  "manifest_sha256": "c33ea6478d75a7bfa5928643a1fa0e07328aecd4e7a3a3e6a35d32c68e9f534f",
+  "inputs_sha256": "95aaebca0bbb76fc33099bc92519291ffbabca5139a7faa66cce08c3b5d4764d",
+  "source_fields_sha256": "0b5463d030fcb90259680ada6fe4c7d056cd7acb65ab80a6902b521b234533f5",
+  "source_manifest_sha256": "979dafb8e6d274d19599e73e9ebd0d3b12cb41eb1c117327001c5c9b28db885c",
+  "runner_sha256": "6f17ae8cee31731bbe3bb2dac28ff9a30daf2b481231020b58ffa69a0012719a",
+  "status": "ok",
+  "selected_id": "density_t01",
+  "pareto_ids": [
+    "density_t00",
+    "density_t01"
+  ],
+  "optimizer": {
+    "iterations": 300,
+    "converged": false,
+    "stop_reason": "max_iterations",
+    "objective_final": 0.012964368307623084,
+    "density_frame_mass_g": 40.75379197616951
+  },
+  "historical_accepted_mass_g": 58.53180409071862,
+  "selected_mass_change_relative_to_historical": -0.12948217276292573,
+  "relative_constraints": {
+    "frame_mass_ratio_max": 2.0,
+    "stiffness_ratio_min": 0.5,
+    "frequency_ratio_min": 0.7,
+    "displacement_ratio_max": 2.0,
+    "stress_ratio_max": 2.0
+  },
+  "baseline_reuse": {
+    "study_directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study",
+    "preparation_path": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\preparation.json",
+    "preparation_sha256": "72ed0c1a32fea7be5e2fa7e815faae1eeda56681012ae479abfa4e09c03591a4",
+    "record_path": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\record.json",
+    "record_sha256": "90e0d818f820ee996ebbdf5e2ccdb1a63fac93cf96b406c9c73b278249652166",
+    "raw_artifacts_verified": 35
+  },
+  "fea_settings": {
+    "mesh_size_mm": 3.0,
+    "mesh_min_size_mm": 0.5,
+    "mesh_curvature_points": 12,
+    "mesh_threads": 1,
+    "element_order": 2,
+    "num_modes": 6,
+    "work_dir": "exports/fea",
+    "solver_path": null,
+    "mesh_timeout_s": 600.0,
+    "solver_timeout_s": 900.0,
+    "threads": 2,
+    "minimum_elastic_frequency_hz": 0.1,
+    "stiffness_load_case": "arm_tip",
+    "mesh_second_order_linear": true,
+    "mesh_high_order_optimize": 0
+  },
+  "resume": {
+    "passed": true,
+    "new_solver_runs": 0,
+    "log": "exports/topology/workstation_validation/candidate_grid4_resume.log"
+  },
+  "candidates": [
+    {
+      "id": "density_t00",
+      "density_threshold": 0.2,
+      "stage": "complete",
+      "status": "ok",
+      "diagnostics": [],
+      "frame_mass_g": 57.12164993514741,
+      "checks": {
+        "passed": true,
+        "violations": [],
+        "checks": {
+          "topology": {
+            "solid_count": 1,
+            "valid": true,
+            "closed": true,
+            "mesh_watertight": true,
+            "mesh_winding_consistent": true,
+            "mesh_body_count": 1,
+            "volume_mm3": 52405.18342674074,
+            "passed": true
+          },
+          "forbidden": {
+            "aio15_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "camera_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "battery_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "xt30_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "balancer_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "motor_front_left_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor hardware envelope; lower mating face permits contact",
+              "passed": true
+            },
+            "prop_front_left_swept_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Propeller swept volume including axial and radial clearance",
+              "passed": true
+            },
+            "motor_front_right_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor hardware envelope; lower mating face permits contact",
+              "passed": true
+            },
+            "prop_front_right_swept_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Propeller swept volume including axial and radial clearance",
+              "passed": true
+            },
+            "motor_rear_left_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor hardware envelope; lower mating face permits contact",
+              "passed": true
+            },
+            "prop_rear_left_swept_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Propeller swept volume including axial and radial clearance",
+              "passed": true
+            },
+            "motor_rear_right_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor hardware envelope; lower mating face permits contact",
+              "passed": true
+            },
+            "prop_rear_right_swept_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Propeller swept volume including axial and radial clearance",
+              "passed": true
+            },
+            "front_left_shaft_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor shaft clearance",
+              "passed": true
+            },
+            "front_left_motor_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_left_motor_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_left_motor_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_left_motor_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_left_motor_leads": {
+              "intersection_mm3": 0.0,
+              "purpose": "Provisional accessible straight motor lead corridor",
+              "passed": true
+            },
+            "front_right_shaft_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor shaft clearance",
+              "passed": true
+            },
+            "front_right_motor_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_right_motor_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_right_motor_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_right_motor_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_right_motor_leads": {
+              "intersection_mm3": 0.0,
+              "purpose": "Provisional accessible straight motor lead corridor",
+              "passed": true
+            },
+            "rear_left_shaft_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor shaft clearance",
+              "passed": true
+            },
+            "rear_left_motor_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_left_motor_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_left_motor_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_left_motor_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_left_motor_leads": {
+              "intersection_mm3": 0.0,
+              "purpose": "Provisional accessible straight motor lead corridor",
+              "passed": true
+            },
+            "rear_right_shaft_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor shaft clearance",
+              "passed": true
+            },
+            "rear_right_motor_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_right_motor_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_right_motor_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_right_motor_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_right_motor_leads": {
+              "intersection_mm3": 0.0,
+              "purpose": "Provisional accessible straight motor lead corridor",
+              "passed": true
+            },
+            "aio_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO through screw and underside assembly access",
+              "passed": true
+            },
+            "aio_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO through screw and underside assembly access",
+              "passed": true
+            },
+            "aio_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO through screw and underside assembly access",
+              "passed": true
+            },
+            "aio_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO through screw and underside assembly access",
+              "passed": true
+            },
+            "strap_access_-1_-1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery strap insertion slot beside wide battery face",
+              "passed": true
+            },
+            "strap_access_-1_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery strap insertion slot beside wide battery face",
+              "passed": true
+            },
+            "strap_access_1_-1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery strap insertion slot beside wide battery face",
+              "passed": true
+            },
+            "strap_access_1_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery strap insertion slot beside wide battery face",
+              "passed": true
+            },
+            "battery_insertion": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery removal vertically above its contact pads",
+              "passed": true
+            },
+            "camera_screw_axis": {
+              "intersection_mm3": 0.0,
+              "purpose": "Camera screw bore limited to exact mounting lugs",
+              "passed": true
+            },
+            "camera_tool_access_-1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Conservative outboard screwdriver corridor; no subvoxel cut through free material",
+              "passed": true
+            },
+            "camera_tool_access_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Conservative outboard screwdriver corridor; no subvoxel cut through free material",
+              "passed": true
+            },
+            "camera_front_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "Unobstructed camera front, insertion and lens field corridor",
+              "passed": true
+            },
+            "xt30_plug_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "Top insertion and removal corridor for disconnected connector",
+              "passed": true
+            },
+            "balancer_plug_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "Top insertion and removal corridor for disconnected connector",
+              "passed": true
+            },
+            "antenna_bore": {
+              "intersection_mm3": 0.0,
+              "purpose": "VTX antenna through bore continuing above every design cell",
+              "passed": true
+            },
+            "antenna_insertion_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "Conservative antenna insertion corridor above the exact retention eyelet",
+              "passed": true
+            },
+            "aio_side_assembly_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO insertion/removal through right side with connectors unplugged",
+              "passed": true
+            },
+            "balance_lead_routing": {
+              "intersection_mm3": 0.0,
+              "purpose": "Accessible balance and power lead corridor; provisional connector routing",
+              "passed": true
+            }
+          },
+          "preserve": {
+            "front_left_motor_contact": {
+              "required_volume_mm3": 1048.6636277682726,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "bore_to_outer:front_left_shaft_clearance": 8.1,
+                  "bore_to_outer:front_left_motor_screw_0": 3.9000000000000035,
+                  "bore_to_outer:front_left_motor_screw_1": 3.9000000000000035,
+                  "bore_to_outer:front_left_motor_screw_2": 3.899999999999999,
+                  "bore_to_outer:front_left_motor_screw_3": 3.899999999999999,
+                  "bore_ligament:front_left_shaft_clearance:front_left_motor_screw_0": 1.9999999999999964,
+                  "bore_ligament:front_left_shaft_clearance:front_left_motor_screw_1": 1.9999999999999964,
+                  "bore_ligament:front_left_shaft_clearance:front_left_motor_screw_2": 2.000000000000001,
+                  "bore_ligament:front_left_shaft_clearance:front_left_motor_screw_3": 2.000000000000001,
+                  "bore_ligament:front_left_motor_screw_0:front_left_motor_screw_1": 4.163961030678923,
+                  "bore_ligament:front_left_motor_screw_0:front_left_motor_screw_2": 6.799999999999997,
+                  "bore_ligament:front_left_motor_screw_0:front_left_motor_screw_3": 4.16396103067893,
+                  "bore_ligament:front_left_motor_screw_1:front_left_motor_screw_2": 4.163961030678923,
+                  "bore_ligament:front_left_motor_screw_1:front_left_motor_screw_3": 6.799999999999997,
+                  "bore_ligament:front_left_motor_screw_2:front_left_motor_screw_3": 4.16396103067893
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 64.00000000000666,
+                "x+": 70.50051037324447,
+                "y-": 60.1470385585671,
+                "y+": 0.0,
+                "z-": 0.0,
+                "z+": 17.93614263110404
+              },
+              "attachment_area_mm2": 212.58369156292227,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "front_right_motor_contact": {
+              "required_volume_mm3": 1048.6636277682728,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "bore_to_outer:front_right_shaft_clearance": 8.1,
+                  "bore_to_outer:front_right_motor_screw_0": 3.9000000000000035,
+                  "bore_to_outer:front_right_motor_screw_1": 3.9000000000000035,
+                  "bore_to_outer:front_right_motor_screw_2": 3.899999999999999,
+                  "bore_to_outer:front_right_motor_screw_3": 3.899999999999999,
+                  "bore_ligament:front_right_shaft_clearance:front_right_motor_screw_0": 1.9999999999999964,
+                  "bore_ligament:front_right_shaft_clearance:front_right_motor_screw_1": 1.9999999999999964,
+                  "bore_ligament:front_right_shaft_clearance:front_right_motor_screw_2": 2.000000000000001,
+                  "bore_ligament:front_right_shaft_clearance:front_right_motor_screw_3": 2.000000000000001,
+                  "bore_ligament:front_right_motor_screw_0:front_right_motor_screw_1": 4.163961030678923,
+                  "bore_ligament:front_right_motor_screw_0:front_right_motor_screw_2": 6.799999999999997,
+                  "bore_ligament:front_right_motor_screw_0:front_right_motor_screw_3": 4.16396103067893,
+                  "bore_ligament:front_right_motor_screw_1:front_right_motor_screw_2": 4.163961030678923,
+                  "bore_ligament:front_right_motor_screw_1:front_right_motor_screw_3": 6.799999999999997,
+                  "bore_ligament:front_right_motor_screw_2:front_right_motor_screw_3": 4.16396103067893
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 70.50051037324447,
+                "x+": 64.00000000000666,
+                "y-": 44.147038558566955,
+                "y+": 0.0,
+                "z-": 0.0,
+                "z+": 11.435632257867011
+              },
+              "attachment_area_mm2": 190.0831811896851,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "rear_left_motor_contact": {
+              "required_volume_mm3": 1048.6636277682728,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "bore_to_outer:rear_left_shaft_clearance": 8.1,
+                  "bore_to_outer:rear_left_motor_screw_0": 3.9000000000000035,
+                  "bore_to_outer:rear_left_motor_screw_1": 3.9000000000000035,
+                  "bore_to_outer:rear_left_motor_screw_2": 3.899999999999999,
+                  "bore_to_outer:rear_left_motor_screw_3": 3.899999999999999,
+                  "bore_ligament:rear_left_shaft_clearance:rear_left_motor_screw_0": 1.9999999999999964,
+                  "bore_ligament:rear_left_shaft_clearance:rear_left_motor_screw_1": 1.9999999999999964,
+                  "bore_ligament:rear_left_shaft_clearance:rear_left_motor_screw_2": 2.000000000000001,
+                  "bore_ligament:rear_left_shaft_clearance:rear_left_motor_screw_3": 2.000000000000001,
+                  "bore_ligament:rear_left_motor_screw_0:rear_left_motor_screw_1": 4.163961030678923,
+                  "bore_ligament:rear_left_motor_screw_0:rear_left_motor_screw_2": 6.799999999999997,
+                  "bore_ligament:rear_left_motor_screw_0:rear_left_motor_screw_3": 4.16396103067893,
+                  "bore_ligament:rear_left_motor_screw_1:rear_left_motor_screw_2": 4.163961030678923,
+                  "bore_ligament:rear_left_motor_screw_1:rear_left_motor_screw_3": 6.799999999999997,
+                  "bore_ligament:rear_left_motor_screw_2:rear_left_motor_screw_3": 4.16396103067893
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 64.00000000000666,
+                "x+": 64.00000000000666,
+                "y-": 0.0,
+                "y+": 0.0,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 128.00000000001333,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "rear_right_motor_contact": {
+              "required_volume_mm3": 1048.6636277682726,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "bore_to_outer:rear_right_shaft_clearance": 8.1,
+                  "bore_to_outer:rear_right_motor_screw_0": 3.9000000000000035,
+                  "bore_to_outer:rear_right_motor_screw_1": 3.9000000000000035,
+                  "bore_to_outer:rear_right_motor_screw_2": 3.899999999999999,
+                  "bore_to_outer:rear_right_motor_screw_3": 3.899999999999999,
+                  "bore_ligament:rear_right_shaft_clearance:rear_right_motor_screw_0": 1.9999999999999964,
+                  "bore_ligament:rear_right_shaft_clearance:rear_right_motor_screw_1": 1.9999999999999964,
+                  "bore_ligament:rear_right_shaft_clearance:rear_right_motor_screw_2": 2.000000000000001,
+                  "bore_ligament:rear_right_shaft_clearance:rear_right_motor_screw_3": 2.000000000000001,
+                  "bore_ligament:rear_right_motor_screw_0:rear_right_motor_screw_1": 4.163961030678923,
+                  "bore_ligament:rear_right_motor_screw_0:rear_right_motor_screw_2": 6.799999999999997,
+                  "bore_ligament:rear_right_motor_screw_0:rear_right_motor_screw_3": 4.16396103067893,
+                  "bore_ligament:rear_right_motor_screw_1:rear_right_motor_screw_2": 4.163961030678923,
+                  "bore_ligament:rear_right_motor_screw_1:rear_right_motor_screw_3": 6.799999999999997,
+                  "bore_ligament:rear_right_motor_screw_2:rear_right_motor_screw_3": 4.16396103067893
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 70.50051037324263,
+                "x+": 64.00000000000666,
+                "y-": 0.0,
+                "y+": 28.14703855856724,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 162.64754893181654,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "aio_contact_0": {
+              "required_volume_mm3": 156.02719914053708,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 5.5,
+                  "bore_to_outer:aio_screw_0": 2.1
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 25.599999999999735,
+                "x+": 25.59999999999954,
+                "y-": 25.599999999999824,
+                "y+": 25.599999999999824,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 102.39999999999893,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "aio_contact_1": {
+              "required_volume_mm3": 156.02719914053708,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 5.5,
+                  "bore_to_outer:aio_screw_1": 2.1
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 25.599999999999728,
+                "x+": 25.59999999999954,
+                "y-": 25.59999999999954,
+                "y+": 25.59999999999954,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 102.39999999999834,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "aio_contact_2": {
+              "required_volume_mm3": 156.02719914053708,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 5.5,
+                  "bore_to_outer:aio_screw_2": 2.1
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 25.599999999999532,
+                "x+": 25.599999999998783,
+                "y-": 25.599999999999824,
+                "y+": 25.599999999999827,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 102.39999999999796,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "aio_contact_3": {
+              "required_volume_mm3": 156.02719914053708,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 5.5,
+                  "bore_to_outer:aio_screw_3": 2.1
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 25.59999999999954,
+                "x+": 25.59999999999878,
+                "y-": 25.59999999999954,
+                "y+": 25.59999999999954,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 102.39999999999739,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_contact_-1_-1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 27.999999999998987,
+                "x+": 23.999999999999574,
+                "y-": 0.0,
+                "y+": 22.49999999999972,
+                "z-": 63.999999999999325,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 138.4999999999976,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_contact_-1_1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 27.99999999999978,
+                "x+": 11.999999999999787,
+                "y-": 22.49999999999972,
+                "y+": 23.999999999999574,
+                "z-": 59.99999999999952,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 146.49999999999838,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_contact_1_-1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 23.999999999999574,
+                "x+": 27.999999999999535,
+                "y-": 0.0,
+                "y+": 22.499999999999734,
+                "z-": 63.999999999999325,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 138.49999999999818,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_contact_1_1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 11.999999999999787,
+                "x+": 27.999999999999535,
+                "y-": 22.499999999999734,
+                "y+": 23.999999999999574,
+                "z-": 59.99999999999952,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 146.49999999999815,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_coupling_-1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 0.0,
+                "x+": 0.0,
+                "y-": 29.99999999999972,
+                "y+": 29.9999999999995,
+                "z-": 63.999999999999545,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 123.99999999999876,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_coupling_1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 0.0,
+                "x+": 0.0,
+                "y-": 29.999999999999726,
+                "y+": 29.999999999999503,
+                "z-": 63.999999999999545,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 123.99999999999878,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "strap_contact_-1_-1": {
+              "required_volume_mm3": 288.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "slot_rim:strap_access_-1_-1:x": 2.0,
+                  "slot_rim:strap_access_-1_-1:y": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 47.999999999999325,
+                "x+": 51.99999999999938,
+                "y-": 19.499999999999847,
+                "y+": 24.000000000000007,
+                "z-": 71.99999999999984,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 215.4999999999984,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "strap_contact_-1_1": {
+              "required_volume_mm3": 288.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "slot_rim:strap_access_-1_1:x": 2.0,
+                  "slot_rim:strap_access_-1_1:y": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 47.999999999999325,
+                "x+": 51.99999999999939,
+                "y-": 24.000000000000007,
+                "y+": 19.49999999999977,
+                "z-": 71.99999999999984,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 215.49999999999832,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "strap_contact_1_-1": {
+              "required_volume_mm3": 288.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "slot_rim:strap_access_1_-1:x": 2.0,
+                  "slot_rim:strap_access_1_-1:y": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 51.99999999999891,
+                "x+": 47.999999999997726,
+                "y-": 19.499999999999854,
+                "y+": 24.000000000000007,
+                "z-": 71.99999999999984,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 215.49999999999633,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "strap_contact_1_1": {
+              "required_volume_mm3": 288.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "slot_rim:strap_access_1_1:x": 2.0,
+                  "slot_rim:strap_access_1_1:y": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 51.99999999999891,
+                "x+": 47.999999999997726,
+                "y-": 24.000000000000007,
+                "y+": 19.499999999999755,
+                "z-": 71.99999999999984,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 215.49999999999625,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "camera_impact_contact_-1": {
+              "required_volume_mm3": 192.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 17.999999999999744,
+                "x+": 15.999999999999828,
+                "y-": 19.999999999999847,
+                "y+": 20.000000000001055,
+                "z-": 31.999999999999545,
+                "z+": 47.999999999999496
+              },
+              "attachment_area_mm2": 153.99999999999952,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "camera_mount_-1": {
+              "required_volume_mm3": 278.78493207955825,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 6.0,
+                  "bore_to_outer:camera_screw_axis": 2.9
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 13.887957395124129,
+                "x+": 0.0,
+                "y-": 31.999999999999783,
+                "y+": 32.00000000000133,
+                "z-": 31.999999999999545,
+                "z+": 31.999999999999545
+              },
+              "attachment_area_mm2": 141.88795739512432,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "camera_impact_contact_1": {
+              "required_volume_mm3": 192.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 15.999999999999828,
+                "x+": 9.999999999999858,
+                "y-": 19.999999999999847,
+                "y+": 20.000000000001112,
+                "z-": 31.999999999999538,
+                "z+": 47.99999999999966
+              },
+              "attachment_area_mm2": 145.99999999999983,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "camera_mount_1": {
+              "required_volume_mm3": 278.78493207955825,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 6.0,
+                  "bore_to_outer:camera_screw_axis": 2.9
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 0.0,
+                "x+": 13.887957395124156,
+                "y-": 31.99999999999978,
+                "y+": 32.00000000000155,
+                "z-": 31.999999999999545,
+                "z+": 31.999999999999545
+              },
+              "attachment_area_mm2": 141.88795739512457,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "xt30_contact": {
+              "required_volume_mm3": 520.2,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 2.5
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 7.999999999999951,
+                "x+": 7.9999999999999805,
+                "y-": 25.500000000001325,
+                "y+": 0.0,
+                "z-": 0.0,
+                "z+": 32.64000000000004
+              },
+              "attachment_area_mm2": 74.1400000000013,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "balancer_contact": {
+              "required_volume_mm3": 379.75000000000006,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 2.5
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 1.874999999999994,
+                "x+": 8.749999999999906,
+                "y-": 24.50000000000128,
+                "y+": 21.00000000000109,
+                "z-": 0.0,
+                "z+": 30.45000000000002
+              },
+              "attachment_area_mm2": 86.57500000000229,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "antenna_contact": {
+              "required_volume_mm3": 314.15926535897927,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 7.0,
+                  "bore_to_outer:antenna_bore": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 55.999999999999424,
+                "x+": 55.99999999999942,
+                "y-": 56.00000000000295,
+                "y+": 56.0000000000029,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 224.0000000000047,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            }
+          },
+          "reconstruction": {
+            "method": "conservative_voxel_threshold_greedy_cuboids",
+            "density_threshold": 0.2,
+            "occupied_voxels": 799,
+            "connectivity": 6,
+            "repairs": [
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  9,
+                  7,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.10643409067701204,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  16,
+                  10,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.11938836089824728,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  12,
+                  4,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.1941768235818815,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  20,
+                  9,
+                  2
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.14253904946926127,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  11,
+                  13,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.15289487612099675,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  11,
+                  16,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.154288378086315,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  11,
+                  21,
+                  1
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.16574476900141724,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  21,
+                  6,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.12802508518094632,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  21,
+                  2,
+                  1
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.17733114108521134,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  21,
+                  6,
+                  1
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.1430823519232163,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              }
+            ],
+            "cuboid_count": 146,
+            "voxel_volume_mm3": 51136.0,
+            "raster_forbidden_voxel_overlap_mm3": {},
+            "final_volume_mm3": 52405.18342674074,
+            "exact_region_volume_change_mm3": 1269.1834267407394,
+            "runtime_s": 1.5198795000032987,
+            "source_grid": {
+              "origin_mm": [
+                -68.0,
+                -64.0,
+                0.0
+              ],
+              "spacing_mm": [
+                4.0,
+                4.0,
+                4.0
+              ],
+              "shape": [
+                34,
+                32,
+                8
+              ],
+              "axis_order": "xyz",
+              "order": "C"
+            },
+            "minimum_voxel_feature_mm": 4.0,
+            "preserve_union_count": 25,
+            "forbidden_cut_count": 56
+          },
+          "features": {
+            "minimum_feature_mm": 2.0,
+            "nozzle_limit_mm": 2.0,
+            "method": "voxel feature lower bound plus exact preserve ligament checks and post-Boolean normal-ray screen",
+            "reconstruction_report_present": true,
+            "passed": true,
+            "grid_feature_mm": 4.0,
+            "post_boolean_wall_screen": {
+              "method": "exact inward CAD normal rays, nine UV samples per face with projected largest-triangle fallback",
+              "minimum_required_mm": 2.0,
+              "minimum_measured_mm": 1.999999999999697,
+              "ray_count": 4210,
+              "thin_samples": [],
+              "thin_sample_count": 0,
+              "unresolved_faces": [],
+              "passed": true,
+              "limitations": "Finite surface sampling is a geometric screen, not a proof of global minimum thickness between samples"
+            }
+          },
+          "supports": {
+            "build_direction": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "supports_allowed": true,
+            "supports_required": true,
+            "method": "conservative downward-face flag; slicer planning required",
+            "passed": true,
+            "accessibility": {
+              "closed_cad_cavities": 0,
+              "trapped_void_voxels": 0,
+              "passed": true,
+              "method": "closed-shell cavity count plus face-connected flood fill from padded exterior",
+              "limitations": "Coarse accessibility screen; support-tool reach and removal through narrow exact passages need slicer/physical review"
+            }
+          }
+        }
+      },
+      "comparison": {
+        "passed": true,
+        "checks": {
+          "frame_mass": true,
+          "stiffness": true,
+          "frequency": true,
+          "displacement": true,
+          "stress": true
+        },
+        "ratios": {
+          "frame_mass_ratio": 1.7760103847797999,
+          "stiffness_ratio": 31.91421484861262,
+          "frequency_ratio": 5.1927346164378205,
+          "displacement_ratio": 0.03925546329469905,
+          "stress_ratio": 0.10829485942254909
+        },
+        "limits": {
+          "frame_mass_ratio_max": 2.0,
+          "stiffness_ratio_min": 0.5,
+          "frequency_ratio_min": 0.7,
+          "displacement_ratio_max": 2.0,
+          "stress_ratio_max": 2.0
+        },
+        "candidate": {
+          "frame_mass_g": 57.12164993514526,
+          "stiffness_n_per_mm": 164.79817559083313,
+          "max_displacement_mm": 0.010026766260390469,
+          "max_von_mises_mpa": 0.6479821494802307,
+          "first_frequency_hz": 1061.935
+        },
+        "reference": {
+          "frame_mass_g": 32.16290311400827,
+          "stiffness_n_per_mm": 5.163785992309858,
+          "max_displacement_mm": 0.25542346004471833,
+          "max_von_mises_mpa": 5.983498689923118,
+          "first_frequency_hz": 204.504
+        },
+        "selection_score": 2.1474714657087954
+      },
+      "reconstruction": {
+        "method": "conservative_voxel_threshold_greedy_cuboids",
+        "density_threshold": 0.2,
+        "occupied_voxels": 799,
+        "connectivity": 6,
+        "repairs": [
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              9,
+              7,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.10643409067701204,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              16,
+              10,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.11938836089824728,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              12,
+              4,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.1941768235818815,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              20,
+              9,
+              2
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.14253904946926127,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              11,
+              13,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.15289487612099675,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              11,
+              16,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.154288378086315,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              11,
+              21,
+              1
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.16574476900141724,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              21,
+              6,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.12802508518094632,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              21,
+              2,
+              1
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.17733114108521134,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              21,
+              6,
+              1
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.1430823519232163,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          }
+        ],
+        "cuboid_count": 146,
+        "voxel_volume_mm3": 51136.0,
+        "raster_forbidden_voxel_overlap_mm3": {},
+        "final_volume_mm3": 52405.18342674074,
+        "exact_region_volume_change_mm3": 1269.1834267407394,
+        "runtime_s": 1.5198795000032987,
+        "source_grid": {
+          "origin_mm": [
+            -68.0,
+            -64.0,
+            0.0
+          ],
+          "spacing_mm": [
+            4.0,
+            4.0,
+            4.0
+          ],
+          "shape": [
+            34,
+            32,
+            8
+          ],
+          "axis_order": "xyz",
+          "order": "C"
+        },
+        "minimum_voxel_feature_mm": 4.0,
+        "preserve_union_count": 25,
+        "forbidden_cut_count": 56
+      }
+    },
+    {
+      "id": "density_t01",
+      "density_threshold": 0.25,
+      "stage": "complete",
+      "status": "ok",
+      "diagnostics": [],
+      "frame_mass_g": 50.95297892131847,
+      "checks": {
+        "passed": true,
+        "violations": [],
+        "checks": {
+          "topology": {
+            "solid_count": 1,
+            "valid": true,
+            "closed": true,
+            "mesh_watertight": true,
+            "mesh_winding_consistent": true,
+            "mesh_body_count": 1,
+            "volume_mm3": 46745.85222139309,
+            "passed": true
+          },
+          "forbidden": {
+            "aio15_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "camera_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "battery_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "xt30_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "balancer_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+              "passed": true
+            },
+            "motor_front_left_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor hardware envelope; lower mating face permits contact",
+              "passed": true
+            },
+            "prop_front_left_swept_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Propeller swept volume including axial and radial clearance",
+              "passed": true
+            },
+            "motor_front_right_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor hardware envelope; lower mating face permits contact",
+              "passed": true
+            },
+            "prop_front_right_swept_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Propeller swept volume including axial and radial clearance",
+              "passed": true
+            },
+            "motor_rear_left_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor hardware envelope; lower mating face permits contact",
+              "passed": true
+            },
+            "prop_rear_left_swept_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Propeller swept volume including axial and radial clearance",
+              "passed": true
+            },
+            "motor_rear_right_envelope": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor hardware envelope; lower mating face permits contact",
+              "passed": true
+            },
+            "prop_rear_right_swept_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Propeller swept volume including axial and radial clearance",
+              "passed": true
+            },
+            "front_left_shaft_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor shaft clearance",
+              "passed": true
+            },
+            "front_left_motor_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_left_motor_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_left_motor_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_left_motor_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_left_motor_leads": {
+              "intersection_mm3": 0.0,
+              "purpose": "Provisional accessible straight motor lead corridor",
+              "passed": true
+            },
+            "front_right_shaft_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor shaft clearance",
+              "passed": true
+            },
+            "front_right_motor_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_right_motor_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_right_motor_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_right_motor_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "front_right_motor_leads": {
+              "intersection_mm3": 0.0,
+              "purpose": "Provisional accessible straight motor lead corridor",
+              "passed": true
+            },
+            "rear_left_shaft_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor shaft clearance",
+              "passed": true
+            },
+            "rear_left_motor_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_left_motor_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_left_motor_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_left_motor_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_left_motor_leads": {
+              "intersection_mm3": 0.0,
+              "purpose": "Provisional accessible straight motor lead corridor",
+              "passed": true
+            },
+            "rear_right_shaft_clearance": {
+              "intersection_mm3": 0.0,
+              "purpose": "Motor shaft clearance",
+              "passed": true
+            },
+            "rear_right_motor_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_right_motor_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_right_motor_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_right_motor_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+              "passed": true
+            },
+            "rear_right_motor_leads": {
+              "intersection_mm3": 0.0,
+              "purpose": "Provisional accessible straight motor lead corridor",
+              "passed": true
+            },
+            "aio_screw_0": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO through screw and underside assembly access",
+              "passed": true
+            },
+            "aio_screw_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO through screw and underside assembly access",
+              "passed": true
+            },
+            "aio_screw_2": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO through screw and underside assembly access",
+              "passed": true
+            },
+            "aio_screw_3": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO through screw and underside assembly access",
+              "passed": true
+            },
+            "strap_access_-1_-1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery strap insertion slot beside wide battery face",
+              "passed": true
+            },
+            "strap_access_-1_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery strap insertion slot beside wide battery face",
+              "passed": true
+            },
+            "strap_access_1_-1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery strap insertion slot beside wide battery face",
+              "passed": true
+            },
+            "strap_access_1_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery strap insertion slot beside wide battery face",
+              "passed": true
+            },
+            "battery_insertion": {
+              "intersection_mm3": 0.0,
+              "purpose": "Battery removal vertically above its contact pads",
+              "passed": true
+            },
+            "camera_screw_axis": {
+              "intersection_mm3": 0.0,
+              "purpose": "Camera screw bore limited to exact mounting lugs",
+              "passed": true
+            },
+            "camera_tool_access_-1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Conservative outboard screwdriver corridor; no subvoxel cut through free material",
+              "passed": true
+            },
+            "camera_tool_access_1": {
+              "intersection_mm3": 0.0,
+              "purpose": "Conservative outboard screwdriver corridor; no subvoxel cut through free material",
+              "passed": true
+            },
+            "camera_front_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "Unobstructed camera front, insertion and lens field corridor",
+              "passed": true
+            },
+            "xt30_plug_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "Top insertion and removal corridor for disconnected connector",
+              "passed": true
+            },
+            "balancer_plug_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "Top insertion and removal corridor for disconnected connector",
+              "passed": true
+            },
+            "antenna_bore": {
+              "intersection_mm3": 0.0,
+              "purpose": "VTX antenna through bore continuing above every design cell",
+              "passed": true
+            },
+            "antenna_insertion_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "Conservative antenna insertion corridor above the exact retention eyelet",
+              "passed": true
+            },
+            "aio_side_assembly_access": {
+              "intersection_mm3": 0.0,
+              "purpose": "AIO insertion/removal through right side with connectors unplugged",
+              "passed": true
+            },
+            "balance_lead_routing": {
+              "intersection_mm3": 0.0,
+              "purpose": "Accessible balance and power lead corridor; provisional connector routing",
+              "passed": true
+            }
+          },
+          "preserve": {
+            "front_left_motor_contact": {
+              "required_volume_mm3": 1048.6636277682726,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "bore_to_outer:front_left_shaft_clearance": 8.1,
+                  "bore_to_outer:front_left_motor_screw_0": 3.9000000000000035,
+                  "bore_to_outer:front_left_motor_screw_1": 3.9000000000000035,
+                  "bore_to_outer:front_left_motor_screw_2": 3.899999999999999,
+                  "bore_to_outer:front_left_motor_screw_3": 3.899999999999999,
+                  "bore_ligament:front_left_shaft_clearance:front_left_motor_screw_0": 1.9999999999999964,
+                  "bore_ligament:front_left_shaft_clearance:front_left_motor_screw_1": 1.9999999999999964,
+                  "bore_ligament:front_left_shaft_clearance:front_left_motor_screw_2": 2.000000000000001,
+                  "bore_ligament:front_left_shaft_clearance:front_left_motor_screw_3": 2.000000000000001,
+                  "bore_ligament:front_left_motor_screw_0:front_left_motor_screw_1": 4.163961030678923,
+                  "bore_ligament:front_left_motor_screw_0:front_left_motor_screw_2": 6.799999999999997,
+                  "bore_ligament:front_left_motor_screw_0:front_left_motor_screw_3": 4.16396103067893,
+                  "bore_ligament:front_left_motor_screw_1:front_left_motor_screw_2": 4.163961030678923,
+                  "bore_ligament:front_left_motor_screw_1:front_left_motor_screw_3": 6.799999999999997,
+                  "bore_ligament:front_left_motor_screw_2:front_left_motor_screw_3": 4.16396103067893
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 64.00000000000666,
+                "x+": 54.500510373242804,
+                "y-": 44.147038558567274,
+                "y+": 0.0,
+                "z-": 0.0,
+                "z+": 11.435632257867013
+              },
+              "attachment_area_mm2": 174.08318118968376,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "front_right_motor_contact": {
+              "required_volume_mm3": 1048.6636277682728,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "bore_to_outer:front_right_shaft_clearance": 8.1,
+                  "bore_to_outer:front_right_motor_screw_0": 3.9000000000000035,
+                  "bore_to_outer:front_right_motor_screw_1": 3.9000000000000035,
+                  "bore_to_outer:front_right_motor_screw_2": 3.899999999999999,
+                  "bore_to_outer:front_right_motor_screw_3": 3.899999999999999,
+                  "bore_ligament:front_right_shaft_clearance:front_right_motor_screw_0": 1.9999999999999964,
+                  "bore_ligament:front_right_shaft_clearance:front_right_motor_screw_1": 1.9999999999999964,
+                  "bore_ligament:front_right_shaft_clearance:front_right_motor_screw_2": 2.000000000000001,
+                  "bore_ligament:front_right_shaft_clearance:front_right_motor_screw_3": 2.000000000000001,
+                  "bore_ligament:front_right_motor_screw_0:front_right_motor_screw_1": 4.163961030678923,
+                  "bore_ligament:front_right_motor_screw_0:front_right_motor_screw_2": 6.799999999999997,
+                  "bore_ligament:front_right_motor_screw_0:front_right_motor_screw_3": 4.16396103067893,
+                  "bore_ligament:front_right_motor_screw_1:front_right_motor_screw_2": 4.163961030678923,
+                  "bore_ligament:front_right_motor_screw_1:front_right_motor_screw_3": 6.799999999999997,
+                  "bore_ligament:front_right_motor_screw_2:front_right_motor_screw_3": 4.16396103067893
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 54.500510373242804,
+                "x+": 64.00000000000666,
+                "y-": 28.147038558567242,
+                "y+": 0.0,
+                "z-": 0.0,
+                "z+": 4.935121884629985
+              },
+              "attachment_area_mm2": 151.5826708164467,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "rear_left_motor_contact": {
+              "required_volume_mm3": 1048.6636277682728,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "bore_to_outer:rear_left_shaft_clearance": 8.1,
+                  "bore_to_outer:rear_left_motor_screw_0": 3.9000000000000035,
+                  "bore_to_outer:rear_left_motor_screw_1": 3.9000000000000035,
+                  "bore_to_outer:rear_left_motor_screw_2": 3.899999999999999,
+                  "bore_to_outer:rear_left_motor_screw_3": 3.899999999999999,
+                  "bore_ligament:rear_left_shaft_clearance:rear_left_motor_screw_0": 1.9999999999999964,
+                  "bore_ligament:rear_left_shaft_clearance:rear_left_motor_screw_1": 1.9999999999999964,
+                  "bore_ligament:rear_left_shaft_clearance:rear_left_motor_screw_2": 2.000000000000001,
+                  "bore_ligament:rear_left_shaft_clearance:rear_left_motor_screw_3": 2.000000000000001,
+                  "bore_ligament:rear_left_motor_screw_0:rear_left_motor_screw_1": 4.163961030678923,
+                  "bore_ligament:rear_left_motor_screw_0:rear_left_motor_screw_2": 6.799999999999997,
+                  "bore_ligament:rear_left_motor_screw_0:rear_left_motor_screw_3": 4.16396103067893,
+                  "bore_ligament:rear_left_motor_screw_1:rear_left_motor_screw_2": 4.163961030678923,
+                  "bore_ligament:rear_left_motor_screw_1:rear_left_motor_screw_3": 6.799999999999997,
+                  "bore_ligament:rear_left_motor_screw_2:rear_left_motor_screw_3": 4.16396103067893
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 64.00000000000666,
+                "x+": 48.000000000005,
+                "y-": 0.0,
+                "y+": 0.0,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 112.00000000001167,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "rear_right_motor_contact": {
+              "required_volume_mm3": 1048.6636277682726,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "bore_to_outer:rear_right_shaft_clearance": 8.1,
+                  "bore_to_outer:rear_right_motor_screw_0": 3.9000000000000035,
+                  "bore_to_outer:rear_right_motor_screw_1": 3.9000000000000035,
+                  "bore_to_outer:rear_right_motor_screw_2": 3.899999999999999,
+                  "bore_to_outer:rear_right_motor_screw_3": 3.899999999999999,
+                  "bore_ligament:rear_right_shaft_clearance:rear_right_motor_screw_0": 1.9999999999999964,
+                  "bore_ligament:rear_right_shaft_clearance:rear_right_motor_screw_1": 1.9999999999999964,
+                  "bore_ligament:rear_right_shaft_clearance:rear_right_motor_screw_2": 2.000000000000001,
+                  "bore_ligament:rear_right_shaft_clearance:rear_right_motor_screw_3": 2.000000000000001,
+                  "bore_ligament:rear_right_motor_screw_0:rear_right_motor_screw_1": 4.163961030678923,
+                  "bore_ligament:rear_right_motor_screw_0:rear_right_motor_screw_2": 6.799999999999997,
+                  "bore_ligament:rear_right_motor_screw_0:rear_right_motor_screw_3": 4.16396103067893,
+                  "bore_ligament:rear_right_motor_screw_1:rear_right_motor_screw_2": 4.163961030678923,
+                  "bore_ligament:rear_right_motor_screw_1:rear_right_motor_screw_3": 6.799999999999997,
+                  "bore_ligament:rear_right_motor_screw_2:rear_right_motor_screw_3": 4.16396103067893
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 54.50051037324138,
+                "x+": 64.00000000000666,
+                "y-": 0.0,
+                "y+": 12.147038558567528,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 130.64754893181558,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "aio_contact_0": {
+              "required_volume_mm3": 156.02719914053708,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 5.5,
+                  "bore_to_outer:aio_screw_0": 2.1
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 25.599999999999735,
+                "x+": 25.59999999999954,
+                "y-": 25.599999999999824,
+                "y+": 25.599999999999824,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 102.39999999999893,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "aio_contact_1": {
+              "required_volume_mm3": 156.02719914053708,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 5.5,
+                  "bore_to_outer:aio_screw_1": 2.1
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 25.599999999999728,
+                "x+": 25.59999999999954,
+                "y-": 25.59999999999954,
+                "y+": 25.59999999999954,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 102.39999999999834,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "aio_contact_2": {
+              "required_volume_mm3": 156.02719914053708,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 5.5,
+                  "bore_to_outer:aio_screw_2": 2.1
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 25.599999999999532,
+                "x+": 25.599999999998783,
+                "y-": 25.599999999999824,
+                "y+": 25.599999999999827,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 102.39999999999796,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "aio_contact_3": {
+              "required_volume_mm3": 156.02719914053708,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 5.5,
+                  "bore_to_outer:aio_screw_3": 2.1
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 25.59999999999954,
+                "x+": 25.59999999999878,
+                "y-": 25.59999999999954,
+                "y+": 25.59999999999954,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 102.39999999999739,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_contact_-1_-1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 27.999999999998987,
+                "x+": 23.999999999999574,
+                "y-": 0.0,
+                "y+": 22.49999999999972,
+                "z-": 63.999999999999325,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 138.4999999999976,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_contact_-1_1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 27.99999999999978,
+                "x+": 11.999999999999787,
+                "y-": 10.49999999999908,
+                "y+": 23.999999999999574,
+                "z-": 59.99999999999933,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 134.49999999999756,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_contact_1_-1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 23.999999999999574,
+                "x+": 27.999999999999535,
+                "y-": 0.0,
+                "y+": 22.499999999999734,
+                "z-": 63.999999999999325,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 138.49999999999818,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_contact_1_1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 11.999999999999787,
+                "x+": 27.999999999999535,
+                "y-": 22.499999999999734,
+                "y+": 23.999999999999574,
+                "z-": 59.99999999999952,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 146.49999999999815,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_coupling_-1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 0.0,
+                "x+": 0.0,
+                "y-": 29.99999999999972,
+                "y+": 29.9999999999995,
+                "z-": 63.999999999999545,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 123.99999999999876,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "battery_coupling_1": {
+              "required_volume_mm3": 255.99999999999994,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 0.0,
+                "x+": 0.0,
+                "y-": 29.999999999999726,
+                "y+": 29.999999999999503,
+                "z-": 63.999999999999545,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 123.99999999999878,
+              "minimum_attachment_area_mm2": 12.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "strap_contact_-1_-1": {
+              "required_volume_mm3": 288.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "slot_rim:strap_access_-1_-1:x": 2.0,
+                  "slot_rim:strap_access_-1_-1:y": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 47.999999999999325,
+                "x+": 51.99999999999938,
+                "y-": 19.499999999999847,
+                "y+": 24.000000000000007,
+                "z-": 71.99999999999984,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 215.4999999999984,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "strap_contact_-1_1": {
+              "required_volume_mm3": 288.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "slot_rim:strap_access_-1_1:x": 2.0,
+                  "slot_rim:strap_access_-1_1:y": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 47.99999999999915,
+                "x+": 51.99999999999939,
+                "y-": 24.000000000000007,
+                "y+": 8.999999999999904,
+                "z-": 71.9999999999995,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 204.99999999999795,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "strap_contact_1_-1": {
+              "required_volume_mm3": 288.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "slot_rim:strap_access_1_-1:x": 2.0,
+                  "slot_rim:strap_access_1_-1:y": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 51.99999999999891,
+                "x+": 47.999999999997726,
+                "y-": 19.499999999999854,
+                "y+": 24.000000000000007,
+                "z-": 71.99999999999984,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 215.49999999999633,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "strap_contact_1_1": {
+              "required_volume_mm3": 288.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0,
+                  "slot_rim:strap_access_1_1:x": 2.0,
+                  "slot_rim:strap_access_1_1:y": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 51.99999999999891,
+                "x+": 47.999999999997726,
+                "y-": 24.000000000000007,
+                "y+": 8.999999999999886,
+                "z-": 71.9999999999995,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 204.99999999999602,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "camera_impact_contact_-1": {
+              "required_volume_mm3": 192.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 9.99999999999982,
+                "x+": 15.999999999999828,
+                "y-": 19.999999999999847,
+                "y+": 20.000000000001116,
+                "z-": 31.999999999999545,
+                "z+": 47.99999999999966
+              },
+              "attachment_area_mm2": 145.99999999999983,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "camera_mount_-1": {
+              "required_volume_mm3": 278.78493207955825,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 6.0,
+                  "bore_to_outer:camera_screw_axis": 2.9
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 13.887957395124129,
+                "x+": 0.0,
+                "y-": 31.999999999999783,
+                "y+": 32.000000000001684,
+                "z-": 31.999999999999545,
+                "z+": 31.999999999999545
+              },
+              "attachment_area_mm2": 141.8879573951247,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "camera_impact_contact_1": {
+              "required_volume_mm3": 192.0,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 4.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 15.999999999999828,
+                "x+": 9.99999999999982,
+                "y-": 19.999999999999847,
+                "y+": 20.000000000001112,
+                "z-": 31.999999999999538,
+                "z+": 47.99999999999966
+              },
+              "attachment_area_mm2": 145.9999999999998,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "camera_mount_1": {
+              "required_volume_mm3": 278.78493207955825,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 6.0,
+                  "bore_to_outer:camera_screw_axis": 2.9
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 0.0,
+                "x+": 13.887957395124156,
+                "y-": 31.99999999999978,
+                "y+": 32.00000000000155,
+                "z-": 31.999999999999545,
+                "z+": 31.999999999999545
+              },
+              "attachment_area_mm2": 141.88795739512457,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "xt30_contact": {
+              "required_volume_mm3": 520.2,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 2.5
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 7.999999999999951,
+                "x+": 7.9999999999999805,
+                "y-": 25.500000000001325,
+                "y+": 0.0,
+                "z-": 0.0,
+                "z+": 32.64000000000004
+              },
+              "attachment_area_mm2": 74.1400000000013,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "balancer_contact": {
+              "required_volume_mm3": 379.75000000000006,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 2.5
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 1.874999999999994,
+                "x+": 8.749999999999906,
+                "y-": 24.50000000000128,
+                "y+": 21.00000000000109,
+                "z-": 0.0,
+                "z+": 30.45000000000002
+              },
+              "attachment_area_mm2": 86.57500000000229,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            },
+            "antenna_contact": {
+              "required_volume_mm3": 314.15926535897927,
+              "missing_volume_mm3": 0,
+              "walls": {
+                "margins_mm": {
+                  "outer_minimum_dimension": 7.0,
+                  "bore_to_outer:antenna_bore": 2.0
+                },
+                "minimum_mm": 2.0,
+                "passed": true
+              },
+              "attachment_sections_mm2": {
+                "x-": 55.999999999999424,
+                "x+": 55.99999999999942,
+                "y-": 56.00000000000295,
+                "y+": 56.0000000000029,
+                "z-": 0.0,
+                "z+": 0.0
+              },
+              "attachment_area_mm2": 224.0000000000047,
+              "minimum_attachment_area_mm2": 8.0,
+              "attachment_method": "summed outside AABB slab mean areas at six interfaces; local attachment check",
+              "passed": true
+            }
+          },
+          "reconstruction": {
+            "method": "conservative_voxel_threshold_greedy_cuboids",
+            "density_threshold": 0.25,
+            "occupied_voxels": 709,
+            "connectivity": 6,
+            "repairs": [
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  9,
+                  7,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.10643409067701204,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  12,
+                  7,
+                  3
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.20772969459137058,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  15,
+                  10,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.209184156784326,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  16,
+                  10,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.11938836089824728,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  12,
+                  4,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.1941768235818815,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  12,
+                  12,
+                  4
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.23251583808095586,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  11,
+                  13,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.15289487612099675,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  11,
+                  16,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.154288378086315,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  21,
+                  2,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.22307010719383427,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  21,
+                  6,
+                  0
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.12802508518094632,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  21,
+                  2,
+                  1
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.17733114108521134,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  21,
+                  6,
+                  1
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.1430823519232163,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              },
+              {
+                "method": "density_guided_local_manifold_fill",
+                "cause": "diagonal_edge_contact",
+                "cell_xyz": [
+                  13,
+                  20,
+                  5
+                ],
+                "material_before": 0,
+                "material_after": 1,
+                "density_before": 0.20526804621282455,
+                "density_after": 1.0,
+                "added_volume_mm3": 64.0
+              }
+            ],
+            "cuboid_count": 128,
+            "voxel_volume_mm3": 45376.0,
+            "raster_forbidden_voxel_overlap_mm3": {},
+            "final_volume_mm3": 46745.85222139309,
+            "exact_region_volume_change_mm3": 1369.852221393092,
+            "runtime_s": 1.5436353999975836,
+            "source_grid": {
+              "origin_mm": [
+                -68.0,
+                -64.0,
+                0.0
+              ],
+              "spacing_mm": [
+                4.0,
+                4.0,
+                4.0
+              ],
+              "shape": [
+                34,
+                32,
+                8
+              ],
+              "axis_order": "xyz",
+              "order": "C"
+            },
+            "minimum_voxel_feature_mm": 4.0,
+            "preserve_union_count": 25,
+            "forbidden_cut_count": 56
+          },
+          "features": {
+            "minimum_feature_mm": 2.0,
+            "nozzle_limit_mm": 2.0,
+            "method": "voxel feature lower bound plus exact preserve ligament checks and post-Boolean normal-ray screen",
+            "reconstruction_report_present": true,
+            "passed": true,
+            "grid_feature_mm": 4.0,
+            "post_boolean_wall_screen": {
+              "method": "exact inward CAD normal rays, nine UV samples per face with projected largest-triangle fallback",
+              "minimum_required_mm": 2.0,
+              "minimum_measured_mm": 1.999999999999697,
+              "ray_count": 3822,
+              "thin_samples": [],
+              "thin_sample_count": 0,
+              "unresolved_faces": [],
+              "passed": true,
+              "limitations": "Finite surface sampling is a geometric screen, not a proof of global minimum thickness between samples"
+            }
+          },
+          "supports": {
+            "build_direction": [
+              0.0,
+              0.0,
+              1.0
+            ],
+            "supports_allowed": true,
+            "supports_required": true,
+            "method": "conservative downward-face flag; slicer planning required",
+            "passed": true,
+            "accessibility": {
+              "closed_cad_cavities": 0,
+              "trapped_void_voxels": 0,
+              "passed": true,
+              "method": "closed-shell cavity count plus face-connected flood fill from padded exterior",
+              "limitations": "Coarse accessibility screen; support-tool reach and removal through narrow exact passages need slicer/physical review"
+            }
+          }
+        }
+      },
+      "comparison": {
+        "passed": true,
+        "checks": {
+          "frame_mass": true,
+          "stiffness": true,
+          "frequency": true,
+          "displacement": true,
+          "stress": true
+        },
+        "ratios": {
+          "frame_mass_ratio": 1.584215788627751,
+          "stiffness_ratio": 27.520121754836545,
+          "frequency_ratio": 4.713994836286821,
+          "displacement_ratio": 0.0462187624054694,
+          "stress_ratio": 0.09618265460264847
+        },
+        "limits": {
+          "frame_mass_ratio_max": 2.0,
+          "stiffness_ratio_min": 0.5,
+          "frequency_ratio_min": 0.7,
+          "displacement_ratio_max": 2.0,
+          "stress_ratio_max": 2.0
+        },
+        "candidate": {
+          "frame_mass_g": 50.952978921316564,
+          "stiffness_n_per_mm": 142.10801922428675,
+          "max_displacement_mm": 0.011805356212589742,
+          "max_von_mises_mpa": 0.5755087878082749,
+          "first_frequency_hz": 964.0308
+        },
+        "reference": {
+          "frame_mass_g": 32.16290311400827,
+          "stiffness_n_per_mm": 5.163785992309858,
+          "max_displacement_mm": 0.25542346004471833,
+          "max_von_mises_mpa": 5.983498689923118,
+          "first_frequency_hz": 204.504
+        },
+        "selection_score": 1.9750885552779414
+      },
+      "reconstruction": {
+        "method": "conservative_voxel_threshold_greedy_cuboids",
+        "density_threshold": 0.25,
+        "occupied_voxels": 709,
+        "connectivity": 6,
+        "repairs": [
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              9,
+              7,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.10643409067701204,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              12,
+              7,
+              3
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.20772969459137058,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              15,
+              10,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.209184156784326,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              16,
+              10,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.11938836089824728,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              12,
+              4,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.1941768235818815,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              12,
+              12,
+              4
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.23251583808095586,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              11,
+              13,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.15289487612099675,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              11,
+              16,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.154288378086315,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              21,
+              2,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.22307010719383427,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              21,
+              6,
+              0
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.12802508518094632,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              21,
+              2,
+              1
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.17733114108521134,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              21,
+              6,
+              1
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.1430823519232163,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          },
+          {
+            "method": "density_guided_local_manifold_fill",
+            "cause": "diagonal_edge_contact",
+            "cell_xyz": [
+              13,
+              20,
+              5
+            ],
+            "material_before": 0,
+            "material_after": 1,
+            "density_before": 0.20526804621282455,
+            "density_after": 1.0,
+            "added_volume_mm3": 64.0
+          }
+        ],
+        "cuboid_count": 128,
+        "voxel_volume_mm3": 45376.0,
+        "raster_forbidden_voxel_overlap_mm3": {},
+        "final_volume_mm3": 46745.85222139309,
+        "exact_region_volume_change_mm3": 1369.852221393092,
+        "runtime_s": 1.5436353999975836,
+        "source_grid": {
+          "origin_mm": [
+            -68.0,
+            -64.0,
+            0.0
+          ],
+          "spacing_mm": [
+            4.0,
+            4.0,
+            4.0
+          ],
+          "shape": [
+            34,
+            32,
+            8
+          ],
+          "axis_order": "xyz",
+          "order": "C"
+        },
+        "minimum_voxel_feature_mm": 4.0,
+        "preserve_union_count": 25,
+        "forbidden_cut_count": 56
+      }
+    },
+    {
+      "id": "density_t02",
+      "density_threshold": 0.3,
+      "stage": "geometry",
+      "status": "invalid",
+      "diagnostics": [
+        "Density threshold produced 2 face-connected components"
+      ]
+    },
+    {
+      "id": "density_t03",
+      "density_threshold": 0.35,
+      "stage": "geometry",
+      "status": "invalid",
+      "diagnostics": [
+        "Density threshold produced 4 face-connected components"
+      ]
+    },
+    {
+      "id": "density_t04",
+      "density_threshold": 0.4,
+      "stage": "geometry",
+      "status": "invalid",
+      "diagnostics": [
+        "Density threshold produced 7 face-connected components"
+      ]
+    },
+    {
+      "id": "density_t05",
+      "density_threshold": 0.5,
+      "stage": "geometry",
+      "status": "invalid",
+      "diagnostics": [
+        "Density threshold produced 13 face-connected components"
+      ]
+    }
+  ],
+  "limitations": [
+    "4 mm voxel density optimization stopped at 300 updates without formal density convergence.",
+    "New candidates independently verified at the 3 mm FEA mesh only; their mesh convergence was not evaluated.",
+    "Historical accepted geometry mesh study is separate and must not be transferred as a convergence claim for changed geometries.",
+    "Linear isotropic material surrogate and all historical physical assumptions remain unchanged."
+  ],
+  "numerical_profile": {
+    "linear_solver_setting": null,
+    "observed_native_backend": "PaStiX",
+    "threads_setting": 2,
+    "source_version": "Archived source before explicit backend and thread-environment changes",
+    "subsequent_backend_migration_applied_to_this_study": false
+  },
+  "fine_grid_study": {
+    "study_directory": "exports/topology/workstation_20260930/candidate_study/grid8over3_iter150_spooles1",
+    "manifest_sha256": "81ebc7a4aa23d991c0a7e176525cb10cfc31aaaafcf340db4bc6b333ad93e15a",
+    "inputs_sha256": "f2bc795f3c474831dcdb45cbcb954a9b657970989e518d40365dc7d2855b6828",
+    "source_fields_sha256": "62cb51803e60f1a834c3e3da83c2e2ae6e85e50e201e030191a5e095e381a72b",
+    "source_manifest_sha256": "3a5de12da73c29f264860333c6965224fd4eb284c283c25e25567cc5dfe06f6a",
+    "source_archive_manifest_sha256": "93c4d43d90784f33dd582321a2dd6e5ed8f9bb1497ad1df4d14f1994aa34284d",
+    "status": "invalid",
+    "selected_id": null,
+    "grid": {
+      "origin_mm": [
+        -68.0,
+        -64.0,
+        0.0
+      ],
+      "spacing_mm": [
+        2.6666666666666665,
+        2.6666666666666665,
+        2.6666666666666665
+      ],
+      "shape": [
+        51,
+        48,
+        12
+      ],
+      "axis_order": "xyz",
+      "order": "C"
+    },
+    "optimizer": {
+      "iterations": 79,
+      "converged": false,
+      "stop_reason": "max_runtime_s",
+      "objective_final": 0.012974775403183078,
+      "elapsed_s": 2440.3963626999903
+    },
+    "last_maximum_design_change": 0.05987292388439713,
+    "numerical_profile_if_fea_were_needed": {
+      "linear_solver": "SPOOLES",
+      "threads": 1,
+      "mesh_size_mm": 3.0
+    },
+    "candidate_fea_runs": 0,
+    "baseline_fea_runs": 0,
+    "geometrically_eligible_candidates": 0,
+    "resume_hash_check_passed": true,
+    "candidates": [
+      {
+        "id": "density_t00",
+        "density_threshold": 0.2,
+        "stage": "geometry",
+        "status": "invalid",
+        "diagnostics": [
+          "Manifold raster repair would enter forbidden cells"
+        ]
+      },
+      {
+        "id": "density_t01",
+        "density_threshold": 0.25,
+        "stage": "geometry",
+        "status": "invalid",
+        "diagnostics": [
+          "Manifold raster repair would enter forbidden cells"
+        ]
+      },
+      {
+        "id": "density_t02",
+        "density_threshold": 0.3,
+        "stage": "geometry",
+        "status": "invalid",
+        "diagnostics": [
+          "Manifold raster repair would enter forbidden cells"
+        ]
+      },
+      {
+        "id": "density_t03",
+        "density_threshold": 0.35,
+        "stage": "geometry",
+        "status": "invalid",
+        "diagnostics": [
+          "Density threshold produced 3 face-connected components"
+        ]
+      },
+      {
+        "id": "density_t04",
+        "density_threshold": 0.4,
+        "stage": "geometry",
+        "status": "invalid",
+        "diagnostics": [
+          "Density threshold produced 3 face-connected components"
+        ]
+      },
+      {
+        "id": "density_t05",
+        "density_threshold": 0.5,
+        "stage": "geometry",
+        "status": "invalid",
+        "diagnostics": [
+          "Density threshold produced 6 face-connected components"
+        ]
+      }
+    ],
+    "interpretation": "All six unchanged thresholds fail during reconstruction. Thresholds 0.20/0.25/0.30 require forbidden cells for manifold repair; thresholds 0.35/0.40/0.50 are disconnected. No solid passed the prerequisite geometry gate, so no subsequent manufacturing/mass/FEA acceptance is claimed. No manual repair or changed keepout was used."
+  },
+  "source_archives": {
+    "grid4_iter300": "exports/topology/workstation_20260930/candidate_study/grid4_iter300/provenance",
+    "grid8over3_iter150_spooles1": "exports/topology/workstation_20260930/candidate_study/grid8over3_iter150_spooles1/provenance",
+    "files_per_study": 27,
+    "all_source_hashes_match_inputs": true
+  }
+}

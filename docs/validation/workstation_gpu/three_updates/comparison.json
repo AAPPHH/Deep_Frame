@@ -1,0 +1,10 @@
+{
+  "density_max_abs": 8.284428698601687e-12,
+  "design_max_abs": 1.5562329203078207e-11,
+  "history_max_compliance_relative_error": 6.399947238833192e-11,
+  "cpu_wall_s": 112.192544000005,
+  "gpu_wall_s": 4.724404900000081,
+  "source_fields_sha256": "62cb51803e60f1a834c3e3da83c2e2ae6e85e50e201e030191a5e095e381a72b",
+  "speedup": 23.7474446781653,
+  "passed": true
+}

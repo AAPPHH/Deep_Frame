@@ -1,0 +1,12 @@
+{
+  "schema_version": "deep-frame-density-figure-v1",
+  "image": "workstation_density_convergence.png",
+  "image_sha256": "7b4ddfca797a8065120c6b57b4a18bb2c3b9a4311b5be32611e6526d8dba6441",
+  "plotter_sha256": "b8ee92199f3eef2b6ce995fbcfaed41c6134b075a6e92fc002794ba13110cff4",
+  "comparison_sha256": "fa47f315440caa0384856bb2e783a3e94ae69e8f2cd979c9f1bf650ea63e4286",
+  "sources": {
+    "grid4_iter300": "bc77a53994eb5fa03b7593afbbf0fd46d69feced22afc6db8e78a95bf15afa0b",
+    "grid8over3_iter150": "85aa6ca8e1ca0b32cb73cacd7cd262a2ed0e50736831c71e01d6561cc61a06ff"
+  },
+  "normalization": "Every plotted compliance uses frozen 4 mm initial case compliances and weights."
+}

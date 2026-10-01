@@ -1,6 +1,6 @@
 # Freie Topologieoptimierung: Schnittstellen v1
 
-Dieser additive Vertrag erweitert `docs/interfaces.md`; die funktionierende v0-Geometrie und die bestehende FEA bleiben unveraendert als Referenz und unabhaengiger Pruefer. Python bleibt ohne Kommentare, Docstrings, argparse und unnoetige Prints. Alle Konfigurationen sind Dictionaries.
+Dieser additive Vertrag erweitert `docs/interfaces.md`; die funktionierende v0-Geometrie und die bestehende FEA bleiben unveraendert als Referenz und unabhaengiger Pruefer. Die fachlichen Python-Module bleiben ohne Kommentare, Docstrings, argparse und unnoetige Prints. Alle fachlichen Konfigurationen sind Dictionaries. Separate Workstation-Studientools unter `tools/` verwenden CLI-Argumente fuer ausdrueckliche Rechenbudgets und neue Ausgabepfade; sie veraendern diesen fachlichen Vertrag nicht.
 
 ## Methode und Verantwortlichkeiten
 
@@ -27,6 +27,8 @@ Die Zellen beschreiben die Optimierungsdiskretisierung; `regions` bleiben die ge
 ## Optimierer und Felddaten
 
 `deep_frame.topology_optimization.optimize_topology(domain: dict, settings: dict) -> dict`
+
+Fuer beobachtbare laengere Studien akzeptiert der vorhandene Optimierer zusaetzlich das optionale Keyword `progress_callback`. Es erhaelt nach jeder ausgewerteten Iteration und der abschliessenden Feldauswertung eine tiefe Kopie des jeweiligen Historieneintrags. Der Callback erhaelt keine veraenderbare Solverreferenz; ein Regressionstest prueft die unveraenderte Dichte gegen einen Lauf ohne Callback. Das Pipeline-Generatorprotokoll bleibt `(domain, settings)`. Das Journal ist ein Fortschrittsnachweis und kein Checkpoint fuer das Fortsetzen einer angefangenen Dichteiteration.
 
 Das Ergebnis hat `status` (`ok`, `invalid`, `failed`), `density` (NumPy-Array), JSON-faehige `summary`, `history`, `diagnostics`. Optional weitere Felder sind explizit zu benennen. Status `ok` beschreibt einen abgeschlossenen Dichteoptimierungslauf, noch keine mechanisch akzeptierte Geometrie. Der Optimierer darf weder v0-Geometrie noch Rekonstruktion oder CalculiX importieren. Austauschbare Generatoren koennen denselben Feld-/Domain-Vertrag verwenden.
 

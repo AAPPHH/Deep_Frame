@@ -1,0 +1,31 @@
+{
+  "schema_version": "deep-frame-density-study-v1",
+  "status": "ok",
+  "artifacts": {
+    "domain_masks.npz": {
+      "sha256": "c0ed2e6a2bb1281aaa9e5d8996f1f58e2041f6b1056eeaa6e235e9b0fbc7ed11",
+      "size_bytes": 1306
+    },
+    "fields.npz": {
+      "sha256": "fda71cec9e080538a10b5b3b90fa64a402071130a643e62a38740a4477ba4924",
+      "size_bytes": 16202
+    },
+    "inputs.json": {
+      "sha256": "fd0c8b63a1c79e9dd9fcea06f4ca52a742d029f44b0089914aac42abf63b1b08",
+      "size_bytes": 146510
+    },
+    "iterations.jsonl": {
+      "sha256": "4d015a1988d8cf518d039757fe0a48030e89d90f97c0f262b371eb7ad7eb44c0",
+      "size_bytes": 104766
+    },
+    "request.json": {
+      "sha256": "4f118056cf27c5fbb278287b75acb7ae3157362bdfdae9fe19613a4ebad5c5f3",
+      "size_bytes": 35167
+    },
+    "result.json": {
+      "sha256": "04474fbcd7bc3b04b0102d5565e236ec5aa5da771a632bdb30a3ddb73711ce51",
+      "size_bytes": 200021
+    }
+  },
+  "elapsed_s": 187.75768090000201
+}

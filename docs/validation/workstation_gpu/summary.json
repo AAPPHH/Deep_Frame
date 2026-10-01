@@ -1,0 +1,70 @@
+{
+  "source_manifest_sha256": "8e7bce5013e1b4151f371e22052e9a8c0633b92b943349e492ce358b986821c9",
+  "source_fields_sha256": "679cee0b6042aaae32c127395ccae0da0d0723a673b208bc8caf363cc4f023c2",
+  "iterations": 708,
+  "converged": true,
+  "stop_reason": "change_tolerance",
+  "last_design_change": 0.004953849106895336,
+  "elapsed_s": 576.1642286999995,
+  "objective_final": 0.012862370883126134,
+  "objective_relative_change_from_cpu79": -0.00866331143037491,
+  "maximum_relative_residual": 2.857109518633874e-10,
+  "density_frame_mass_g": 42.219785480047555,
+  "gray_fraction_free": 0.15498173447430316,
+  "field_comparison_cpu79_gpu708": {
+    "integration": "Exact piecewise-constant voxel overlap; equal physical envelope and origin.",
+    "common_subdivision_shape": [
+      51,
+      48,
+      12
+    ],
+    "rms_density_full_box": 0.015569803566514202,
+    "rms_density_common_allowed": 0.01867186932840994,
+    "rms_density_common_free": 0.01887770168995615,
+    "maximum_density_difference": 0.273829936730138,
+    "allowed_mask_disagreement_fraction_of_box": 0.0
+  },
+  "connectivity": [
+    {
+      "threshold": 0.2,
+      "occupied_cells": 3044,
+      "face_connected_components": 1,
+      "components_touching_preserves": 1
+    },
+    {
+      "threshold": 0.25,
+      "occupied_cells": 2719,
+      "face_connected_components": 1,
+      "components_touching_preserves": 1
+    },
+    {
+      "threshold": 0.3,
+      "occupied_cells": 2457,
+      "face_connected_components": 1,
+      "components_touching_preserves": 1
+    },
+    {
+      "threshold": 0.35,
+      "occupied_cells": 2249,
+      "face_connected_components": 3,
+      "components_touching_preserves": 1
+    },
+    {
+      "threshold": 0.4,
+      "occupied_cells": 2087,
+      "face_connected_components": 2,
+      "components_touching_preserves": 1
+    },
+    {
+      "threshold": 0.5,
+      "occupied_cells": 1799,
+      "face_connected_components": 4,
+      "components_touching_preserves": 2
+    }
+  ],
+  "symbolic_reanalyses": 0,
+  "nvidia_smi_sampled_max_used_mib": 3520.0,
+  "nvidia_smi_sample_count": 257,
+  "nvidia_smi_max_utilization_percent": 99.0,
+  "interpretation": "Density change criterion at this fixed raster only. No global optimum, grid convergence, CAD acceptance or FEA acceptance is implied."
+}

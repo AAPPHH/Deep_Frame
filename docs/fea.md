@@ -16,6 +16,8 @@ Der Installer laedt das vom [CalculiX-Autor angebotene Windows-Archiv](https://w
 
 Suchreihenfolge: `settings.solver_path`, Umgebungsvariable `CALCULIX_PATH`, `ccx`/`ccx_static`/`ccx_dynamic` im PATH, danach `sys.prefix/calculix/**/ccx_static.exe`. Ein ausdruecklich angegebener fehlender Pfad ist ein Fehler. Auf anderen Betriebssystemen muss ein passendes CalculiX-Binary installiert werden; der mitgelieferte Download ist fuer Windows. Das Add-on pinnt Gmsh 4.15.2.
 
+`settings.linear_solver` erlaubt die explizite Auswahl `"SPOOLES"` oder `"PASTIX"` fuer statische und modale Rechnungen. Fehlend oder `None` behaelt das native Standardbackend bei; es gibt keinen automatischen Fallback. Das gewaehlte Backend muss im Binary enthalten sein. `settings.threads` setzt die OMP-, CCX-Stiffness-, CCX-Results- und CCX-Equation-Solver-Threadvariablen sowie `NUMBER_OF_CPUS`; geerbte CCX-Overrides werden dabei ueberschrieben. Ergebnisse enthalten `linear_solver` und `solver_threads`. Neue Workstation-Verifikationen setzen nach dokumentierten nativen Abbruechen ausdruecklich `linear_solver="SPOOLES", threads=1`. Diagnose, Grenzen dieser Beobachtung und vollstaendige Aufrufbeispiele stehen in [workstation_solver_diagnosis.md](validation/workstation_solver_diagnosis.md). Die vorhandenen Defaults und historischen Abnahmeresultate wurden nicht umgestellt.
+
 Jede Auswertung legt ein eigenes Verzeichnis unter `settings.work_dir` an. Dort liegen STEP, Gmsh-Netz, CalculiX-Eingaben, Ergebnisse, Logs und `result.json`. `exports/fea/` ignoriert diese grossen Laufartefakte. Die Programme oeffnen keine Konsolenfenster. Netzgenerator und jeder Solverlauf haben getrennte Timeouts, standardmaessig 180 s. Es gibt keine eigenen Status-Prints.
 
 ## Material, Einheiten und Vernetzung

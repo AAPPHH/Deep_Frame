@@ -1,0 +1,7 @@
+{
+  "renderer_sha256": "d891e8e05263463518cbc15f96c933c891eca4c20ae9fc855d8f7c3ef55e13e0",
+  "result_sha256": "e84751fee45717047452cee7c0f7531a5ffbcacac7b32c90606fc2355d8d13a9",
+  "benchmark_sha256": "f6f99d45f8f4e695ed323c1fa7c9280cc44d3104c281a05871fc287e6ecb4e24",
+  "image_sha256": "817394490740f08602dcd614dd044bc44ddabc04691e2b07344b60c832c7c1cf",
+  "interpretation": "Actual stored convergence history and measured three-update wall time. No geometry or FEA acceleration claim."
+}

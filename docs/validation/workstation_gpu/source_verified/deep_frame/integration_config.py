@@ -1,0 +1,16 @@
+INTEGRATION_CONFIG = {
+    "model_version": "frame-v0-linear-fixtures-v1",
+    "arm_tip_force_n": 1.0,
+    "arm_tip_motor": "front_left",
+    "battery_impact_g_factor": 10.0,
+    "standard_gravity_m_s2": 9.80665,
+    "camera_side_force_n": 5.0,
+    "central_fixture_fraction": 0.9,
+    "selection_tolerance_mm": 0.01,
+    "motor_pad_margin_mm": 0.1,
+    "battery_attachment_band_width_mm": 4.0,
+    "battery_attachment_y_mm": 0.0,
+    "battery_attachment_margin_mm": 0.1,
+    "camera_upper_height_fraction": 0.25,
+    "camera_length_fraction": 0.5,
+}

@@ -1,0 +1,313 @@
+{
+  "status": "ok",
+  "artifacts": {
+    "baseline_source_manifest.json": {
+      "sha256": "467e2d429a1d4089566315accb285a2fade4633d1e80f24c8babb1cf3cedd503",
+      "size_bytes": 17226
+    },
+    "first_4mm.json": {
+      "sha256": "77830172bf56364afa8bf7b22014e31cc3e6b0e839ade1bcdaa7f07369d7f6ae",
+      "size_bytes": 67024
+    },
+    "first_8over3mm.json": {
+      "sha256": "725a18177ddedd5e49d7c6e168046a87a5f547e723dba0ac7e50cda35a1e0425",
+      "size_bytes": 68135
+    },
+    "first_benchmark.py": {
+      "sha256": "7a5a25e8ab91d975e635092b25ed58e7e874f9b52ddf39cda0f2137b3c4a1f61",
+      "size_bytes": 1987
+    },
+    "first_benchmark_fine.py": {
+      "sha256": "251412a91d3b3b4fe3f2d90af5c6950c92643c7e26bff6e2df6c79bd3bde052e",
+      "size_bytes": 1999
+    },
+    "gpu_monitor.jsonl": {
+      "sha256": "d1be72238267a7d9bebd2752716a49e0e6d9d37e5cb23fe0ee6883620e0bd4c6",
+      "size_bytes": 23850
+    },
+    "integration.json": {
+      "sha256": "1e12ea4d0f16c10e7539b819b2b214b18e8225d43e86fcc17d2cbdc226250220",
+      "size_bytes": 1353
+    },
+    "matched79_history.json": {
+      "sha256": "0a25da0f130c47b9e56a0575991f7c81bac040a5bb6d46a4d13a703000d392f5",
+      "size_bytes": 287
+    },
+    "pytest_integrated.log": {
+      "sha256": "ab648d7d8e9bb737268232af4a955eb177080f28f53887e7277b97b02e334321",
+      "size_bytes": 532
+    },
+    "requirements_installed.txt": {
+      "sha256": "9fbf0d3fd74ed418e637ba974701846d0756f2810037f9da94f20ed174225ecc",
+      "size_bytes": 1916
+    },
+    "summary.json": {
+      "sha256": "ba5046569cd4f237cf29a6e1238bf4166fe6967ed9e74c52ef7e3a322a87ab31",
+      "size_bytes": 2357
+    },
+    "three_updates.py": {
+      "sha256": "305cdc713333e62e43ea219c4c6db48c9a9044aa2a217cb8cd905f9ae85ad502",
+      "size_bytes": 2647
+    },
+    "grid8over3_gpu1000/domain_masks.npz": {
+      "sha256": "98af04af56de2f0babd68a81a7397869651fb03d3e2547a3dc6705ac5b58ae58",
+      "size_bytes": 2094
+    },
+    "grid8over3_gpu1000/fields.npz": {
+      "sha256": "679cee0b6042aaae32c127395ccae0da0d0723a673b208bc8caf363cc4f023c2",
+      "size_bytes": 53686
+    },
+    "grid8over3_gpu1000/inputs.json": {
+      "sha256": "1e7c50813c05ae233c83ac8bb95ccd5ae412e6d7310b60b05906752ed5511719",
+      "size_bytes": 146822
+    },
+    "grid8over3_gpu1000/iterations.jsonl": {
+      "sha256": "ddf271f5d1316bb18c743314aaab8157d554b32838fb28e36245db5dd2c0eb8b",
+      "size_bytes": 932460
+    },
+    "grid8over3_gpu1000/manifest.json": {
+      "sha256": "8e7bce5013e1b4151f371e22052e9a8c0633b92b943349e492ce358b986821c9",
+      "size_bytes": 997
+    },
+    "grid8over3_gpu1000/request.json": {
+      "sha256": "2c64340b304ae7fffc51fc39479eed7cfb60c5c981a758f2059aeb169972b625",
+      "size_bytes": 35346
+    },
+    "grid8over3_gpu1000/result.json": {
+      "sha256": "e84751fee45717047452cee7c0f7531a5ffbcacac7b32c90606fc2355d8d13a9",
+      "size_bytes": 1616766
+    },
+    "grid8over3_gpu1000/status.json": {
+      "sha256": "382be3d9f5908f42253c851b366bed8acd26160283919ac5a91e04eb23546811",
+      "size_bytes": 501152
+    },
+    "integrated_cli_smoke/domain_masks.npz": {
+      "sha256": "c0ed2e6a2bb1281aaa9e5d8996f1f58e2041f6b1056eeaa6e235e9b0fbc7ed11",
+      "size_bytes": 1306
+    },
+    "integrated_cli_smoke/fields.npz": {
+      "sha256": "8b926367979c7c87cd64345425674f3eb6418adef7cdd85aa495bc56fdebc1a3",
+      "size_bytes": 89664
+    },
+    "integrated_cli_smoke/inputs.json": {
+      "sha256": "d082724a77c91350629a3b19db3dc71fd555ffa68d42709d1a051b556d19b0e4",
+      "size_bytes": 146637
+    },
+    "integrated_cli_smoke/iterations.jsonl": {
+      "sha256": "cd5c739a449a620ae555b4e3212191dde75e8339f5d262cfef6ce4cb8afdd489",
+      "size_bytes": 2564
+    },
+    "integrated_cli_smoke/manifest.json": {
+      "sha256": "7b7ff4b513a72bf85f077dbf6c2a434211926ca40dfa67cc643ae6ca27dbbe6b",
+      "size_bytes": 994
+    },
+    "integrated_cli_smoke/request.json": {
+      "sha256": "209de0066eda930b448330056896daf45c13bf4b67a7b4a39f9c16742ad5e2cd",
+      "size_bytes": 35295
+    },
+    "integrated_cli_smoke/result.json": {
+      "sha256": "22e87d2c27649931d48339c6ab3aa6a4599e68750ab8bb9b2336428d9eab4b10",
+      "size_bytes": 80146
+    },
+    "integrated_cli_smoke/status.json": {
+      "sha256": "5b6b8fdd1826a2fdb32e187730a5124fb239cfde52bca0791ce0cce8ba6ab102",
+      "size_bytes": 76121
+    },
+    "source_integrated/requirements-gpu.txt": {
+      "sha256": "ac4a9eeae20f35ae5781171bec4d69fe756b435914080c761d9791c5e102bb6d",
+      "size_bytes": 157
+    },
+    "source_verified/manifest.json": {
+      "sha256": "61ec98fb1d93f0d1e08fb145516cbf430e62fcc2bade60730d1c04b647ba3ade",
+      "size_bytes": 3197
+    },
+    "source_verified/requirements-gpu.txt": {
+      "sha256": "8c90fa0eae12c0b3f795b6f57ca2c744be6481b10bfb47bda74f2fe16a15b6bf",
+      "size_bytes": 49
+    },
+    "three_updates/comparison.json": {
+      "sha256": "f6f99d45f8f4e695ed323c1fa7c9280cc44d3104c281a05871fc287e6ecb4e24",
+      "size_bytes": 377
+    },
+    "three_updates/cpu_superlu.json": {
+      "sha256": "a47f6aeea7440e357f433297720e1ffabd1a0078db1a89b161c3d25526d0c220",
+      "size_bytes": 81383
+    },
+    "three_updates/cpu_superlu.jsonl": {
+      "sha256": "ba2f6a00a52e4ca04ffc01bb9a62bd0678b1be98292a7c692c300325d278a571",
+      "size_bytes": 5198
+    },
+    "three_updates/cpu_superlu.npz": {
+      "sha256": "1658aa330bb725fd7136dfb36ad93cb984fdbdc2f8483ac63ab5688e558464ed",
+      "size_bytes": 259499
+    },
+    "three_updates/cuda_cudss.json": {
+      "sha256": "5a0f10ca0fd733add4030af68ccfad99c7f54c1ed91b94d8d93bba563e6a44d5",
+      "size_bytes": 84844
+    },
+    "three_updates/cuda_cudss.jsonl": {
+      "sha256": "d48fd63ef38790cba3c22a94418d465377c5f50e12404c3c8376ee00139576bc",
+      "size_bytes": 5191
+    },
+    "three_updates/cuda_cudss.npz": {
+      "sha256": "648cb94f45776af826fe0b23649171b948b95dcf78a4d3668e9db6c0793ec19e",
+      "size_bytes": 259455
+    },
+    "three_updates/source_sha256.json": {
+      "sha256": "6e5627f4c29d7d5ea8de8819c59cc6d418d314f2f7174a59ffbee534880ae5b7",
+      "size_bytes": 2871
+    },
+    "source_verified/deep_frame/checks.py": {
+      "sha256": "1d7a98aae5c6f660ceac4e300ceadcb465ddfc7c51a687b6d289bdaa405c9e87",
+      "size_bytes": 7358
+    },
+    "source_verified/deep_frame/components.py": {
+      "sha256": "3fa8965a188f311abebe0af2268e76d20bf6a8167655d0757f939832e025ede7",
+      "size_bytes": 5745
+    },
+    "source_verified/deep_frame/component_defaults.py": {
+      "sha256": "93cabf48ce128b0124d70232892d14f12bf18e9e11998b33428d091a6ab39a85",
+      "size_bytes": 3528
+    },
+    "source_verified/deep_frame/config.py": {
+      "sha256": "c53dcb69f28004c3b6afa367a020d8a3a6e7326b8a30260bbad39f777581af14",
+      "size_bytes": 1148
+    },
+    "source_verified/deep_frame/fea.py": {
+      "sha256": "f61ec5c8b3e879ff1e87fd4522762a89b3e6ac74e34df7d95cd7408dbcca5cce",
+      "size_bytes": 18263
+    },
+    "source_verified/deep_frame/fea_config.py": {
+      "sha256": "b50afb0dba165cddab142f55a108a19c0db9a601451c92ceabed80eca62cdacb",
+      "size_bytes": 1198
+    },
+    "source_verified/deep_frame/fea_mesh.py": {
+      "sha256": "1cba2084cde2ee70e2f010e044277688e8a469f6054a2ea96f6d788ea07b73c0",
+      "size_bytes": 3300
+    },
+    "source_verified/deep_frame/frame.py": {
+      "sha256": "fdde2eed077cd1dacc930590e72213cc3c95b7036109b1d03405fc187786965d",
+      "size_bytes": 9712
+    },
+    "source_verified/deep_frame/frame_defaults.py": {
+      "sha256": "c9139b1649cb63552a79e6e606933f22fd79b03cee2afec84ce49580312ee50a",
+      "size_bytes": 28242
+    },
+    "source_verified/deep_frame/geometry.py": {
+      "sha256": "7e3e58b25266fe6baffbdf887bac9cf2bae4c42d7c2bb4863ec00fcdfb834b6d",
+      "size_bytes": 503
+    },
+    "source_verified/deep_frame/integration.py": {
+      "sha256": "1c4847101fd49cd7e2b53dbfe6ed28c746433b7f00b9cfdd39ce99f8c694e453",
+      "size_bytes": 8249
+    },
+    "source_verified/deep_frame/integration_config.py": {
+      "sha256": "9f0541125de2770427e266f9677905e34ce5273184bc29e2cc0c1a0fa01e76d3",
+      "size_bytes": 567
+    },
+    "source_verified/deep_frame/model.py": {
+      "sha256": "4f08f5031d420cb02580997c2fa2e6f9dcf631c31e9b3f22180db4559b4c4ab7",
+      "size_bytes": 689
+    },
+    "source_verified/deep_frame/optimization.py": {
+      "sha256": "ec2c70681b0511e831e1ee34e4855f9e07aa8a12105b9586bcf5a9b858661b0e",
+      "size_bytes": 16741
+    },
+    "source_verified/deep_frame/optimization_config.py": {
+      "sha256": "3649c9a43391f7505767dd58eec14037c178e86e9ad18d7891576e86568859ea",
+      "size_bytes": 1384
+    },
+    "source_verified/deep_frame/optimization_viewer.py": {
+      "sha256": "f313a1e65ea809af9c3962688e67deb4a8a5bd7fb64a1b6f99615bc13b6a2b84",
+      "size_bytes": 727
+    },
+    "source_verified/deep_frame/topology_config.py": {
+      "sha256": "2ff8e1c97d416f3ba28ad4d3aa92001b9d51b0696ae502b3cdb67db62696ecda",
+      "size_bytes": 1813
+    },
+    "source_verified/deep_frame/topology_domain.py": {
+      "sha256": "7f66b686ef56c4bc582319b189257bee1d1d00e7f77826ab6d1d42c48e4d720f",
+      "size_bytes": 24473
+    },
+    "source_verified/deep_frame/topology_elasticity.py": {
+      "sha256": "402c72a22a9acf7e65858af45e2e4f9cf5b1d951c3dd3a31aa305afddf331ed0",
+      "size_bytes": 19022
+    },
+    "source_verified/deep_frame/topology_geometry.py": {
+      "sha256": "4bd9c323ac2b44f7d61d632cb3804c6af65f1faeb71013e28330a72b3d034e34",
+      "size_bytes": 10527
+    },
+    "source_verified/deep_frame/topology_gpu.py": {
+      "sha256": "1bb4977d0f05242a3cb73ee135407b71b79fdf8304101f9f9485b21873a77f13",
+      "size_bytes": 9259
+    },
+    "source_verified/deep_frame/topology_optimization.py": {
+      "sha256": "536cd16d4f33a710444d9ac0ada95ffa2d8e72edc31d33fdb0841668976d4b8c",
+      "size_bytes": 14926
+    },
+    "source_verified/deep_frame/topology_pipeline.py": {
+      "sha256": "7f31ca0d6cd2b51f3d9367f49083976f0420a7462c86530a1805e45e1ba119cd",
+      "size_bytes": 26402
+    },
+    "source_verified/deep_frame/topology_validation.py": {
+      "sha256": "351a6ebcfdbea8755d881600da08c266091ee175fdd941e80958fbaa36ab67f9",
+      "size_bytes": 11640
+    },
+    "source_verified/deep_frame/topology_visualization.py": {
+      "sha256": "c0c12bfe799e639173fb75ba4d0d136f885633448c00cccca095a96f6f8d1eda",
+      "size_bytes": 7853
+    },
+    "source_verified/deep_frame/viewer.py": {
+      "sha256": "98aeaf90d31cd3f1e56e6a782eecf701588d3423b4c6feba7483cfaf96c319e7",
+      "size_bytes": 1886
+    },
+    "source_verified/deep_frame/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    "source_verified/tests/test_topology_gpu.py": {
+      "sha256": "69aea740513768dc581af5c4a0241dbf1e630545cfd8c69fd0be70004ab35583",
+      "size_bytes": 4691
+    },
+    "source_verified/tools/run_topology_study.py": {
+      "sha256": "422e4388f6fbdbcd83a1347bf1453fcdd8ec6880d3844c0605e21e8427af47bd",
+      "size_bytes": 7792
+    },
+    "source_verified/exports/topology/gpu_pilot/three_updates.py": {
+      "sha256": "305cdc713333e62e43ea219c4c6db48c9a9044aa2a217cb8cd905f9ae85ad502",
+      "size_bytes": 2647
+    },
+    "source_integrated/deep_frame/topology_elasticity.py": {
+      "sha256": "f1db32180b470663613a7c9b9a4f4ef107ee3ecba206abeaffb707996815e257",
+      "size_bytes": 19215
+    },
+    "source_integrated/deep_frame/topology_gpu.py": {
+      "sha256": "24c609122ef1b4303abf1eb622dd2d097f2e5859c39af097e052837d81fac8f2",
+      "size_bytes": 10537
+    },
+    "source_integrated/deep_frame/topology_optimization.py": {
+      "sha256": "4eeb65fc5e1188426a149d9051c76af6c0468515505cf1bc27ee6ac774635706",
+      "size_bytes": 15201
+    },
+    "source_integrated/tests/test_topology_gpu.py": {
+      "sha256": "ed2582d1f910630c95b85a1e7ac88cc3d497dcc790ad76e970cc0d8f7eabe6b5",
+      "size_bytes": 6912
+    },
+    "source_integrated/tools/benchmark_topology_gpu.py": {
+      "sha256": "def233501a937397c91192b5176825598809ae1f20a17b429682a60f38fa0fe2",
+      "size_bytes": 6126
+    },
+    "source_integrated/tools/plot_topology_gpu.py": {
+      "sha256": "d891e8e05263463518cbc15f96c933c891eca4c20ae9fc855d8f7c3ef55e13e0",
+      "size_bytes": 3420
+    },
+    "source_integrated/tools/run_topology_study.py": {
+      "sha256": "422e4388f6fbdbcd83a1347bf1453fcdd8ec6880d3844c0605e21e8427af47bd",
+      "size_bytes": 7792
+    },
+    "source_integrated/docs/validation/workstation_gpu.md": {
+      "sha256": "649f4bf0d3085bcf2010e94835b0b9a1c83c4fd836668e6c6f846315430d2644",
+      "size_bytes": 10335
+    }
+  }
+}

@@ -1,0 +1,252 @@
+{
+  "schema_version": "deep-frame-workstation-native-diagnostic-v1",
+  "recurring_native_failure": true,
+  "windows_exit_code": 3221226356,
+  "windows_exit_code_hex": "0xC0000374",
+  "native_binary_sha256": "a326dfb2efe888e35e2195da263761c0b646b10e452b8998f36ea38da612a277",
+  "initial_failure": "exports/topology/workstation_validation/solver_diagnosis/initial_failure/case_1.log",
+  "recurrence": "exports/topology/workstation_20260930/mesh_study/results/baseline_1p5mm/fea/evaluation_vftpkrc2/case_3.log",
+  "comparison": {
+    "pastix": {
+      "runtime_s": 40.72322809998877,
+      "peak_rss_bytes": 5951700992,
+      "frequencies_hz": [
+        201.7339,
+        236.7104,
+        238.5035,
+        416.6727,
+        457.0306,
+        591.803
+      ]
+    },
+    "spooles": {
+      "runtime_s": 47.53812250000192,
+      "peak_rss_bytes": 2577854464,
+      "frequencies_hz": [
+        201.7339,
+        236.7104,
+        238.5035,
+        416.6727,
+        457.0306,
+        591.803
+      ]
+    },
+    "absolute_frequency_differences_hz": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "relative_frequency_differences": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "statement": "Two successful explicit one-thread diagnostics with identical physics and distinct linear algebra backends; no causal fix or long-term reliability claim."
+  },
+  "diagnostic_jobs": {
+    "baseline_1p5_pastix_threads1": {
+      "record_path": "exports/topology/workstation_validation/solver_diagnosis/baseline_1p5_pastix_threads1/record.json",
+      "record_sha256": "8fb9da919bda0fe1cd5ff54540b0bd33835be042bc27cf554d8440f99ec37edf",
+      "schema_version": "deep-frame-native-diagnostic-v1",
+      "variant": "baseline_1p5_pastix_threads1",
+      "status": "ok",
+      "source_input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_3.inp",
+      "source_input_sha256": "75b2040eb68b2d48297e134a454485c5ffd2e91d1cb82fbbd52990ebc2fb31c0",
+      "diagnostic_input_sha256": "75b2040eb68b2d48297e134a454485c5ffd2e91d1cb82fbbd52990ebc2fb31c0",
+      "input_changes": [],
+      "solver_path": "C:\\clones\\Deep_Frame\\.venv\\calculix\\calculix_2.22_4win\\ccx_static.exe",
+      "solver_sha256": "a326dfb2efe888e35e2195da263761c0b646b10e452b8998f36ea38da612a277",
+      "script_sha256": "b1018cee14bb9b96b65c2f7fd3ec1ecf07b9e712100c6142704303ac3ccbccac",
+      "environment": {
+        "OMP_NUM_THREADS": "1",
+        "CCX_NPROC_RESULTS": "1",
+        "CCX_NPROC_STIFFNESS": "1",
+        "CCX_NPROC_EQUATION_SOLVER": "1",
+        "NUMBER_OF_CPUS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      },
+      "timeout_s": 600,
+      "automatic_retry": false,
+      "free_ram_before_bytes": 27745628160,
+      "elapsed_s": 40.72322809998877,
+      "returncode": 0,
+      "peak_rss_bytes": 5951700992,
+      "minimum_free_ram_bytes": 20495794176,
+      "abort_reason": null,
+      "modal_result": {
+        "analysis": "modal",
+        "eigenfrequencies_hz": [
+          201.7339,
+          236.7104,
+          238.5035,
+          416.6727,
+          457.0306,
+          591.803
+        ],
+        "discarded_rigid_modes": 0,
+        "fixture": "all translations fixed on selected nodes"
+      },
+      "artifacts": {
+        "case_3.12d": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        "case_3.cvg": {
+          "sha256": "7949113325cb32be7bffd2b865928ef5606322c0f7f08d37a302e5063b074593",
+          "size_bytes": 278
+        },
+        "case_3.dat": {
+          "sha256": "2588fb9cf0e1a3b8a5dbea806e2062c73cc306e4a03bfa41938bb6d5ee626879",
+          "size_bytes": 2673
+        },
+        "case_3.frd": {
+          "sha256": "8eefc7494eaf6ab41d2680deae66e3593cc2b607e286c2c36cbe1bde96132b57",
+          "size_bytes": 21864520
+        },
+        "case_3.inp": {
+          "sha256": "75b2040eb68b2d48297e134a454485c5ffd2e91d1cb82fbbd52990ebc2fb31c0",
+          "size_bytes": 15825273
+        },
+        "case_3.log": {
+          "sha256": "63621e61f0ad22641542608670ac888d3fe78baaa262544f134e00feba4ee47f",
+          "size_bytes": 13927
+        },
+        "case_3.sta": {
+          "sha256": "996b9c2185a886af77592a4dd2183af438e4b5ea56e3621262de46da071adf89",
+          "size_bytes": 100
+        }
+      }
+    },
+    "baseline_1p5_spooles_threads1": {
+      "record_path": "exports/topology/workstation_validation/solver_diagnosis/baseline_1p5_spooles_threads1/record.json",
+      "record_sha256": "d472001f75e36d90b2be47bacdc783a20618337a804201600509e1d841cd8132",
+      "schema_version": "deep-frame-native-diagnostic-v1",
+      "variant": "baseline_1p5_spooles_threads1",
+      "status": "ok",
+      "source_input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_3.inp",
+      "source_input_sha256": "75b2040eb68b2d48297e134a454485c5ffd2e91d1cb82fbbd52990ebc2fb31c0",
+      "diagnostic_input_sha256": "cdd80e35fd5e6d42473b057967552c1e9100e46ba9f35e2108643637ad9cea16",
+      "input_changes": [
+        {
+          "from": "*FREQUENCY",
+          "to": "*FREQUENCY,SOLVER=SPOOLES",
+          "count": 1
+        }
+      ],
+      "solver_path": "C:\\clones\\Deep_Frame\\.venv\\calculix\\calculix_2.22_4win\\ccx_static.exe",
+      "solver_sha256": "a326dfb2efe888e35e2195da263761c0b646b10e452b8998f36ea38da612a277",
+      "script_sha256": "b1018cee14bb9b96b65c2f7fd3ec1ecf07b9e712100c6142704303ac3ccbccac",
+      "environment": {
+        "OMP_NUM_THREADS": "1",
+        "CCX_NPROC_RESULTS": "1",
+        "CCX_NPROC_STIFFNESS": "1",
+        "CCX_NPROC_EQUATION_SOLVER": "1",
+        "NUMBER_OF_CPUS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1"
+      },
+      "timeout_s": 600,
+      "automatic_retry": false,
+      "free_ram_before_bytes": 27010945024,
+      "elapsed_s": 47.53812250000192,
+      "returncode": 0,
+      "peak_rss_bytes": 2577854464,
+      "minimum_free_ram_bytes": 25163411456,
+      "abort_reason": null,
+      "modal_result": {
+        "analysis": "modal",
+        "eigenfrequencies_hz": [
+          201.7339,
+          236.7104,
+          238.5035,
+          416.6727,
+          457.0306,
+          591.803
+        ],
+        "discarded_rigid_modes": 0,
+        "fixture": "all translations fixed on selected nodes"
+      },
+      "artifacts": {
+        "case_3.12d": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        },
+        "case_3.cvg": {
+          "sha256": "7949113325cb32be7bffd2b865928ef5606322c0f7f08d37a302e5063b074593",
+          "size_bytes": 278
+        },
+        "case_3.dat": {
+          "sha256": "3e7c8db34057135a3817f0b499dd7632bcde2202af9c6b9ac82869a3b963eb8f",
+          "size_bytes": 2673
+        },
+        "case_3.frd": {
+          "sha256": "8aa6b9fb59b3a1dc5360f08245ccdc1d92ea7233ec22a3c650cfb3c31b02cf8e",
+          "size_bytes": 21864520
+        },
+        "case_3.inp": {
+          "sha256": "cdd80e35fd5e6d42473b057967552c1e9100e46ba9f35e2108643637ad9cea16",
+          "size_bytes": 15825288
+        },
+        "case_3.log": {
+          "sha256": "abbd17709724857fe0313f1d54f7961b2a32156d0c283c7402c9b64d2f7fe93e",
+          "size_bytes": 3016
+        },
+        "case_3.sta": {
+          "sha256": "996b9c2185a886af77592a4dd2183af438e4b5ea56e3621262de46da071adf89",
+          "size_bytes": 100
+        },
+        "spooles.out": {
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size_bytes": 0
+        }
+      }
+    }
+  },
+  "official_sources": {
+    "release_source": {
+      "url": "https://www.dhondt.de/ccx_2.22.src.tar.bz2",
+      "sha256": "3a94dcc775a31f570229734b341d6b06301ebdc759863df901c8b9bf1854c0bc",
+      "selected_files": [
+        "./CalculiX/ccx_2.22/src/frequencys.f",
+        "./CalculiX/ccx_2.22/src/arpack.c"
+      ]
+    },
+    "manual_url": "https://github.com/Dhondtguido/CalculiX/blob/master/doc/CalculiX.tex",
+    "included_backend_evidence": ".venv/calculix/calculix_2.22_4win/README_Install lists ccx_static.exe: spooles (static), pastix (static)"
+  },
+  "conclusion": "The 2.22 Windows binary failed twice during a point-mass modal analysis in the default PaStiX path. Cause is unresolved. Explicit one-thread PaStiX and SPOOLES both solved the unchanged 1.5 mm physics and gave all six frequencies identical at printed precision. These two observations support an explicit diagnostic alternative, not a claim of a proven fix. No historical failed or accepted artifact was overwritten.",
+  "implementation": {
+    "default": null,
+    "allowed_explicit_values": [
+      "SPOOLES",
+      "PASTIX"
+    ],
+    "automatic_fallback": false,
+    "workstation_explicit_settings": {
+      "linear_solver": "SPOOLES",
+      "threads": 1
+    },
+    "thread_environment_forced_from_settings": [
+      "OMP_NUM_THREADS",
+      "CCX_NPROC_RESULTS",
+      "CCX_NPROC_STIFFNESS",
+      "CCX_NPROC_EQUATION_SOLVER",
+      "NUMBER_OF_CPUS"
+    ],
+    "historical_source_copies": "exports/topology/workstation_validation/source_before_backend",
+    "invalid_input_contract": "Backend and thread validation precedes result metadata; invalid values remain strict-JSON-safe without starting mesh or solver."
+  },
+  "validation": {
+    "passed": 151,
+    "duration_s": 36.86,
+    "report": "exports/topology/workstation_validation/environment.json",
+    "source_snapshot": "exports/topology/workstation_validation/source_final"
+  }
+}

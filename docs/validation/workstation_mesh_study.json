@@ -1,0 +1,3619 @@
+{
+  "schema_version": "deep-frame-workstation-mesh-evidence-v1",
+  "date": "2026-09-30",
+  "scientific_status": "mesh_sensitivity_screen_not_satisfied",
+  "raw_study": "../../exports/topology/workstation_20260930/mesh_study",
+  "audit": {
+    "initial_repository": {
+      "commit": "15e37bf320982618c71210bd5bd19be0af89878e",
+      "tag": "phase1-workstation-2026-09-30",
+      "tag_commit": "938bbdfc42a8ca04887fdc494fd6b0c4b5cb6061",
+      "initial_worktree_clean": true,
+      "since_tag_only_handoff_documents": true,
+      "source_raw_matches_at_arrival": 24,
+      "source_normalized_matches_at_arrival": 26,
+      "line_ending_only_differences": [
+        "components.py",
+        "model.py"
+      ]
+    },
+    "historical_raw_run_transferred": false,
+    "historical_zip_transferred": false,
+    "versioned_artifact_checks": {
+      "run_manifest.json": {
+        "sha256": "4d6f9fbc3c9c3129a5683dbb300d2e295031e186364b38049cf948b6375f08a9",
+        "size_bytes": 249271,
+        "passed": true
+      },
+      "inputs.json": {
+        "sha256": "f46b2489f04a3c7fd0e7695dac23bca1422c1901faebcd7d9b576cd39b052baa",
+        "size_bytes": 146456,
+        "passed": true
+      },
+      "fields.npz": {
+        "sha256": "e9f188ab36bdef40fd6bcb45d9cc37ee7fafbf652a08ca7cf95b54f2faa113da",
+        "size_bytes": 18013,
+        "passed": true
+      },
+      "optimization.json": {
+        "sha256": "199c658642980c81b14cc728ba6da734fe7e1d274c836f4e41fad322835070a9",
+        "size_bytes": 145645,
+        "passed": true
+      },
+      "candidate_record.json": {
+        "sha256": "da2253d8ac9440e80ddb06c63c890804584d9f1840bcb01ff5584dd8412744bd",
+        "size_bytes": 66588,
+        "passed": true
+      },
+      "baseline_fea.json": {
+        "sha256": "99cec72296390ce7b21d50e4f7bb185fdc021053b24c427ff5f1645918065442",
+        "size_bytes": 5600,
+        "passed": true
+      },
+      "candidate_fea.json": {
+        "sha256": "7cbc7fc407669080b148d976a672684c80075e6cbfcfc847cb6563d3c2834906",
+        "size_bytes": 5836,
+        "passed": true
+      }
+    },
+    "mask_checks": {
+      "allowed": true,
+      "preserve": true,
+      "forbidden": true
+    },
+    "migration_note": "Original ZIP, STEP/STL and raw FEA were not transferred. CAD is regenerated from SHA256-verified archived density and inputs; new files are not claimed byte-identical to the lost raw artifacts.",
+    "historical_stl_byte_matches": {
+      "baseline": true,
+      "candidate": true
+    },
+    "three_mm_physical_output_exact_matches": {
+      "baseline": {
+        "frame_mass_g": true,
+        "point_mass_g": true,
+        "mass_g": true,
+        "eigenfrequencies_hz": true,
+        "max_displacement_mm": true,
+        "max_von_mises_mpa": true,
+        "stiffness_n_per_mm": true,
+        "load_cases": true,
+        "mesh": true,
+        "point_mass_coupling": true,
+        "solver_version": true
+      },
+      "candidate": {
+        "frame_mass_g": true,
+        "point_mass_g": true,
+        "mass_g": true,
+        "eigenfrequencies_hz": true,
+        "max_displacement_mm": true,
+        "max_von_mises_mpa": true,
+        "stiffness_n_per_mm": true,
+        "load_cases": true,
+        "mesh": true,
+        "point_mass_coupling": true,
+        "solver_version": true
+      }
+    }
+  },
+  "summary": {
+    "schema_version": "deep-frame-workstation-mesh-summary-v1",
+    "study_input_sha256": "2eed8a9e3f89650b98203a05de72c96e6ebff00fc83fa19a25544d3d47389c01",
+    "preparation": "preparation.json",
+    "preparation_sha256": "72ed0c1a32fea7be5e2fa7e815faae1eeda56681012ae479abfa4e09c03591a4",
+    "rows": [
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 1.5,
+        "status": "failed",
+        "record": "results/baseline_1p5mm/record.json",
+        "record_sha256": "de9ed3e397743bb4b4ff7085ab79f516455a115941e933fcae90bfa8d1737481",
+        "diagnostics": [
+          "RuntimeError: External tool failed (3221226356); log: C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_3.log; rix.\n number of equations\n 509598\n number of nonzero lower triangular matrix elements\n 17948925\n\n Using up to 2 cpu(s) for setting up the structure of the matrix.\n Using up to 2 cpu(s) for the stress calculation.\n\n Using up to 2 cpu(s) for the symmetric stiffness/mass contributions.\n\nNot reusing csc.\n+-------------------------------------------------+\n+     PaStiX : Parallel Sparse matriX package     +\n+-------------------------------------------------+\n  Version:                                   6.0.1\n  Schedulers:\n    sequential:                            Enabled\n    thread static:                         Started\n    thread dynamic:                       Disabled\n    PaRSEC:                               Disabled\n    StarPU:                               Disabled\n  Number of MPI processes:                       1\n  Number of threads per process:                 1\n  Number of GPUs:                                0\n  MPI communication support:              Disabled\n  Distribution level:                     2D( 256)\n  Blocking size (min/max):             1024 / 2048\n\n  Matrix type:  General\n  Arithmetic:   Double\n  Format:       CSC\n  N:            509598\n  nnz:          36407448\n"
+        ]
+      },
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 2.0,
+        "status": "ok",
+        "record": "results/baseline_2p0mm/record.json",
+        "record_sha256": "42a3f99df79ea3bceb7edefa60a949d4e57dd54b18d3b57b691dcf84da2dc7f9",
+        "metrics": {
+          "frame_mass_g": 32.16290311400827,
+          "stiffness_n_per_mm": 5.147838217757748,
+          "max_displacement_mm": 0.2562465305004315,
+          "max_von_mises_mpa": 6.700761139370715,
+          "first_frequency_hz": 200.2521
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 64931,
+          "minimum_jacobian_mm3": 0.016011423523299755,
+          "mesh_size_mm": 2.0,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 119383
+        },
+        "runtime_s": 75.96278269999311,
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 106,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ]
+      },
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 2.5,
+        "status": "ok",
+        "record": "results/baseline_2p5mm/record.json",
+        "record_sha256": "097b365f0532bd7d2c212c0ae393a3a0d2c434bc68b256faff4fb7fd40370c4a",
+        "metrics": {
+          "frame_mass_g": 32.16290311400827,
+          "stiffness_n_per_mm": 5.149508608886,
+          "max_displacement_mm": 0.25582464873115396,
+          "max_von_mises_mpa": 6.819512577895481,
+          "first_frequency_hz": 202.561
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 52949,
+          "minimum_jacobian_mm3": 0.05445183683787707,
+          "mesh_size_mm": 2.5,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 97025
+        },
+        "runtime_s": 62.7509207999974,
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 77,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ]
+      },
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 3.0,
+        "status": "ok",
+        "record": "results/baseline_3p0mm/record.json",
+        "record_sha256": "90e0d818f820ee996ebbdf5e2ccdb1a63fac93cf96b406c9c73b278249652166",
+        "metrics": {
+          "frame_mass_g": 32.16290311400827,
+          "stiffness_n_per_mm": 5.163785992309858,
+          "max_displacement_mm": 0.25542346004471833,
+          "max_von_mises_mpa": 5.983498689923118,
+          "first_frequency_hz": 204.504
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 45491,
+          "minimum_jacobian_mm3": 0.053391162260114436,
+          "mesh_size_mm": 3.0,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 83406
+        },
+        "runtime_s": 49.41689680000127,
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 58,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ]
+      },
+      {
+        "geometry": "candidate",
+        "mesh_size_mm": 2.0,
+        "status": "ok",
+        "record": "results/candidate_2p0mm/record.json",
+        "record_sha256": "528fd2b629ff6bfc02b731e5a49d2c1dd36d06d5a8ed82e53cc38747a9a104e1",
+        "metrics": {
+          "frame_mass_g": 58.53180409071862,
+          "stiffness_n_per_mm": 187.11812984143887,
+          "max_displacement_mm": 0.008328702386318615,
+          "max_von_mises_mpa": 0.6500579411275345,
+          "first_frequency_hz": 1068.339
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 81024,
+          "minimum_jacobian_mm3": 0.06943952503119023,
+          "mesh_size_mm": 2.0,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 143983
+        },
+        "runtime_s": 89.85455109999748,
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 107,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ]
+      },
+      {
+        "geometry": "candidate",
+        "mesh_size_mm": 2.5,
+        "status": "ok",
+        "record": "results/candidate_2p5mm/record.json",
+        "record_sha256": "5b16edf73cc55f7f2d9c8c81237e262b063021ad9c326dbdc358b61576cb430e",
+        "metrics": {
+          "frame_mass_g": 58.53180409071862,
+          "stiffness_n_per_mm": 191.97429552664462,
+          "max_displacement_mm": 0.008158618522276149,
+          "max_von_mises_mpa": 0.6325102491374891,
+          "first_frequency_hz": 1068.723
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 71302,
+          "minimum_jacobian_mm3": 0.06612403249742939,
+          "mesh_size_mm": 2.5,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 128046
+        },
+        "runtime_s": 78.43700549998903,
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 108,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ]
+      },
+      {
+        "geometry": "candidate",
+        "mesh_size_mm": 3.0,
+        "status": "ok",
+        "record": "results/candidate_3p0mm/record.json",
+        "record_sha256": "3abcf3954482e550a8b614082576b8bf122a49ab6506c490e20e65563c9cab90",
+        "metrics": {
+          "frame_mass_g": 58.53180409071862,
+          "stiffness_n_per_mm": 194.39106808692114,
+          "max_displacement_mm": 0.008062850696662235,
+          "max_von_mises_mpa": 0.5174761080440285,
+          "first_frequency_hz": 1075.764
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 60933,
+          "minimum_jacobian_mm3": 0.06504657037365616,
+          "mesh_size_mm": 3.0,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 110430
+        },
+        "runtime_s": 61.76120229999651,
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 64,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ]
+      }
+    ],
+    "successive_mesh_changes": [
+      {
+        "geometry": "baseline",
+        "coarse_mm": 3.0,
+        "fine_mm": 2.5,
+        "relative_changes": {
+          "stiffness_n_per_mm": 0.0027649061067055447,
+          "max_displacement_mm": 0.0015706806507334026,
+          "first_frequency_hz": 0.009501036654539718,
+          "max_von_mises_mpa": 0.13971990825038616
+        },
+        "screen_passed": false
+      },
+      {
+        "geometry": "baseline",
+        "coarse_mm": 2.5,
+        "fine_mm": 2.0,
+        "relative_changes": {
+          "stiffness_n_per_mm": 0.0003243787427347211,
+          "max_displacement_mm": 0.0016491052420868346,
+          "first_frequency_hz": 0.011398541673866114,
+          "max_von_mises_mpa": 0.01741347892071976
+        },
+        "screen_passed": true
+      },
+      {
+        "geometry": "candidate",
+        "coarse_mm": 3.0,
+        "fine_mm": 2.5,
+        "relative_changes": {
+          "stiffness_n_per_mm": 0.01243252884024415,
+          "max_displacement_mm": 0.011877663275292827,
+          "first_frequency_hz": 0.006545115843251792,
+          "max_von_mises_mpa": 0.22229845843177176
+        },
+        "screen_passed": false
+      },
+      {
+        "geometry": "candidate",
+        "coarse_mm": 2.5,
+        "fine_mm": 2.0,
+        "relative_changes": {
+          "stiffness_n_per_mm": 0.025295916163587395,
+          "max_displacement_mm": 0.0208471401840975,
+          "first_frequency_hz": 0.00035930732285172073,
+          "max_von_mises_mpa": 0.02774293699426056
+        },
+        "screen_passed": false
+      }
+    ],
+    "same_mesh_comparisons": [
+      {
+        "mesh_size_mm": 3.0,
+        "passed": true,
+        "checks": {
+          "frame_mass": true,
+          "stiffness": true,
+          "frequency": true,
+          "displacement": true,
+          "stress": true
+        },
+        "ratios": {
+          "frame_mass_ratio": 1.8198545039059488,
+          "stiffness_ratio": 37.645066696493046,
+          "frequency_ratio": 5.260356765637836,
+          "displacement_ratio": 0.03156660196855304,
+          "stress_ratio": 0.0864838675264551
+        },
+        "limits": {
+          "frame_mass_ratio_max": 2.0,
+          "stiffness_ratio_min": 0.5,
+          "frequency_ratio_min": 0.7,
+          "displacement_ratio_max": 2.0,
+          "stress_ratio_max": 2.0
+        },
+        "candidate": {
+          "frame_mass_g": 58.53180409071862,
+          "stiffness_n_per_mm": 194.39106808692114,
+          "max_displacement_mm": 0.008062850696662235,
+          "max_von_mises_mpa": 0.5174761080440285,
+          "first_frequency_hz": 1075.764
+        },
+        "reference": {
+          "frame_mass_g": 32.16290311400827,
+          "stiffness_n_per_mm": 5.163785992309858,
+          "max_displacement_mm": 0.25542346004471833,
+          "max_von_mises_mpa": 5.983498689923118,
+          "first_frequency_hz": 204.504
+        },
+        "selection_score": 2.154570053660322
+      },
+      {
+        "mesh_size_mm": 2.5,
+        "passed": true,
+        "checks": {
+          "frame_mass": true,
+          "stiffness": true,
+          "frequency": true,
+          "displacement": true,
+          "stress": true
+        },
+        "ratios": {
+          "frame_mass_ratio": 1.8198545039059488,
+          "stiffness_ratio": 37.280119348742026,
+          "frequency_ratio": 5.276055114261876,
+          "displacement_ratio": 0.03189144815693674,
+          "stress_ratio": 0.0927500670924319
+        },
+        "limits": {
+          "frame_mass_ratio_max": 2.0,
+          "stiffness_ratio_min": 0.5,
+          "frequency_ratio_min": 0.7,
+          "displacement_ratio_max": 2.0,
+          "stress_ratio_max": 2.0
+        },
+        "candidate": {
+          "frame_mass_g": 58.53180409071862,
+          "stiffness_n_per_mm": 191.97429552664462,
+          "max_displacement_mm": 0.008158618522276149,
+          "max_von_mises_mpa": 0.6325102491374891,
+          "first_frequency_hz": 1068.723
+        },
+        "reference": {
+          "frame_mass_g": 32.16290311400827,
+          "stiffness_n_per_mm": 5.149508608886,
+          "max_displacement_mm": 0.25582464873115396,
+          "max_von_mises_mpa": 6.819512577895481,
+          "first_frequency_hz": 202.561
+        },
+        "selection_score": 2.1608555161159035
+      },
+      {
+        "mesh_size_mm": 2.0,
+        "passed": true,
+        "checks": {
+          "frame_mass": true,
+          "stiffness": true,
+          "frequency": true,
+          "displacement": true,
+          "stress": true
+        },
+        "ratios": {
+          "frame_mass_ratio": 1.8198545039059488,
+          "stiffness_ratio": 36.348875377622534,
+          "frequency_ratio": 5.334970269974696,
+          "displacement_ratio": 0.032502693285459294,
+          "stress_ratio": 0.09701255239618689
+        },
+        "limits": {
+          "frame_mass_ratio_max": 2.0,
+          "stiffness_ratio_min": 0.5,
+          "frequency_ratio_min": 0.7,
+          "displacement_ratio_max": 2.0,
+          "stress_ratio_max": 2.0
+        },
+        "candidate": {
+          "frame_mass_g": 58.53180409071862,
+          "stiffness_n_per_mm": 187.11812984143887,
+          "max_displacement_mm": 0.008328702386318615,
+          "max_von_mises_mpa": 0.6500579411275345,
+          "first_frequency_hz": 1068.339
+        },
+        "reference": {
+          "frame_mass_g": 32.16290311400827,
+          "stiffness_n_per_mm": 5.147838217757748,
+          "max_displacement_mm": 0.2562465305004315,
+          "max_von_mises_mpa": 6.700761139370715,
+          "first_frequency_hz": 200.2521
+        },
+        "selection_score": 2.164323386220379
+      }
+    ],
+    "screen": {
+      "stiffness_n_per_mm": 0.02,
+      "max_displacement_mm": 0.02,
+      "first_frequency_hz": 0.02,
+      "max_von_mises_mpa": 0.05
+    },
+    "interpretation": "Predeclared successive-mesh sensitivity screen; not a proof of asymptotic convergence. Physical selector boxes, point-mass patch, loads, material and CAD stay fixed; node counts and equal nodal force allocation vary with the mesh. Peaks at sharp corners may be singular."
+  },
+  "geometries": {
+    "baseline": {
+      "volume_mm3": 29507.250563310336,
+      "bounds_min_mm": [
+        -63.963240360358064,
+        -59.5,
+        0.0
+      ],
+      "bounds_max_mm": [
+        63.963240360358064,
+        52.0,
+        29.0
+      ],
+      "solids": 1,
+      "is_valid": true,
+      "historical_volume_mm3": 29507.25056331034,
+      "volume_difference_mm3": -3.637978807091713e-12,
+      "historical_volume_matches": true,
+      "step": {
+        "path": "geometry/baseline/geometry.step",
+        "sha256": "678c1a946c642329fb5777308ab414d9d98b5f3d30f56ba7c794dcdfb4fbba5c",
+        "size_bytes": 664982
+      },
+      "stl": {
+        "path": "geometry/baseline/geometry.stl",
+        "sha256": "545698fec3ffd8cb840d7c196b748a48927ef9d70752f55ee714b1ef8b157398",
+        "size_bytes": 906084
+      }
+    },
+    "candidate": {
+      "volume_mm3": 53698.902835521665,
+      "bounds_min_mm": [
+        -64.0,
+        -60.0,
+        0.0
+      ],
+      "bounds_max_mm": [
+        64.0,
+        49.37487240669072,
+        29.0
+      ],
+      "solids": 1,
+      "is_valid": true,
+      "historical_volume_mm3": 53698.902835521665,
+      "volume_difference_mm3": 0.0,
+      "historical_volume_matches": true,
+      "step": {
+        "path": "geometry/candidate/geometry.step",
+        "sha256": "55872d9907f23682fcbdd83c2857c99e8952bab058ba693fe09b5f6ab48ad478",
+        "size_bytes": 1919743
+      },
+      "stl": {
+        "path": "geometry/candidate/geometry.stl",
+        "sha256": "0fcf054c3928668bc40eeb9f3af2421e42eeceb1a1a69b72441ed4bc3c1a2db3",
+        "size_bytes": 988684
+      }
+    }
+  },
+  "provenance": {
+    "packages": {
+      "numpy": "2.5.3",
+      "scipy": "1.18.1",
+      "build123d": "0.13.0",
+      "gmsh": "4.15.2",
+      "trimesh": "5.1.0",
+      "cadquery-ocp-novtk": "8.0.1.0.0"
+    },
+    "python_version": "3.13.5 (main, Jul 23 2025, 00:30:06) [MSC v.1944 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "source_sha256": {
+      "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "checks.py": "1d7a98aae5c6f660ceac4e300ceadcb465ddfc7c51a687b6d289bdaa405c9e87",
+      "component_defaults.py": "93cabf48ce128b0124d70232892d14f12bf18e9e11998b33428d091a6ab39a85",
+      "components.py": "3fa8965a188f311abebe0af2268e76d20bf6a8167655d0757f939832e025ede7",
+      "config.py": "c53dcb69f28004c3b6afa367a020d8a3a6e7326b8a30260bbad39f777581af14",
+      "fea.py": "e7f571fb6e1f040b836d596bdfba139456f916614cd93e3537b097f213ddf096",
+      "fea_config.py": "b50afb0dba165cddab142f55a108a19c0db9a601451c92ceabed80eca62cdacb",
+      "fea_mesh.py": "1cba2084cde2ee70e2f010e044277688e8a469f6054a2ea96f6d788ea07b73c0",
+      "frame.py": "fdde2eed077cd1dacc930590e72213cc3c95b7036109b1d03405fc187786965d",
+      "frame_defaults.py": "c9139b1649cb63552a79e6e606933f22fd79b03cee2afec84ce49580312ee50a",
+      "geometry.py": "7e3e58b25266fe6baffbdf887bac9cf2bae4c42d7c2bb4863ec00fcdfb834b6d",
+      "integration.py": "1c4847101fd49cd7e2b53dbfe6ed28c746433b7f00b9cfdd39ce99f8c694e453",
+      "integration_config.py": "9f0541125de2770427e266f9677905e34ce5273184bc29e2cc0c1a0fa01e76d3",
+      "model.py": "4f08f5031d420cb02580997c2fa2e6f9dcf631c31e9b3f22180db4559b4c4ab7",
+      "optimization.py": "ec2c70681b0511e831e1ee34e4855f9e07aa8a12105b9586bcf5a9b858661b0e",
+      "optimization_config.py": "3649c9a43391f7505767dd58eec14037c178e86e9ad18d7891576e86568859ea",
+      "optimization_viewer.py": "f313a1e65ea809af9c3962688e67deb4a8a5bd7fb64a1b6f99615bc13b6a2b84",
+      "topology_config.py": "2ff8e1c97d416f3ba28ad4d3aa92001b9d51b0696ae502b3cdb67db62696ecda",
+      "topology_domain.py": "7f66b686ef56c4bc582319b189257bee1d1d00e7f77826ab6d1d42c48e4d720f",
+      "topology_elasticity.py": "a0e26d16e183fb0fcef84b629b7203118995f5552a0cfcf4a9d4572286dead34",
+      "topology_geometry.py": "4bd9c323ac2b44f7d61d632cb3804c6af65f1faeb71013e28330a72b3d034e34",
+      "topology_optimization.py": "98d68ef590ecebcaf8cdfd2a58cb5bd0893132d3be640ffb5357cbb1da59ff16",
+      "topology_pipeline.py": "7f31ca0d6cd2b51f3d9367f49083976f0420a7462c86530a1805e45e1ba119cd",
+      "topology_validation.py": "351a6ebcfdbea8755d881600da08c266091ee175fdd941e80958fbaa36ab67f9",
+      "topology_visualization.py": "c0c12bfe799e639173fb75ba4d0d136f885633448c00cccca095a96f6f8d1eda",
+      "viewer.py": "98aeaf90d31cd3f1e56e6a782eecf701588d3423b4c6feba7483cfaf96c319e7"
+    },
+    "callbacks": {
+      "reconstructor": {
+        "name": "deep_frame.topology_geometry.reconstruct_topology",
+        "source_sha256": "1e868d94f331798423ea498dd7287a243431d56e4cab71022bd8afa6cfd7f60c"
+      },
+      "evaluator": {
+        "name": "deep_frame.fea.evaluate",
+        "source_sha256": "71006f1aede0a1dee998f18e5a9c1a8769d454146ef26b54ea6457399f6aba0b"
+      },
+      "baseline_builder": {
+        "name": "deep_frame.geometry.build_geometry",
+        "source_sha256": "705b5a75d72dcbb957d10300902d6256a6171e61f6a961fba03f92e5a4e362d8"
+      }
+    },
+    "git_revision": "15e37bf320982618c71210bd5bd19be0af89878e",
+    "git_tracked_dirty": true,
+    "solver": {
+      "solver_path": "C:\\clones\\Deep_Frame\\.venv\\calculix\\calculix_2.22_4win\\ccx_static.exe",
+      "calculix_version": "2.22",
+      "calculix_sha256": "a326dfb2efe888e35e2195da263761c0b646b10e452b8998f36ea38da612a277",
+      "gmsh_version": "4.15.2",
+      "build123d_version": "0.13.0",
+      "ocp_version": "8.0.1.0.0"
+    },
+    "study_runner_sha256": "8f1fe74c5bc3e8ef912f928c38f5fadb49b603ea1fef496b628f3f925d625152"
+  },
+  "physical_model": {
+    "material": {
+      "name": "PA6-CF, preliminary isotropic dry XY surrogate",
+      "young_modulus_mpa": 4430.0,
+      "poisson_ratio": 0.3,
+      "density_g_cm3": 1.09,
+      "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf",
+      "assumptions": [
+        "Bambu PA6-CF TDS: XY Young modulus 4430 +/- 310 MPa, density 1.09 g/cm3.",
+        "Poisson ratio 0.30 is an unmeasured modeling assumption.",
+        "Isotropic full-density surrogate; real printed Z modulus is lower (2170 +/- 230 MPa).",
+        "No moisture, voids, plasticity, fatigue, damage or strain-rate dependence."
+      ]
+    },
+    "point_masses": [
+      {
+        "name": "battery",
+        "mass_g": 37.0,
+        "position_mm": [
+          -1.6781509643504353e-16,
+          -3.0144237274670914e-16,
+          34.5
+        ],
+        "attachment_region": {
+          "kind": "box",
+          "min_mm": [
+            -20.1,
+            -2.0,
+            28.99
+          ],
+          "max_mm": [
+            20.1,
+            2.0,
+            29.01
+          ]
+        }
+      }
+    ],
+    "load_cases": [
+      {
+        "name": "arm_tip",
+        "analysis": "static",
+        "fixed_regions": [
+          {
+            "kind": "box",
+            "min_mm": [
+              -15.95,
+              -15.95,
+              -0.01
+            ],
+            "max_mm": [
+              -9.55,
+              -9.55,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              -15.95,
+              9.55,
+              -0.01
+            ],
+            "max_mm": [
+              -9.55,
+              15.95,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              9.55,
+              -15.95,
+              -0.01
+            ],
+            "max_mm": [
+              15.95,
+              -9.55,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              9.55,
+              9.55,
+              -0.01
+            ],
+            "max_mm": [
+              15.95,
+              15.95,
+              0.01
+            ]
+          }
+        ],
+        "loads": [
+          {
+            "region": {
+              "kind": "box",
+              "min_mm": [
+                -64.06324036035807,
+                30.27487240669072,
+                3.99
+              ],
+              "max_mm": [
+                -44.86324036035806,
+                49.47487240669072,
+                4.01
+              ]
+            },
+            "force_n": [
+              0.0,
+              0.0,
+              -1.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "battery_impact",
+        "analysis": "static",
+        "fixed_regions": [
+          {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          }
+        ],
+        "loads": [
+          {
+            "region": {
+              "kind": "box",
+              "min_mm": [
+                -20.1,
+                -2.0,
+                28.99
+              ],
+              "max_mm": [
+                20.1,
+                2.0,
+                29.01
+              ]
+            },
+            "force_n": [
+              0.0,
+              0.0,
+              -3.6284604999999996
+            ]
+          }
+        ]
+      },
+      {
+        "name": "camera_side",
+        "analysis": "static",
+        "fixed_regions": [
+          {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          }
+        ],
+        "loads": [
+          {
+            "region": {
+              "kind": "box",
+              "min_mm": [
+                -12.01,
+                26.5,
+                19.5
+              ],
+              "max_mm": [
+                12.01,
+                43.5,
+                26.01
+              ]
+            },
+            "force_n": [
+              5.0,
+              0.0,
+              0.0
+            ]
+          }
+        ]
+      },
+      {
+        "name": "modes",
+        "analysis": "modal",
+        "fixed_regions": [
+          {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          }
+        ]
+      }
+    ],
+    "fea_settings": {
+      "mesh_size_mm": 3.0,
+      "mesh_min_size_mm": 0.5,
+      "mesh_curvature_points": 12,
+      "mesh_threads": 1,
+      "element_order": 2,
+      "num_modes": 6,
+      "work_dir": "exports/fea",
+      "solver_path": null,
+      "mesh_timeout_s": 600.0,
+      "solver_timeout_s": 900.0,
+      "threads": 2,
+      "minimum_elastic_frequency_hz": 0.1,
+      "stiffness_load_case": "arm_tip",
+      "mesh_second_order_linear": true,
+      "mesh_high_order_optimize": 0
+    },
+    "relative_constraints": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+    }
+  },
+  "candidate_validation": {
+    "passed": true,
+    "minimum_feature_screen": {
+      "minimum_feature_mm": 2.0,
+      "nozzle_limit_mm": 2.0,
+      "method": "voxel feature lower bound plus exact preserve ligament checks and post-Boolean normal-ray screen",
+      "reconstruction_report_present": true,
+      "passed": true,
+      "grid_feature_mm": 4.0,
+      "post_boolean_wall_screen": {
+        "method": "exact inward CAD normal rays, nine UV samples per face with projected largest-triangle fallback",
+        "minimum_required_mm": 2.0,
+        "minimum_measured_mm": 1.999999999999697,
+        "ray_count": 4182,
+        "thin_samples": [],
+        "thin_sample_count": 0,
+        "unresolved_faces": [],
+        "passed": true,
+        "limitations": "Finite surface sampling is a geometric screen, not a proof of global minimum thickness between samples"
+      }
+    },
+    "repairs": [
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          7,
+          27,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.034380805448818885,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          9,
+          7,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.1774794385069857,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          12,
+          21,
+          5
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.19608086535813013,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          14,
+          10,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.061234919875626105,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          16,
+          10,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.11078986729369267,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          11,
+          13,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.13100253777705595,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          11,
+          16,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.15652224624902059,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          21,
+          6,
+          0
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.13424123207375221,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          21,
+          2,
+          1
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.18204554161575415,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          21,
+          6,
+          1
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.0995644153217222,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      },
+      {
+        "method": "density_guided_local_manifold_fill",
+        "cause": "diagonal_edge_contact",
+        "cell_xyz": [
+          13,
+          27,
+          4
+        ],
+        "material_before": 0,
+        "material_after": 1,
+        "density_before": 0.18742067954903546,
+        "density_after": 1.0,
+        "added_volume_mm3": 64.0
+      }
+    ]
+  },
+  "fea_results": [
+    {
+      "geometry": "baseline",
+      "mesh_size_mm": 1.5,
+      "status": "failed",
+      "result": {
+        "status": "failed",
+        "mass_g": 69.16290311400827,
+        "eigenfrequencies_hz": [],
+        "max_displacement_mm": null,
+        "max_von_mises_mpa": null,
+        "stiffness_n_per_mm": null,
+        "load_cases": {
+          "arm_tip": {
+            "analysis": "static",
+            "max_displacement_mm": 0.25643800872736294,
+            "max_von_mises_mpa": 4.157699280773115,
+            "loads": [
+              {
+                "node_count": 1909,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -1.0
+                ],
+                "mean_displacement_mm": [
+                  -0.011704977632268193,
+                  0.005971574856469357,
+                  -0.19386741037192234
+                ],
+                "directional_displacement_mm": 0.19386741037192234,
+                "stiffness_n_per_mm": 5.158164531529891
+              }
+            ],
+            "stiffness_n_per_mm": 5.158164531529891,
+            "fixed_node_count": 1189
+          },
+          "battery_impact": {
+            "analysis": "static",
+            "max_displacement_mm": 0.029206419795056025,
+            "max_von_mises_mpa": 2.0015333106023987,
+            "loads": [
+              {
+                "node_count": 199,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -3.6284604999999996
+                ],
+                "mean_displacement_mm": [
+                  -8.240708642412056e-07,
+                  0.0005622376793969849,
+                  -0.02372379507537687
+                ],
+                "directional_displacement_mm": 0.02372379507537687,
+                "stiffness_n_per_mm": 152.9460395552822
+              }
+            ],
+            "stiffness_n_per_mm": 152.9460395552822,
+            "fixed_node_count": 7564
+          },
+          "camera_side": {
+            "analysis": "static",
+            "max_displacement_mm": 0.19935972505427318,
+            "max_von_mises_mpa": 8.176501551737926,
+            "loads": [
+              {
+                "node_count": 2299,
+                "force_n": [
+                  5.0,
+                  0.0,
+                  0.0
+                ],
+                "mean_displacement_mm": [
+                  0.1540576866463678,
+                  9.366161809482219e-05,
+                  -0.0001943187081339828
+                ],
+                "directional_displacement_mm": 0.1540576866463678,
+                "stiffness_n_per_mm": 32.45537505361395
+              }
+            ],
+            "stiffness_n_per_mm": 32.45537505361395,
+            "fixed_node_count": 7564
+          }
+        },
+        "diagnostics": [
+          "RuntimeError: External tool failed (3221226356); log: C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_3.log; rix.\n number of equations\n 509598\n number of nonzero lower triangular matrix elements\n 17948925\n\n Using up to 2 cpu(s) for setting up the structure of the matrix.\n Using up to 2 cpu(s) for the stress calculation.\n\n Using up to 2 cpu(s) for the symmetric stiffness/mass contributions.\n\nNot reusing csc.\n+-------------------------------------------------+\n+     PaStiX : Parallel Sparse matriX package     +\n+-------------------------------------------------+\n  Version:                                   6.0.1\n  Schedulers:\n    sequential:                            Enabled\n    thread static:                         Started\n    thread dynamic:                       Disabled\n    PaRSEC:                               Disabled\n    StarPU:                               Disabled\n  Number of MPI processes:                       1\n  Number of threads per process:                 1\n  Number of GPUs:                                0\n  MPI communication support:              Disabled\n  Distribution level:                     2D( 256)\n  Blocking size (min/max):             1024 / 2048\n\n  Matrix type:  General\n  Arithmetic:   Double\n  Format:       CSC\n  N:            509598\n  nnz:          36407448\n"
+        ],
+        "artifacts": {
+          "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2",
+          "arm_tip": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_0.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_0.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_0.log"
+          },
+          "battery_impact": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_1.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_1.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_1.log"
+          },
+          "camera_side": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_2.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_2.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\case_2.log"
+          },
+          "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_1p5mm\\fea\\evaluation_vftpkrc2\\result.json"
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 97610,
+          "minimum_jacobian_mm3": 0.02124715721341696,
+          "mesh_size_mm": 1.5,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 177627
+        },
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 199,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ],
+        "frame_mass_g": 32.16290311400827,
+        "point_mass_g": 37.0,
+        "solver_version": "2.22",
+        "runtime_s": 87.18068869999843
+      }
+    },
+    {
+      "geometry": "baseline",
+      "mesh_size_mm": 2.0,
+      "status": "ok",
+      "result": {
+        "status": "ok",
+        "mass_g": 69.16290311400827,
+        "eigenfrequencies_hz": [
+          200.2521,
+          234.4677,
+          236.374,
+          420.58,
+          459.7338,
+          595.0011
+        ],
+        "max_displacement_mm": 0.2562465305004315,
+        "max_von_mises_mpa": 6.700761139370715,
+        "stiffness_n_per_mm": 5.147838217757748,
+        "load_cases": {
+          "arm_tip": {
+            "analysis": "static",
+            "max_displacement_mm": 0.2562465305004315,
+            "max_von_mises_mpa": 3.424785669241509,
+            "loads": [
+              {
+                "node_count": 1590,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -1.0
+                ],
+                "mean_displacement_mm": [
+                  -0.011642074433962268,
+                  0.006086614068553463,
+                  -0.19425629899371072
+                ],
+                "directional_displacement_mm": 0.19425629899371072,
+                "stiffness_n_per_mm": 5.147838217757748
+              }
+            ],
+            "stiffness_n_per_mm": 5.147838217757748,
+            "fixed_node_count": 952
+          },
+          "battery_impact": {
+            "analysis": "static",
+            "max_displacement_mm": 0.03017721750869966,
+            "max_von_mises_mpa": 1.6064452307166193,
+            "loads": [
+              {
+                "node_count": 106,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -3.6284604999999996
+                ],
+                "mean_displacement_mm": [
+                  3.2760956792452812e-06,
+                  0.0005412201235849057,
+                  -0.02468403245283019
+                ],
+                "directional_displacement_mm": 0.02468403245283019,
+                "stiffness_n_per_mm": 146.99626193304456
+              }
+            ],
+            "stiffness_n_per_mm": 146.99626193304456,
+            "fixed_node_count": 6364
+          },
+          "camera_side": {
+            "analysis": "static",
+            "max_displacement_mm": 0.19892392056344305,
+            "max_von_mises_mpa": 6.700761139370715,
+            "loads": [
+              {
+                "node_count": 1404,
+                "force_n": [
+                  5.0,
+                  0.0,
+                  0.0
+                ],
+                "mean_displacement_mm": [
+                  0.15429685085470066,
+                  5.709532763533051e-05,
+                  -7.347156695155523e-05
+                ],
+                "directional_displacement_mm": 0.15429685085470066,
+                "stiffness_n_per_mm": 32.40506836207847
+              }
+            ],
+            "stiffness_n_per_mm": 32.40506836207847,
+            "fixed_node_count": 6364
+          },
+          "modes": {
+            "analysis": "modal",
+            "eigenfrequencies_hz": [
+              200.2521,
+              234.4677,
+              236.374,
+              420.58,
+              459.7338,
+              595.0011
+            ],
+            "discarded_rigid_modes": 0,
+            "fixture": "all translations fixed on selected nodes",
+            "fixed_node_count": 6364
+          }
+        },
+        "diagnostics": [],
+        "artifacts": {
+          "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka",
+          "arm_tip": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_0.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_0.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_0.log"
+          },
+          "battery_impact": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_1.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_1.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_1.log"
+          },
+          "camera_side": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_2.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_2.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_2.log"
+          },
+          "modes": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_3.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_3.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\case_3.log"
+          },
+          "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p0mm\\fea\\evaluation_t4xobzka\\result.json"
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 64931,
+          "minimum_jacobian_mm3": 0.016011423523299755,
+          "mesh_size_mm": 2.0,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 119383
+        },
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 106,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ],
+        "frame_mass_g": 32.16290311400827,
+        "point_mass_g": 37.0,
+        "solver_version": "2.22",
+        "runtime_s": 75.96278269999311
+      }
+    },
+    {
+      "geometry": "baseline",
+      "mesh_size_mm": 2.5,
+      "status": "ok",
+      "result": {
+        "status": "ok",
+        "mass_g": 69.16290311400827,
+        "eigenfrequencies_hz": [
+          202.561,
+          236.6836,
+          238.1386,
+          423.4693,
+          462.6967,
+          597.9907
+        ],
+        "max_displacement_mm": 0.25582464873115396,
+        "max_von_mises_mpa": 6.819512577895481,
+        "stiffness_n_per_mm": 5.149508608886,
+        "load_cases": {
+          "arm_tip": {
+            "analysis": "static",
+            "max_displacement_mm": 0.25582464873115396,
+            "max_von_mises_mpa": 3.2474399935230593,
+            "loads": [
+              {
+                "node_count": 1417,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -1.0
+                ],
+                "mean_displacement_mm": [
+                  -0.011586108814396605,
+                  0.006159183175723348,
+                  -0.19419328637967484
+                ],
+                "directional_displacement_mm": 0.19419328637967484,
+                "stiffness_n_per_mm": 5.149508608886
+              }
+            ],
+            "stiffness_n_per_mm": 5.149508608886,
+            "fixed_node_count": 804
+          },
+          "battery_impact": {
+            "analysis": "static",
+            "max_displacement_mm": 0.029365898979309885,
+            "max_von_mises_mpa": 1.2630315745460363,
+            "loads": [
+              {
+                "node_count": 77,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -3.6284604999999996
+                ],
+                "mean_displacement_mm": [
+                  7.642711103896102e-05,
+                  0.00042822384545454544,
+                  -0.024177864285714286
+                ],
+                "directional_displacement_mm": 0.024177864285714286,
+                "stiffness_n_per_mm": 150.07365651166754
+              }
+            ],
+            "stiffness_n_per_mm": 150.07365651166754,
+            "fixed_node_count": 5664
+          },
+          "camera_side": {
+            "analysis": "static",
+            "max_displacement_mm": 0.19590604153597557,
+            "max_von_mises_mpa": 6.819512577895481,
+            "loads": [
+              {
+                "node_count": 1016,
+                "force_n": [
+                  5.0,
+                  0.0,
+                  0.0
+                ],
+                "mean_displacement_mm": [
+                  0.1509370332677164,
+                  0.0004989848129921269,
+                  -0.0011119200984251944
+                ],
+                "directional_displacement_mm": 0.1509370332677164,
+                "stiffness_n_per_mm": 33.12639643003663
+              }
+            ],
+            "stiffness_n_per_mm": 33.12639643003663,
+            "fixed_node_count": 5664
+          },
+          "modes": {
+            "analysis": "modal",
+            "eigenfrequencies_hz": [
+              202.561,
+              236.6836,
+              238.1386,
+              423.4693,
+              462.6967,
+              597.9907
+            ],
+            "discarded_rigid_modes": 0,
+            "fixture": "all translations fixed on selected nodes",
+            "fixed_node_count": 5664
+          }
+        },
+        "diagnostics": [],
+        "artifacts": {
+          "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew",
+          "arm_tip": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_0.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_0.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_0.log"
+          },
+          "battery_impact": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_1.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_1.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_1.log"
+          },
+          "camera_side": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_2.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_2.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_2.log"
+          },
+          "modes": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_3.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_3.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\case_3.log"
+          },
+          "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_2p5mm\\fea\\evaluation_g0r7klew\\result.json"
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 52949,
+          "minimum_jacobian_mm3": 0.05445183683787707,
+          "mesh_size_mm": 2.5,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 97025
+        },
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 77,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ],
+        "frame_mass_g": 32.16290311400827,
+        "point_mass_g": 37.0,
+        "solver_version": "2.22",
+        "runtime_s": 62.7509207999974
+      }
+    },
+    {
+      "geometry": "baseline",
+      "mesh_size_mm": 3.0,
+      "status": "ok",
+      "result": {
+        "status": "ok",
+        "mass_g": 69.16290311400827,
+        "eigenfrequencies_hz": [
+          204.504,
+          240.6657,
+          240.9864,
+          426.2794,
+          464.7615,
+          601.5691
+        ],
+        "max_displacement_mm": 0.25542346004471833,
+        "max_von_mises_mpa": 5.983498689923118,
+        "stiffness_n_per_mm": 5.163785992309858,
+        "load_cases": {
+          "arm_tip": {
+            "analysis": "static",
+            "max_displacement_mm": 0.25542346004471833,
+            "max_von_mises_mpa": 2.938383537483186,
+            "loads": [
+              {
+                "node_count": 1248,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -1.0
+                ],
+                "mean_displacement_mm": [
+                  -0.011528314294871797,
+                  0.006203563523237182,
+                  -0.19365636017628246
+                ],
+                "directional_displacement_mm": 0.19365636017628246,
+                "stiffness_n_per_mm": 5.163785992309858
+              }
+            ],
+            "stiffness_n_per_mm": 5.163785992309858,
+            "fixed_node_count": 716
+          },
+          "battery_impact": {
+            "analysis": "static",
+            "max_displacement_mm": 0.028385830163246792,
+            "max_von_mises_mpa": 1.126452415192182,
+            "loads": [
+              {
+                "node_count": 58,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -3.6284604999999996
+                ],
+                "mean_displacement_mm": [
+                  -1.1580045517241378e-05,
+                  0.0004473436224137933,
+                  -0.023297142931034485
+                ],
+                "directional_displacement_mm": 0.023297142931034485,
+                "stiffness_n_per_mm": 155.74701630758642
+              }
+            ],
+            "stiffness_n_per_mm": 155.74701630758642,
+            "fixed_node_count": 4933
+          },
+          "camera_side": {
+            "analysis": "static",
+            "max_displacement_mm": 0.1943364860042192,
+            "max_von_mises_mpa": 5.983498689923118,
+            "loads": [
+              {
+                "node_count": 738,
+                "force_n": [
+                  5.0,
+                  0.0,
+                  0.0
+                ],
+                "mean_displacement_mm": [
+                  0.14997036653116527,
+                  0.0003627629945799421,
+                  -0.0010043117886178858
+                ],
+                "directional_displacement_mm": 0.14997036653116527,
+                "stiffness_n_per_mm": 33.339919849838815
+              }
+            ],
+            "stiffness_n_per_mm": 33.339919849838815,
+            "fixed_node_count": 4933
+          },
+          "modes": {
+            "analysis": "modal",
+            "eigenfrequencies_hz": [
+              204.504,
+              240.6657,
+              240.9864,
+              426.2794,
+              464.7615,
+              601.5691
+            ],
+            "discarded_rigid_modes": 0,
+            "fixture": "all translations fixed on selected nodes",
+            "fixed_node_count": 4933
+          }
+        },
+        "diagnostics": [],
+        "artifacts": {
+          "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7",
+          "arm_tip": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_0.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_0.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_0.log"
+          },
+          "battery_impact": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_1.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_1.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_1.log"
+          },
+          "camera_side": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_2.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_2.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_2.log"
+          },
+          "modes": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_3.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_3.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\case_3.log"
+          },
+          "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\baseline_3p0mm\\fea\\evaluation_e_vid_y7\\result.json"
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 45491,
+          "minimum_jacobian_mm3": 0.053391162260114436,
+          "mesh_size_mm": 3.0,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 83406
+        },
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 58,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ],
+        "frame_mass_g": 32.16290311400827,
+        "point_mass_g": 37.0,
+        "solver_version": "2.22",
+        "runtime_s": 49.41689680000127
+      }
+    },
+    {
+      "geometry": "candidate",
+      "mesh_size_mm": 2.0,
+      "status": "ok",
+      "result": {
+        "status": "ok",
+        "mass_g": 95.53180409071862,
+        "eigenfrequencies_hz": [
+          1068.339,
+          1190.527,
+          1447.103,
+          1541.364,
+          1964.394,
+          2082.494
+        ],
+        "max_displacement_mm": 0.008328702386318615,
+        "max_von_mises_mpa": 0.6500579411275345,
+        "stiffness_n_per_mm": 187.11812984143887,
+        "load_cases": {
+          "arm_tip": {
+            "analysis": "static",
+            "max_displacement_mm": 0.008328702386318615,
+            "max_von_mises_mpa": 0.6500579411275345,
+            "loads": [
+              {
+                "node_count": 1738,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -1.0
+                ],
+                "mean_displacement_mm": [
+                  5.199169375478708e-05,
+                  0.00040550888509781335,
+                  -0.005344217585155351
+                ],
+                "directional_displacement_mm": 0.005344217585155351,
+                "stiffness_n_per_mm": 187.11812984143887
+              }
+            ],
+            "stiffness_n_per_mm": 187.11812984143887,
+            "fixed_node_count": 819
+          },
+          "battery_impact": {
+            "analysis": "static",
+            "max_displacement_mm": 0.0013418769325728643,
+            "max_von_mises_mpa": 0.2956700438244542,
+            "loads": [
+              {
+                "node_count": 107,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -3.6284604999999996
+                ],
+                "mean_displacement_mm": [
+                  0.00010407320121495327,
+                  -0.00010601917308411212,
+                  -0.001173714037383178
+                ],
+                "directional_displacement_mm": 0.001173714037383178,
+                "stiffness_n_per_mm": 3091.4348678062456
+              }
+            ],
+            "stiffness_n_per_mm": 3091.4348678062456,
+            "fixed_node_count": 7500
+          },
+          "camera_side": {
+            "analysis": "static",
+            "max_displacement_mm": 0.0014159174685269196,
+            "max_von_mises_mpa": 0.30480513105490314,
+            "loads": [
+              {
+                "node_count": 1258,
+                "force_n": [
+                  5.0,
+                  0.0,
+                  0.0
+                ],
+                "mean_displacement_mm": [
+                  0.0008844206957074716,
+                  -8.776323347686807e-06,
+                  -9.784814137424486e-05
+                ],
+                "directional_displacement_mm": 0.0008844206957074716,
+                "stiffness_n_per_mm": 5653.418134907356
+              }
+            ],
+            "stiffness_n_per_mm": 5653.418134907356,
+            "fixed_node_count": 7500
+          },
+          "modes": {
+            "analysis": "modal",
+            "eigenfrequencies_hz": [
+              1068.339,
+              1190.527,
+              1447.103,
+              1541.364,
+              1964.394,
+              2082.494
+            ],
+            "discarded_rigid_modes": 0,
+            "fixture": "all translations fixed on selected nodes",
+            "fixed_node_count": 7500
+          }
+        },
+        "diagnostics": [],
+        "artifacts": {
+          "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb",
+          "arm_tip": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_0.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_0.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_0.log"
+          },
+          "battery_impact": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_1.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_1.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_1.log"
+          },
+          "camera_side": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_2.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_2.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_2.log"
+          },
+          "modes": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_3.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_3.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\case_3.log"
+          },
+          "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p0mm\\fea\\evaluation_cf2c53mb\\result.json"
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 81024,
+          "minimum_jacobian_mm3": 0.06943952503119023,
+          "mesh_size_mm": 2.0,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 143983
+        },
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 107,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ],
+        "frame_mass_g": 58.53180409071862,
+        "point_mass_g": 37.0,
+        "solver_version": "2.22",
+        "runtime_s": 89.85455109999748
+      }
+    },
+    {
+      "geometry": "candidate",
+      "mesh_size_mm": 2.5,
+      "status": "ok",
+      "result": {
+        "status": "ok",
+        "mass_g": 95.53180409071862,
+        "eigenfrequencies_hz": [
+          1068.723,
+          1194.931,
+          1450.402,
+          1546.92,
+          1970.607,
+          2084.37
+        ],
+        "max_displacement_mm": 0.008158618522276149,
+        "max_von_mises_mpa": 0.6325102491374891,
+        "stiffness_n_per_mm": 191.97429552664462,
+        "load_cases": {
+          "arm_tip": {
+            "analysis": "static",
+            "max_displacement_mm": 0.008158618522276149,
+            "max_von_mises_mpa": 0.6325102491374891,
+            "loads": [
+              {
+                "node_count": 1550,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -1.0
+                ],
+                "mean_displacement_mm": [
+                  6.219828974867086e-05,
+                  0.00039708256167741936,
+                  -0.005209030705161292
+                ],
+                "directional_displacement_mm": 0.005209030705161292,
+                "stiffness_n_per_mm": 191.97429552664462
+              }
+            ],
+            "stiffness_n_per_mm": 191.97429552664462,
+            "fixed_node_count": 790
+          },
+          "battery_impact": {
+            "analysis": "static",
+            "max_displacement_mm": 0.00135082096666727,
+            "max_von_mises_mpa": 0.29362105436783736,
+            "loads": [
+              {
+                "node_count": 108,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -3.6284604999999996
+                ],
+                "mean_displacement_mm": [
+                  0.00010379959898148148,
+                  -0.00010478284611111119,
+                  -0.001172614148148148
+                ],
+                "directional_displacement_mm": 0.001172614148148148,
+                "stiffness_n_per_mm": 3094.3345735084717
+              }
+            ],
+            "stiffness_n_per_mm": 3094.3345735084717,
+            "fixed_node_count": 6669
+          },
+          "camera_side": {
+            "analysis": "static",
+            "max_displacement_mm": 0.001416174986759733,
+            "max_von_mises_mpa": 0.2703954696255141,
+            "loads": [
+              {
+                "node_count": 1131,
+                "force_n": [
+                  5.0,
+                  0.0,
+                  0.0
+                ],
+                "mean_displacement_mm": [
+                  0.0008945338210433254,
+                  -7.796017364279383e-06,
+                  -0.00010128272377347485
+                ],
+                "directional_displacement_mm": 0.0008945338210433254,
+                "stiffness_n_per_mm": 5589.503585418748
+              }
+            ],
+            "stiffness_n_per_mm": 5589.503585418748,
+            "fixed_node_count": 6669
+          },
+          "modes": {
+            "analysis": "modal",
+            "eigenfrequencies_hz": [
+              1068.723,
+              1194.931,
+              1450.402,
+              1546.92,
+              1970.607,
+              2084.37
+            ],
+            "discarded_rigid_modes": 0,
+            "fixture": "all translations fixed on selected nodes",
+            "fixed_node_count": 6669
+          }
+        },
+        "diagnostics": [],
+        "artifacts": {
+          "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8",
+          "arm_tip": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_0.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_0.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_0.log"
+          },
+          "battery_impact": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_1.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_1.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_1.log"
+          },
+          "camera_side": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_2.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_2.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_2.log"
+          },
+          "modes": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_3.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_3.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\case_3.log"
+          },
+          "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_2p5mm\\fea\\evaluation_kpo7fdr8\\result.json"
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 71302,
+          "minimum_jacobian_mm3": 0.06612403249742939,
+          "mesh_size_mm": 2.5,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 128046
+        },
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 108,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ],
+        "frame_mass_g": 58.53180409071862,
+        "point_mass_g": 37.0,
+        "solver_version": "2.22",
+        "runtime_s": 78.43700549998903
+      }
+    },
+    {
+      "geometry": "candidate",
+      "mesh_size_mm": 3.0,
+      "status": "ok",
+      "result": {
+        "status": "ok",
+        "mass_g": 95.53180409071862,
+        "eigenfrequencies_hz": [
+          1075.764,
+          1192.776,
+          1446.945,
+          1548.478,
+          1972.901,
+          2095.669
+        ],
+        "max_displacement_mm": 0.008062850696662235,
+        "max_von_mises_mpa": 0.5174761080440285,
+        "stiffness_n_per_mm": 194.39106808692114,
+        "load_cases": {
+          "arm_tip": {
+            "analysis": "static",
+            "max_displacement_mm": 0.008062850696662235,
+            "max_von_mises_mpa": 0.5174761080440285,
+            "loads": [
+              {
+                "node_count": 1450,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -1.0
+                ],
+                "mean_displacement_mm": [
+                  6.68095652255862e-05,
+                  0.00039622168082758565,
+                  -0.005144269280689657
+                ],
+                "directional_displacement_mm": 0.005144269280689657,
+                "stiffness_n_per_mm": 194.39106808692114
+              }
+            ],
+            "stiffness_n_per_mm": 194.39106808692114,
+            "fixed_node_count": 727
+          },
+          "battery_impact": {
+            "analysis": "static",
+            "max_displacement_mm": 0.0013404602206377751,
+            "max_von_mises_mpa": 0.24048691023779942,
+            "loads": [
+              {
+                "node_count": 64,
+                "force_n": [
+                  0.0,
+                  0.0,
+                  -3.6284604999999996
+                ],
+                "mean_displacement_mm": [
+                  0.00010453872484374998,
+                  -9.939914525624998e-05,
+                  -0.0011664945515624998
+                ],
+                "directional_displacement_mm": 0.0011664945515624998,
+                "stiffness_n_per_mm": 3110.5678934717166
+              }
+            ],
+            "stiffness_n_per_mm": 3110.5678934717166,
+            "fixed_node_count": 6146
+          },
+          "camera_side": {
+            "analysis": "static",
+            "max_displacement_mm": 0.001387367994944402,
+            "max_von_mises_mpa": 0.23965326105843168,
+            "loads": [
+              {
+                "node_count": 955,
+                "force_n": [
+                  5.0,
+                  0.0,
+                  0.0
+                ],
+                "mean_displacement_mm": [
+                  0.0008798357905759156,
+                  -3.9822481510995234e-06,
+                  -0.00011319444653727759
+                ],
+                "directional_displacement_mm": 0.0008798357905759156,
+                "stiffness_n_per_mm": 5682.878616164434
+              }
+            ],
+            "stiffness_n_per_mm": 5682.878616164434,
+            "fixed_node_count": 6146
+          },
+          "modes": {
+            "analysis": "modal",
+            "eigenfrequencies_hz": [
+              1075.764,
+              1192.776,
+              1446.945,
+              1548.478,
+              1972.901,
+              2095.669
+            ],
+            "discarded_rigid_modes": 0,
+            "fixture": "all translations fixed on selected nodes",
+            "fixed_node_count": 6146
+          }
+        },
+        "diagnostics": [],
+        "artifacts": {
+          "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2",
+          "arm_tip": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_0.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_0.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_0.log"
+          },
+          "battery_impact": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_1.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_1.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_1.log"
+          },
+          "camera_side": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_2.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_2.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_2.log"
+          },
+          "modes": {
+            "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_3.inp",
+            "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_3.dat",
+            "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\case_3.log"
+          },
+          "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study\\results\\candidate_3p0mm\\fea\\evaluation_apfyhzt2\\result.json"
+        },
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 60933,
+          "minimum_jacobian_mm3": 0.06504657037365616,
+          "mesh_size_mm": 3.0,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+          "node_count": 110430
+        },
+        "point_mass_coupling": [
+          {
+            "name": "battery",
+            "mass_g": 37.0,
+            "position_mm": [
+              -1.6781509643504353e-16,
+              -3.0144237274670914e-16,
+              34.5
+            ],
+            "attachment_nodes": 64,
+            "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+          }
+        ],
+        "frame_mass_g": 58.53180409071862,
+        "point_mass_g": 37.0,
+        "solver_version": "2.22",
+        "runtime_s": 61.76120229999651
+      }
+    }
+  ],
+  "extra_1p5_mm_attempt": {
+    "mesh_benchmark": [
+      {
+        "geometry": "baseline",
+        "returncode": 0,
+        "runtime_s": 4.110489599988796,
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 97610,
+          "minimum_jacobian_mm3": 0.02124715721341696,
+          "mesh_size_mm": 1.5,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes"
+        }
+      },
+      {
+        "geometry": "candidate",
+        "returncode": 0,
+        "runtime_s": 6.987522299998091,
+        "mesh": {
+          "gmsh_version": "4.15.2",
+          "element_type": "C3D10",
+          "element_count": 149614,
+          "minimum_jacobian_mm3": 0.0628637331695028,
+          "mesh_size_mm": 1.5,
+          "second_order_linear": true,
+          "high_order_optimize": 0,
+          "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes"
+        }
+      }
+    ],
+    "baseline_modal_failed": true,
+    "native_exit_code": 3221226356,
+    "native_exit_hex": "0xC0000374",
+    "candidate_not_started": true,
+    "automatic_retries": 0,
+    "partial_static_results_excluded_from_complete_comparisons": true,
+    "scope": "original native-default/PaStiX2 study only; separate later SPOOLES1 results are in spooles1_followup"
+  },
+  "stress_peak_diagnostic": {
+    "note": "Element centroid is a locator, not the exact integration-point position. No singularity is proven by this diagnostic.",
+    "rows": [
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 2.0,
+        "governing_case": "camera_side",
+        "max_von_mises_mpa": 6.700761139370715,
+        "element": 58888,
+        "integration_point": 2,
+        "element_centroid_of_four_vertices_mm": [
+          9.0,
+          19.75,
+          25.75
+        ],
+        "element_bounds_min_mm": [
+          8.0,
+          19.0,
+          25.0
+        ],
+        "element_bounds_max_mm": [
+          10.0,
+          20.0,
+          26.0
+        ]
+      },
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 2.5,
+        "governing_case": "camera_side",
+        "max_von_mises_mpa": 6.819512577895481,
+        "element": 46054,
+        "integration_point": 2,
+        "element_centroid_of_four_vertices_mm": [
+          8.684821428571425,
+          19.73071428571425,
+          25.75
+        ],
+        "element_bounds_min_mm": [
+          7.5,
+          18.922857142857,
+          25.0
+        ],
+        "element_bounds_max_mm": [
+          10.0,
+          20.0,
+          26.0
+        ]
+      },
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 3.0,
+        "governing_case": "camera_side",
+        "max_von_mises_mpa": 5.983498689923118,
+        "element": 33351,
+        "integration_point": 2,
+        "element_centroid_of_four_vertices_mm": [
+          8.678571428571425,
+          19.5,
+          25.75
+        ],
+        "element_bounds_min_mm": [
+          7.1428571428571,
+          18.0,
+          25.0
+        ],
+        "element_bounds_max_mm": [
+          10.0,
+          20.0,
+          26.0
+        ]
+      },
+      {
+        "geometry": "candidate",
+        "mesh_size_mm": 2.0,
+        "governing_case": "arm_tip",
+        "max_von_mises_mpa": 0.6500579411275345,
+        "element": 17239,
+        "integration_point": 3,
+        "element_centroid_of_four_vertices_mm": [
+          -14.246660560683999,
+          15.670988715230749,
+          0.2603911200504
+        ],
+        "element_bounds_min_mm": [
+          -14.824015998079,
+          15.311816387999,
+          0.0
+        ],
+        "element_bounds_max_mm": [
+          -13.376811199465,
+          16.431475507979,
+          1.0415644802016
+        ]
+      },
+      {
+        "geometry": "candidate",
+        "mesh_size_mm": 2.5,
+        "governing_case": "arm_tip",
+        "max_von_mises_mpa": 0.6325102491374891,
+        "element": 15446,
+        "integration_point": 3,
+        "element_centroid_of_four_vertices_mm": [
+          -14.246799157278499,
+          15.67103738723375,
+          0.26039963836115
+        ],
+        "element_bounds_min_mm": [
+          -14.824104747259,
+          15.311747033022,
+          0.0
+        ],
+        "element_bounds_max_mm": [
+          -13.37680948075,
+          16.431515161173,
+          1.0415985534446
+        ]
+      },
+      {
+        "geometry": "candidate",
+        "mesh_size_mm": 3.0,
+        "governing_case": "arm_tip",
+        "max_von_mises_mpa": 0.5174761080440285,
+        "element": 31060,
+        "integration_point": 3,
+        "element_centroid_of_four_vertices_mm": [
+          -14.899040656917,
+          16.291754733675,
+          0.24494760414516
+        ],
+        "element_bounds_min_mm": [
+          -15.7907857596,
+          15.844979922459,
+          0.0
+        ],
+        "element_bounds_max_mm": [
+          -14.387998518924,
+          16.901211398076,
+          0.97979041658064
+        ]
+      }
+    ]
+  },
+  "integrity_tests": {
+    "path": "../../tests/test_workstation_mesh_study.py",
+    "passed": 3,
+    "covers": [
+      "modified historical density bytes",
+      "unowned stale CAD in a new output directory",
+      "cached status ok with missing modal case"
+    ]
+  },
+  "interpretation": [
+    "The 3, 2.5 and 2 mm PaStiX/native-default study and the separate 2/1.5 mm SPOOLES1 study keep reconstructed CAD, material, physical load/fixture boxes and 37 g battery COM/rigid patch fixed.",
+    "Equal per-node force distribution and discrete patch membership vary with the mesh.",
+    "The two 2 mm backend anchors have exactly equal principal metrics, six eigenfrequencies and mesh metadata; the only baseline vector component difference is about 1.26e-12 mm.",
+    "The historical free candidate passes the final 2 to 1.5 mm sensitivity screen with SPOOLES1: stiffness 0.0013%, displacement 0.8755%, first frequency 0.4669%, stress 0.5934%.",
+    "The baseline stress peak increases 22.0235% in that interval, above the unchanged 5% criterion. General mesh convergence and a converged stress-based candidate/v0 ratio are not established.",
+    "All five historical candidate/v0 acceptance comparisons pass at every complete mesh/backend level. A passed final interval for one geometry is not an asymptotic convergence proof.",
+    "The original native-default/two-thread 1.5 mm baseline modal crash remains a failed record. A separated, explicit SPOOLES1 study supplies new complete results without replacing it.",
+    "Source changes for explicit backend choice and subsequent invalid-input metadata validation intentionally invalidate exact resume against earlier source identities; every run has its complete source-byte archive."
+  ],
+  "resume_boundary": {
+    "old_six_successful_records_resumed_before_source_change": true,
+    "new_fea_calls_during_resume": 0,
+    "archived_runner": "exports/topology/workstation_20260930/mesh_study/provenance/run_workstation_mesh_study.py",
+    "archived_runner_sha256": "8f1fe74c5bc3e8ef912f928c38f5fadb49b603ea1fef496b628f3f925d625152",
+    "current_core_and_runner_changed_for_explicit_linear_solver": true,
+    "old_identity_no_longer_resumable_with_current_source": true,
+    "new_study_directory": "exports/topology/workstation_20260930/mesh_study_spooles1",
+    "new_study_settings": {
+      "linear_solver": "SPOOLES",
+      "threads": 1,
+      "mesh_sizes_mm": [
+        2,
+        1.5
+      ]
+    },
+    "both_studies_have_complete_hash_verified_source_archives": true,
+    "subsequent_json_metadata_and_thread_validation_core_fix_changes_source_again": true,
+    "current_source_requires_a_fresh_output_for_recomputation": true,
+    "exact_old_cache_resume_requires_restoring_its_archived_source_environment": true
+  },
+  "complete_fea_results": 10,
+  "preserved_failed_fea_results": 1,
+  "source_archives": [
+    {
+      "study": "mesh_study",
+      "manifest": "exports/topology/workstation_20260930/mesh_study/provenance/source_manifest.json",
+      "sha256": "fe9609a2e965d5d854115e07b86eb41a7180086bd9e94f8b3f6cbcc5171d1d43",
+      "source_modules": 26,
+      "runner_included": true,
+      "files_verified": 27
+    },
+    {
+      "study": "mesh_study_spooles1",
+      "manifest": "exports/topology/workstation_20260930/mesh_study_spooles1/provenance/source_manifest.json",
+      "sha256": "76e46542b763404834a611dd371378bea647766709cddf3802e3a9c059736f88",
+      "source_modules": 26,
+      "runner_included": true,
+      "files_verified": 27
+    }
+  ],
+  "spooles1_followup": {
+    "raw_study": "../../exports/topology/workstation_20260930/mesh_study_spooles1",
+    "preparation_sha256": "a797d55638e6f9f859c8e920854f1a154ed38058286c2f44b54ea3f08faf1036",
+    "summary": {
+      "schema_version": "deep-frame-workstation-mesh-summary-v1",
+      "study_input_sha256": "8f2964fc1964005e385dec8475c91e10e439bdb49f5bbb17bbd495d46e4758bb",
+      "preparation": "preparation.json",
+      "preparation_sha256": "a797d55638e6f9f859c8e920854f1a154ed38058286c2f44b54ea3f08faf1036",
+      "rows": [
+        {
+          "geometry": "baseline",
+          "mesh_size_mm": 1.5,
+          "status": "ok",
+          "record": "results/baseline_1p5mm/record.json",
+          "record_sha256": "db9062baca1bd4d572c8b1e2b5dbe1006e27d6b8917c743ff51ae5c9c3b1814b",
+          "metrics": {
+            "frame_mass_g": 32.16290311400827,
+            "stiffness_n_per_mm": 5.158164531529891,
+            "max_displacement_mm": 0.25643800872736294,
+            "max_von_mises_mpa": 8.176501551737926,
+            "first_frequency_hz": 201.7339
+          },
+          "mesh": {
+            "gmsh_version": "4.15.2",
+            "element_type": "C3D10",
+            "element_count": 97610,
+            "minimum_jacobian_mm3": 0.02124715721341696,
+            "mesh_size_mm": 1.5,
+            "second_order_linear": true,
+            "high_order_optimize": 0,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+            "node_count": 177627
+          },
+          "runtime_s": 141.08563639999193,
+          "point_mass_coupling": [
+            {
+              "name": "battery",
+              "mass_g": 37.0,
+              "position_mm": [
+                -1.6781509643504353e-16,
+                -3.0144237274670914e-16,
+                34.5
+              ],
+              "attachment_nodes": 199,
+              "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+            }
+          ]
+        },
+        {
+          "geometry": "baseline",
+          "mesh_size_mm": 2.0,
+          "status": "ok",
+          "record": "results/baseline_2p0mm/record.json",
+          "record_sha256": "23f22f24d308000a423cf2cca4dad77ed5add3eb4350e3513c0d2606909a8d8f",
+          "metrics": {
+            "frame_mass_g": 32.16290311400827,
+            "stiffness_n_per_mm": 5.147838217757748,
+            "max_displacement_mm": 0.2562465305004315,
+            "max_von_mises_mpa": 6.700761139370715,
+            "first_frequency_hz": 200.2521
+          },
+          "mesh": {
+            "gmsh_version": "4.15.2",
+            "element_type": "C3D10",
+            "element_count": 64931,
+            "minimum_jacobian_mm3": 0.016011423523299755,
+            "mesh_size_mm": 2.0,
+            "second_order_linear": true,
+            "high_order_optimize": 0,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+            "node_count": 119383
+          },
+          "runtime_s": 83.22991850000108,
+          "point_mass_coupling": [
+            {
+              "name": "battery",
+              "mass_g": 37.0,
+              "position_mm": [
+                -1.6781509643504353e-16,
+                -3.0144237274670914e-16,
+                34.5
+              ],
+              "attachment_nodes": 106,
+              "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+            }
+          ]
+        },
+        {
+          "geometry": "candidate",
+          "mesh_size_mm": 1.5,
+          "status": "ok",
+          "record": "results/candidate_1p5mm/record.json",
+          "record_sha256": "f56640d9ee80395676dd2f03a847c59708b0e316a332bf1895daaa2a53a714aa",
+          "metrics": {
+            "frame_mass_g": 58.53180409071862,
+            "stiffness_n_per_mm": 187.1205710684329,
+            "max_displacement_mm": 0.00840162370077857,
+            "max_von_mises_mpa": 0.6539154539070705,
+            "first_frequency_hz": 1063.351
+          },
+          "mesh": {
+            "gmsh_version": "4.15.2",
+            "element_type": "C3D10",
+            "element_count": 149614,
+            "minimum_jacobian_mm3": 0.0628637331695028,
+            "mesh_size_mm": 1.5,
+            "second_order_linear": true,
+            "high_order_optimize": 0,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+            "node_count": 257102
+          },
+          "runtime_s": 276.32534229999874,
+          "point_mass_coupling": [
+            {
+              "name": "battery",
+              "mass_g": 37.0,
+              "position_mm": [
+                -1.6781509643504353e-16,
+                -3.0144237274670914e-16,
+                34.5
+              ],
+              "attachment_nodes": 208,
+              "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+            }
+          ]
+        },
+        {
+          "geometry": "candidate",
+          "mesh_size_mm": 2.0,
+          "status": "ok",
+          "record": "results/candidate_2p0mm/record.json",
+          "record_sha256": "32c1a31b4c140022db5bbc54721c570129774a56ef3efb9fb4dfc36836868427",
+          "metrics": {
+            "frame_mass_g": 58.53180409071862,
+            "stiffness_n_per_mm": 187.11812984143887,
+            "max_displacement_mm": 0.008328702386318615,
+            "max_von_mises_mpa": 0.6500579411275345,
+            "first_frequency_hz": 1068.339
+          },
+          "mesh": {
+            "gmsh_version": "4.15.2",
+            "element_type": "C3D10",
+            "element_count": 81024,
+            "minimum_jacobian_mm3": 0.06943952503119023,
+            "mesh_size_mm": 2.0,
+            "second_order_linear": true,
+            "high_order_optimize": 0,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+            "node_count": 143983
+          },
+          "runtime_s": 113.64036920000217,
+          "point_mass_coupling": [
+            {
+              "name": "battery",
+              "mass_g": 37.0,
+              "position_mm": [
+                -1.6781509643504353e-16,
+                -3.0144237274670914e-16,
+                34.5
+              ],
+              "attachment_nodes": 107,
+              "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+            }
+          ]
+        }
+      ],
+      "successive_mesh_changes": [
+        {
+          "geometry": "baseline",
+          "coarse_mm": 2.0,
+          "fine_mm": 1.5,
+          "relative_changes": {
+            "stiffness_n_per_mm": 0.002005951495624325,
+            "max_displacement_mm": 0.0007472422223921971,
+            "first_frequency_hz": 0.007399672712545824,
+            "max_von_mises_mpa": 0.22023474373626195
+          },
+          "screen_passed": false
+        },
+        {
+          "geometry": "candidate",
+          "coarse_mm": 2.0,
+          "fine_mm": 1.5,
+          "relative_changes": {
+            "stiffness_n_per_mm": 1.3046448230857877e-05,
+            "max_displacement_mm": 0.00875542324333023,
+            "first_frequency_hz": 0.0046689299931949035,
+            "max_von_mises_mpa": 0.0059341060780599975
+          },
+          "screen_passed": true
+        }
+      ],
+      "same_mesh_comparisons": [
+        {
+          "mesh_size_mm": 2.0,
+          "passed": true,
+          "checks": {
+            "frame_mass": true,
+            "stiffness": true,
+            "frequency": true,
+            "displacement": true,
+            "stress": true
+          },
+          "ratios": {
+            "frame_mass_ratio": 1.8198545039059488,
+            "stiffness_ratio": 36.348875377622534,
+            "frequency_ratio": 5.334970269974696,
+            "displacement_ratio": 0.032502693285459294,
+            "stress_ratio": 0.09701255239618689
+          },
+          "limits": {
+            "frame_mass_ratio_max": 2.0,
+            "stiffness_ratio_min": 0.5,
+            "frequency_ratio_min": 0.7,
+            "displacement_ratio_max": 2.0,
+            "stress_ratio_max": 2.0
+          },
+          "candidate": {
+            "frame_mass_g": 58.53180409071862,
+            "stiffness_n_per_mm": 187.11812984143887,
+            "max_displacement_mm": 0.008328702386318615,
+            "max_von_mises_mpa": 0.6500579411275345,
+            "first_frequency_hz": 1068.339
+          },
+          "reference": {
+            "frame_mass_g": 32.16290311400827,
+            "stiffness_n_per_mm": 5.147838217757748,
+            "max_displacement_mm": 0.2562465305004315,
+            "max_von_mises_mpa": 6.700761139370715,
+            "first_frequency_hz": 200.2521
+          },
+          "selection_score": 2.164323386220379
+        },
+        {
+          "mesh_size_mm": 1.5,
+          "passed": true,
+          "checks": {
+            "frame_mass": true,
+            "stiffness": true,
+            "frequency": true,
+            "displacement": true,
+            "stress": true
+          },
+          "ratios": {
+            "frame_mass_ratio": 1.8198545039059488,
+            "stiffness_ratio": 36.27658054035234,
+            "frequency_ratio": 5.271057566427854,
+            "displacement_ratio": 0.03276278638441199,
+            "stress_ratio": 0.07997496848368847
+          },
+          "limits": {
+            "frame_mass_ratio_max": 2.0,
+            "stiffness_ratio_min": 0.5,
+            "frequency_ratio_min": 0.7,
+            "displacement_ratio_max": 2.0,
+            "stress_ratio_max": 2.0
+          },
+          "candidate": {
+            "frame_mass_g": 58.53180409071862,
+            "stiffness_n_per_mm": 187.1205710684329,
+            "max_displacement_mm": 0.00840162370077857,
+            "max_von_mises_mpa": 0.6539154539070705,
+            "first_frequency_hz": 1063.351
+          },
+          "reference": {
+            "frame_mass_g": 32.16290311400827,
+            "stiffness_n_per_mm": 5.158164531529891,
+            "max_displacement_mm": 0.25643800872736294,
+            "max_von_mises_mpa": 8.176501551737926,
+            "first_frequency_hz": 201.7339
+          },
+          "selection_score": 2.149873501977338
+        }
+      ],
+      "screen": {
+        "stiffness_n_per_mm": 0.02,
+        "max_displacement_mm": 0.02,
+        "first_frequency_hz": 0.02,
+        "max_von_mises_mpa": 0.05
+      },
+      "interpretation": "Predeclared successive-mesh sensitivity screen; not a proof of asymptotic convergence. Physical selector boxes, point-mass patch, loads, material and CAD stay fixed; node counts and equal nodal force allocation vary with the mesh. Peaks at sharp corners may be singular."
+    },
+    "provenance": {
+      "packages": {
+        "numpy": "2.5.3",
+        "scipy": "1.18.1",
+        "build123d": "0.13.0",
+        "gmsh": "4.15.2",
+        "trimesh": "5.1.0",
+        "cadquery-ocp-novtk": "8.0.1.0.0"
+      },
+      "python_version": "3.13.5 (main, Jul 23 2025, 00:30:06) [MSC v.1944 64 bit (AMD64)]",
+      "platform": "Windows-11-10.0.26200-SP0",
+      "source_sha256": {
+        "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "checks.py": "1d7a98aae5c6f660ceac4e300ceadcb465ddfc7c51a687b6d289bdaa405c9e87",
+        "component_defaults.py": "93cabf48ce128b0124d70232892d14f12bf18e9e11998b33428d091a6ab39a85",
+        "components.py": "3fa8965a188f311abebe0af2268e76d20bf6a8167655d0757f939832e025ede7",
+        "config.py": "c53dcb69f28004c3b6afa367a020d8a3a6e7326b8a30260bbad39f777581af14",
+        "fea.py": "eb8ac32392be1a7b0e9f017cc068740ff88ca31bc39b814bad96b00c86563052",
+        "fea_config.py": "b50afb0dba165cddab142f55a108a19c0db9a601451c92ceabed80eca62cdacb",
+        "fea_mesh.py": "1cba2084cde2ee70e2f010e044277688e8a469f6054a2ea96f6d788ea07b73c0",
+        "frame.py": "fdde2eed077cd1dacc930590e72213cc3c95b7036109b1d03405fc187786965d",
+        "frame_defaults.py": "c9139b1649cb63552a79e6e606933f22fd79b03cee2afec84ce49580312ee50a",
+        "geometry.py": "7e3e58b25266fe6baffbdf887bac9cf2bae4c42d7c2bb4863ec00fcdfb834b6d",
+        "integration.py": "1c4847101fd49cd7e2b53dbfe6ed28c746433b7f00b9cfdd39ce99f8c694e453",
+        "integration_config.py": "9f0541125de2770427e266f9677905e34ce5273184bc29e2cc0c1a0fa01e76d3",
+        "model.py": "4f08f5031d420cb02580997c2fa2e6f9dcf631c31e9b3f22180db4559b4c4ab7",
+        "optimization.py": "ec2c70681b0511e831e1ee34e4855f9e07aa8a12105b9586bcf5a9b858661b0e",
+        "optimization_config.py": "3649c9a43391f7505767dd58eec14037c178e86e9ad18d7891576e86568859ea",
+        "optimization_viewer.py": "f313a1e65ea809af9c3962688e67deb4a8a5bd7fb64a1b6f99615bc13b6a2b84",
+        "topology_config.py": "2ff8e1c97d416f3ba28ad4d3aa92001b9d51b0696ae502b3cdb67db62696ecda",
+        "topology_domain.py": "7f66b686ef56c4bc582319b189257bee1d1d00e7f77826ab6d1d42c48e4d720f",
+        "topology_elasticity.py": "a0e26d16e183fb0fcef84b629b7203118995f5552a0cfcf4a9d4572286dead34",
+        "topology_geometry.py": "4bd9c323ac2b44f7d61d632cb3804c6af65f1faeb71013e28330a72b3d034e34",
+        "topology_optimization.py": "98d68ef590ecebcaf8cdfd2a58cb5bd0893132d3be640ffb5357cbb1da59ff16",
+        "topology_pipeline.py": "7f31ca0d6cd2b51f3d9367f49083976f0420a7462c86530a1805e45e1ba119cd",
+        "topology_validation.py": "351a6ebcfdbea8755d881600da08c266091ee175fdd941e80958fbaa36ab67f9",
+        "topology_visualization.py": "c0c12bfe799e639173fb75ba4d0d136f885633448c00cccca095a96f6f8d1eda",
+        "viewer.py": "98aeaf90d31cd3f1e56e6a782eecf701588d3423b4c6feba7483cfaf96c319e7"
+      },
+      "callbacks": {
+        "reconstructor": {
+          "name": "deep_frame.topology_geometry.reconstruct_topology",
+          "source_sha256": "1e868d94f331798423ea498dd7287a243431d56e4cab71022bd8afa6cfd7f60c"
+        },
+        "evaluator": {
+          "name": "deep_frame.fea.evaluate",
+          "source_sha256": "ffb3f281ed19337a14773e4661beba542bd3cdce9cb08c82f7fa8bf152a1630c"
+        },
+        "baseline_builder": {
+          "name": "deep_frame.geometry.build_geometry",
+          "source_sha256": "705b5a75d72dcbb957d10300902d6256a6171e61f6a961fba03f92e5a4e362d8"
+        }
+      },
+      "git_revision": "15e37bf320982618c71210bd5bd19be0af89878e",
+      "git_tracked_dirty": true,
+      "solver": {
+        "solver_path": "C:\\clones\\Deep_Frame\\.venv\\calculix\\calculix_2.22_4win\\ccx_static.exe",
+        "calculix_version": "2.22",
+        "calculix_sha256": "a326dfb2efe888e35e2195da263761c0b646b10e452b8998f36ea38da612a277",
+        "gmsh_version": "4.15.2",
+        "build123d_version": "0.13.0",
+        "ocp_version": "8.0.1.0.0"
+      },
+      "study_runner_sha256": "13a2479410524474d39a75363077c8a1462c81def8af291ec91349f02b2843a8"
+    },
+    "settings": {
+      "mesh_size_mm": 3.0,
+      "mesh_min_size_mm": 0.5,
+      "mesh_curvature_points": 12,
+      "mesh_threads": 1,
+      "element_order": 2,
+      "num_modes": 6,
+      "work_dir": "exports/fea",
+      "solver_path": null,
+      "mesh_timeout_s": 600.0,
+      "solver_timeout_s": 900.0,
+      "threads": 1,
+      "minimum_elastic_frequency_hz": 0.1,
+      "stiffness_load_case": "arm_tip",
+      "mesh_second_order_linear": true,
+      "mesh_high_order_optimize": 0,
+      "linear_solver": "SPOOLES"
+    },
+    "backend_anchors_2mm": [
+      {
+        "geometry": "baseline",
+        "old_record_sha256": "42a3f99df79ea3bceb7edefa60a949d4e57dd54b18d3b57b691dcf84da2dc7f9",
+        "field_exact_matches": {
+          "frame_mass_g": true,
+          "point_mass_g": true,
+          "mass_g": true,
+          "eigenfrequencies_hz": true,
+          "max_displacement_mm": true,
+          "max_von_mises_mpa": true,
+          "stiffness_n_per_mm": true,
+          "load_cases": false,
+          "mesh": true,
+          "point_mass_coupling": true,
+          "solver_version": true
+        },
+        "relative_metric_changes": {
+          "frame_mass_g": 0.0,
+          "stiffness_n_per_mm": 0.0,
+          "max_displacement_mm": 0.0,
+          "max_von_mises_mpa": 0.0
+        },
+        "all_six_frequencies_exact": true,
+        "note": "The only baseline load-case difference is the lateral mean arm-tip displacement: 1.257862e-12 mm absolute (2.0666e-10 relative); the candidate load-case records are fully equal."
+      },
+      {
+        "geometry": "candidate",
+        "old_record_sha256": "528fd2b629ff6bfc02b731e5a49d2c1dd36d06d5a8ed82e53cc38747a9a104e1",
+        "field_exact_matches": {
+          "frame_mass_g": true,
+          "point_mass_g": true,
+          "mass_g": true,
+          "eigenfrequencies_hz": true,
+          "max_displacement_mm": true,
+          "max_von_mises_mpa": true,
+          "stiffness_n_per_mm": true,
+          "load_cases": true,
+          "mesh": true,
+          "point_mass_coupling": true,
+          "solver_version": true
+        },
+        "relative_metric_changes": {
+          "frame_mass_g": 0.0,
+          "stiffness_n_per_mm": 0.0,
+          "max_displacement_mm": 0.0,
+          "max_von_mises_mpa": 0.0
+        },
+        "all_six_frequencies_exact": true,
+        "note": "The only baseline load-case difference is the lateral mean arm-tip displacement: 1.257862e-12 mm absolute (2.0666e-10 relative); the candidate load-case records are fully equal."
+      }
+    ],
+    "raw_artifact_hashes_verified": 144,
+    "fea_results": [
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 1.5,
+        "status": "ok",
+        "result": {
+          "status": "ok",
+          "mass_g": 69.16290311400827,
+          "eigenfrequencies_hz": [
+            201.7339,
+            236.7104,
+            238.5035,
+            416.6727,
+            457.0306,
+            591.803
+          ],
+          "max_displacement_mm": 0.25643800872736294,
+          "max_von_mises_mpa": 8.176501551737926,
+          "stiffness_n_per_mm": 5.158164531529891,
+          "load_cases": {
+            "arm_tip": {
+              "analysis": "static",
+              "max_displacement_mm": 0.25643800872736294,
+              "max_von_mises_mpa": 4.157699280773115,
+              "loads": [
+                {
+                  "node_count": 1909,
+                  "force_n": [
+                    0.0,
+                    0.0,
+                    -1.0
+                  ],
+                  "mean_displacement_mm": [
+                    -0.011704977632268193,
+                    0.005971574858040859,
+                    -0.19386741037192234
+                  ],
+                  "directional_displacement_mm": 0.19386741037192234,
+                  "stiffness_n_per_mm": 5.158164531529891
+                }
+              ],
+              "stiffness_n_per_mm": 5.158164531529891,
+              "fixed_node_count": 1189
+            },
+            "battery_impact": {
+              "analysis": "static",
+              "max_displacement_mm": 0.029206419795056025,
+              "max_von_mises_mpa": 2.0015333106023987,
+              "loads": [
+                {
+                  "node_count": 199,
+                  "force_n": [
+                    0.0,
+                    0.0,
+                    -3.6284604999999996
+                  ],
+                  "mean_displacement_mm": [
+                    -8.240708758542705e-07,
+                    0.0005622376793969849,
+                    -0.02372379507537687
+                  ],
+                  "directional_displacement_mm": 0.02372379507537687,
+                  "stiffness_n_per_mm": 152.9460395552822
+                }
+              ],
+              "stiffness_n_per_mm": 152.9460395552822,
+              "fixed_node_count": 7564
+            },
+            "camera_side": {
+              "analysis": "static",
+              "max_displacement_mm": 0.19935972505427318,
+              "max_von_mises_mpa": 8.176501551737926,
+              "loads": [
+                {
+                  "node_count": 2299,
+                  "force_n": [
+                    5.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mean_displacement_mm": [
+                    0.1540576866463678,
+                    9.366161809482219e-05,
+                    -0.0001943187081339828
+                  ],
+                  "directional_displacement_mm": 0.1540576866463678,
+                  "stiffness_n_per_mm": 32.45537505361395
+                }
+              ],
+              "stiffness_n_per_mm": 32.45537505361395,
+              "fixed_node_count": 7564
+            },
+            "modes": {
+              "analysis": "modal",
+              "eigenfrequencies_hz": [
+                201.7339,
+                236.7104,
+                238.5035,
+                416.6727,
+                457.0306,
+                591.803
+              ],
+              "discarded_rigid_modes": 0,
+              "fixture": "all translations fixed on selected nodes",
+              "fixed_node_count": 7564
+            }
+          },
+          "diagnostics": [],
+          "artifacts": {
+            "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv",
+            "arm_tip": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_0.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_0.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_0.log"
+            },
+            "battery_impact": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_1.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_1.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_1.log"
+            },
+            "camera_side": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_2.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_2.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_2.log"
+            },
+            "modes": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_3.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_3.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\case_3.log"
+            },
+            "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_1p5mm\\fea\\evaluation_2pp72nwv\\result.json"
+          },
+          "linear_solver": "SPOOLES",
+          "solver_threads": 1,
+          "mesh": {
+            "gmsh_version": "4.15.2",
+            "element_type": "C3D10",
+            "element_count": 97610,
+            "minimum_jacobian_mm3": 0.02124715721341696,
+            "mesh_size_mm": 1.5,
+            "second_order_linear": true,
+            "high_order_optimize": 0,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+            "node_count": 177627
+          },
+          "point_mass_coupling": [
+            {
+              "name": "battery",
+              "mass_g": 37.0,
+              "position_mm": [
+                -1.6781509643504353e-16,
+                -3.0144237274670914e-16,
+                34.5
+              ],
+              "attachment_nodes": 199,
+              "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+            }
+          ],
+          "frame_mass_g": 32.16290311400827,
+          "point_mass_g": 37.0,
+          "solver_version": "2.22",
+          "runtime_s": 141.08563639999193
+        }
+      },
+      {
+        "geometry": "baseline",
+        "mesh_size_mm": 2.0,
+        "status": "ok",
+        "result": {
+          "status": "ok",
+          "mass_g": 69.16290311400827,
+          "eigenfrequencies_hz": [
+            200.2521,
+            234.4677,
+            236.374,
+            420.58,
+            459.7338,
+            595.0011
+          ],
+          "max_displacement_mm": 0.2562465305004315,
+          "max_von_mises_mpa": 6.700761139370715,
+          "stiffness_n_per_mm": 5.147838217757748,
+          "load_cases": {
+            "arm_tip": {
+              "analysis": "static",
+              "max_displacement_mm": 0.2562465305004315,
+              "max_von_mises_mpa": 3.424785669241509,
+              "loads": [
+                {
+                  "node_count": 1590,
+                  "force_n": [
+                    0.0,
+                    0.0,
+                    -1.0
+                  ],
+                  "mean_displacement_mm": [
+                    -0.011642074433962268,
+                    0.006086614067295601,
+                    -0.19425629899371072
+                  ],
+                  "directional_displacement_mm": 0.19425629899371072,
+                  "stiffness_n_per_mm": 5.147838217757748
+                }
+              ],
+              "stiffness_n_per_mm": 5.147838217757748,
+              "fixed_node_count": 952
+            },
+            "battery_impact": {
+              "analysis": "static",
+              "max_displacement_mm": 0.03017721750869966,
+              "max_von_mises_mpa": 1.6064452307166193,
+              "loads": [
+                {
+                  "node_count": 106,
+                  "force_n": [
+                    0.0,
+                    0.0,
+                    -3.6284604999999996
+                  ],
+                  "mean_displacement_mm": [
+                    3.2760956792452812e-06,
+                    0.0005412201235849057,
+                    -0.02468403245283019
+                  ],
+                  "directional_displacement_mm": 0.02468403245283019,
+                  "stiffness_n_per_mm": 146.99626193304456
+                }
+              ],
+              "stiffness_n_per_mm": 146.99626193304456,
+              "fixed_node_count": 6364
+            },
+            "camera_side": {
+              "analysis": "static",
+              "max_displacement_mm": 0.19892392056344305,
+              "max_von_mises_mpa": 6.700761139370715,
+              "loads": [
+                {
+                  "node_count": 1404,
+                  "force_n": [
+                    5.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mean_displacement_mm": [
+                    0.15429685085470066,
+                    5.709532763533051e-05,
+                    -7.347156695155523e-05
+                  ],
+                  "directional_displacement_mm": 0.15429685085470066,
+                  "stiffness_n_per_mm": 32.40506836207847
+                }
+              ],
+              "stiffness_n_per_mm": 32.40506836207847,
+              "fixed_node_count": 6364
+            },
+            "modes": {
+              "analysis": "modal",
+              "eigenfrequencies_hz": [
+                200.2521,
+                234.4677,
+                236.374,
+                420.58,
+                459.7338,
+                595.0011
+              ],
+              "discarded_rigid_modes": 0,
+              "fixture": "all translations fixed on selected nodes",
+              "fixed_node_count": 6364
+            }
+          },
+          "diagnostics": [],
+          "artifacts": {
+            "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0",
+            "arm_tip": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_0.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_0.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_0.log"
+            },
+            "battery_impact": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_1.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_1.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_1.log"
+            },
+            "camera_side": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_2.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_2.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_2.log"
+            },
+            "modes": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_3.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_3.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\case_3.log"
+            },
+            "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\baseline_2p0mm\\fea\\evaluation_onietib0\\result.json"
+          },
+          "linear_solver": "SPOOLES",
+          "solver_threads": 1,
+          "mesh": {
+            "gmsh_version": "4.15.2",
+            "element_type": "C3D10",
+            "element_count": 64931,
+            "minimum_jacobian_mm3": 0.016011423523299755,
+            "mesh_size_mm": 2.0,
+            "second_order_linear": true,
+            "high_order_optimize": 0,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+            "node_count": 119383
+          },
+          "point_mass_coupling": [
+            {
+              "name": "battery",
+              "mass_g": 37.0,
+              "position_mm": [
+                -1.6781509643504353e-16,
+                -3.0144237274670914e-16,
+                34.5
+              ],
+              "attachment_nodes": 106,
+              "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+            }
+          ],
+          "frame_mass_g": 32.16290311400827,
+          "point_mass_g": 37.0,
+          "solver_version": "2.22",
+          "runtime_s": 83.22991850000108
+        }
+      },
+      {
+        "geometry": "candidate",
+        "mesh_size_mm": 1.5,
+        "status": "ok",
+        "result": {
+          "status": "ok",
+          "mass_g": 95.53180409071862,
+          "eigenfrequencies_hz": [
+            1063.351,
+            1182.733,
+            1432.825,
+            1535.104,
+            1948.892,
+            2067.858
+          ],
+          "max_displacement_mm": 0.00840162370077857,
+          "max_von_mises_mpa": 0.6539154539070705,
+          "stiffness_n_per_mm": 187.1205710684329,
+          "load_cases": {
+            "arm_tip": {
+              "analysis": "static",
+              "max_displacement_mm": 0.00840162370077857,
+              "max_von_mises_mpa": 0.6539154539070705,
+              "loads": [
+                {
+                  "node_count": 2022,
+                  "force_n": [
+                    0.0,
+                    0.0,
+                    -1.0
+                  ],
+                  "mean_displacement_mm": [
+                    6.25281523743719e-05,
+                    0.00041773525855588517,
+                    -0.005344147863006919
+                  ],
+                  "directional_displacement_mm": 0.005344147863006919,
+                  "stiffness_n_per_mm": 187.1205710684329
+                }
+              ],
+              "stiffness_n_per_mm": 187.1205710684329,
+              "fixed_node_count": 1094
+            },
+            "battery_impact": {
+              "analysis": "static",
+              "max_displacement_mm": 0.0013743229077488692,
+              "max_von_mises_mpa": 0.41112332343170316,
+              "loads": [
+                {
+                  "node_count": 208,
+                  "force_n": [
+                    0.0,
+                    0.0,
+                    -3.6284604999999996
+                  ],
+                  "mean_displacement_mm": [
+                    0.0001069753057692308,
+                    -0.00010473009006250001,
+                    -0.0011907322836538464
+                  ],
+                  "directional_displacement_mm": 0.0011907322836538464,
+                  "stiffness_n_per_mm": 3047.2513005743085
+                }
+              ],
+              "stiffness_n_per_mm": 3047.2513005743085,
+              "fixed_node_count": 8974
+            },
+            "camera_side": {
+              "analysis": "static",
+              "max_displacement_mm": 0.0014094453209149798,
+              "max_von_mises_mpa": 0.37936465136366293,
+              "loads": [
+                {
+                  "node_count": 3000,
+                  "force_n": [
+                    5.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mean_displacement_mm": [
+                    0.0008778641490000003,
+                    -1.4460948613133314e-05,
+                    -9.351324601426686e-05
+                  ],
+                  "directional_displacement_mm": 0.0008778641490000003,
+                  "stiffness_n_per_mm": 5695.642094161882
+                }
+              ],
+              "stiffness_n_per_mm": 5695.642094161882,
+              "fixed_node_count": 8974
+            },
+            "modes": {
+              "analysis": "modal",
+              "eigenfrequencies_hz": [
+                1063.351,
+                1182.733,
+                1432.825,
+                1535.104,
+                1948.892,
+                2067.858
+              ],
+              "discarded_rigid_modes": 0,
+              "fixture": "all translations fixed on selected nodes",
+              "fixed_node_count": 8974
+            }
+          },
+          "diagnostics": [],
+          "artifacts": {
+            "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu",
+            "arm_tip": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_0.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_0.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_0.log"
+            },
+            "battery_impact": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_1.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_1.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_1.log"
+            },
+            "camera_side": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_2.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_2.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_2.log"
+            },
+            "modes": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_3.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_3.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\case_3.log"
+            },
+            "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_1p5mm\\fea\\evaluation_qbwls7uu\\result.json"
+          },
+          "linear_solver": "SPOOLES",
+          "solver_threads": 1,
+          "mesh": {
+            "gmsh_version": "4.15.2",
+            "element_type": "C3D10",
+            "element_count": 149614,
+            "minimum_jacobian_mm3": 0.0628637331695028,
+            "mesh_size_mm": 1.5,
+            "second_order_linear": true,
+            "high_order_optimize": 0,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+            "node_count": 257102
+          },
+          "point_mass_coupling": [
+            {
+              "name": "battery",
+              "mass_g": 37.0,
+              "position_mm": [
+                -1.6781509643504353e-16,
+                -3.0144237274670914e-16,
+                34.5
+              ],
+              "attachment_nodes": 208,
+              "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+            }
+          ],
+          "frame_mass_g": 58.53180409071862,
+          "point_mass_g": 37.0,
+          "solver_version": "2.22",
+          "runtime_s": 276.32534229999874
+        }
+      },
+      {
+        "geometry": "candidate",
+        "mesh_size_mm": 2.0,
+        "status": "ok",
+        "result": {
+          "status": "ok",
+          "mass_g": 95.53180409071862,
+          "eigenfrequencies_hz": [
+            1068.339,
+            1190.527,
+            1447.103,
+            1541.364,
+            1964.394,
+            2082.494
+          ],
+          "max_displacement_mm": 0.008328702386318615,
+          "max_von_mises_mpa": 0.6500579411275345,
+          "stiffness_n_per_mm": 187.11812984143887,
+          "load_cases": {
+            "arm_tip": {
+              "analysis": "static",
+              "max_displacement_mm": 0.008328702386318615,
+              "max_von_mises_mpa": 0.6500579411275345,
+              "loads": [
+                {
+                  "node_count": 1738,
+                  "force_n": [
+                    0.0,
+                    0.0,
+                    -1.0
+                  ],
+                  "mean_displacement_mm": [
+                    5.199169375478708e-05,
+                    0.00040550888509781335,
+                    -0.005344217585155351
+                  ],
+                  "directional_displacement_mm": 0.005344217585155351,
+                  "stiffness_n_per_mm": 187.11812984143887
+                }
+              ],
+              "stiffness_n_per_mm": 187.11812984143887,
+              "fixed_node_count": 819
+            },
+            "battery_impact": {
+              "analysis": "static",
+              "max_displacement_mm": 0.0013418769325728643,
+              "max_von_mises_mpa": 0.2956700438244542,
+              "loads": [
+                {
+                  "node_count": 107,
+                  "force_n": [
+                    0.0,
+                    0.0,
+                    -3.6284604999999996
+                  ],
+                  "mean_displacement_mm": [
+                    0.00010407320121495327,
+                    -0.00010601917308411212,
+                    -0.001173714037383178
+                  ],
+                  "directional_displacement_mm": 0.001173714037383178,
+                  "stiffness_n_per_mm": 3091.4348678062456
+                }
+              ],
+              "stiffness_n_per_mm": 3091.4348678062456,
+              "fixed_node_count": 7500
+            },
+            "camera_side": {
+              "analysis": "static",
+              "max_displacement_mm": 0.0014159174685269196,
+              "max_von_mises_mpa": 0.30480513105490314,
+              "loads": [
+                {
+                  "node_count": 1258,
+                  "force_n": [
+                    5.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mean_displacement_mm": [
+                    0.0008844206957074716,
+                    -8.776323347686807e-06,
+                    -9.784814137424486e-05
+                  ],
+                  "directional_displacement_mm": 0.0008844206957074716,
+                  "stiffness_n_per_mm": 5653.418134907356
+                }
+              ],
+              "stiffness_n_per_mm": 5653.418134907356,
+              "fixed_node_count": 7500
+            },
+            "modes": {
+              "analysis": "modal",
+              "eigenfrequencies_hz": [
+                1068.339,
+                1190.527,
+                1447.103,
+                1541.364,
+                1964.394,
+                2082.494
+              ],
+              "discarded_rigid_modes": 0,
+              "fixture": "all translations fixed on selected nodes",
+              "fixed_node_count": 7500
+            }
+          },
+          "diagnostics": [],
+          "artifacts": {
+            "directory": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4",
+            "arm_tip": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_0.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_0.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_0.log"
+            },
+            "battery_impact": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_1.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_1.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_1.log"
+            },
+            "camera_side": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_2.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_2.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_2.log"
+            },
+            "modes": {
+              "input": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_3.inp",
+              "data": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_3.dat",
+              "log": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\case_3.log"
+            },
+            "result": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\mesh_study_spooles1\\results\\candidate_2p0mm\\fea\\evaluation_sldu1gh4\\result.json"
+          },
+          "linear_solver": "SPOOLES",
+          "solver_threads": 1,
+          "mesh": {
+            "gmsh_version": "4.15.2",
+            "element_type": "C3D10",
+            "element_count": 81024,
+            "minimum_jacobian_mm3": 0.06943952503119023,
+            "mesh_size_mm": 2.0,
+            "second_order_linear": true,
+            "high_order_optimize": 0,
+            "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+            "node_count": 143983
+          },
+          "point_mass_coupling": [
+            {
+              "name": "battery",
+              "mass_g": 37.0,
+              "position_mm": [
+                -1.6781509643504353e-16,
+                -3.0144237274670914e-16,
+                34.5
+              ],
+              "attachment_nodes": 107,
+              "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+            }
+          ],
+          "frame_mass_g": 58.53180409071862,
+          "point_mass_g": 37.0,
+          "solver_version": "2.22",
+          "runtime_s": 113.64036920000217
+        }
+      }
+    ],
+    "baseline_final_interval_passed": false,
+    "candidate_final_interval_passed": true,
+    "general_mesh_convergence_established": false,
+    "all_relative_acceptance_comparisons_passed": true
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "schema_version": "deep-frame-workstation-geometry-visualization-v1",
+  "rendering": "Direct original STL triangles, Matplotlib orthographic shaded projections, identical physical limits and scale in all panels; no geometry smoothing or remodeling",
+  "grid": {
+    "origin_mm": [
+      -68.0,
+      -64.0,
+      0.0
+    ],
+    "spacing_mm": [
+      4.0,
+      4.0,
+      4.0
+    ],
+    "shape": [
+      34,
+      32,
+      8
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+  },
+  "axis_limits_mm": [
+    [
+      -68.0,
+      -64.0,
+      0.0
+    ],
+    [
+      68.0,
+      64.0,
+      32.0
+    ]
+  ],
+  "views": [
+    {
+      "elevation_deg": 28,
+      "azimuth_deg": -45
+    },
+    {
+      "elevation_deg": 90,
+      "azimuth_deg": -90
+    }
+  ],
+  "packages": {
+    "numpy": "2.5.3",
+    "matplotlib": "3.11.2",
+    "trimesh": "5.1.0"
+  },
+  "renderer_sha256": "e68ac71fcd6ec83bf02055878f940685494e849cb7c330f5930e487a15d8bd65",
+  "selected_id": "density_t01",
+  "selected_manifest_sha256": "c33ea6478d75a7bfa5928643a1fa0e07328aecd4e7a3a3e6a35d32c68e9f534f",
+  "selected_record_sha256": "b13ad324e82019b400f1c3a6a37ac44819b2d473c3d8d17b50d53fc3d78991a7",
+  "sources": [
+    {
+      "name": "v0",
+      "path": "exports/topology/workstation_20260930/mesh_study/geometry/baseline/geometry.stl",
+      "sha256": "545698fec3ffd8cb840d7c196b748a48927ef9d70752f55ee714b1ef8b157398",
+      "size_bytes": 906084,
+      "triangle_count": 18120,
+      "bounds_mm": [
+        [
+          -63.961788177490234,
+          -59.5,
+          0.0
+        ],
+        [
+          63.961788177490234,
+          52.0,
+          29.0
+        ]
+      ],
+      "stl_volume_mm3": 29505.697830089845,
+      "cad_frame_mass_g": 32.16290311400827,
+      "watertight": true,
+      "body_count": 1,
+      "topology_check_note": "Vertex merging used only for closed-body checks; rendering uses original STL triangles"
+    },
+    {
+      "name": "handoff_45",
+      "path": "exports/topology/workstation_20260930/mesh_study/geometry/candidate/geometry.stl",
+      "sha256": "0fcf054c3928668bc40eeb9f3af2421e42eeceb1a1a69b72441ed4bc3c1a2db3",
+      "size_bytes": 988684,
+      "triangle_count": 19772,
+      "bounds_mm": [
+        [
+          -64.0,
+          -60.0,
+          0.0
+        ],
+        [
+          64.0,
+          49.374874114990234,
+          29.0
+        ]
+      ],
+      "stl_volume_mm3": 53698.40568290333,
+      "cad_frame_mass_g": 58.53180409071862,
+      "watertight": true,
+      "body_count": 1,
+      "topology_check_note": "Vertex merging used only for closed-body checks; rendering uses original STL triangles"
+    },
+    {
+      "name": "workstation_300",
+      "path": "exports/topology/workstation_20260930/candidate_study/grid4_iter300/candidates/density_t01/geometry.stl",
+      "sha256": "587b649e08f5d2de82d26719b10dd4dd6a6d65841d4069659c38d625600c101f",
+      "size_bytes": 987884,
+      "triangle_count": 19756,
+      "bounds_mm": [
+        [
+          -64.0,
+          -60.0,
+          0.0
+        ],
+        [
+          64.0,
+          49.374874114990234,
+          29.0
+        ]
+      ],
+      "stl_volume_mm3": 46745.199573622514,
+      "cad_frame_mass_g": 50.952978921316564,
+      "watertight": true,
+      "body_count": 1,
+      "topology_check_note": "Vertex merging used only for closed-body checks; rendering uses original STL triangles"
+    }
+  ],
+  "image": {
+    "path": "docs/validation/workstation_geometry_comparison.png",
+    "sha256": "7b0c954583092b5ba426c95c5bae9c324893ef12f719922ef5a55ae23d621f96",
+    "size_bytes": 602354
+  }
+}

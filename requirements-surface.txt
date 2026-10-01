@@ -1,0 +1,8 @@
+-r requirements.txt
+-r requirements-fea.txt
+-r requirements-topology.txt
+scikit-image==0.26.0
+fast-simplification==0.2.0
+rtree==1.4.1
+pymeshlab==2025.7.post1
+msvc-runtime==14.44.35112; sys_platform == "win32"

@@ -117,6 +117,27 @@ def test_optimizer_is_deterministic_and_reports_iteration_limit():
     assert first["summary"]["objective_final"] == second["summary"]["objective_final"]
 
 
+def test_progress_callback_reports_iterations_without_mutating_solver_history():
+    domain = beam_domain((6, 3, 3))
+    settings = {"volume_fraction": 0.7, "filter_radius_mm": 3.0, "max_iterations": 3, "change_tolerance": 1e-12}
+    observed = []
+
+    def progress(entry):
+        observed.append(deepcopy(entry))
+        entry["compliances_n_mm"].clear()
+        entry["objective"] = -1
+
+    result = optimize_topology(domain, settings, progress_callback=progress)
+    plain = optimize_topology(domain, settings)
+    assert result["status"] == "ok"
+    assert observed == result["history"]
+    assert len(observed) == 4
+    assert observed[-1]["final_evaluation"]
+    assert observed[-1]["maximum_design_change"] is None
+    assert np.array_equal(result["density"], plain["density"])
+    assert result["summary"]["objective_final"] == plain["summary"]["objective_final"]
+
+
 @pytest.mark.parametrize("settings", [{"volume_fraction": 0.1}, {"volume_fraction": float("nan")}, {"penalization": 0}, {"case_weights": {"missing": 1}}, {"max_iterations": 0}])
 def test_invalid_settings_and_impossible_preserve_budget_fail_cleanly(settings):
     result = optimize_topology(beam_domain(), settings)

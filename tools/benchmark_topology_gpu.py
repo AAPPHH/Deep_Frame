@@ -1,0 +1,97 @@
+"""Compare complete CPU/GPU optimization updates from verified physical inputs."""
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+from time import perf_counter
+
+import numpy as np
+
+from deep_frame.topology_optimization import optimize_topology
+from deep_frame.topology_pipeline import _file_digest, _provenance, _save
+from tools.summarize_topology_study import verify_artifacts
+
+
+def compare(source, output, updates=3):
+    source, output = Path(source).resolve(), Path(output).resolve()
+    if isinstance(updates, bool) or not 1 <= updates <= 3:
+        raise ValueError("Benchmark must use one to three complete updates")
+    manifest = json.loads((source / "manifest.json").read_text())
+    if manifest["status"] != "ok":
+        raise ValueError("Source density study is not successful")
+    verify_artifacts(source, manifest["artifacts"], ("inputs.json", "fields.npz", "result.json", "domain_masks.npz"))
+    inputs = json.loads((source / "inputs.json").read_text())
+    domain = inputs["domain"]
+    with np.load(source / "fields.npz", allow_pickle=False) as fields:
+        for key in ("allowed", "preserve", "forbidden"):
+            domain[key] = fields[key].copy()
+    output.mkdir(parents=True, exist_ok=False)
+    _save(output / "inputs.json", {"source": str(source), "source_manifest_sha256": _file_digest(source / "manifest.json"),
+                                   "source_fields_sha256": _file_digest(source / "fields.npz"), "updates": updates,
+                                   "runner_sha256": _file_digest(__file__),
+                                   "provenance": _provenance({"generator": optimize_topology}, {}, False),
+                                   "thread_environment": {key: os.environ.get(key) for key in
+                                                          ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS")}})
+    results = {}
+    try:
+        for backend in ("cpu_superlu", "cuda_cudss"):
+            settings = {**inputs["settings"], "linear_solver": backend, "max_iterations": updates,
+                        "minimum_iterations": updates, "max_runtime_s": 600}
+            with (output / (backend + ".jsonl")).open("w", encoding="utf-8") as journal:
+                def progress(entry):
+                    journal.write(json.dumps(entry, allow_nan=False) + "\n")
+                    journal.flush()
+                    _save(output / "status.json", {"status": "running", "backend": backend, **entry})
+                    print(json.dumps({"backend": backend, "iteration": entry["iteration"],
+                                      "elapsed_s": entry["elapsed_s"]}), flush=True)
+
+                started = perf_counter()
+                result = optimize_topology(domain, settings, progress_callback=progress)
+                result["wall_s"] = perf_counter() - started
+            arrays = {key: value for key, value in result.items() if isinstance(value, np.ndarray)}
+            np.savez_compressed(output / (backend + ".npz"), **arrays)
+            results[backend] = {key: value for key, value in result.items() if key not in arrays}
+            _save(output / (backend + ".json"), results[backend])
+            if result["status"] != "ok":
+                raise RuntimeError(str(result["diagnostics"]))
+        with np.load(output / "cpu_superlu.npz") as cpu, np.load(output / "cuda_cudss.npz") as gpu:
+            report = {key + "_max_abs": float(np.max(np.abs(cpu[key] - gpu[key])))
+                      for key in ("density", "design_density")}
+        pairs = list(zip(results["cpu_superlu"]["history"], results["cuda_cudss"]["history"], strict=True))
+        if any(set(cpu["compliances_n_mm"]) != set(gpu["compliances_n_mm"]) for cpu, gpu in pairs):
+            raise ValueError("CPU/GPU case sets differ")
+        report["history_max_compliance_relative_error"] = max(
+            abs(cpu["compliances_n_mm"][key] / gpu["compliances_n_mm"][key] - 1)
+            for cpu, gpu in pairs for key in cpu["compliances_n_mm"])
+        report["gpu_max_residual"] = max(entry["maximum_relative_residual"] for entry in results["cuda_cudss"]["history"])
+        for name, result in results.items():
+            report[name + "_wall_s"] = result["wall_s"]
+            elapsed = [0] + [entry["elapsed_s"] for entry in result["history"]]
+            report[name + "_evaluation_intervals_s"] = np.diff(elapsed).tolist()
+        report["speedup"] = report["cpu_superlu_wall_s"] / report["cuda_cudss_wall_s"]
+        report["acceptance_limits"] = {"density_max_abs": 1e-7, "design_density_max_abs": 1e-7,
+                                       "history_max_compliance_relative_error": 1e-6, "gpu_max_residual": 1e-8}
+        report["passed"] = all(report[key] <= limit for key, limit in report["acceptance_limits"].items())
+        report["timing_scope"] = "Complete uniform-start optimization including initialization, assembly, transfer, synchronization, OC updates, gradients, final metrics and resource destruction. First interval includes GPU setup; final interval has no OC update."
+        _save(output / "comparison.json", report)
+        _save(output / "status.json", {"status": "ok" if report["passed"] else "failed"})
+        artifacts = {path.name: {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(), "size_bytes": path.stat().st_size}
+                     for path in output.iterdir() if path.is_file()}
+        _save(output / "manifest.json", {"status": "ok" if report["passed"] else "failed", "artifacts": artifacts})
+        return report
+    except Exception as error:
+        _save(output / "status.json", {"status": "failed", "error": str(error)})
+        raise
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", required=True)
+    parser.add_argument("--output", required=True)
+    parser.add_argument("--updates", type=int, default=3)
+    arguments = parser.parse_args()
+    result = compare(arguments.source, arguments.output, arguments.updates)
+    print(json.dumps(result), flush=True)
+    raise SystemExit(0 if result["passed"] else 1)

@@ -1,0 +1,10 @@
+{
+  "compared_completed_updates": 79,
+  "first_directory": "exports/topology/workstation_20260930/density_study/grid4_iter300",
+  "second_directory": "exports/topology/workstation_20260930/density_study/grid4_matched79",
+  "first_result_sha256": "bc77a53994eb5fa03b7593afbbf0fd46d69feced22afc6db8e78a95bf15afa0b",
+  "second_result_sha256": "04474fbcd7bc3b04b0102d5565e236ec5aa5da771a632bdb30a3ddb73711ce51",
+  "maximum_relative_compliance_difference": 0.0,
+  "objective_relative_difference": 0.0,
+  "source_archive_index_sha256": "c2f846dcb469028317fa65c3feff0e3011ef79b68ead5a1be1189b75262e6dcf"
+}

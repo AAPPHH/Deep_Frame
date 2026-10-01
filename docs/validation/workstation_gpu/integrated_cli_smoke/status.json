@@ -1,0 +1,2582 @@
+{
+  "status": "ok",
+  "pid": 9088,
+  "summary": {
+    "method": "3D Hex8 SIMP, spatial density filter, smooth projection, normalized multi-load compliance, OC volume constraint",
+    "initialization": "uniform in every free cell; fixed preserves; no frame template or connectivity seed",
+    "settings": {
+      "volume_fraction": 0.1,
+      "filter_radius_mm": 6.0,
+      "penalization": 3.0,
+      "min_stiffness_ratio": 1e-06,
+      "max_iterations": 1,
+      "minimum_iterations": 1,
+      "change_tolerance": 0.005,
+      "move_limit": 0.12,
+      "projection_beta": 1.0,
+      "projection_eta": 0.5,
+      "minimum_design_density": 0.001,
+      "case_weights": {
+        "arm_tip": 1.0,
+        "battery_impact": 1.0,
+        "camera_side": 1.0,
+        "connection_aio_contact_0": 0.0196078431372549,
+        "connection_aio_contact_1": 0.0196078431372549,
+        "connection_aio_contact_2": 0.0196078431372549,
+        "connection_aio_contact_3": 0.0196078431372549,
+        "connection_battery_contact_-1_-1": 0.0196078431372549,
+        "connection_battery_contact_-1_1": 0.0196078431372549,
+        "connection_battery_contact_1_-1": 0.0196078431372549,
+        "connection_battery_contact_1_1": 0.0196078431372549,
+        "connection_strap_contact_-1_-1": 0.0196078431372549,
+        "connection_strap_contact_-1_1": 0.0196078431372549,
+        "connection_strap_contact_1_-1": 0.0196078431372549,
+        "connection_strap_contact_1_1": 0.0196078431372549,
+        "connection_camera_mount_-1": 0.0196078431372549,
+        "connection_camera_mount_1": 0.0196078431372549,
+        "connection_xt30_contact": 0.0196078431372549,
+        "connection_balancer_contact": 0.0196078431372549,
+        "connection_antenna_contact": 0.0196078431372549
+      },
+      "max_runtime_s": 30.0,
+      "interface_node_policy": "preserve_adjacent",
+      "linear_solver": "cuda_cudss"
+    },
+    "converged": false,
+    "stop_reason": "max_iterations",
+    "iterations": 1,
+    "volume_fraction": 0.09999999985413668,
+    "target_volume_fraction": 0.1,
+    "density_volume_mm3": 37388.799945463456,
+    "density_frame_mass_g": 40.753791940555175,
+    "objective_initial": 1.0,
+    "objective_final": 0.21975943083815047,
+    "normalization_compliances_n_mm": {
+      "arm_tip": 1.522186258317899,
+      "battery_impact": 0.9222770334410298,
+      "camera_side": 0.9051555415513115,
+      "connection_aio_contact_0": 0.0004557480486233323,
+      "connection_aio_contact_1": 0.0004549569413674023,
+      "connection_aio_contact_2": 0.0008258975389617442,
+      "connection_aio_contact_3": 0.0008006042405297171,
+      "connection_battery_contact_-1_-1": 0.000287033391148302,
+      "connection_battery_contact_-1_1": 0.00026868613952983763,
+      "connection_battery_contact_1_-1": 0.0003173314105981574,
+      "connection_battery_contact_1_1": 0.00030027646756448803,
+      "connection_strap_contact_-1_-1": 0.00022722181639364,
+      "connection_strap_contact_-1_1": 0.0002182135290585746,
+      "connection_strap_contact_1_-1": 0.0002773744364215977,
+      "connection_strap_contact_1_1": 0.0002690795402103607,
+      "connection_camera_mount_-1": 0.0003604106613295916,
+      "connection_camera_mount_1": 0.00039740791939784693,
+      "connection_xt30_contact": 0.0006688568018470978,
+      "connection_balancer_contact": 0.0005171256553123631,
+      "connection_antenna_contact": 0.0006843006315914698
+    },
+    "normalized_case_weights": {
+      "arm_tip": 0.3,
+      "battery_impact": 0.3,
+      "camera_side": 0.3,
+      "connection_aio_contact_0": 0.0058823529411764705,
+      "connection_aio_contact_1": 0.0058823529411764705,
+      "connection_aio_contact_2": 0.0058823529411764705,
+      "connection_aio_contact_3": 0.0058823529411764705,
+      "connection_battery_contact_-1_-1": 0.0058823529411764705,
+      "connection_battery_contact_-1_1": 0.0058823529411764705,
+      "connection_battery_contact_1_-1": 0.0058823529411764705,
+      "connection_battery_contact_1_1": 0.0058823529411764705,
+      "connection_strap_contact_-1_-1": 0.0058823529411764705,
+      "connection_strap_contact_-1_1": 0.0058823529411764705,
+      "connection_strap_contact_1_-1": 0.0058823529411764705,
+      "connection_strap_contact_1_1": 0.0058823529411764705,
+      "connection_camera_mount_-1": 0.0058823529411764705,
+      "connection_camera_mount_1": 0.0058823529411764705,
+      "connection_xt30_contact": 0.0058823529411764705,
+      "connection_balancer_contact": 0.0058823529411764705,
+      "connection_antenna_contact": 0.0058823529411764705
+    },
+    "static_surrogate_metrics": {
+      "arm_tip": {
+        "compliance_n_mm": 0.2706582946957431,
+        "relative_residual": 4.262628479805438e-11,
+        "max_displacement_mm": 0.420138882637967,
+        "max_von_mises_mpa": 0.40028130902856734,
+        "loads": [
+          {
+            "node_count": 23,
+            "force_n": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "mean_displacement_mm": [
+              0.0068354702891551215,
+              0.0034712115514247037,
+              -0.2706582946957431
+            ],
+            "directional_displacement_mm": 0.2706582946957431,
+            "stiffness_n_per_mm": 3.694695561147079
+          }
+        ],
+        "stiffness_n_per_mm": 3.694695561147079
+      },
+      "battery_impact": {
+        "compliance_n_mm": 0.22158273111118315,
+        "relative_residual": 4.656978247303123e-12,
+        "max_displacement_mm": 0.08166389735627758,
+        "max_von_mises_mpa": 0.24204605871061396,
+        "loads": [
+          {
+            "node_count": 18,
+            "force_n": [
+              0.0,
+              0.0,
+              -3.6284604999999996
+            ],
+            "mean_displacement_mm": [
+              -0.0010434787178371884,
+              -0.011698635869380643,
+              -0.06106797390000063
+            ],
+            "directional_displacement_mm": 0.06106797390000063,
+            "stiffness_n_per_mm": 59.41674937409316
+          }
+        ],
+        "stiffness_n_per_mm": 59.41674937409316
+      },
+      "camera_side": {
+        "compliance_n_mm": 0.1767229532454328,
+        "relative_residual": 1.1016975418393865e-12,
+        "max_displacement_mm": 0.05996223165619405,
+        "max_von_mises_mpa": 0.20039968899332156,
+        "loads": [
+          {
+            "node_count": 18,
+            "force_n": [
+              5.0,
+              0.0,
+              0.0
+            ],
+            "mean_displacement_mm": [
+              0.03534459064908656,
+              -0.000601306042370455,
+              -0.001158575123516066
+            ],
+            "directional_displacement_mm": 0.03534459064908656,
+            "stiffness_n_per_mm": 141.46436295278525
+          }
+        ],
+        "stiffness_n_per_mm": 141.46436295278525
+      },
+      "connection_aio_contact_0": {
+        "compliance_n_mm": 0.00012877418512424304,
+        "relative_residual": 2.5273388803289473e-12,
+        "max_displacement_mm": 0.0026563483842158794,
+        "max_von_mises_mpa": 0.006530803546244425,
+        "loads": [
+          {
+            "node_count": 2,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              6.9619083255473356e-06,
+              0.00010803264092835318,
+              -0.002575483702484861
+            ],
+            "directional_displacement_mm": 0.002575483702484861,
+            "stiffness_n_per_mm": 19.413828925323557
+          }
+        ],
+        "stiffness_n_per_mm": 19.413828925323557
+      },
+      "connection_aio_contact_1": {
+        "compliance_n_mm": 7.217378131399254e-05,
+        "relative_residual": 1.283377865413581e-12,
+        "max_displacement_mm": 0.00168982816028671,
+        "max_von_mises_mpa": 0.005876297951758641,
+        "loads": [
+          {
+            "node_count": 2,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -4.553340252509929e-06,
+              6.071369589437086e-05,
+              -0.0014434756262798505
+            ],
+            "directional_displacement_mm": 0.0014434756262798503,
+            "stiffness_n_per_mm": 34.63861743814881
+          }
+        ],
+        "stiffness_n_per_mm": 34.63861743814881
+      },
+      "connection_aio_contact_2": {
+        "compliance_n_mm": 0.00013770510697220007,
+        "relative_residual": 2.123543906015943e-12,
+        "max_displacement_mm": 0.00309313925088307,
+        "max_von_mises_mpa": 0.005957421262690427,
+        "loads": [
+          {
+            "node_count": 2,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -5.516738986449492e-05,
+              -3.2574823067649196e-06,
+              -0.002754102139444001
+            ],
+            "directional_displacement_mm": 0.002754102139444001,
+            "stiffness_n_per_mm": 18.154736995373025
+          }
+        ],
+        "stiffness_n_per_mm": 18.154736995373025
+      },
+      "connection_aio_contact_3": {
+        "compliance_n_mm": 0.00011083159376386479,
+        "relative_residual": 1.4082529453081305e-12,
+        "max_displacement_mm": 0.0028392136162883556,
+        "max_von_mises_mpa": 0.006046498421198397,
+        "loads": [
+          {
+            "node_count": 2,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -7.569922300306288e-05,
+              0.00010431702911262851,
+              -0.0022166318752772957
+            ],
+            "directional_displacement_mm": 0.0022166318752772957,
+            "stiffness_n_per_mm": 22.55674501375882
+          }
+        ],
+        "stiffness_n_per_mm": 22.55674501375882
+      },
+      "connection_battery_contact_-1_-1": {
+        "compliance_n_mm": 0.00011351186391139815,
+        "relative_residual": 4.0669447917874665e-12,
+        "max_displacement_mm": 0.0025275983692988435,
+        "max_von_mises_mpa": 0.004219114643612217,
+        "loads": [
+          {
+            "node_count": 6,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              0.0002034824643415893,
+              -0.000398106667219994,
+              -0.0022702372782279633
+            ],
+            "directional_displacement_mm": 0.0022702372782279633,
+            "stiffness_n_per_mm": 22.024129583066124
+          }
+        ],
+        "stiffness_n_per_mm": 22.024129583066124
+      },
+      "connection_battery_contact_-1_1": {
+        "compliance_n_mm": 5.225507895648975e-05,
+        "relative_residual": 1.911138593427037e-12,
+        "max_displacement_mm": 0.0011017428699433588,
+        "max_von_mises_mpa": 0.0041733731704238705,
+        "loads": [
+          {
+            "node_count": 6,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              0.00011955201360430294,
+              -2.847835864320194e-05,
+              -0.001045101579129795
+            ],
+            "directional_displacement_mm": 0.001045101579129795,
+            "stiffness_n_per_mm": 47.8422394516259
+          }
+        ],
+        "stiffness_n_per_mm": 47.8422394516259
+      },
+      "connection_battery_contact_1_-1": {
+        "compliance_n_mm": 9.990391062595749e-05,
+        "relative_residual": 3.4893311023692354e-12,
+        "max_displacement_mm": 0.002241690676297194,
+        "max_von_mises_mpa": 0.005246087717555793,
+        "loads": [
+          {
+            "node_count": 6,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -0.00042215560387772545,
+              -0.00024003058801692377,
+              -0.0019980782125191498
+            ],
+            "directional_displacement_mm": 0.0019980782125191498,
+            "stiffness_n_per_mm": 25.024045448631703
+          }
+        ],
+        "stiffness_n_per_mm": 25.024045448631703
+      },
+      "connection_battery_contact_1_1": {
+        "compliance_n_mm": 5.602334135598302e-05,
+        "relative_residual": 1.8158019800094675e-12,
+        "max_displacement_mm": 0.0014325139007954272,
+        "max_von_mises_mpa": 0.0047261256344330324,
+        "loads": [
+          {
+            "node_count": 6,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -8.745706491666193e-05,
+              -3.427134041479619e-05,
+              -0.0011204668271196606
+            ],
+            "directional_displacement_mm": 0.0011204668271196606,
+            "stiffness_n_per_mm": 44.624257309369
+          }
+        ],
+        "stiffness_n_per_mm": 44.624257309369
+      },
+      "connection_strap_contact_-1_-1": {
+        "compliance_n_mm": 8.222531580393314e-05,
+        "relative_residual": 3.3633683815238712e-12,
+        "max_displacement_mm": 0.002080070552661138,
+        "max_von_mises_mpa": 0.00450557123997133,
+        "loads": [
+          {
+            "node_count": 5,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              5.806322297936824e-05,
+              -0.00033876191519486795,
+              -0.001644506316078663
+            ],
+            "directional_displacement_mm": 0.001644506316078663,
+            "stiffness_n_per_mm": 30.40426145593977
+          }
+        ],
+        "stiffness_n_per_mm": 30.40426145593977
+      },
+      "connection_strap_contact_-1_1": {
+        "compliance_n_mm": 4.9399626986849394e-05,
+        "relative_residual": 2.4525251543837687e-12,
+        "max_displacement_mm": 0.00104308241549892,
+        "max_von_mises_mpa": 0.004287648005020708,
+        "loads": [
+          {
+            "node_count": 5,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              2.1087262873573695e-05,
+              -0.00011091719632608432,
+              -0.000987992539736988
+            ],
+            "directional_displacement_mm": 0.000987992539736988,
+            "stiffness_n_per_mm": 50.60766958150355
+          }
+        ],
+        "stiffness_n_per_mm": 50.60766958150355
+      },
+      "connection_strap_contact_1_-1": {
+        "compliance_n_mm": 7.474817109275105e-05,
+        "relative_residual": 3.119382617639745e-12,
+        "max_displacement_mm": 0.001795667831686483,
+        "max_von_mises_mpa": 0.0047671192580716745,
+        "loads": [
+          {
+            "node_count": 5,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -0.00014730203162039888,
+              -0.000206275614249405,
+              -0.001494963421855021
+            ],
+            "directional_displacement_mm": 0.001494963421855021,
+            "stiffness_n_per_mm": 33.445634367399876
+          }
+        ],
+        "stiffness_n_per_mm": 33.445634367399876
+      },
+      "connection_strap_contact_1_1": {
+        "compliance_n_mm": 5.379549124369348e-05,
+        "relative_residual": 2.111088454352769e-12,
+        "max_displacement_mm": 0.0013121396298711948,
+        "max_von_mises_mpa": 0.005387634169610729,
+        "loads": [
+          {
+            "node_count": 5,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              9.862452589228944e-06,
+              -8.011272772851472e-05,
+              -0.0010759098248738694
+            ],
+            "directional_displacement_mm": 0.0010759098248738694,
+            "stiffness_n_per_mm": 46.47229613863
+          }
+        ],
+        "stiffness_n_per_mm": 46.47229613863
+      },
+      "connection_camera_mount_-1": {
+        "compliance_n_mm": 6.200986259876254e-05,
+        "relative_residual": 2.2757493261359483e-12,
+        "max_displacement_mm": 0.002464490733456183,
+        "max_von_mises_mpa": 0.0035599449241082667,
+        "loads": [
+          {
+            "node_count": 8,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              0.0001664108747227729,
+              1.4393108010975195e-05,
+              -0.0012401972519752507
+            ],
+            "directional_displacement_mm": 0.0012401972519752507,
+            "stiffness_n_per_mm": 40.31616738415237
+          }
+        ],
+        "stiffness_n_per_mm": 40.31616738415237
+      },
+      "connection_camera_mount_1": {
+        "compliance_n_mm": 6.881038077691235e-05,
+        "relative_residual": 2.1153798370200423e-12,
+        "max_displacement_mm": 0.0031265452671675447,
+        "max_von_mises_mpa": 0.003955653778699329,
+        "loads": [
+          {
+            "node_count": 8,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              -0.00018773149065762473,
+              -1.0021900099537345e-05,
+              -0.0013762076155382468
+            ],
+            "directional_displacement_mm": 0.0013762076155382468,
+            "stiffness_n_per_mm": 36.33172744829243
+          }
+        ],
+        "stiffness_n_per_mm": 36.33172744829243
+      },
+      "connection_xt30_contact": {
+        "compliance_n_mm": 0.0007871734116497006,
+        "relative_residual": 1.3025509809314702e-11,
+        "max_displacement_mm": 0.016602437666592876,
+        "max_von_mises_mpa": 0.008631136423240256,
+        "loads": [
+          {
+            "node_count": 3,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              0.0015171322606962747,
+              0.0007513797982178091,
+              -0.01574346823299401
+            ],
+            "directional_displacement_mm": 0.01574346823299401,
+            "stiffness_n_per_mm": 3.1759202775417466
+          }
+        ],
+        "stiffness_n_per_mm": 3.1759202775417466
+      },
+      "connection_balancer_contact": {
+        "compliance_n_mm": 0.00027692878594661504,
+        "relative_residual": 6.54761391778969e-12,
+        "max_displacement_mm": 0.006834905820284725,
+        "max_von_mises_mpa": 0.006642332873345577,
+        "loads": [
+          {
+            "node_count": 4,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              0.00017933447582549458,
+              0.0011064596925074192,
+              -0.0055385757189322996
+            ],
+            "directional_displacement_mm": 0.0055385757189322996,
+            "stiffness_n_per_mm": 9.027591665685264
+          }
+        ],
+        "stiffness_n_per_mm": 9.027591665685264
+      },
+      "connection_antenna_contact": {
+        "compliance_n_mm": 0.0007715754015226964,
+        "relative_residual": 1.265239913781947e-11,
+        "max_displacement_mm": 0.01878149410413052,
+        "max_von_mises_mpa": 0.00826091585546479,
+        "loads": [
+          {
+            "node_count": 3,
+            "force_n": [
+              0.0,
+              0.0,
+              -0.05
+            ],
+            "mean_displacement_mm": [
+              0.0001604921096399216,
+              0.0021788686083740543,
+              -0.015431508030453928
+            ],
+            "directional_displacement_mm": 0.015431508030453928,
+            "stiffness_n_per_mm": 3.2401240307379875
+          }
+        ],
+        "stiffness_n_per_mm": 3.2401240307379875
+      }
+    },
+    "modal_assessment": "independent gmsh/CalculiX candidate verification, including specified point masses; no voxel-frequency substitute",
+    "stress_assessment": "Hex8 Gauss-point SIMP stresses are surrogate diagnostics only; exact-solid CalculiX governs candidate stress constraints",
+    "manufacturing_assessment": "density filtering regularizes lengths; reconstructed-solid feature, connection, forbidden and manufacturing checks remain mandatory",
+    "gray_fraction_free": 0.2603800140745954,
+    "element_model": "three displacement DOFs/node, fully integrated trilinear 8-node 3D elasticity, 2x2x2 Gauss integration",
+    "units": {
+      "length": "mm",
+      "force": "N",
+      "stress": "MPa",
+      "density": "g/cm3",
+      "internal_modal_mass": "tonne"
+    },
+    "system": {
+      "nodes": 10395,
+      "active_nodes": 8864,
+      "elements": 8704,
+      "active_elements": 5842,
+      "dofs": 31185,
+      "active_dofs": 26592,
+      "interface_node_policy": "preserve_adjacent",
+      "linear_solver": "cuda_cudss",
+      "gpu_symbolic_reanalyses": 0,
+      "gpu_solver_details": [
+        {
+          "cudss_version": "0.8.0.10",
+          "cupy_version": "14.2.0",
+          "cuda_runtime_version": 12090,
+          "cuda_driver_version": 13030,
+          "device_name": "NVIDIA GeForce RTX 4080",
+          "precision": "float64",
+          "numeric_factorization": "GPU Cholesky, hybrid execution disabled",
+          "analysis_s": 0.0917401000042446,
+          "shape": [
+            26580,
+            26580
+          ],
+          "nnz": 1662156,
+          "solves": [
+            {
+              "factor_s": 0.02884700000868179,
+              "solve_s": 0.014963599998736754,
+              "transfer_factor_solve_s": 0.05343499999435153,
+              "device_free_bytes_after_solve": 15600713728,
+              "device_total_bytes": 17170956288
+            },
+            {
+              "factor_s": 0.0172725000011269,
+              "solve_s": 0.0007411000115098432,
+              "transfer_factor_solve_s": 0.027404599997680634,
+              "device_free_bytes_after_solve": 15414067200,
+              "device_total_bytes": 17170956288
+            }
+          ]
+        },
+        {
+          "cudss_version": "0.8.0.10",
+          "cupy_version": "14.2.0",
+          "cuda_runtime_version": 12090,
+          "cuda_driver_version": 13030,
+          "device_name": "NVIDIA GeForce RTX 4080",
+          "precision": "float64",
+          "numeric_factorization": "GPU Cholesky, hybrid execution disabled",
+          "analysis_s": 0.08298930000455584,
+          "shape": [
+            26316,
+            26316
+          ],
+          "nnz": 1639188,
+          "solves": [
+            {
+              "factor_s": 0.020133500001975335,
+              "solve_s": 0.0034734999935608357,
+              "transfer_factor_solve_s": 0.057055199999012984,
+              "device_free_bytes_after_solve": 15414067200,
+              "device_total_bytes": 17170956288
+            },
+            {
+              "factor_s": 0.017020100000081584,
+              "solve_s": 0.0033404999994672835,
+              "transfer_factor_solve_s": 0.03216000000247732,
+              "device_free_bytes_after_solve": 15414067200,
+              "device_total_bytes": 17170956288
+            }
+          ]
+        }
+      ],
+      "independent_fixtures": 2,
+      "selector_expansions": [
+        {
+          "case": "battery_impact",
+          "role": "load",
+          "original": {
+            "kind": "box",
+            "min_mm": [
+              -20.1,
+              -2.0,
+              28.99
+            ],
+            "max_mm": [
+              20.1,
+              2.0,
+              29.01
+            ]
+          },
+          "expanded": {
+            "kind": "box",
+            "min_mm": [
+              -22.1,
+              -4.0,
+              26.99
+            ],
+            "max_mm": [
+              22.1,
+              4.0,
+              31.01
+            ]
+          },
+          "expansion_each_side_mm": [
+            2.0,
+            2.0,
+            2.0
+          ],
+          "selected_nodes": 18
+        }
+      ],
+      "selector_filtering": [
+        {
+          "case": "arm_tip",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              3.99
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              4.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "battery_impact",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -22.1,
+              -4.0,
+              26.99
+            ],
+            "max_mm": [
+              22.1,
+              4.0,
+              31.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 15,
+          "selected_nodes": 18
+        },
+        {
+          "case": "camera_side",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "camera_side",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "camera_side",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "camera_side",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "camera_side",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -12.01,
+              26.5,
+              19.5
+            ],
+            "max_mm": [
+              12.01,
+              43.5,
+              26.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 20,
+          "removed_nonpreserve_interface_nodes": 18,
+          "selected_nodes": 18
+        },
+        {
+          "case": "modes",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "modes",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "modes",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "modes",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_0",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_0",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_0",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_0",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_2",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_2",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_2",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_2",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_3",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_3",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_3",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_aio_contact_3",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_battery_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_-1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_strap_contact_1_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_-1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_camera_mount_1",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_xt30_contact",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -12.6,
+              -55.2,
+              0
+            ],
+            "max_mm": [
+              -2.4000000000000004,
+              -34.8,
+              2.5
+            ]
+          },
+          "removed_forbidden_only_nodes": 9,
+          "removed_nonpreserve_interface_nodes": 3,
+          "selected_nodes": 3
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_balancer_contact",
+          "role": "load",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              2.5999999999999996,
+              -52.75,
+              0
+            ],
+            "max_mm": [
+              12.4,
+              -37.25,
+              2.5
+            ]
+          },
+          "removed_forbidden_only_nodes": 6,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 4
+        },
+        {
+          "case": "connection_antenna_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_antenna_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              30.27487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              49.47487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_antenna_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              -64.06324036035807,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              -44.86324036035806,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        },
+        {
+          "case": "connection_antenna_contact",
+          "role": "fixture",
+          "selector": {
+            "kind": "box",
+            "min_mm": [
+              44.86324036035806,
+              -49.47487240669072,
+              -0.01
+            ],
+            "max_mm": [
+              64.06324036035807,
+              -30.27487240669072,
+              0.01
+            ]
+          },
+          "removed_forbidden_only_nodes": 0,
+          "removed_nonpreserve_interface_nodes": 2,
+          "selected_nodes": 23
+        }
+      ],
+      "cases": [
+        {
+          "name": "arm_tip",
+          "analysis": "static",
+          "fixed_nodes": 4,
+          "load_nodes": [
+            23
+          ]
+        },
+        {
+          "name": "battery_impact",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            18
+          ]
+        },
+        {
+          "name": "camera_side",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            18
+          ]
+        },
+        {
+          "name": "modes",
+          "analysis": "modal",
+          "fixed_nodes": 92,
+          "load_nodes": []
+        },
+        {
+          "name": "connection_aio_contact_0",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            2
+          ]
+        },
+        {
+          "name": "connection_aio_contact_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            2
+          ]
+        },
+        {
+          "name": "connection_aio_contact_2",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            2
+          ]
+        },
+        {
+          "name": "connection_aio_contact_3",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            2
+          ]
+        },
+        {
+          "name": "connection_battery_contact_-1_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            6
+          ]
+        },
+        {
+          "name": "connection_battery_contact_-1_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            6
+          ]
+        },
+        {
+          "name": "connection_battery_contact_1_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            6
+          ]
+        },
+        {
+          "name": "connection_battery_contact_1_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            6
+          ]
+        },
+        {
+          "name": "connection_strap_contact_-1_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            5
+          ]
+        },
+        {
+          "name": "connection_strap_contact_-1_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            5
+          ]
+        },
+        {
+          "name": "connection_strap_contact_1_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            5
+          ]
+        },
+        {
+          "name": "connection_strap_contact_1_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            5
+          ]
+        },
+        {
+          "name": "connection_camera_mount_-1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            8
+          ]
+        },
+        {
+          "name": "connection_camera_mount_1",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            8
+          ]
+        },
+        {
+          "name": "connection_xt30_contact",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            3
+          ]
+        },
+        {
+          "name": "connection_balancer_contact",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            4
+          ]
+        },
+        {
+          "name": "connection_antenna_contact",
+          "analysis": "static",
+          "fixed_nodes": 92,
+          "load_nodes": [
+            3
+          ]
+        }
+      ]
+    },
+    "elapsed_s": 1.1258483999990858
+  },
+  "diagnostics": [
+    "Density iteration stopped at max_iterations; convergence is not claimed"
+  ],
+  "elapsed_s": 1.3097839999973075
+}

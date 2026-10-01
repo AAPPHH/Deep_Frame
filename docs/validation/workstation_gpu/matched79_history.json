@@ -1,0 +1,8 @@
+{
+  "matched_design_updates": 79,
+  "cpu_field_evaluation_iteration": 80,
+  "gpu_history_iteration": 80,
+  "objective_relative_difference": 1.8455237338343977e-11,
+  "case_max_relative_difference": 3.3626657014451666e-11,
+  "gpu_maximum_relative_residual": 2.857109518633874e-10
+}
