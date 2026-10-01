@@ -107,7 +107,7 @@ PA6-CF-Dichte als vorlaeufige Herstellerreferenz: Bambu Lab 1.09 g/cm3, https://
 
 ## Freie Topologieoptimierung: Schnittstellen v1
 
-Dieser additive Vertrag erweitert die obigen Schnittstellen; die funktionierende v0-Geometrie und die bestehende FEA bleiben unveraendert als Referenz und unabhaengiger Pruefer. Die fachlichen Python-Module bleiben ohne Kommentare, Docstrings, argparse und unnoetige Prints. Alle fachlichen Konfigurationen sind Dictionaries. Separate Workstation-Studientools unter `tools/` verwenden CLI-Argumente fuer ausdrueckliche Rechenbudgets und neue Ausgabepfade; sie veraendern diesen fachlichen Vertrag nicht.
+Dieser additive Vertrag erweitert die obigen Schnittstellen; die funktionierende v0-Geometrie und die bestehende FEA bleiben unveraendert als Referenz und unabhaengiger Pruefer. Die fachlichen Python-Module bleiben ohne Kommentare, Docstrings, argparse und unnoetige Prints. Alle fachlichen Konfigurationen sind Dictionaries. Separate Workstation-Studientools unter `tools/` besitzen je Befehl ein einfaches Default-Dict; ausdrueckliche Rechenbudgets und neue Ausgabepfade stehen in einer optionalen JSON-Datei, deren Schluessel, Typen und Grenzen vor dem Start geprueft werden. Sie veraendern diesen fachlichen Vertrag nicht.
 
 ### Methode und Verantwortlichkeiten
 

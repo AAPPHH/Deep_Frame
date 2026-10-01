@@ -1,4 +1,7 @@
+from copy import deepcopy
+import json
 from pathlib import Path
+import sys
 
 COMPONENT_DEFAULTS = {
     "aio15": {
@@ -735,3 +738,45 @@ CONFIG = {
     },
     "frame_export_stem": "exports/frame_v0",
 }
+
+def _convert(kind, value, key):
+    if isinstance(kind, tuple):
+        if value in kind:
+            return value
+    elif isinstance(kind, list):
+        if isinstance(value, (list, tuple)) and (len(value) == len(kind) if len(kind) > 1 else len(value) > 0):
+            return [_convert(kind[0], item, key) for item in value]
+    elif kind == "flag":
+        if isinstance(value, bool):
+            return value
+    elif kind == "text":
+        if isinstance(value, str):
+            return value
+    elif kind == "path":
+        if isinstance(value, (str, Path)):
+            return Path(value)
+    elif not isinstance(value, bool) and isinstance(value, (str, int) if kind == "int" else (str, int, float)):
+        try:
+            return {"int": int, "float": float}[kind](value)
+        except ValueError:
+            pass
+    raise ValueError(f"Invalid configuration value for {key}: {value!r}")
+
+def configure(defaults, kinds, overrides, required=()):
+    if not isinstance(overrides, dict):
+        raise ValueError("Configuration overrides must be a JSON object")
+    unknown = sorted(set(overrides) - set(defaults))
+    if unknown:
+        raise ValueError("Unknown configuration keys: " + ", ".join(unknown))
+    config = deepcopy(defaults)
+    config.update({key: _convert(kinds[key], value, key) for key, value in overrides.items()})
+    missing = [key for key in required if config[key] is None]
+    if missing:
+        raise ValueError("Missing required configuration: " + ", ".join(missing))
+    return config
+
+def command_line(commands, argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    if not 1 <= len(argv) <= 2 or argv[0] not in commands:
+        raise SystemExit("usage: {" + ",".join(commands) + "} [config.json]")
+    return commands[argv[0]](json.loads(Path(argv[1]).read_text(encoding="utf-8-sig")) if len(argv) == 2 else {})

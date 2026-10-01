@@ -1,4 +1,3 @@
-import argparse
 from copy import deepcopy
 import hashlib
 from importlib.metadata import version
@@ -13,6 +12,7 @@ import numpy as np
 import trimesh
 from build123d import export_step, export_stl, import_step
 
+from deep_frame.config import command_line, configure
 from deep_frame.fea import evaluate
 from deep_frame.frame import build_geometry
 from deep_frame.topology_geometry import reconstruct_topology, validate_topology
@@ -30,6 +30,14 @@ SCREEN = {
     "first_frequency_hz": 0.02,
     "max_von_mises_mpa": 0.05,
 }
+
+MESH_CONFIG = {"output": DEFAULT_OUTPUT, "mesh_sizes": [3.0, 2.5, 2.0], "threads": 2, "linear_solver": None, "prepare_only": False}
+MESH_KINDS = {"output": "path", "mesh_sizes": ["float"], "threads": "int", "linear_solver": ("SPOOLES", "PASTIX"), "prepare_only": "flag"}
+CANDIDATES_CONFIG = {"source": None, "output": None, "baseline_study": None, "geometry_only": False, "linear_solver": None, "threads": 2}
+CANDIDATES_KINDS = {"source": "path", "output": "path", "baseline_study": "path", "geometry_only": "flag",
+                    "linear_solver": ("SPOOLES", "PASTIX"), "threads": "int"}
+RENDER_CONFIG = {"output": ROOT / "docs/validation/workstation_geometry_comparison.png"}
+RENDER_KINDS = {"output": "path"}
 
 def read(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -139,7 +147,7 @@ def mesh_prepare(output, threads, linear_solver=None):
     if previous_path.exists():
         previous = read(previous_path)
         if previous["study_input_sha256"] != record["study_input_sha256"]:
-            raise ValueError("Study provenance changed; choose a fresh --output directory")
+            raise ValueError("Study provenance changed; choose a fresh output directory")
         for name in solids:
             if not _valid_artifacts({"artifacts": {kind: previous["geometries"][name][kind] for kind in ("step", "stl")}}, output):
                 raise ValueError("Stored study geometry was modified")
@@ -195,27 +203,16 @@ def summarize(output, preparation):
     _save(output / "summary.json", summary)
     return summary
 
-def mesh_main(argv=None, prog=None):
-    """Reconstruct the archived density and independently refine its FEA mesh.
-
-    This does not run topology optimization or alter the historical acceptance files.
-    Run from the repository with the local venv Python; see --help.
-    """
-    parser = argparse.ArgumentParser(prog=prog, description=mesh_main.__doc__)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--mesh-sizes", nargs="+", type=float, default=[3.0, 2.5, 2.0])
-    parser.add_argument("--threads", type=int, default=2)
-    parser.add_argument("--linear-solver", choices=("SPOOLES", "PASTIX"), default=None)
-    parser.add_argument("--prepare-only", action="store_true")
-    args = parser.parse_args(argv)
-    if args.threads < 1 or any(size <= 0 or not np.isfinite(size) for size in args.mesh_sizes):
-        parser.error("Mesh sizes and threads must be positive")
-    output = args.output.resolve()
+def mesh_main(overrides):
+    config = configure(MESH_CONFIG, MESH_KINDS, overrides)
+    if config["threads"] < 1 or any(size <= 0 or not np.isfinite(size) for size in config["mesh_sizes"]):
+        raise ValueError("Mesh sizes and threads must be positive")
+    output = config["output"].resolve()
     output.mkdir(parents=True, exist_ok=True)
-    solids, preparation = mesh_prepare(output, args.threads, args.linear_solver)
-    if args.prepare_only:
+    solids, preparation = mesh_prepare(output, config["threads"], config["linear_solver"])
+    if config["prepare_only"]:
         return
-    for size in args.mesh_sizes:
+    for size in config["mesh_sizes"]:
         for name, solid in solids.items():
             directory = output / "results" / (name + "_" + str(size).replace(".", "p") + "mm")
             directory.mkdir(parents=True, exist_ok=True)
@@ -534,32 +531,17 @@ def run(source, output, geometry_only=False, baseline_study=None, linear_solver=
     print(json.dumps({"event": "finished", "manifest": str(path), "status": manifest["status"], "selected_id": manifest["selected_id"]}), flush=True)
     return manifest
 
-def candidates_main(argv=None, prog=None):
-    """Validate a completed density study against the original Phase-1 screens.
-
-    Use --geometry-only first to separate reconstruction from expensive FEA.
-    Existing evidence is resumed only after input, record and artifact hash checks.
-    """
-    parser = argparse.ArgumentParser(prog=prog, description=candidates_main.__doc__)
-    parser.add_argument("--source", required=True, type=Path)
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--baseline-study", type=Path)
-    parser.add_argument("--geometry-only", action="store_true")
-    parser.add_argument("--linear-solver", choices=("SPOOLES", "PASTIX"))
-    parser.add_argument("--threads", type=int, default=2)
-    args = parser.parse_args(argv)
-    run(args.source.resolve(), args.output.resolve(), args.geometry_only,
-        args.baseline_study.resolve() if args.baseline_study else None,
-        args.linear_solver, args.threads)
+def candidates_main(overrides):
+    config = configure(CANDIDATES_CONFIG, CANDIDATES_KINDS, overrides, ("source", "output"))
+    run(config["source"].resolve(), config["output"].resolve(), config["geometry_only"],
+        config["baseline_study"].resolve() if config["baseline_study"] else None,
+        config["linear_solver"], config["threads"])
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
-def render_main(argv=None, prog=None):
-    """Render actual v0, handoff and selected workstation STL files at one scale."""
-    parser = argparse.ArgumentParser(prog=prog, description=render_main.__doc__)
-    parser.add_argument("--output", type=Path, default=ROOT / "docs/validation/workstation_geometry_comparison.png")
-    args = parser.parse_args(argv)
+def render_main(overrides):
+    config = configure(RENDER_CONFIG, RENDER_KINDS, overrides)
     base = ROOT / "exports/topology/workstation_20260930"
     mesh_dir = base / "mesh_study"
     study_dir = base / "candidate_study/grid4_iter300"
@@ -636,7 +618,7 @@ def render_main(argv=None, prog=None):
             "topology_check_note": "Vertex merging used only for closed-body checks; rendering uses original STL triangles",
         })
     figure.suptitle("Deep_Frame | Workstation: drei Strukturen im gleichen Maßstab\n4-mm-Designraster der freien Strukturen; identische orthografische Ansichten", fontsize=15)
-    output = args.output.resolve()
+    output = config["output"].resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(output, dpi=160)
     plt.close(figure)
@@ -645,13 +627,7 @@ def render_main(argv=None, prog=None):
     print(json.dumps({"image": str(output), "manifest": str(output.with_suffix('.json')), "sources": len(sources)}))
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    commands = parser.add_subparsers(dest="command", required=True)
-    handlers = {"mesh": mesh_main, "candidates": candidates_main, "render": render_main}
-    for name, function in handlers.items():
-        commands.add_parser(name, help=function.__doc__.splitlines()[0], add_help=False)
-    args, arguments = parser.parse_known_args(argv)
-    return handlers[args.command](arguments, parser.prog + " " + args.command)
+    return command_line({"mesh": mesh_main, "candidates": candidates_main, "render": render_main}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

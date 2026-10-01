@@ -58,10 +58,14 @@ Der Hex8-Solver waehlt das lineare Gleichungssystem ueber `settings.linear_solve
 
 Jede Einspanngruppe besitzt ein eigenes cuDSS-Objekt. Die Symbolanalyse wird nur bei identischem Matrixmuster wiederverwendet; jede Neuanalyse wird gezaehlt und mit den Geraete-/Versionsangaben unter `summary.system` (`linear_solver`, `gpu_symbolic_reanalyses`, `gpu_solver_details`) gespeichert. Nach jedem GPU-Solve berechnet die CPU den Residualvektor der identischen Steifigkeitsmatrix; die Grenze betraegt `1e-8` statt `1e-4` im CPU-Pfad. Ein GPU-Fehler fuehrt zu `status: failed`, es gibt keinen stillen Rueckfall auf die CPU.
 
-Messungen, Hardware, Gleichheitsnachweise und der laengere 708-Update-Lauf stehen in [workstation_gpu.md](validation/workstation_gpu.md). Mit den zusammengefassten Studienwerkzeugen lauten die dort dokumentierten Aufrufe aus dem Repository mit dem GPU-Interpreter; Ausgabeverzeichnisse muessen neu sein:
+Messungen, Hardware, Gleichheitsnachweise und der laengere 708-Update-Lauf stehen in [workstation_gpu.md](validation/workstation_gpu.md). Die zusammengefassten Studienwerkzeuge werden als `python -m tools.<werkzeug> <befehl> [config.json]` gestartet. Jeder Befehl besitzt ein Default-Dict im Werkzeug, z. B. `BENCHMARK_CONFIG` in `tools/gpu_benchmark.py` und `RUN_CONFIG` in `tools/topology_study.py`; die JSON-Datei ueberschreibt nur bekannte Schluessel, unbekannte Schluessel, falsche Typen, unzulaessige Auswahlwerte und fehlende Pflichtwerte werden vor dem Start abgelehnt. Die dort dokumentierten Laeufe lauten aus dem Repository mit dem GPU-Interpreter; Ausgabeverzeichnisse muessen neu sein:
 
 ```powershell
 $gpuPython = 'C:\clones\Deep_Frame-gpu\.venv\Scripts\python.exe'
-& $gpuPython -m tools.gpu_benchmark benchmark --source docs/validation/workstation_density_study/grid8over3_iter150 --output exports/topology/gpu_replay/three_updates
-& $gpuPython -m tools.topology_study run --directory exports/topology/gpu_replay/grid8over3_gpu1000 --shape 51 48 12 --max-iterations 1000 --max-runtime-s 1200 --change-tolerance 0.005 --linear-solver cuda_cudss
+'{"source": "docs/validation/workstation_density_study/grid8over3_iter150", "output": "exports/topology/gpu_replay/three_updates"}' | Out-File -Encoding ascii benchmark.json
+& $gpuPython -m tools.gpu_benchmark benchmark benchmark.json
+'{"directory": "exports/topology/gpu_replay/grid8over3_gpu1000", "shape": [51, 48, 12], "max_iterations": 1000, "max_runtime_s": 1200, "change_tolerance": 0.005, "linear_solver": "cuda_cudss"}' | Out-File -Encoding ascii study.json
+& $gpuPython -m tools.topology_study run study.json
 ```
+
+`tools/mature_pipeline.py run` schreibt die Konfigurationen seiner Kindprozesse als `density_config.json` und `geometry_config.json` in das Laufverzeichnis, startet `topology_study run` und `mature_pipeline.py geometry` mit diesen Pfaden und speichert Befehle, Werte und SHA256 der Konfigurationen unter `commands` und `configs` in `run.json`.

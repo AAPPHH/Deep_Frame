@@ -1,4 +1,3 @@
-import argparse
 import hashlib
 import json
 import os
@@ -8,11 +7,21 @@ from time import perf_counter
 import numpy as np
 from scipy.ndimage import label
 
-from deep_frame.config import TOPOLOGY_CONFIG
+from deep_frame.config import TOPOLOGY_CONFIG, command_line, configure
 from deep_frame.frame import reference_parameters
 from deep_frame.topology_geometry import build_design_domain
 from deep_frame.topology_optimization import _settings, optimize_topology
 from deep_frame.topology_pipeline import _file_digest, _provenance, _save
+
+RUN_CONFIG = {"directory": None, "shape": [34, 32, 8], "max_iterations": 300, "change_tolerance": 0.005,
+              "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu"}
+RUN_KINDS = {"directory": "text", "shape": ["int"] * 3, "max_iterations": "int", "change_tolerance": "float",
+             "max_runtime_s": "float", "linear_solver": ("cpu_superlu", "cuda_cudss")}
+SUMMARIZE_CONFIG = {"root": "exports/topology/workstation_20260930/density_study", "runs": None,
+                    "output": "docs/validation/workstation_density_study.json"}
+PLOT_CONFIG = {"root": "exports/topology/workstation_20260930/density_study", "runs": None,
+               "output": "docs/validation/workstation_density_convergence.png"}
+STUDIES_KINDS = {"root": "text", "runs": ["text"], "output": "text"}
 
 def study_parameters(shape):
     shape = np.asarray(shape, dtype=int)
@@ -98,21 +107,10 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
                             "elapsed_s": perf_counter() - started})
         raise
 
-def run_main(argv=None, prog=None):
-    """Bounded, observable density experiments; each invocation starts uniformly.
-
-    Run from the repository root with ``python -m tools.topology_study run --help``.
-    This runner does not reconstruct or mechanically accept any candidate.
-    """
-    parser = argparse.ArgumentParser(prog=prog, description=run_main.__doc__)
-    parser.add_argument("--directory", required=True, help="New output directory; refuses existing paths.")
-    parser.add_argument("--shape", nargs=3, type=int, default=[34, 32, 8])
-    parser.add_argument("--max-iterations", type=int, default=300)
-    parser.add_argument("--change-tolerance", type=float, default=0.005)
-    parser.add_argument("--max-runtime-s", type=float, default=1800.0)
-    parser.add_argument("--linear-solver", choices=("cpu_superlu", "cuda_cudss"), default="cpu_superlu")
-    args = parser.parse_args(argv)
-    status = run_study(args.directory, args.shape, args.max_iterations, args.change_tolerance, args.max_runtime_s, args.linear_solver)
+def run_main(overrides):
+    config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("directory",))
+    status = run_study(config["directory"], config["shape"], config["max_iterations"], config["change_tolerance"],
+                       config["max_runtime_s"], config["linear_solver"])
     return 0 if status == "ok" else 1
 
 def read_json(path):
@@ -256,15 +254,10 @@ def summarize(root, names, output):
     _save(output, report)
     return report
 
-def summarize_main(argv=None, prog=None):
-    """Verify completed density experiments and summarize their numerical evidence."""
-    parser = argparse.ArgumentParser(prog=prog, description=summarize_main.__doc__)
-    parser.add_argument("--root", default="exports/topology/workstation_20260930/density_study")
-    parser.add_argument("--runs", nargs="+", required=True)
-    parser.add_argument("--output", default="docs/validation/workstation_density_study.json")
-    options = parser.parse_args(argv)
-    result = summarize(options.root, options.runs, options.output)
-    print(json.dumps({"studies": [study["name"] for study in result["studies"]], "output": options.output}))
+def summarize_main(overrides):
+    config = configure(SUMMARIZE_CONFIG, STUDIES_KINDS, overrides, ("runs",))
+    result = summarize(config["root"], config["runs"], config["output"])
+    print(json.dumps({"studies": [study["name"] for study in result["studies"]], "output": config["output"]}))
 
 def plot(root, names, output):
     import matplotlib
@@ -311,23 +304,12 @@ def plot(root, names, output):
     figure.savefig(output, dpi=160)
     plt.close(figure)
 
-def plot_main(argv=None, prog=None):
-    """Plot stored density histories using the same frozen compliance normalization."""
-    parser = argparse.ArgumentParser(prog=prog, description=plot_main.__doc__)
-    parser.add_argument("--root", default="exports/topology/workstation_20260930/density_study")
-    parser.add_argument("--runs", nargs="+", required=True)
-    parser.add_argument("--output", default="docs/validation/workstation_density_convergence.png")
-    arguments = parser.parse_args(argv)
-    plot(arguments.root, arguments.runs, arguments.output)
+def plot_main(overrides):
+    config = configure(PLOT_CONFIG, STUDIES_KINDS, overrides, ("runs",))
+    plot(config["root"], config["runs"], config["output"])
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    commands = parser.add_subparsers(dest="command", required=True)
-    handlers = {"run": run_main, "summarize": summarize_main, "plot": plot_main}
-    for name, function in handlers.items():
-        commands.add_parser(name, help=function.__doc__.splitlines()[0], add_help=False)
-    args, arguments = parser.parse_known_args(argv)
-    return handlers[args.command](arguments, parser.prog + " " + args.command)
+    return command_line({"run": run_main, "summarize": summarize_main, "plot": plot_main}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

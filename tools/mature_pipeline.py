@@ -1,4 +1,3 @@
-import argparse
 from copy import deepcopy
 import hashlib
 import importlib.metadata
@@ -22,11 +21,40 @@ from build123d import Plane, export_step, import_step, section
 from OCP.BRepClass3d import BRepClass3d_SolidClassifier
 from OCP.TopAbs import TopAbs_OUT
 
+from deep_frame.config import command_line, configure
 from deep_frame.fea import evaluate
 from deep_frame.frame import build_geometry
 from deep_frame.topology_geometry import region_shape
 from deep_frame.topology_pipeline import _merge, _provenance, _verify_cases, compare_to_baseline
 from tools.workstation_study import load_source
+
+SURFACE_CONFIG = {"subdivisions": 4, "interpolation_method": "pchip", "thresholds": [0.20, 0.25, 0.30, 0.35, 0.40, 0.50],
+                  "face_budgets": [6000, 12000, 24000, 48000], "surface_deviation_mm": 0.20, "density_smoothing_sigma_mm": 0.0,
+                  "manufacturing_opening_radius_mm": 0.0, "manufacturing_opening_method": "grayscale",
+                  "surface_constraint_mode": "embedded", "free_forbidden_buffer_mm": 0.0, "decimation_bounds_mode": "none",
+                  "preserve_fusion_mode": "direct", "boolean_fuzzy_mm": 1e-7, "validation_boolean_fuzzy_mm": 1e-7,
+                  "maximum_wall_samples": 2_000_000, "mesh_timeout_s": 900, "solver_timeout_s": 900, "geometry_only": False}
+SURFACE_KINDS = {"subdivisions": "int", "interpolation_method": ("pchip", "cubic"), "thresholds": ["float"],
+                 "face_budgets": ["int"], "surface_deviation_mm": "float", "density_smoothing_sigma_mm": "float",
+                 "manufacturing_opening_radius_mm": "float", "manufacturing_opening_method": ("grayscale", "distance"),
+                 "surface_constraint_mode": ("embedded", "cad_only", "envelope_only", "envelope_forbidden"),
+                 "free_forbidden_buffer_mm": "float", "decimation_bounds_mode": ("none", "reference_aabb"),
+                 "preserve_fusion_mode": ("direct", "preunion"), "boolean_fuzzy_mm": "float", "validation_boolean_fuzzy_mm": "float",
+                 "maximum_wall_samples": "int", "mesh_timeout_s": "float", "solver_timeout_s": "float", "geometry_only": "flag"}
+RUN_CONFIG = {"output": None, "reference_step": None, "source": None, "density_python": Path(sys.executable),
+              "density_workspace": ROOT, "geometry_python": Path(sys.executable), "shape": [51, 48, 12], "max_iterations": 1000,
+              "max_runtime_s": 1200, "change_tolerance": 0.005, "density_backend": "cpu_superlu",
+              "density_finalization_timeout_s": 600, "geometry_timeout_s": 14400, **SURFACE_CONFIG}
+RUN_KINDS = {"output": "path", "reference_step": "path", "source": "path", "density_python": "path",
+             "density_workspace": "path", "geometry_python": "path", "shape": ["int"] * 3, "max_iterations": "int",
+             "max_runtime_s": "float", "change_tolerance": "float", "density_backend": ("cuda_cudss", "cpu_superlu"),
+             "density_finalization_timeout_s": "float", "geometry_timeout_s": "float", **SURFACE_KINDS}
+GEOMETRY_CONFIG = {"source": None, "output": None, "reference_step": None, **SURFACE_CONFIG, "study_timeout_s": 14400}
+GEOMETRY_KINDS = {"source": "path", "output": "path", "reference_step": "path", **SURFACE_KINDS, "study_timeout_s": "float"}
+RENDER_CONFIG = {"step": None, "output": None,
+                 "inputs": Path("C:/clones/Deep_Frame/exports/topology/workstation_20260930/density_study/grid8over3_iter150/inputs.json"),
+                 "validation": None}
+RENDER_KINDS = {"step": "path", "output": "path", "inputs": "path", "validation": "path"}
 
 def save(path, data):
     temporary = path.with_name(path.name + ".tmp")
@@ -69,62 +97,35 @@ def execute(command, cwd, logfile, timeout):
     return {**report, "runtime_s": time.perf_counter()-started,
             "log_sha256": hashlib.sha256(logfile.read_bytes()).hexdigest()}
 
-def run_parse_args(argv=None, prog=None):
-    parser = argparse.ArgumentParser(prog=prog, description=run_main.__doc__)
-    parser.add_argument("--output", required=True, type=Path)
-    parser.add_argument("--reference-step", required=True, type=Path)
-    parser.add_argument("--source", type=Path, help="Hash-verified completed density study; skips density optimization")
-    parser.add_argument("--density-python", "--gpu-python", dest="density_python", type=Path,
-                        default=Path(sys.executable), help="Python interpreter for the chosen CPU or GPU backend")
-    parser.add_argument("--density-workspace", type=Path, default=ROOT)
-    parser.add_argument("--geometry-python", type=Path, default=Path(sys.executable))
-    parser.add_argument("--shape", nargs=3, type=int, default=[51, 48, 12])
-    parser.add_argument("--max-iterations", type=int, default=1000)
-    parser.add_argument("--max-runtime-s", type=float, default=1200)
-    parser.add_argument("--change-tolerance", type=float, default=0.005)
-    parser.add_argument("--density-backend", choices=("cuda_cudss", "cpu_superlu"), default="cpu_superlu")
-    parser.add_argument("--density-finalization-timeout-s", type=float, default=600,
-                        help="Hard timeout allowance beyond the density update budget for final state evaluation")
-    parser.add_argument("--geometry-timeout-s", type=float, default=14400)
-    parser.add_argument("--subdivisions", type=int, default=4)
-    parser.add_argument("--interpolation-method", choices=("pchip", "cubic"), default="pchip")
-    parser.add_argument("--thresholds", nargs="+", type=float, default=[0.20, 0.25, 0.30, 0.35, 0.40, 0.50])
-    parser.add_argument("--face-budgets", nargs="+", type=int, default=[6000, 12000, 24000, 48000])
-    parser.add_argument("--surface-deviation-mm", type=float, default=0.20)
-    parser.add_argument("--density-smoothing-sigma-mm", type=float, default=0.0)
-    parser.add_argument("--manufacturing-opening-radius-mm", type=float, default=0.0)
-    parser.add_argument("--manufacturing-opening-method", choices=("grayscale", "distance"), default="grayscale")
-    parser.add_argument("--surface-constraint-mode", choices=("embedded", "cad_only", "envelope_only", "envelope_forbidden"), default="embedded")
-    parser.add_argument("--free-forbidden-buffer-mm", type=float, default=0.0)
-    parser.add_argument("--decimation-bounds-mode", choices=("none", "reference_aabb"), default="none")
-    parser.add_argument("--preserve-fusion-mode", choices=("direct", "preunion"), default="direct")
-    parser.add_argument("--boolean-fuzzy-mm", type=float, default=1e-7)
-    parser.add_argument("--validation-boolean-fuzzy-mm", type=float, default=1e-7)
-    parser.add_argument("--maximum-wall-samples", type=int, default=2_000_000)
-    parser.add_argument("--mesh-timeout-s", type=float, default=900)
-    parser.add_argument("--solver-timeout-s", type=float, default=900)
-    parser.add_argument("--geometry-only", action="store_true")
-    args = parser.parse_args(argv)
-    if not math.isfinite(args.boolean_fuzzy_mm) or args.boolean_fuzzy_mm <= 0:
-        parser.error("Boolean fuzzy tolerance must be finite and positive")
-    if not math.isfinite(args.validation_boolean_fuzzy_mm) or args.validation_boolean_fuzzy_mm <= 0:
-        parser.error("Validation boolean fuzzy tolerance must be finite and positive")
-    if args.maximum_wall_samples <= 0:
-        parser.error("Maximum wall samples must be a positive integer")
-    if not math.isfinite(args.manufacturing_opening_radius_mm) or args.manufacturing_opening_radius_mm < 0:
-        parser.error("Manufacturing opening radius must be finite and nonnegative")
-    if not math.isfinite(args.free_forbidden_buffer_mm) or args.free_forbidden_buffer_mm < 0:
-        parser.error("Free forbidden buffer must be finite and nonnegative")
-    if args.free_forbidden_buffer_mm > 0 and (args.surface_constraint_mode != "envelope_forbidden" or args.manufacturing_opening_radius_mm <= 0):
-        parser.error("A positive free forbidden buffer requires envelope_forbidden and a positive manufacturing opening radius")
-    budgets = (args.max_runtime_s, args.geometry_timeout_s, args.density_finalization_timeout_s,
-               args.mesh_timeout_s, args.solver_timeout_s, args.surface_deviation_mm)
-    if (any(not math.isfinite(v) or v <= 0 for v in budgets) or args.max_iterations <= 0
-            or min(args.shape) <= 1 or args.subdivisions <= 0 or min(args.face_budgets) <= 0
-            or not 0 < args.change_tolerance < 1 or any(not 0 < v < 1 for v in args.thresholds)
-            or not math.isfinite(args.density_smoothing_sigma_mm) or args.density_smoothing_sigma_mm < 0):
-        parser.error("Use finite positive budgets, grid dimensions greater than one and thresholds/tolerance in (0,1)")
-    return args
+def check_surface(config):
+    if not math.isfinite(config["boolean_fuzzy_mm"]) or config["boolean_fuzzy_mm"] <= 0:
+        raise ValueError("Boolean fuzzy tolerance must be finite and positive")
+    if not math.isfinite(config["validation_boolean_fuzzy_mm"]) or config["validation_boolean_fuzzy_mm"] <= 0:
+        raise ValueError("Validation boolean fuzzy tolerance must be finite and positive")
+    if config["maximum_wall_samples"] <= 0:
+        raise ValueError("Maximum wall samples must be a positive integer")
+    if not math.isfinite(config["manufacturing_opening_radius_mm"]) or config["manufacturing_opening_radius_mm"] < 0:
+        raise ValueError("Manufacturing opening radius must be finite and nonnegative")
+    if not math.isfinite(config["free_forbidden_buffer_mm"]) or config["free_forbidden_buffer_mm"] < 0:
+        raise ValueError("Free forbidden buffer must be finite and nonnegative")
+    if config["free_forbidden_buffer_mm"] > 0 and (config["surface_constraint_mode"] != "envelope_forbidden" or config["manufacturing_opening_radius_mm"] <= 0):
+        raise ValueError("A positive free forbidden buffer requires envelope_forbidden and a positive manufacturing opening radius")
+    if any(not math.isfinite(v) or v <= 0 for v in (config["mesh_timeout_s"], config["solver_timeout_s"], config["surface_deviation_mm"],
+                                                    config["subdivisions"], *config["face_budgets"])):
+        raise ValueError("Use finite positive runtime, tessellation and face budgets")
+    if any(not math.isfinite(v) or not 0 < v < 1 for v in config["thresholds"]):
+        raise ValueError("Thresholds must be finite values in (0,1)")
+    if not math.isfinite(config["density_smoothing_sigma_mm"]) or config["density_smoothing_sigma_mm"] < 0:
+        raise ValueError("Density smoothing must be finite and nonnegative")
+
+def run_config(overrides):
+    config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("output", "reference_step"))
+    check_surface(config)
+    budgets = (config["max_runtime_s"], config["geometry_timeout_s"], config["density_finalization_timeout_s"])
+    if (any(not math.isfinite(v) or v <= 0 for v in budgets) or config["max_iterations"] <= 0
+            or min(config["shape"]) <= 1 or not 0 < config["change_tolerance"] < 1):
+        raise ValueError("Use finite positive budgets, grid dimensions greater than one and thresholds/tolerance in (0,1)")
+    return config
 
 def verify_geometry(directory):
     manifest = read(directory / "manifest.json")
@@ -172,71 +173,63 @@ def verify_geometry(directory):
         raise ValueError("Geometry acceptance summary disagrees with verified candidate evidence")
     return manifest
 
-def run_main(argv=None, prog=None):
-    """Run uniform-start density optimization and automatic continuous CAD/FEA selection."""
-    args = run_parse_args(argv, prog)
-    output = args.output.resolve()
+def run_main(overrides):
+    config = run_config(overrides)
+    output = config["output"].resolve()
     if output.exists() and any(output.iterdir()):
         raise ValueError("A new empty output directory is required")
     output.mkdir(parents=True, exist_ok=True)
-    source = args.source.resolve() if args.source else output / "density"
-    density_command = None if args.source else [str(args.density_python.resolve()), "-m", "tools.topology_study", "run", "--directory", str(source),
-                       "--shape", *map(str,args.shape), "--max-iterations", str(args.max_iterations),
-                       "--max-runtime-s", str(args.max_runtime_s), "--change-tolerance", str(args.change_tolerance),
-                       "--linear-solver", args.density_backend]
-    geometry_command = [str(args.geometry_python.resolve()), str(ROOT/"tools/mature_pipeline.py"), "geometry",
-                        "--source", str(source), "--output", str(output/"geometry"),
-                        "--reference-step", str(output / "reference.step"), "--subdivisions", str(args.subdivisions),
-                        "--interpolation-method", args.interpolation_method,
-                        "--thresholds", *map(str, args.thresholds), "--face-budgets", *map(str, args.face_budgets),
-                        "--surface-deviation-mm", str(args.surface_deviation_mm),
-                        "--density-smoothing-sigma-mm", str(args.density_smoothing_sigma_mm),
-                        "--manufacturing-opening-radius-mm", str(args.manufacturing_opening_radius_mm),
-                        "--manufacturing-opening-method", args.manufacturing_opening_method,
-                        "--surface-constraint-mode", args.surface_constraint_mode,
-                        "--free-forbidden-buffer-mm", str(args.free_forbidden_buffer_mm),
-                        "--decimation-bounds-mode", args.decimation_bounds_mode,
-                        "--preserve-fusion-mode", args.preserve_fusion_mode,
-                        "--boolean-fuzzy-mm", str(args.boolean_fuzzy_mm),
-                        "--validation-boolean-fuzzy-mm", str(args.validation_boolean_fuzzy_mm),
-                        "--maximum-wall-samples", str(args.maximum_wall_samples),
-                        "--study-timeout-s", str(args.geometry_timeout_s), "--mesh-timeout-s", str(args.mesh_timeout_s),
-                        "--solver-timeout-s", str(args.solver_timeout_s)]
-    if args.geometry_only:
-        geometry_command.append("--geometry-only")
+    source = config["source"].resolve() if config["source"] else output / "density"
+    stages = {"density": None if config["source"] else {
+                  "directory": str(source), "shape": config["shape"], "max_iterations": config["max_iterations"],
+                  "max_runtime_s": config["max_runtime_s"], "change_tolerance": config["change_tolerance"],
+                  "linear_solver": config["density_backend"]},
+              "geometry": {"source": str(source), "output": str(output / "geometry"), "reference_step": str(output / "reference.step"),
+                           **{key: config[key] for key in SURFACE_CONFIG}, "study_timeout_s": config["geometry_timeout_s"]}}
+    configs = {}
+    for name, values in stages.items():
+        configs[name] = None
+        if values is not None:
+            path = output / (name + "_config.json")
+            write(path, values)
+            configs[name] = {"path": str(path), "sha256": digest(path), "values": values}
+    density_command = None if config["source"] else [str(config["density_python"].resolve()), "-m", "tools.topology_study", "run",
+                                                     configs["density"]["path"]]
+    geometry_command = [str(config["geometry_python"].resolve()), str(ROOT/"tools/mature_pipeline.py"), "geometry",
+                        configs["geometry"]["path"]]
     report = {"schema_version": "deep-frame-mature-end-to-end-v2", "status": "running", "stage": "preparing",
               "overall_acceptance": False, "accepted_count": 0, "selected_id": None,
-              "initial_density": "saved density source; initialization is documented in source inputs" if args.source else "fresh uniform free-domain initialization; no restart or prescribed arm seed",
-              "source": str(source), "source_mode": "saved" if args.source else "fresh_uniform",
-              "density_backend": args.density_backend, "independent_fea": {"linear_solver": "SPOOLES", "threads": 1},
-              "surface_constraint_mode": args.surface_constraint_mode,
-              "free_forbidden_buffer_mm": args.free_forbidden_buffer_mm,
-              "decimation_bounds_mode": args.decimation_bounds_mode,
-              "preserve_fusion_mode": args.preserve_fusion_mode,
-              "cad_boolean_settings": {"boolean_fuzzy_value_mm": args.boolean_fuzzy_mm,
-                                       "validator_boolean_fuzzy_value_mm": args.validation_boolean_fuzzy_mm},
-              "budgets": {"density_updates_s": args.max_runtime_s, "density_finalization_allowance_s": args.density_finalization_timeout_s,
-                          "maximum_wall_samples": args.maximum_wall_samples,
-                          "geometry_and_fea_process_s": args.geometry_timeout_s, "mesh_per_run_s": args.mesh_timeout_s,
-                          "solver_per_case_s": args.solver_timeout_s},
+              "initial_density": "saved density source; initialization is documented in source inputs" if config["source"] else "fresh uniform free-domain initialization; no restart or prescribed arm seed",
+              "source": str(source), "source_mode": "saved" if config["source"] else "fresh_uniform",
+              "density_backend": config["density_backend"], "independent_fea": {"linear_solver": "SPOOLES", "threads": 1},
+              "surface_constraint_mode": config["surface_constraint_mode"],
+              "free_forbidden_buffer_mm": config["free_forbidden_buffer_mm"],
+              "decimation_bounds_mode": config["decimation_bounds_mode"],
+              "preserve_fusion_mode": config["preserve_fusion_mode"],
+              "cad_boolean_settings": {"boolean_fuzzy_value_mm": config["boolean_fuzzy_mm"],
+                                       "validator_boolean_fuzzy_value_mm": config["validation_boolean_fuzzy_mm"]},
+              "budgets": {"density_updates_s": config["max_runtime_s"], "density_finalization_allowance_s": config["density_finalization_timeout_s"],
+                          "maximum_wall_samples": config["maximum_wall_samples"],
+                          "geometry_and_fea_process_s": config["geometry_timeout_s"], "mesh_per_run_s": config["mesh_timeout_s"],
+                          "solver_per_case_s": config["solver_timeout_s"]},
               "orchestrator_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-              "commands": {"density": density_command, "geometry": geometry_command}, "stages": {}}
+              "commands": {"density": density_command, "geometry": geometry_command}, "configs": configs, "stages": {}}
     save(output/"run.json", report)
     save(output/"status.json", {"status": "running", "stage": "preparing"})
     try:
-        for path in (args.geometry_python, args.reference_step):
+        for path in (config["geometry_python"], config["reference_step"]):
             if not path.is_file():
                 raise ValueError("Required file does not exist: " + str(path))
-        shutil.copy2(args.reference_step, output / "reference.step")
+        shutil.copy2(config["reference_step"], output / "reference.step")
         report["reference_step_sha256"] = hashlib.sha256((output / "reference.step").read_bytes()).hexdigest()
         if density_command is not None:
-            if not args.density_python.is_file() or not (args.density_workspace / "tools/topology_study.py").is_file():
+            if not config["density_python"].is_file() or not (config["density_workspace"] / "tools/topology_study.py").is_file():
                 raise ValueError("Density Python/workspace does not exist")
             report["stage"] = "density"
             save(output/"run.json", report)
             save(output/"status.json", {"status": "running", "stage": "density"})
             print(json.dumps({"stage": "density", "directory": str(source)}), flush=True)
-            report["stages"]["density"] = execute(density_command, args.density_workspace.resolve(), output/"density.log", args.max_runtime_s+args.density_finalization_timeout_s)
+            report["stages"]["density"] = execute(density_command, config["density_workspace"].resolve(), output/"density.log", config["max_runtime_s"]+config["density_finalization_timeout_s"])
             save(output/"run.json", report)
             if report["stages"]["density"]["returncode"] != 0:
                 raise RuntimeError("Density stage failed; inspect density.log and persisted stage evidence")
@@ -250,12 +243,12 @@ def run_main(argv=None, prog=None):
         save(output/"run.json", report)
         save(output/"status.json", {"status": "running", "stage": "geometry_and_fea", "detail_status": "geometry/status.json"})
         print(json.dumps({"stage": "geometry_and_fea", "directory": str(output/"geometry")}), flush=True)
-        report["stages"]["geometry"] = execute(geometry_command, ROOT, output/"geometry.log", args.geometry_timeout_s)
+        report["stages"]["geometry"] = execute(geometry_command, ROOT, output/"geometry.log", config["geometry_timeout_s"])
         save(output/"run.json", report)
         if report["stages"]["geometry"]["returncode"] != 0:
             raise RuntimeError("Geometry stage failed; inspect geometry.log and persisted candidate evidence")
         geometry = verify_geometry(output / "geometry")
-        if (geometry["thresholds"] != args.thresholds or geometry["source_manifest_sha256"] != report["density_manifest_sha256"]
+        if (geometry["thresholds"] != config["thresholds"] or geometry["source_manifest_sha256"] != report["density_manifest_sha256"]
                 or geometry["comparison_reference"]["sha256"] != report["reference_step_sha256"]):
             raise ValueError("Geometry evidence changed the requested thresholds, density source or reference STEP")
         report.update(status="complete", stage="finished", overall_acceptance=bool(geometry["overall_acceptance"]),
@@ -392,25 +385,25 @@ def run_candidate(candidate, record, domain, density, reconstruction, validator,
     record["status"] = "accepted" if record["comparison"]["passed"] else "mechanically_rejected"
     return baseline
 
-def run_study(args):
+def run_study(config):
     from deep_frame.topology_surface import reconstruct_surface
-    source, output = args.source.resolve(), args.output.resolve()
+    source, output = config["source"].resolve(), config["output"].resolve()
     if output.exists() and any(output.iterdir()):
         raise ValueError("A new empty output directory is required; old evidence is never overwritten")
     output.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     records = []
     manifest = {"schema_version": "deep-frame-continuous-geometry-study-v2", "status": "running", "stage": "preparing",
-                "density_source": str(source), "geometry_only": args.geometry_only, "thresholds": args.thresholds,
+                "density_source": str(source), "geometry_only": config["geometry_only"], "thresholds": config["thresholds"],
                 "accepted_count": 0, "selected_id": None, "overall_acceptance": False, "candidates": [],
                 "acceptance_scope": "Geometry and independent FEA screens; final manufacturing/render review remains required",
-                "study_timeout_s": args.study_timeout_s,
+                "study_timeout_s": config["study_timeout_s"],
                 "budget_policy": "Study budget checked at stage/progress boundaries; external orchestrator enforces process timeout"}
     write(output / "manifest.json", manifest)
     write(output / "status.json", {"status": "running", "stage": "preparing"})
     try:
         from deep_frame import topology_surface_validation as validator
-        if not args.reference_step.is_file():
+        if not config["reference_step"].is_file():
             raise ValueError("A reference STEP file is required for surface maturity")
         load_source(source)
         source_manifest = read(source / "manifest.json")
@@ -437,26 +430,26 @@ def run_study(args):
             shutil.copy2(path, target)
         settings = _merge(domain["fea_settings"], historical["settings"]["fea_settings"])
         settings.update(mesh_size_mm=3.0, mesh_threads=1, threads=1, linear_solver="SPOOLES",
-                        mesh_timeout_s=args.mesh_timeout_s, solver_timeout_s=args.solver_timeout_s)
-        reconstruction = {"interpolation_subdivisions": args.subdivisions, "interpolation_method": args.interpolation_method,
-                          "density_smoothing_sigma_mm": args.density_smoothing_sigma_mm,
-                          "manufacturing_opening_radius_mm": args.manufacturing_opening_radius_mm,
-                          "manufacturing_opening_method": args.manufacturing_opening_method,
-                          "surface_constraint_mode": args.surface_constraint_mode,
-                          "free_forbidden_buffer_mm": args.free_forbidden_buffer_mm,
-                          "decimation_bounds_mode": args.decimation_bounds_mode,
-                          "preserve_fusion_mode": args.preserve_fusion_mode,
-                          "boolean_fuzzy_value_mm": args.boolean_fuzzy_mm,
-                          "maximum_surface_deviation_mm": args.surface_deviation_mm, "decimation_face_budgets": args.face_budgets}
-        validation_settings = validator._settings({"maximum_wall_samples": args.maximum_wall_samples,
-                                                    "boolean_fuzzy_mm": args.validation_boolean_fuzzy_mm})
-        shutil.copy2(args.reference_step, output / "reference.step")
+                        mesh_timeout_s=config["mesh_timeout_s"], solver_timeout_s=config["solver_timeout_s"])
+        reconstruction = {"interpolation_subdivisions": config["subdivisions"], "interpolation_method": config["interpolation_method"],
+                          "density_smoothing_sigma_mm": config["density_smoothing_sigma_mm"],
+                          "manufacturing_opening_radius_mm": config["manufacturing_opening_radius_mm"],
+                          "manufacturing_opening_method": config["manufacturing_opening_method"],
+                          "surface_constraint_mode": config["surface_constraint_mode"],
+                          "free_forbidden_buffer_mm": config["free_forbidden_buffer_mm"],
+                          "decimation_bounds_mode": config["decimation_bounds_mode"],
+                          "preserve_fusion_mode": config["preserve_fusion_mode"],
+                          "boolean_fuzzy_value_mm": config["boolean_fuzzy_mm"],
+                          "maximum_surface_deviation_mm": config["surface_deviation_mm"], "decimation_face_budgets": config["face_budgets"]}
+        validation_settings = validator._settings({"maximum_wall_samples": config["maximum_wall_samples"],
+                                                    "boolean_fuzzy_mm": config["validation_boolean_fuzzy_mm"]})
+        shutil.copy2(config["reference_step"], output / "reference.step")
         reference = import_step(output / "reference.step")
         if not reference.is_valid or len(reference.solids()) != 1 or reference.volume <= 0:
             raise ValueError("Reference STEP must be a valid single positive-volume solid")
         manifest.update(source_manifest_sha256=digest(snapshot / "manifest.json"), density_status=density_result["status"],
                         reconstruction_settings=reconstruction, validation_settings=validation_settings, fea_settings=settings,
-                        comparison_reference={"source": str(args.reference_step.resolve()), "sha256": digest(output / "reference.step"), "volume_mm3": reference.volume},
+                        comparison_reference={"source": str(config["reference_step"].resolve()), "sha256": digest(output / "reference.step"), "volume_mm3": reference.volume},
                         material=domain["material"], point_masses=domain["point_masses"], load_cases=domain["comparison_load_cases"],
                         packages={p: importlib.metadata.version(p) for p in ("build123d", "numpy", "scipy", "trimesh", "gmsh", "scikit-image", "fast-simplification", "rtree", "pymeshlab")},
                         source_artifacts=artifacts(provenance),
@@ -468,8 +461,8 @@ def run_study(args):
         manifest["v0_geometry"] = {"volume_mm3": baseline_solid.volume, "frame_mass_g": baseline_mass}
         write(output / "manifest.json", manifest)
         baseline = None
-        for index, threshold in enumerate(args.thresholds):
-            if time.perf_counter() - started >= args.study_timeout_s:
+        for index, threshold in enumerate(config["thresholds"]):
+            if time.perf_counter() - started >= config["study_timeout_s"]:
                 raise TimeoutError("Geometry study runtime budget exceeded before next candidate")
             candidate = output / "candidates" / f"t{index:02d}"
             candidate.mkdir(parents=True)
@@ -489,12 +482,12 @@ def run_study(args):
                     journal.write(json.dumps(event, allow_nan=False) + "\n")
                 write(candidate / "record.json", record)
                 write(output / "status.json", {"status": "running", "candidate_status": record["status"], **event})
-                if event["elapsed_s"] >= args.study_timeout_s:
+                if event["elapsed_s"] >= config["study_timeout_s"]:
                     raise TimeoutError("Geometry study runtime budget exceeded at " + event["stage"])
             try:
                 baseline = run_candidate(candidate, record, domain, density, reconstruction, validator, validation_settings,
                                          reference, baseline_solid, baseline_mass, baseline, settings,
-                                         historical["settings"]["relative_constraints"], args.geometry_only, progress)
+                                         historical["settings"]["relative_constraints"], config["geometry_only"], progress)
             except Exception as error:
                 record["status"] = "failed"
                 record["diagnostics"].append(type(error).__name__ + ": " + str(error))
@@ -511,7 +504,7 @@ def run_study(args):
             write(output / "manifest.json", manifest)
             write(output / "status.json", {"status": "running", "stage": "candidate_finished", "candidate": record["id"], "candidate_status": record["status"]})
             print(json.dumps({"candidate": record["id"], "threshold": threshold, "status": record["status"], "diagnostics": record["diagnostics"]}), flush=True)
-        if time.perf_counter() - started >= args.study_timeout_s:
+        if time.perf_counter() - started >= config["study_timeout_s"]:
             raise TimeoutError("Geometry study runtime budget exceeded")
         manifest.update(acceptance(records, complete=True), status="complete", stage="finished")
     except Exception as error:
@@ -523,55 +516,15 @@ def run_study(args):
           | ({"error": manifest["error"]} if "error" in manifest else {}))
     return manifest
 
-def parse_args(argv=None, prog=None):
-    parser = argparse.ArgumentParser(prog=prog, description=geometry_main.__doc__)
-    parser.add_argument("--source", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--reference-step", type=Path, required=True)
-    parser.add_argument("--thresholds", nargs="+", type=float, default=[0.20, 0.25, 0.30, 0.35, 0.40, 0.50])
-    parser.add_argument("--surface-deviation-mm", type=float, default=0.20)
-    parser.add_argument("--subdivisions", type=int, default=4)
-    parser.add_argument("--interpolation-method", choices=("pchip", "cubic"), default="pchip")
-    parser.add_argument("--density-smoothing-sigma-mm", type=float, default=0.0)
-    parser.add_argument("--manufacturing-opening-radius-mm", type=float, default=0.0)
-    parser.add_argument("--manufacturing-opening-method", choices=("grayscale", "distance"), default="grayscale")
-    parser.add_argument("--surface-constraint-mode", choices=("embedded", "cad_only", "envelope_only", "envelope_forbidden"), default="embedded")
-    parser.add_argument("--free-forbidden-buffer-mm", type=float, default=0.0)
-    parser.add_argument("--decimation-bounds-mode", choices=("none", "reference_aabb"), default="none")
-    parser.add_argument("--preserve-fusion-mode", choices=("direct", "preunion"), default="direct")
-    parser.add_argument("--boolean-fuzzy-mm", type=float, default=1e-7)
-    parser.add_argument("--validation-boolean-fuzzy-mm", type=float, default=1e-7)
-    parser.add_argument("--maximum-wall-samples", type=int, default=2_000_000)
-    parser.add_argument("--face-budgets", nargs="+", type=int, default=[6000, 12000, 24000, 48000])
-    parser.add_argument("--geometry-only", action="store_true")
-    parser.add_argument("--study-timeout-s", type=float, default=14400)
-    parser.add_argument("--mesh-timeout-s", type=float, default=900)
-    parser.add_argument("--solver-timeout-s", type=float, default=900)
-    args = parser.parse_args(argv)
-    if not np.isfinite(args.boolean_fuzzy_mm) or args.boolean_fuzzy_mm <= 0:
-        parser.error("Boolean fuzzy tolerance must be finite and positive")
-    if not np.isfinite(args.validation_boolean_fuzzy_mm) or args.validation_boolean_fuzzy_mm <= 0:
-        parser.error("Validation boolean fuzzy tolerance must be finite and positive")
-    if args.maximum_wall_samples <= 0:
-        parser.error("Maximum wall samples must be a positive integer")
-    if any(not np.isfinite(v) or v <= 0 for v in (args.study_timeout_s, args.mesh_timeout_s, args.solver_timeout_s,
-                                                  args.surface_deviation_mm, args.subdivisions, *args.face_budgets)):
-        parser.error("Use finite positive runtime, tessellation and face budgets")
-    if any(not np.isfinite(v) or not 0 < v < 1 for v in args.thresholds):
-        parser.error("Thresholds must be finite values in (0,1)")
-    if not np.isfinite(args.density_smoothing_sigma_mm) or args.density_smoothing_sigma_mm < 0:
-        parser.error("Density smoothing must be finite and nonnegative")
-    if not np.isfinite(args.manufacturing_opening_radius_mm) or args.manufacturing_opening_radius_mm < 0:
-        parser.error("Manufacturing opening radius must be finite and nonnegative")
-    if not np.isfinite(args.free_forbidden_buffer_mm) or args.free_forbidden_buffer_mm < 0:
-        parser.error("Free forbidden buffer must be finite and nonnegative")
-    if args.free_forbidden_buffer_mm > 0 and (args.surface_constraint_mode != "envelope_forbidden" or args.manufacturing_opening_radius_mm <= 0):
-        parser.error("A positive free forbidden buffer requires envelope_forbidden and a positive manufacturing opening radius")
-    return args
+def geometry_config(overrides):
+    config = configure(GEOMETRY_CONFIG, GEOMETRY_KINDS, overrides, ("source", "output", "reference_step"))
+    check_surface(config)
+    if not math.isfinite(config["study_timeout_s"]) or config["study_timeout_s"] <= 0:
+        raise ValueError("Use finite positive runtime, tessellation and face budgets")
+    return config
 
-def geometry_main(argv=None, prog=None):
-    """Reconstruct density surfaces, validate final STEP CAD and mechanically screen candidates."""
-    return 0 if run_study(parse_args(argv, prog))["status"] == "complete" else 1
+def geometry_main(overrides):
+    return 0 if run_study(geometry_config(overrides))["status"] == "complete" else 1
 
 def face_colors(normals, elevation, azimuth):
     elev, azim = np.deg2rad([elevation, azimuth])
@@ -614,32 +567,26 @@ def section_paths(shape, plane, coordinates):
              for edge in sliced.edges()]
     return sliced, paths
 
-def render_main(argv=None, prog=None):
-    """Render the reimported STEP and exact strap sections without geometry smoothing."""
+def render_main(overrides):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection, PolyCollection
     from matplotlib.lines import Line2D
     from deep_frame.topology_surface_validation import _mesh, _settings
-    parser = argparse.ArgumentParser(prog=prog, description=render_main.__doc__)
-    parser.add_argument("--step", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--inputs", type=Path, default=Path("C:/clones/Deep_Frame/exports/topology/workstation_20260930/density_study/grid8over3_iter150/inputs.json"))
-    parser.add_argument("--validation", type=Path)
-    args = parser.parse_args(argv)
-    args.output.mkdir(parents=True, exist_ok=True)
+    config = configure(RENDER_CONFIG, RENDER_KINDS, overrides, ("step", "output"))
+    config["output"].mkdir(parents=True, exist_ok=True)
     started = perf_counter()
-    record = {"status": "running", "step": str(args.step.resolve()), "step_sha256": digest(args.step),
-              "inputs_sha256": digest(args.inputs), "renderer_sha256": digest(Path(__file__)),
+    record = {"status": "running", "step": str(config["step"].resolve()), "step_sha256": digest(config["step"]),
+              "inputs_sha256": digest(config["inputs"]), "renderer_sha256": digest(Path(__file__)),
               "rendering": "Fresh STEP import, whole-CAD adaptive tessellation, flat per-triangle normal shading, orthographic projection and metric axes; no geometry smoothing, decimation, hole filling, vertex-normal interpolation or remodeling",
               "section_method": "Exact CAD intersection with each named plane; section faces filled from their tessellation and CAD edges sampled to 0.01 mm deflection", "images": {}, "sections": []}
     def journal(stage):
         record.update(stage=stage, elapsed_s=perf_counter()-started)
-        (args.output / "render_manifest.json").write_text(json.dumps(record, indent=2, allow_nan=False), encoding="utf-8")
+        (config["output"] / "render_manifest.json").write_text(json.dumps(record, indent=2, allow_nan=False), encoding="utf-8")
         print(stage, flush=True)
     journal("STEP import")
-    solid = import_step(args.step)
+    solid = import_step(config["step"])
     journal("CAD tessellation")
     mesh = _mesh(solid, _settings({}))
     outward = []
@@ -656,26 +603,26 @@ def render_main(argv=None, prog=None):
     label = "DIAGNOSE – Geometrie- und Mechanikfreigabe offen"
     if not valid:
         label = "DIAGNOSE – Topologieprüfung fehlgeschlagen"
-    if args.validation:
-        proof = json.loads(args.validation.read_text(encoding="utf-8"))
+    if config["validation"]:
+        proof = json.loads(config["validation"].read_text(encoding="utf-8"))
         expected = proof.get("sha256") or proof.get("provenance", {}).get("candidate_sha256")
         if expected != record["step_sha256"]:
             raise ValueError("Validation record must identify the rendered STEP by matching SHA256")
         validation = proof.get("validation", proof)
-        record["validation"] = {"path": str(args.validation), "sha256": digest(args.validation),
+        record["validation"] = {"path": str(config["validation"]), "sha256": digest(config["validation"]),
                                 "passed": validation.get("passed", False), "violations": validation.get("violations", [])}
         if validation.get("passed", False) and valid:
             label = "Geometrie-Gates bestanden – mechanische Freigabe separat prüfen"
         else:
             label = "DIAGNOSE – Geometrie-Gates nicht bestanden"
     record["display_status"] = label
-    domain = json.loads(args.inputs.read_text(encoding="utf-8"))["domain"]
+    domain = json.loads(config["inputs"].read_text(encoding="utf-8"))["domain"]
     lower = np.asarray(domain["grid"]["origin_mm"], dtype=float)
     upper = lower + np.asarray(domain["grid"]["shape"]) * np.asarray(domain["grid"]["spacing_mm"])
     lower, upper = np.minimum(lower, mesh.bounds[0]), np.maximum(upper, mesh.bounds[1])
     footer = "Reimportierter STEP | SHA256 " + record["step_sha256"][:16] + "… | CAD-Dreiecke: " + str(len(mesh.faces))
     def save(figure, name):
-        path = args.output / (name + ".png")
+        path = config["output"] / (name + ".png")
         figure.savefig(path, dpi=200, facecolor="white")
         plt.close(figure)
         record["images"][name] = {"path": path.name, "sha256": digest(path)}
@@ -727,13 +674,7 @@ def render_main(argv=None, prog=None):
     journal("complete")
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    commands = parser.add_subparsers(dest="command", required=True)
-    handlers = {"run": run_main, "geometry": geometry_main, "render": render_main}
-    for name, function in handlers.items():
-        commands.add_parser(name, help=function.__doc__.splitlines()[0], add_help=False)
-    args, arguments = parser.parse_known_args(argv)
-    return handlers[args.command](arguments, parser.prog + " " + args.command)
+    return command_line({"run": run_main, "geometry": geometry_main, "render": render_main}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

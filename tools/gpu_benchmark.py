@@ -1,4 +1,3 @@
-import argparse
 import hashlib
 import json
 import os
@@ -7,9 +6,15 @@ from time import perf_counter
 
 import numpy as np
 
+from deep_frame.config import command_line, configure
 from deep_frame.topology_optimization import optimize_topology
 from deep_frame.topology_pipeline import _file_digest, _provenance, _save
 from tools.topology_study import verify_artifacts
+
+BENCHMARK_CONFIG = {"source": None, "output": None, "updates": 3}
+BENCHMARK_KINDS = {"source": "text", "output": "text", "updates": "int"}
+PLOT_CONFIG = {"evidence": "docs/validation/workstation_gpu", "output": "docs/validation/workstation_gpu_convergence.png"}
+PLOT_KINDS = {"evidence": "text", "output": "text"}
 
 def compare(source, output, updates=3):
     source, output = Path(source).resolve(), Path(output).resolve()
@@ -81,14 +86,9 @@ def compare(source, output, updates=3):
         _save(output / "status.json", {"status": "failed", "error": str(error)})
         raise
 
-def benchmark_main(argv=None, prog=None):
-    """Compare complete CPU/GPU optimization updates from verified physical inputs."""
-    parser = argparse.ArgumentParser(prog=prog, description=benchmark_main.__doc__)
-    parser.add_argument("--source", required=True)
-    parser.add_argument("--output", required=True)
-    parser.add_argument("--updates", type=int, default=3)
-    arguments = parser.parse_args(argv)
-    result = compare(arguments.source, arguments.output, arguments.updates)
+def benchmark_main(overrides):
+    config = configure(BENCHMARK_CONFIG, BENCHMARK_KINDS, overrides, ("source", "output"))
+    result = compare(config["source"], config["output"], config["updates"])
     print(json.dumps(result), flush=True)
     return 0 if result["passed"] else 1
 
@@ -133,22 +133,12 @@ def render(evidence, output):
                                        "image_sha256": _file_digest(output),
                                        "interpretation": "Actual stored convergence history and measured three-update wall time. No geometry or FEA acceleration claim."})
 
-def plot_main(argv=None, prog=None):
-    """Plot the observed GPU optimization and complete CPU/GPU benchmark."""
-    parser = argparse.ArgumentParser(prog=prog, description=plot_main.__doc__)
-    parser.add_argument("--evidence", default="docs/validation/workstation_gpu")
-    parser.add_argument("--output", default="docs/validation/workstation_gpu_convergence.png")
-    arguments = parser.parse_args(argv)
-    render(arguments.evidence, arguments.output)
+def plot_main(overrides):
+    config = configure(PLOT_CONFIG, PLOT_KINDS, overrides)
+    render(config["evidence"], config["output"])
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    commands = parser.add_subparsers(dest="command", required=True)
-    handlers = {"benchmark": benchmark_main, "plot": plot_main}
-    for name, function in handlers.items():
-        commands.add_parser(name, help=function.__doc__.splitlines()[0], add_help=False)
-    args, arguments = parser.parse_known_args(argv)
-    return handlers[args.command](arguments, parser.prog + " " + args.command)
+    return command_line({"benchmark": benchmark_main, "plot": plot_main}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

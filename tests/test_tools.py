@@ -169,8 +169,8 @@ def study(tmp_path, monkeypatch):
     pipeline.write(source / "manifest.json", {"status": "ok", "artifacts": pipeline.artifacts(source)})
     reference = tmp_path / "reference.step"
     export_step(Box(9, 9, 9), reference)
-    args = pipeline.parse_args(["--source", str(source), "--output", str(tmp_path / "output"),
-                                "--reference-step", str(reference), "--thresholds", "0.3"])
+    args = pipeline.geometry_config({"source": str(source), "output": str(tmp_path / "output"),
+                                     "reference_step": str(reference), "thresholds": [0.3]})
     calls = {"reconstruction": 0, "validation": 0, "fea": 0, "mesh": 0}
     validator = ModuleType("deep_frame.topology_surface_validation")
     validator._settings = lambda settings: {"tessellation_mm": 0.03, **settings}
@@ -211,15 +211,15 @@ def test_invalid_geometry_persists_validation_without_any_fea(study):
     args, source, validator, calls = study
     validator.validate_surface = lambda *a, **k: {"passed": False, "checks": {}, "violations": ["features"]}
     result = pipeline.run_study(args)
-    record = pipeline.read(args.output / "candidates/t00/record.json")
+    record = pipeline.read(args["output"] / "candidates/t00/record.json")
     assert result["status"] == "complete"
     assert result["overall_acceptance"] is False
     assert result["accepted_count"] == 0 and result["selected_id"] is None
     assert record["status"] == "geometry_invalid"
     assert record["validation"]["violations"] == ["features"]
     assert calls["fea"] == 0
-    assert (args.output / "candidates/t00/geometry.stl").is_file()
-    pipeline.verify_geometry(args.output)
+    assert (args["output"] / "candidates/t00/geometry.stl").is_file()
+    pipeline.verify_geometry(args["output"])
 
 def test_final_mesh_error_never_hides_validator_rejection(study):
     args, _, validator, calls = study
@@ -228,7 +228,7 @@ def test_final_mesh_error_never_hides_validator_rejection(study):
         raise ValueError("Missing CAD triangle coverage")
     validator._mesh = cannot_mesh
     pipeline.run_study(args)
-    record = pipeline.read(args.output / "candidates/t00/record.json")
+    record = pipeline.read(args["output"] / "candidates/t00/record.json")
     assert record["status"] == "geometry_invalid"
     assert record["validation"]["violations"] == ["topology"]
     assert "coverage" in record["final_mesh"]["error"]
@@ -248,7 +248,7 @@ def test_source_hash_mismatch_stops_geometry_and_persists_failure(study):
     assert result["status"] == "failed" and "artifact mismatch" in result["error"]
     assert not result["overall_acceptance"] and result["selected_id"] is None
     assert calls == {"reconstruction": 0, "validation": 0, "fea": 0, "mesh": 0}
-    assert pipeline.read(args.output / "status.json")["status"] == "failed"
+    assert pipeline.read(args["output"] / "status.json")["status"] == "failed"
 
 def test_failure_preserves_report_preunion_shape_and_mesh(study, monkeypatch):
     args, _, validator, calls = study
@@ -262,22 +262,22 @@ def test_failure_preserves_report_preunion_shape_and_mesh(study, monkeypatch):
         raise error
     monkeypatch.setattr(topology_surface, "reconstruct_surface", fail)
     result = pipeline.run_study(args)
-    record = pipeline.read(args.output / "candidates/t00/record.json")
+    record = pipeline.read(args["output"] / "candidates/t00/record.json")
     assert result["status"] == "complete" and not result["overall_acceptance"]
     assert record["reconstruction"] == report and record["status"] == "failed"
     assert calls["fea"] == 0
     for name in ("failure/reconstruction.step", "failure/reconstruction.ply", "failure/reconstruction.json"):
         assert name in record["artifacts"]
-        assert (args.output / "candidates/t00" / name).stat().st_size > 0
-    assert list((args.output / "candidates/t00/intermediate").glob("*_before_exact_constraints.step"))
+        assert (args["output"] / "candidates/t00" / name).stat().st_size > 0
+    assert list((args["output"] / "candidates/t00/intermediate").glob("*_before_exact_constraints.step"))
 
 def test_complete_acceptance_only_after_last_candidate_with_final_cad_exports(study, monkeypatch):
     args, _, _, calls = study
-    args.thresholds = [0.3, 0.4]
+    args["thresholds"] = [0.3, 0.4]
     observed = []
     original = topology_surface.reconstruct_surface
     def reconstruct(*a, **k):
-        observed.append(pipeline.read(args.output / "manifest.json"))
+        observed.append(pipeline.read(args["output"] / "manifest.json"))
         return original(*a, **k)
     monkeypatch.setattr(topology_surface, "reconstruct_surface", reconstruct)
     result = pipeline.run_study(args)
@@ -286,14 +286,14 @@ def test_complete_acceptance_only_after_last_candidate_with_final_cad_exports(st
     assert result["status"] == "complete" and result["overall_acceptance"]
     assert result["accepted_count"] == 2 and result["selected_id"] == "t00"
     assert calls["fea"] == 3
-    mesh_report = pipeline.read(args.output / "candidates/t00/final_mesh.json")
-    assert mesh_report["source_step_sha256"] == pipeline.digest(args.output / "candidates/t00/geometry.step")
+    mesh_report = pipeline.read(args["output"] / "candidates/t00/final_mesh.json")
+    assert mesh_report["source_step_sha256"] == pipeline.digest(args["output"] / "candidates/t00/geometry.step")
     assert mesh_report["tessellation"]["used_deflection_mm"] == 0.03
-    pipeline.verify_geometry(args.output)
+    pipeline.verify_geometry(args["output"])
 
 def test_geometry_only_does_not_claim_mechanical_acceptance(study):
     args, _, _, calls = study
-    args.geometry_only = True
+    args["geometry_only"] = True
     result = pipeline.run_study(args)
     assert result["status"] == "complete" and not result["overall_acceptance"]
     assert result["accepted_count"] == 0 and result["selected_id"] is None and calls["fea"] == 0
@@ -302,9 +302,9 @@ def test_changed_baseline_invalidates_stored_acceptance(study):
     args, _, _, _ = study
     result = pipeline.run_study(args)
     assert result["overall_acceptance"]
-    (args.output / "baseline/raw_fea_result.json").write_text("{}", encoding="utf-8")
+    (args["output"] / "baseline/raw_fea_result.json").write_text("{}", encoding="utf-8")
     with pytest.raises(ValueError, match="verified independent baseline"):
-        pipeline.verify_geometry(args.output)
+        pipeline.verify_geometry(args["output"])
 
 def test_unverified_claims_cannot_be_counted_as_accepted():
     incomplete = {"id": "t00", "status": "accepted", "comparison": {"passed": True, "selection_score": 1}}
@@ -315,10 +315,11 @@ def test_orchestrator_saved_source_hash_mismatch_never_launches_subprocess(study
     (source / "fields.npz").write_bytes(b"corrupt")
     monkeypatch.setattr(pipeline, "execute", lambda *a: pytest.fail("No subprocess after source corruption"))
     output = tmp_path / "orchestrator"
-    code = pipeline.run_main(["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step)])
+    code = pipeline.run_main({"source": str(source), "output": str(output), "reference_step": str(args["reference_step"])})
     report = pipeline.read(output / "run.json")
     assert code == 1 and report["status"] == "failed" and not report["overall_acceptance"]
     assert "artifact mismatch" in report["error"] and report["commands"]["density"] is None
+    assert report["configs"]["density"] is None and not (output / "density_config.json").exists()
 
 @pytest.mark.parametrize("backend", ["cpu_superlu", "cuda_cudss"])
 def test_orchestrator_fresh_density_selects_backend_and_verified_geometry(study, monkeypatch, tmp_path, backend):
@@ -329,14 +330,15 @@ def test_orchestrator_fresh_density_selects_backend_and_verified_geometry(study,
         commands.append(command)
         if "tools.topology_study" in command:
             shutil.copytree(source, output / "density")
-            assert command[command.index("--linear-solver") + 1] == backend
-            assert "--source" not in command
+            density = pipeline.read(command[-1])
+            assert density["linear_solver"] == backend
+            assert "source" not in density
         else:
             assert pipeline.main(command[2:]) == 0
         return {"returncode": 0}
     monkeypatch.setattr(pipeline, "execute", execute)
-    code = pipeline.run_main(["--output", str(output), "--reference-step", str(args.reference_step),
-                        "--density-backend", backend, "--thresholds", "0.3"])
+    code = pipeline.run_main({"output": str(output), "reference_step": str(args["reference_step"]),
+                              "density_backend": backend, "thresholds": [0.3]})
     report = pipeline.read(output / "run.json")
     assert code == 0 and report["status"] == "complete" and report["overall_acceptance"]
     assert report["source_mode"] == "fresh_uniform" and report["source_artifacts_verified"]
@@ -352,7 +354,7 @@ def test_orchestrator_does_not_trust_false_manifest_acceptance(study, monkeypatc
                                                     "overall_acceptance": True, "accepted_count": 1, "selected_id": "fiction"})
         return {"returncode": 0}
     monkeypatch.setattr(pipeline, "execute", execute)
-    assert pipeline.run_main(["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step)]) == 1
+    assert pipeline.run_main({"source": str(source), "output": str(output), "reference_step": str(args["reference_step"])}) == 1
     report = pipeline.read(output / "run.json")
     assert not report["overall_acceptance"] and report["selected_id"] is None
     assert "acceptance summary" in report["error"]
@@ -363,145 +365,145 @@ def test_subprocess_timeout_retains_log_hash_and_explicit_budget(tmp_path):
     assert report["log_sha256"] == pipeline.digest(tmp_path / "run.log")
     assert report["process_tree_cleanup_returncode"] == 0
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 def test_reference_step_is_required(parse, tmp_path):
-    with pytest.raises(SystemExit):
-        parse(["--output", str(tmp_path)])
+    with pytest.raises(ValueError):
+        parse({"output": str(tmp_path)})
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 @pytest.mark.parametrize("value", ["-0.1", "nan", "inf", "-inf"])
 def test_manufacturing_opening_radius_rejects_negative_or_nonfinite_values(parse, tmp_path, value):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--manufacturing-opening-radius-mm=" + value])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "manufacturing_opening_radius_mm": value})
 
 def test_manufacturing_opening_radius_is_forwarded_to_reconstructor(study, monkeypatch, tmp_path):
     args, source, _, _ = study
-    assert args.manufacturing_opening_radius_mm == 0.0
+    assert args["manufacturing_opening_radius_mm"] == 0.0
     original = topology_surface.reconstruct_surface
     seen = []
     def reconstruct(domain, density, settings, **kwargs):
         seen.append(settings["manufacturing_opening_radius_mm"])
         return original(domain, density, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert command[command.index("--manufacturing-opening-radius-mm") + 1] == "1.0"
+        assert str(pipeline.read(command[-1])["manufacturing_opening_radius_mm"]) == "1.0"
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(topology_surface, "reconstruct_surface", reconstruct)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "opening_study"
-    assert pipeline.run_main(["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step),
-                        "--thresholds", "0.3", "--manufacturing-opening-radius-mm", "1.0"]) == 0
+    assert pipeline.run_main({"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]),
+                              "thresholds": [0.3], "manufacturing_opening_radius_mm": 1.0}) == 0
     assert seen == [1.0]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["reconstruction_settings"]["manufacturing_opening_radius_mm"] == 1.0
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 @pytest.mark.parametrize("value", ["0", "-1", "1.5", "nan", "inf"])
 def test_wall_sample_budget_must_be_a_positive_integer(parse, tmp_path, value):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--maximum-wall-samples=" + value])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "maximum_wall_samples": value})
 
 @pytest.mark.parametrize("requested", [None, 1_200_000])
 def test_wall_sample_budget_reaches_validator_and_is_persisted(study, monkeypatch, tmp_path, requested):
     args, source, validator, _ = study
     expected = requested if requested is not None else 2_000_000
-    assert args.maximum_wall_samples == 2_000_000
+    assert args["maximum_wall_samples"] == 2_000_000
     original = validator.validate_surface
     seen = []
     def validate(solid, domain, settings, **kwargs):
         seen.append(settings["maximum_wall_samples"])
         return original(solid, domain, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert command[command.index("--maximum-wall-samples") + 1] == str(expected)
+        assert str(pipeline.read(command[-1])["maximum_wall_samples"]) == str(expected)
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(validator, "validate_surface", validate)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "wall_budget_study"
-    command = ["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step), "--thresholds", "0.3"]
+    overrides = {"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]), "thresholds": [0.3]}
     if requested is not None:
-        command.extend(["--maximum-wall-samples", str(requested)])
-    assert pipeline.run_main(command) == 0
+        overrides["maximum_wall_samples"] = requested
+    assert pipeline.run_main(overrides) == 0
     assert seen == [expected]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["validation_settings"]["maximum_wall_samples"] == expected
     assert pipeline.read(output / "run.json")["budgets"]["maximum_wall_samples"] == expected
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 def test_opening_method_rejects_unknown_values(parse, tmp_path):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--manufacturing-opening-method", "unknown"])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "manufacturing_opening_method": "unknown"})
 
 @pytest.mark.parametrize("requested", [None, "distance"])
 def test_opening_method_reaches_reconstructor_and_is_persisted(study, monkeypatch, tmp_path, requested):
     args, source, _, _ = study
     expected = requested or "grayscale"
-    assert args.manufacturing_opening_method == "grayscale"
+    assert args["manufacturing_opening_method"] == "grayscale"
     original = topology_surface.reconstruct_surface
     seen = []
     def reconstruct(domain, density, settings, **kwargs):
         seen.append(settings["manufacturing_opening_method"])
         return original(domain, density, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert command[command.index("--manufacturing-opening-method") + 1] == expected
+        assert pipeline.read(command[-1])["manufacturing_opening_method"] == expected
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(topology_surface, "reconstruct_surface", reconstruct)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "opening_method_study"
-    command = ["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step), "--thresholds", "0.3"]
+    overrides = {"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]), "thresholds": [0.3]}
     if requested is not None:
-        command.extend(["--manufacturing-opening-method", requested])
-    assert pipeline.run_main(command) == 0
+        overrides["manufacturing_opening_method"] = requested
+    assert pipeline.run_main(overrides) == 0
     assert seen == [expected]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["reconstruction_settings"]["manufacturing_opening_method"] == expected
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 @pytest.mark.parametrize("value", ["0", "-1e-7", "nan", "inf", "-inf"])
 def test_boolean_fuzzy_tolerance_must_be_finite_and_positive(parse, tmp_path, value):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--boolean-fuzzy-mm=" + value])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "boolean_fuzzy_mm": value})
 
 @pytest.mark.parametrize("requested", [None, 1e-5])
 def test_boolean_fuzzy_tolerance_reaches_reconstructor_and_is_persisted(study, monkeypatch, tmp_path, requested):
     args, source, _, _ = study
     expected = requested if requested is not None else 1e-7
-    assert args.boolean_fuzzy_mm == 1e-7
+    assert args["boolean_fuzzy_mm"] == 1e-7
     original = topology_surface.reconstruct_surface
     seen = []
     def reconstruct(domain, density, settings, **kwargs):
         seen.append(settings["boolean_fuzzy_value_mm"])
         return original(domain, density, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert float(command[command.index("--boolean-fuzzy-mm") + 1]) == expected
+        assert float(pipeline.read(command[-1])["boolean_fuzzy_mm"]) == expected
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(topology_surface, "reconstruct_surface", reconstruct)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "boolean_fuzzy_study"
-    command = ["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step), "--thresholds", "0.3"]
+    overrides = {"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]), "thresholds": [0.3]}
     if requested is not None:
-        command.extend(["--boolean-fuzzy-mm", str(requested)])
-    assert pipeline.run_main(command) == 0
+        overrides["boolean_fuzzy_mm"] = requested
+    assert pipeline.run_main(overrides) == 0
     assert seen == [expected]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["reconstruction_settings"]["boolean_fuzzy_value_mm"] == expected
     wrapper = pipeline.read(output / "run.json")
     assert wrapper["cad_boolean_settings"]["boolean_fuzzy_value_mm"] == expected
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 @pytest.mark.parametrize("value", ["0", "-1e-7", "nan", "inf", "-inf"])
 def test_validation_boolean_fuzzy_tolerance_must_be_finite_and_positive(parse, tmp_path, value):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--validation-boolean-fuzzy-mm=" + value])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "validation_boolean_fuzzy_mm": value})
 
 @pytest.mark.parametrize("requested", [None, 1e-5])
 def test_validation_fuzzy_tolerance_is_forwarded_separately_and_persisted(study, monkeypatch, tmp_path, requested):
     args, source, validator, _ = study
     expected = requested if requested is not None else 1e-7
-    assert args.validation_boolean_fuzzy_mm == 1e-7
+    assert args["validation_boolean_fuzzy_mm"] == 1e-7
     original = validator.validate_surface
     seen = []
     def validate(solid, domain, settings, **kwargs):
@@ -509,17 +511,18 @@ def test_validation_fuzzy_tolerance_is_forwarded_separately_and_persisted(study,
         assert "boolean_fuzzy_value_mm" not in settings
         return original(solid, domain, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert float(command[command.index("--validation-boolean-fuzzy-mm") + 1]) == expected
-        assert float(command[command.index("--boolean-fuzzy-mm") + 1]) == 2e-6
+        geometry = pipeline.read(command[-1])
+        assert float(geometry["validation_boolean_fuzzy_mm"]) == expected
+        assert float(geometry["boolean_fuzzy_mm"]) == 2e-6
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(validator, "validate_surface", validate)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "validation_boolean_fuzzy_study"
-    command = ["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step),
-               "--thresholds", "0.3", "--boolean-fuzzy-mm", "2e-6"]
+    overrides = {"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]),
+               "thresholds": [0.3], "boolean_fuzzy_mm": 2e-6}
     if requested is not None:
-        command.extend(["--validation-boolean-fuzzy-mm", str(requested)])
-    assert pipeline.run_main(command) == 0
+        overrides["validation_boolean_fuzzy_mm"] = requested
+    assert pipeline.run_main(overrides) == 0
     assert seen == [expected]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["validation_settings"]["boolean_fuzzy_mm"] == expected
@@ -528,48 +531,48 @@ def test_validation_fuzzy_tolerance_is_forwarded_separately_and_persisted(study,
     assert wrapper["cad_boolean_settings"] == {"boolean_fuzzy_value_mm": 2e-6,
                                                "validator_boolean_fuzzy_value_mm": expected}
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 def test_surface_constraint_mode_rejects_unknown_values(parse, tmp_path):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--surface-constraint-mode", "unknown"])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "surface_constraint_mode": "unknown"})
 
 @pytest.mark.parametrize("requested", [None, "cad_only", "envelope_only", "envelope_forbidden"])
 def test_surface_constraint_mode_reaches_reconstructor_and_is_persisted(study, monkeypatch, tmp_path, requested):
     args, source, _, _ = study
     expected = requested or "embedded"
-    assert args.surface_constraint_mode == "embedded"
+    assert args["surface_constraint_mode"] == "embedded"
     original = topology_surface.reconstruct_surface
     seen = []
     def reconstruct(domain, density, settings, **kwargs):
         seen.append(settings["surface_constraint_mode"])
         return original(domain, density, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert command[command.index("--surface-constraint-mode") + 1] == expected
+        assert pipeline.read(command[-1])["surface_constraint_mode"] == expected
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(topology_surface, "reconstruct_surface", reconstruct)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "surface_constraint_mode_study"
-    command = ["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step), "--thresholds", "0.3"]
+    overrides = {"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]), "thresholds": [0.3]}
     if requested is not None:
-        command.extend(["--surface-constraint-mode", requested])
-    assert pipeline.run_main(command) == 0
+        overrides["surface_constraint_mode"] = requested
+    assert pipeline.run_main(overrides) == 0
     assert seen == [expected]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["reconstruction_settings"]["surface_constraint_mode"] == expected
     assert pipeline.read(output / "run.json")["surface_constraint_mode"] == expected
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 def test_decimation_bounds_mode_rejects_unknown_values(parse, tmp_path):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--decimation-bounds-mode", "unknown"])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "decimation_bounds_mode": "unknown"})
 
 @pytest.mark.parametrize("requested", [None, "reference_aabb"])
 def test_decimation_bounds_mode_reaches_reconstructor_and_is_persisted(study, monkeypatch, tmp_path, requested):
     args, source, _, _ = study
     expected = requested or "none"
-    assert args.decimation_bounds_mode == "none"
+    assert args["decimation_bounds_mode"] == "none"
     original = topology_surface.reconstruct_surface
     seen = []
     def reconstruct(domain, density, settings, **kwargs):
@@ -577,77 +580,78 @@ def test_decimation_bounds_mode_reaches_reconstructor_and_is_persisted(study, mo
         assert settings["surface_constraint_mode"] == "envelope_only"
         return original(domain, density, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert command[command.index("--decimation-bounds-mode") + 1] == expected
-        assert command[command.index("--surface-constraint-mode") + 1] == "envelope_only"
+        geometry = pipeline.read(command[-1])
+        assert geometry["decimation_bounds_mode"] == expected
+        assert geometry["surface_constraint_mode"] == "envelope_only"
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(topology_surface, "reconstruct_surface", reconstruct)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "decimation_bounds_mode_study"
-    command = ["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step),
-               "--thresholds", "0.3", "--surface-constraint-mode", "envelope_only"]
+    overrides = {"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]),
+               "thresholds": [0.3], "surface_constraint_mode": "envelope_only"}
     if requested is not None:
-        command.extend(["--decimation-bounds-mode", requested])
-    assert pipeline.run_main(command) == 0
+        overrides["decimation_bounds_mode"] = requested
+    assert pipeline.run_main(overrides) == 0
     assert seen == [expected]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["reconstruction_settings"]["decimation_bounds_mode"] == expected
     assert pipeline.read(output / "run.json")["decimation_bounds_mode"] == expected
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 def test_preserve_fusion_mode_rejects_unknown_values(parse, tmp_path):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--preserve-fusion-mode", "unknown"])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "preserve_fusion_mode": "unknown"})
 
 @pytest.mark.parametrize("requested", [None, "direct", "preunion"])
 def test_preserve_fusion_mode_reaches_reconstructor_and_is_persisted(study, monkeypatch, tmp_path, requested):
     args, source, _, _ = study
     expected = requested or "direct"
-    assert args.preserve_fusion_mode == "direct"
+    assert args["preserve_fusion_mode"] == "direct"
     original = topology_surface.reconstruct_surface
     seen = []
     def reconstruct(domain, density, settings, **kwargs):
         seen.append(settings["preserve_fusion_mode"])
         return original(domain, density, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert command[command.index("--preserve-fusion-mode") + 1] == expected
+        assert pipeline.read(command[-1])["preserve_fusion_mode"] == expected
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(topology_surface, "reconstruct_surface", reconstruct)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "preserve_fusion_mode_study"
-    command = ["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step),
-               "--thresholds", "0.3"]
+    overrides = {"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]), "thresholds": [0.3]}
     if requested is not None:
-        command.extend(["--preserve-fusion-mode", requested])
-    assert pipeline.run_main(command) == 0
+        overrides["preserve_fusion_mode"] = requested
+    assert pipeline.run_main(overrides) == 0
     assert seen == [expected]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["reconstruction_settings"]["preserve_fusion_mode"] == expected
     wrapper = pipeline.read(output / "run.json")
     assert wrapper["preserve_fusion_mode"] == expected
-    stored_command = wrapper["commands"]["geometry"]
-    assert stored_command[stored_command.index("--preserve-fusion-mode") + 1] == expected
+    stored = wrapper["configs"]["geometry"]
+    assert wrapper["commands"]["geometry"][-1] == stored["path"] and stored["sha256"] == pipeline.digest(stored["path"])
+    assert stored["values"]["preserve_fusion_mode"] == expected
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 @pytest.mark.parametrize("value", ["-0.1", "nan", "inf", "-inf"])
 def test_free_forbidden_buffer_rejects_negative_or_nonfinite_values(parse, tmp_path, value):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--free-forbidden-buffer-mm=" + value])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "free_forbidden_buffer_mm": value})
 
-@pytest.mark.parametrize("parse", [pipeline.parse_args, pipeline.run_parse_args])
+@pytest.mark.parametrize("parse", [pipeline.geometry_config, pipeline.run_config])
 @pytest.mark.parametrize("mode,radius", [("embedded", 1.25), ("cad_only", 1.25), ("envelope_only", 1.25), ("envelope_forbidden", 0)])
 def test_positive_free_forbidden_buffer_requires_forbidden_opening(parse, tmp_path, mode, radius):
-    with pytest.raises(SystemExit):
-        parse(["--source", str(tmp_path / "source"), "--output", str(tmp_path / "output"),
-               "--reference-step", str(tmp_path / "reference.step"), "--free-forbidden-buffer-mm", "0.5",
-               "--surface-constraint-mode", mode, "--manufacturing-opening-radius-mm", str(radius)])
+    with pytest.raises(ValueError):
+        parse({"source": str(tmp_path / "source"), "output": str(tmp_path / "output"),
+               "reference_step": str(tmp_path / "reference.step"), "free_forbidden_buffer_mm": "0.5",
+               "surface_constraint_mode": mode, "manufacturing_opening_radius_mm": str(radius)})
 
 @pytest.mark.parametrize("requested", [None, 0.0, 0.5])
 def test_free_forbidden_buffer_reaches_reconstructor_and_is_persisted(study, monkeypatch, tmp_path, requested):
     args, source, _, _ = study
     expected = requested if requested is not None else 0.0
-    assert args.free_forbidden_buffer_mm == 0.0
+    assert args["free_forbidden_buffer_mm"] == 0.0
     original = topology_surface.reconstruct_surface
     seen = []
     def reconstruct(domain, density, settings, **kwargs):
@@ -658,26 +662,26 @@ def test_free_forbidden_buffer_reaches_reconstructor_and_is_persisted(study, mon
             assert settings["preserve_fusion_mode"] == "preunion"
         return original(domain, density, settings, **kwargs)
     def execute(command, cwd, logfile, timeout):
-        assert command[command.index("--free-forbidden-buffer-mm") + 1] == str(expected)
+        assert str(pipeline.read(command[-1])["free_forbidden_buffer_mm"]) == str(expected)
         return {"returncode": pipeline.main(command[2:])}
     monkeypatch.setattr(topology_surface, "reconstruct_surface", reconstruct)
     monkeypatch.setattr(pipeline, "execute", execute)
     output = tmp_path / "free_forbidden_buffer_study"
-    command = ["--source", str(source), "--output", str(output), "--reference-step", str(args.reference_step),
-               "--thresholds", "0.3"]
+    overrides = {"source": str(source), "output": str(output), "reference_step": str(args["reference_step"]), "thresholds": [0.3]}
     if requested is not None:
-        command.extend(["--free-forbidden-buffer-mm", str(requested)])
+        overrides["free_forbidden_buffer_mm"] = requested
     if expected > 0:
-        command.extend(["--surface-constraint-mode", "envelope_forbidden", "--manufacturing-opening-radius-mm", "1.25",
-                        "--preserve-fusion-mode", "preunion"])
-    assert pipeline.run_main(command) == 0
+        overrides.update(surface_constraint_mode="envelope_forbidden", manufacturing_opening_radius_mm=1.25,
+                        preserve_fusion_mode="preunion")
+    assert pipeline.run_main(overrides) == 0
     assert seen == [expected]
     manifest = pipeline.read(output / "geometry/manifest.json")
     assert manifest["reconstruction_settings"]["free_forbidden_buffer_mm"] == expected
     wrapper = pipeline.read(output / "run.json")
     assert wrapper["free_forbidden_buffer_mm"] == expected
-    stored_command = wrapper["commands"]["geometry"]
-    assert stored_command[stored_command.index("--free-forbidden-buffer-mm") + 1] == str(expected)
+    stored = wrapper["configs"]["geometry"]
+    assert wrapper["commands"]["geometry"][-1] == stored["path"] and stored["sha256"] == pipeline.digest(stored["path"])
+    assert str(stored["values"]["free_forbidden_buffer_mm"]) == str(expected)
 
 @pytest.mark.parametrize("module,method", [(pipeline, "write"), (pipeline, "save")])
 @pytest.mark.parametrize("winerror", [5, 32, 33])
