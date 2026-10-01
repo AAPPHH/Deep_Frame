@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import shutil
 import sys
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 from build123d import Box, export_step
 import numpy as np
@@ -831,6 +831,21 @@ def test_density_study_logs_its_run(tmp_path, monkeypatch):
     assert topology_study.run_main({"directory": str(tmp_path / "density"), "max_iterations": 3, "run_log": str(tmp_path / "run_log.jsonl")}) == 0
     line, = ledger(tmp_path / "run_log.jsonl")
     assert line["kind"] == "density" and line["success"] and line["iterations"] == 3 and line["run_dir"] == str((tmp_path / "density").resolve())
+
+def test_raster_study_logs_one_ledger_line_per_candidate(tmp_path, monkeypatch):
+    inputs = {"input_sha256": "raster-input", "baseline_reference_frame_mass_g": 1.0, "thresholds": [0.1, 0.2], "reconstruction_settings": {}, "parameters": {}, "relative_constraints": {"frame_mass_ratio_max": 2.0}}
+    monkeypatch.setattr(workstation, "prepare", lambda *a: (inputs, {"material": {"density_g_cm3": 1.0}}, np.zeros(1)))
+    monkeypatch.setattr(workstation, "build_geometry", lambda parameters: SimpleNamespace(volume=1000.0))
+    def reconstruct(*a):
+        raise ValueError("no solid")
+    monkeypatch.setattr(workstation, "reconstruct_topology", reconstruct)
+    config = {"source": str(tmp_path / "source"), "output": str(tmp_path / "raster"), "geometry_only": True, "run_log": str(tmp_path / "run_log.jsonl")}
+    workstation.candidates_main(config)
+    lines = ledger(tmp_path / "run_log.jsonl")
+    assert [line["candidate"] for line in lines] == ["density_t00", "density_t01"] and [line["parameters"]["threshold"] for line in lines] == [0.1, 0.2]
+    assert all(line["kind"] == "raster" and not line["success"] and line["failure_stage"] == "geometry" and line["source_sha256"] == "raster-input" and line["runtime_s"] >= 0 for line in lines)
+    workstation.candidates_main(config)
+    assert len(ledger(tmp_path / "run_log.jsonl")) == 2
 
 def fake_fea(calls):
     def evaluate(solid, material, masses, cases, settings):

@@ -390,5 +390,17 @@
   "volume_fraction": 0.09999999999660367,
   "gray_fraction_free": 0.15498173447430316,
   "minimum_ray_thickness_mm": 0.89
+ },
+ "plan_conformance": {
+  "converged_per_plan": false,
+  "stop": "objective_stall at beta 16 after 14 iterations (minimum_iterations 10); converged=true in the record means only this stall stop",
+  "plan_rule": "stop only on change_tolerance 0.005 at beta 16; beta advance on change < 0.01 after >= 20 iterations or after the interval; max_iterations 400 contingency",
+  "deviations": [
+   "beta transitions 2->4, 4->8, 8->16 by objective stall",
+   "beta 16 ran 14 iterations, plan 20 per level",
+   "max_iterations 360, plan contingency 400",
+   "design change at move limit every iteration"
+  ],
+  "rerun": false
  }
 }

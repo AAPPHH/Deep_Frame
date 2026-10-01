@@ -14,7 +14,9 @@ Spalten:
 |---|---|---|---|---|---|
 | Bestanden | **nein** (geometry_invalid) | **nein** (geometry_invalid) | **nein** (geometry_invalid) | **nein** | **ja** |
 | Fehlschlagende Checks | nur features (2-mm-Wand): 86 dünne Samples, min 0.021 mm | nur features: 116, min 0.079 mm | nur features: 85, min 0.281 mm | Hauptlauf ef_buffer050_preunion: reconstruction/decimation (8 degenerierte Dreiecke). Weitester Lauf envelope_bounds: validation/topology `closed_manifold_single_solid` (Tessellation nicht wasserdicht); Rest nicht ausgewertet, keine FEA | keine (Wand min 2.000 mm, 0 dünn) |
-| Übrige 10 Checks | bestanden | bestanden | bestanden | – | bestanden |
+| Übrige 10 Checks | bestanden⁵ | bestanden⁵ | bestanden⁵ | – | bestanden |
+| deviation gegated (verarbeitetes Feld) / rohe Dichte (Diagnose, ungegated)⁵ | 0.077 / **0.257** mm | 0.072 / **0.344** mm | 0.056 / **0.345** mm | – | – |
+| Bohrungsstege mit Polygon-Toleranz⁶ | 424 Samples, min 1.9839 mm (Toleranz 0.0191) | 424, min 1.9839 | 424, min 1.9839 | – | – |
 | Dichte (geteilt, einmalig) | 576 s GPU | 2771 s GPU (116 It., 24.7 s/It.) | (gleich) | 576 s GPU (gpu708) | 820 s CPU |
 | Feld + Extraktion + Booleans | 91.3 s | 85.7 s | 83.6 s | Extraktion 77.7, Nähen 37.9, Booleans 28.5, STEP 4.3 s | Rekonstruktion 1.5 s |
 | Validierung | 26.8 s | 25.2 s | 24.2 s | 22.2 s (bis Abbruch) | – |
@@ -32,8 +34,10 @@ Spalten:
 | \|H\| r=1 mm p50 / p95 / p99 / max | 0.099 / 0.465 / 0.536 / 0.862 | 0.123 / 0.483 / 0.584 / 0.826 | 0.118 / 0.468 / 0.565 / 0.825 | – | 0.000 / 0.500 / 0.832 / 1.260 |
 | Krümmung Nachbar-RMS | 0.147 /mm | 0.171 | 0.167 | – | 0.268 |
 
-¹ Diagnostische FEA (Kandidat ist geometry_invalid): separater Prozess auf geometry.ply, `fea_remesh_target_mm` 1.2 (fein c00: 1.0), tet_attempts nur remesh_hxt/remesh_delaunay; SICN-/Randabweichungs-Gates, Lastfälle, Material, Punktmassen, SPOOLES 1 Thread unverändert. Record und Ledger unverändert.
+¹ Diagnostische FEA (Kandidat ist geometry_invalid): separater Prozess auf geometry.ply, `fea_remesh_target_mm` 1.2 (fein c00: 1.0), tet_attempts nur remesh_hxt/remesh_delaunay; SICN-/Randabweichungs-Gates, Lastfälle, Material, Punktmassen, SPOOLES 1 Thread unverändert. Record und Ledger unverändert. Die FEA rechnet also auf einer neu vernetzten Kopie der Oberfläche, nicht auf dem Endnetz selbst. Die Randabweichung zu `geometry.ply` wird nur an den Randknoten geprüft, nicht an Flächenpunkten. Das Gate wird im Zweig feature/fea-meshing neu entworfen. Da alle Kandidaten geometry_invalid sind, gab es keine Abnahme-FEA im Sinne von C13. Alle FEA-Werte und "würde bestehen" sind Diagnose.
 ² (d) gelöst mit PaStiX, 2 Threads (keine SPOOLES-Nachrechnung vorhanden).
+⁵ **Nutzerentscheidung 1:** deviation (C9) wird gegen das verarbeitete Feld gegated, wie `density_isosurface` der CAD-Route. Gemessen wird also der Extraktions-, Remesh- und Boolean-Fehler; ein echter 0,3-mm-Fehler scheitert weiterhin. Der Plan (Abschnitt 5, C9 ii) verlangte ≤ 0,20 mm gegen die rohe Dichte-Isofläche. Diese Distanz enthält die gewollte Formänderung durch sigma_d, Opening und Ripple-Glättung und wird nur als Diagnose gespeichert. Nach Plandefinition scheitert deviation bei (a), (b) c00 und (b) c01 (0,257 / 0,344 / 0,345 mm > 0,20); dann bestünden nur 9 von 11 Checks.
+⁶ **Nutzerentscheidung 2:** Der analytische Motorbohrungs-Steg ist genau 2,0 mm. Umschriebene Polygone (Bohrung bis +0,01 mm) können ihn nie erreichen. Nur Sehnen mit beiden Enden auf vorgeschriebenen Bohrungspolygonen dürfen deshalb um die summierte Polygon-Übergröße kürzer sein. Alle anderen Stellen behalten die strikte Grenze von 2,0 mm; ein freier 1,98-mm-Steg scheitert.
 
 Formmetriken für (a), (b), (d) mit derselben Implementierung (`surface_metrics` mit der gpu708-Domain, Regionen in allen drei Domains identisch; `ball_curvature` r 1 mm, 5000 Samples, seed 0). (d) ist die OCCT-Tessellation (0.03 mm) des t01-STEP, also dasselbe Netz wie die Surface-Maturity-Referenz.
 
@@ -76,7 +80,7 @@ Erfolgsrate 0/8, Geometrie-Erfolgsrate 0/8; 4/8 bis zum Endnetz gebaut. Laufzeit
 
 ## Empfehlung
 
-Standardroute: **implizite Route**. Jeder gebaute Kandidat liefert in ca. 2 min ein geschlossenes, orientiertes, selbstschnittfreies Einzelkörper-Netz mit exakten Bohrungen, Keep-out- und Hüllkurven-Freiheit; 10 von 11 Checks bestehen, die FEA läuft auf dem Endnetz und läge mechanisch klar über v0 und über (d). Die CAD-Route erreichte auf gpu708 in sechs Läufen nie die FEA (Abbruch in Dezimierung, OCCT-Booleans oder Tessellations-Topologie). Formqualität: Scharfkanten 0.04-0.05 /mm statt 0.24, achsnormaler Anteil 0.16-0.21 statt 1.0, keine Voxelstufen. Noch kein implizites Teil ist freigegeben; (d) bleibt bis dahin die einzige geprüfte Referenz.
+Standardroute: **implizite Route**. Jeder gebaute Kandidat liefert in ca. 2 min ein geschlossenes, orientiertes, selbstschnittfreies Einzelkörper-Netz mit exakten Bohrungen, Keep-out- und Hüllkurven-Freiheit; 10 von 11 Checks bestehen nach den aktuellen Definitionen (Nutzerentscheidungen ⁵ ⁶); nach der Plandefinition von C9 sind es 9 von 11. Die diagnostische FEA läuft auf einer neu vernetzten Kopie des Endnetzes und läge mechanisch klar über v0 und über (d). Die CAD-Route erreichte auf gpu708 in sechs Läufen nie die FEA (Abbruch in Dezimierung, OCCT-Booleans oder Tessellations-Topologie). Formqualität: Scharfkanten 0.04-0.05 /mm statt 0.24, achsnormaler Anteil 0.16-0.21 statt 1.0, keine Voxelstufen. Noch kein implizites Teil ist freigegeben; (d) bleibt bis dahin die einzige geprüfte Referenz.
 
 ## Offene Probleme
 
@@ -84,5 +88,5 @@ Standardroute: **implizite Route**. Jeder gebaute Kandidat liefert in ca. 2 min 
 2. **FEA-Oberflächenvorbereitung** (`fea._prepare_surface`): Standardziel 2.0 mm faltet dünne Glieder; der refine_hxt-Fallback erzeugt 370-400k C3D10, die SPOOLES im 10-GB-CPU-Slot nicht löst (2x OOM-Kill, 1x Native-Crash bei 14 GB). Sliver mit konstant 3.44° bei sweep t020 none bei allen Zielen 2.0-1.0 mm. Nötig: Sliver-/Faltenreparatur bzw. Zielkette, Elementgrenze ca. 220k, Port des Retry-on-Crash (935dc58), FEA in eigenem Prozess, damit ein OOM den Geometrie-Record nicht löscht.
 3. **FEA dominiert die Laufzeit**: 350-524 s bei 1.0-1.2-mm-Oberfläche gegen ca. 115 s Geometrie + Validierung; Spitzen 6-7.7 GB.
 4. **Extension-Guard** weist preserve_forbidden auf gpu708 bei jeder Schwelle ab (4/8 im Sweep).
-5. **Feinrechnung**: Öffnung entfernt noch 4.8-5.4 cm³, die Mindestbreite stammt also nicht allein vom Optimierer; Stopp durch objective_stall bei 24.7 s/It. statt geplanter 11-12; f1-Lücke c00 (460 Hz) vs. c01 (763 Hz) ungeklärt.
+5. **Feinrechnung**: Die Öffnung entfernt noch 4.8-5.4 cm³, die Mindestbreite stammt also nicht allein vom Optimierer. Der Lauf ist **nicht konvergiert** im Sinne des Plans (Abschnitt 11). Er stoppte durch objective_stall (Spanne der Zielfunktion < 0,5 % über 10 Iterationen) bei β 16 nach nur 14 Iterationen (minimum_iterations 10 statt 20 je Stufe, max_iterations 360 statt 400). Die Designänderung lag in jeder Iteration am Move-Limit, change_tolerance 0,005 wurde nie erreicht, und auch die Wechsel 2→4→8→16 kamen über Stagnation. Das Record-Feld `converged: true` meint nur diesen Stagnationsstopp. Der Lauf wurde nicht wiederholt. Zeit pro Iteration 24.7 s statt der geplanten 11-12 s; f1-Lücke c00 (460 Hz) vs. c01 (763 Hz) ungeklärt.
 6. (d) wurde mit PaStiX/2 Threads gelöst, nicht mit dem SPOOLES-Profil der impliziten Route.

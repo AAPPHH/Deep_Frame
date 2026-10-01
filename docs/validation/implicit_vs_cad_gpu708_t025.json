@@ -28,8 +28,8 @@
     "topology": true,
     "self_intersections": true,
     "envelope": true,
-    "forbidden": null,
-    "preserve": null,
+    "forbidden": true,
+    "preserve": true,
     "features": false,
     "supports": true,
     "deviation": true,
@@ -38,8 +38,8 @@
    },
    "thin_samples": 86,
    "minimum_wall_mm": 0.020647335173981728,
-   "rays": null,
-   "unresolved": null,
+   "rays": 294620,
+   "unresolved": 0,
    "mass_g": 57.77004030038151,
    "mass_screen": {
     "ratio_to_v0": 1.796169956909775,
@@ -186,7 +186,18 @@
    "diagnostics": [
     "features"
    ],
-   "record_sha256": "48b7bfabe9f297f0c005e0500886e4869dcca3a1d990d12c29ffd66ba7e2793f"
+   "record_sha256": "48b7bfabe9f297f0c005e0500886e4869dcca3a1d990d12c29ffd66ba7e2793f",
+   "prescribed_bore_web": {
+    "sample_count": 424,
+    "minimum_measured_mm": 1.9838975846660496,
+    "maximum_allowance_mm": 0.01908363442783867
+   },
+   "deviation": {
+    "gated_processed_field_max_mm": 0.07749994099140167,
+    "raw_density_diagnostic_max_mm": 0.25683683156967163,
+    "raw_density_diagnostic_gated": false,
+    "limit_mm": 0.2
+   }
   },
   "b_c00": {
    "run": "fine_robust_shell",
@@ -214,8 +225,8 @@
     "topology": true,
     "self_intersections": true,
     "envelope": true,
-    "forbidden": null,
-    "preserve": null,
+    "forbidden": true,
+    "preserve": true,
     "features": false,
     "supports": true,
     "deviation": true,
@@ -224,8 +235,8 @@
    },
    "thin_samples": 116,
    "minimum_wall_mm": 0.07942698083498118,
-   "rays": null,
-   "unresolved": null,
+   "rays": 282694,
+   "unresolved": 0,
    "mass_g": 42.71136878514888,
    "mass_screen": {
     "ratio_to_v0": 1.3279699482894725,
@@ -372,7 +383,18 @@
    "diagnostics": [
     "features"
    ],
-   "record_sha256": "516664111444eadf17ace1ceaffa6e671ecf9abb79a42246c6ae654847701fcc"
+   "record_sha256": "516664111444eadf17ace1ceaffa6e671ecf9abb79a42246c6ae654847701fcc",
+   "prescribed_bore_web": {
+    "sample_count": 424,
+    "minimum_measured_mm": 1.9838975846660496,
+    "maximum_allowance_mm": 0.01908363442783867
+   },
+   "deviation": {
+    "gated_processed_field_max_mm": 0.07195574045181274,
+    "raw_density_diagnostic_max_mm": 0.3440204858779907,
+    "raw_density_diagnostic_gated": false,
+    "limit_mm": 0.2
+   }
   },
   "b_c01": {
    "run": "fine_robust_shell",
@@ -400,8 +422,8 @@
     "topology": true,
     "self_intersections": true,
     "envelope": true,
-    "forbidden": null,
-    "preserve": null,
+    "forbidden": true,
+    "preserve": true,
     "features": false,
     "supports": true,
     "deviation": true,
@@ -410,8 +432,8 @@
    },
    "thin_samples": 85,
    "minimum_wall_mm": 0.2807919174644199,
-   "rays": null,
-   "unresolved": null,
+   "rays": 286676,
+   "unresolved": 0,
    "mass_g": 46.38636054921319,
    "mass_screen": {
     "ratio_to_v0": 1.4422317657329264,
@@ -558,7 +580,18 @@
    "diagnostics": [
     "features"
    ],
-   "record_sha256": "c90b8add542117a918692b84d7c741e4e02657e3df820c919cb1fca65cc831b7"
+   "record_sha256": "c90b8add542117a918692b84d7c741e4e02657e3df820c919cb1fca65cc831b7",
+   "prescribed_bore_web": {
+    "sample_count": 424,
+    "minimum_measured_mm": 1.9838975846660496,
+    "maximum_allowance_mm": 0.01908363442783867
+   },
+   "deviation": {
+    "gated_processed_field_max_mm": 0.05601155757904053,
+    "raw_density_diagnostic_max_mm": 0.3450597822666168,
+    "raw_density_diagnostic_gated": false,
+    "limit_mm": 0.2
+   }
   },
   "d": {
    "run": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\candidate_study\\grid4_iter300\\candidates\\density_t01",
@@ -1351,5 +1384,10 @@
    "top",
    "low_front"
   ]
+ },
+ "decisions": {
+  "deviation": "User decision: C9 free-zone gate measures the final mesh against marching cubes of the processed field (CAD-route density_isosurface definition); the raw-density iso-surface distance is recorded ungated (plan section 5 C9(ii) had gated it; it exceeds 0.20 mm on all three columns)",
+  "bore_web": "User decision: C6 chords with both ends on prescribed bore polygons may fall short of 2.0 mm by exactly the summed circumscribed-polygon oversize (about 0.019 mm), because the analytic bore ligament is exactly 2.0 mm and a circumscribed polygon can never meet it; all other chords keep the strict 2.0 mm minimum",
+  "robust_fine_run": "The fine density stopped on objective_stall at beta 16 after 14 iterations (minimum_iterations 10, max_iterations 360); the design change stayed at the move limit in every iteration and change_tolerance 0.005 was never met, so it is a stall stop, not design convergence in the sense of plan section 11"
  }
 }
