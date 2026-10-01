@@ -184,7 +184,7 @@ def run_main(overrides):
                                                      configs["density"]["path"]]
     geometry_command = [str(config["geometry_python"].resolve()), str(ROOT/"tools/mature_pipeline.py"), "geometry",
                         configs["geometry"]["path"]]
-    report = {"schema_version": "deep-frame-mature-end-to-end-v2", "status": "running", "stage": "preparing",
+    report = {"schema_version": "deep-frame-mature-end-to-end-v3", "status": "running", "stage": "preparing",
               "overall_acceptance": False, "accepted_count": 0, "selected_id": None,
               "initial_density": "saved density source; initialization is documented in source inputs" if config["source"] else "fresh uniform free-domain initialization; no restart or prescribed arm seed",
               "source": str(source), "source_mode": "saved" if config["source"] else "fresh_uniform",

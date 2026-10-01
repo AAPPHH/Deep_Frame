@@ -319,7 +319,7 @@ def test_orchestrator_saved_source_hash_mismatch_never_launches_subprocess(study
     report = _read(output / "run.json")
     assert code == 1 and report["status"] == "failed" and not report["overall_acceptance"]
     assert "artifact mismatch" in report["error"] and report["commands"]["density"] is None
-    assert report["configs"]["density"] is None and not (output / "density_config.json").exists()
+    assert report["schema_version"] == "deep-frame-mature-end-to-end-v3" and report["configs"]["density"] is None and not (output / "density_config.json").exists()
 
 @pytest.mark.parametrize("backend", ["cpu_superlu", "cuda_cudss"])
 def test_orchestrator_fresh_density_selects_backend_and_verified_geometry(study, monkeypatch, tmp_path, backend):
@@ -343,6 +343,8 @@ def test_orchestrator_fresh_density_selects_backend_and_verified_geometry(study,
     assert code == 0 and report["status"] == "complete" and report["overall_acceptance"]
     assert report["source_mode"] == "fresh_uniform" and report["source_artifacts_verified"]
     assert report["accepted_count"] == 1 and report["selected_id"] == "t00" and len(commands) == 2
+    assert report["schema_version"] == "deep-frame-mature-end-to-end-v3"
+    assert all(report["configs"][name]["sha256"] == _file_digest(output / (name + "_config.json")) for name in ("density", "geometry"))
 
 def test_orchestrator_does_not_trust_false_manifest_acceptance(study, monkeypatch, tmp_path):
     args, source, _, _ = study
