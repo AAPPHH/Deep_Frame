@@ -411,6 +411,14 @@ def surface_metrics(mesh, domain, settings=None):
         "settings": {key: settings[key] for key in ("prescribed_surface_tolerance_mm", "axis_normal_angle_deg", "sharp_edge_angle_deg", "source_plane_tolerance_mm", "tessellation_mm", "tessellation_angle_rad")},
     }
 
+def surface_maturity(metrics, reference, settings):
+    ratios = {}
+    for key, limit_name in (("free_sharp_edge_length_per_area_per_mm", "maximum_free_crease_ratio"), ("free_axis_normal_area_fraction", "maximum_free_axis_fraction_ratio")):
+        candidate_value, reference_value = metrics[key], reference[key]
+        ratio = candidate_value / reference_value if candidate_value is not None and reference_value is not None and reference_value > 0 else None
+        ratios[key] = {"candidate": candidate_value, "reference": reference_value, "ratio": ratio, "maximum_ratio": settings[limit_name], "passed": ratio is not None and ratio <= settings[limit_name]}
+    return {"passed": all(value["passed"] for value in ratios.values()), "ratios": ratios, "reference_metrics": reference}
+
 def _triangle_samples(triangle, spacing):
     pending = [triangle]
     while pending:
@@ -736,12 +744,7 @@ def _validate_surface(solid, domain: dict, settings: dict, *, reference_solid=No
         reference_mesh = _mesh(reference_solid, reference_settings)
         reference = surface_metrics(reference_mesh, domain, settings)
         reference["tessellation"] = reference_mesh.metadata["adaptive_tessellation"]
-        ratios = {}
-        for key, limit_name in (("free_sharp_edge_length_per_area_per_mm", "maximum_free_crease_ratio"), ("free_axis_normal_area_fraction", "maximum_free_axis_fraction_ratio")):
-            candidate_value, reference_value = metrics[key], reference[key]
-            ratio = candidate_value / reference_value if candidate_value is not None and reference_value is not None and reference_value > 0 else None
-            ratios[key] = {"candidate": candidate_value, "reference": reference_value, "ratio": ratio, "maximum_ratio": settings[limit_name], "passed": ratio is not None and ratio <= settings[limit_name]}
-        checks["surface_maturity"] = {"passed": all(value["passed"] for value in ratios.values()), "ratios": ratios, "reference_metrics": reference}
+        checks["surface_maturity"] = surface_maturity(metrics, reference, settings)
         if progress is not None:
             progress({"stage": "surface_maturity", "status": "completed", "result": checks["surface_maturity"]})
             progress({"stage": "material_difference", "status": "started"})

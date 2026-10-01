@@ -15,6 +15,7 @@ from scipy.ndimage import distance_transform_edt, gaussian_filter, grey_opening,
 from scipy.interpolate import PchipInterpolator
 from skimage.measure import marching_cubes
 
+from .config import SURFACE_FIDELITY
 from .topology_geometry import region_bounds, region_contains, region_shape
 
 class SurfaceReconstructionError(ValueError):
@@ -52,8 +53,7 @@ def _settings(settings):
         "free_forbidden_buffer_mm": 0.0,
         "surface_constraint_mode": "embedded",
         "decimation_bounds_mode": "none",
-        "maximum_surface_deviation_mm": 0.20,
-        "maximum_relative_volume_change": 0.01,
+        **SURFACE_FIDELITY,
         "decimation_face_budgets": [6000, 12000, 24000, 48000],
         "fidelity_batch_size": 1000,
         "boolean_tolerance_mm3": 1e-5,

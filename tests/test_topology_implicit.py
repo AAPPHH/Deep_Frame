@@ -8,7 +8,7 @@ from scipy.ndimage import gaussian_filter
 from deep_frame.config import TOPOLOGY_CONFIG
 from deep_frame.topology_geometry import rasterize_regions, region_contains
 from deep_frame.topology_implicit import VALIDATION_CHECKS, ImplicitError, ImplicitField, MeshAcceptance, _adjacent_pair, _trimesh, build_field, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, validate_implicit, vertex_manifold, wall_screen
-from deep_frame.topology_surface_validation import _settings as _validation_settings
+from deep_frame.topology_surface_validation import _settings as _validation_settings, surface_metrics
 
 def box(name, role, low, high, **extra):
     return {"name": name, "role": role, "kind": "box", "min_mm": list(low), "max_mm": list(high), **extra}
@@ -195,6 +195,19 @@ def test_invalid_implicit_settings_fail(changes):
     with pytest.raises(ValueError):
         implicit_settings({**SMALL, **changes})
 
+@pytest.mark.parametrize("changes", [{"segment_tolerance_mm": 0.6}, {"surface_deviation_mm": 25.0}, {"relative_volume_change": 0.9}, {"free_zone_minimum_samples": 1}, {"penetration_tolerance_mm": 0.5}, {"penetration_sample_spacing_mm": 2.0},
+                                     {"free_zone_preserve_mm": 5.0}, {"free_zone_constraint_mm": 9.0}, {"free_zone_modified_mm": 4.0}, {"free_zone_opening_cells": 0.1}, {"mesh_minimum_sicn": 0.001}, {"mesh_boundary_deviation_mm": 0.5}])
+def test_acceptance_gates_cannot_be_weakened(changes):
+    with pytest.raises(ValueError, match="cannot be weakened"):
+        implicit_settings({**SMALL, **changes})
+    domain, density = composite_domain()
+    with pytest.raises(ValueError, match="cannot be weakened"):
+        build_implicit(domain, density, {**SMALL, **changes})
+
+def test_acceptance_gates_can_be_tightened():
+    config = implicit_settings({**SMALL, "surface_deviation_mm": 0.1, "segment_tolerance_mm": 0.005, "free_zone_minimum_samples": 5000, "free_zone_preserve_mm": 2.0, "free_zone_opening_cells": 1.0})
+    assert config["surface_deviation_mm"] == 0.1 and segments(1.4, config["segment_tolerance_mm"]) > segments(1.4, 0.01)
+
 def edge_free(points, low, high, h):
     near = (np.abs(points-low) <= h) | (np.abs(points-high) <= h)
     return near.sum(axis=1) == 1
@@ -266,7 +279,8 @@ def test_composite_build_has_exact_planes_bore_and_clearance():
         assert on_plane.any() and np.all(np.sign(mesh.face_normals[on_plane, 2]) == sign)
     bore = report["exact_booleans"]["cylinders"][0]
     wall = np.hypot(mesh.vertices[:, 0]-4, mesh.vertices[:, 1]-5) < 1.2
-    assert wall.any() and np.allclose(np.hypot(mesh.vertices[wall, 0]-4, mesh.vertices[wall, 1]-5), bore["circumscribed_radius_mm"], atol=1e-9)
+    assert wall.any() and np.allclose(np.hypot(mesh.vertices[wall, 0]-4, mesh.vertices[wall, 1]-5), bore["cut_radius_mm"], atol=1e-5) and bore["oversize_mm"] <= CONFIG["segment_tolerance_mm"]
+    assert report["exact_booleans"]["float32"]["passed"] and np.array_equal(mesh.vertices, mesh.vertices.astype(np.float32))
     above = (mesh.vertices[:, 0] > 11) & (mesh.vertices[:, 0] < 17)
     assert mesh.vertices[above, 2].max() <= 4.5
     assert set(report["timings_s"]) >= {"extraction", "remesh", "booleans", "final_checks"}
@@ -298,8 +312,8 @@ def test_bores_and_slots_are_dimensionally_exact(region):
     wall = radius < region["radius_mm"]+0.5
     assert wall.sum() == 2*row["segments"]
     assert np.all((radius[wall] >= region["radius_mm"]-1e-6) & (radius[wall] <= region["radius_mm"]+0.01+1e-6))
-    assert np.allclose(radius[wall], row["circumscribed_radius_mm"], atol=1e-9)
-    area = row["segments"]*row["circumscribed_radius_mm"]**2*np.sin(2*np.pi/row["segments"])/2
+    assert np.allclose(radius[wall], row["cut_radius_mm"], atol=1e-5) and row["cut_radius_mm"] > row["circumscribed_radius_mm"]
+    area = row["segments"]*row["cut_radius_mm"]**2*np.sin(2*np.pi/row["segments"])/2
     assert block.volume-final.volume == pytest.approx(area*length, rel=1e-6)
 
 def test_exported_ply_is_exact_and_stl_is_written(tmp_path):
@@ -389,6 +403,24 @@ def test_keepout_clearance_or_tangency_passes(region):
     row = acceptance(BLOCK, [region]).forbidden()["k"]
     assert row["passed"] and row["intersection_mm3"] <= SETTINGS["volume_tolerance_mm3"]
 
+def binary32_domain():
+    regions = [box("aio", "forbidden", [-16.15, -16.15, -1], [16.15, 16.15, 20]), box("pad", "preserve", [-26.3, -3.3, 0.5], [-18.3, 4.7, 10.5]), cylinder("bore", "forbidden", [-22.3, 0.7, 5.5], 1.4, 30.0, rasterize=False)]
+    domain = make_domain((40, 30, 16), regions, origin=(-35.0, -15.0, 0.0))
+    domain["manufacturing"] = TOPOLOGY_CONFIG["manufacturing"]
+    return domain
+
+def test_keepout_on_a_binary32_inexact_plane_is_checked_on_the_delivered_stl():
+    domain = binary32_domain()
+    row = MeshAcceptance(trimesh.creation.box(bounds=[[-30, -10, 0.5], [-16.15, 10, 10.5]]), domain, CONFIG, SETTINGS).forbidden()["aio"]
+    assert not row["passed"] and row["intersection_by_body_mm3"]["float64"] == 0 and row["intersection_by_body_mm3"]["stl"] > SETTINGS["volume_tolerance_mm3"]
+    final, report = exact_booleans(trimesh.creation.box(bounds=[[-30, -10, 0.5], [-10, 10, 10.5]]), domain, CONFIG)
+    assert report["passed"] and np.array_equal(final.vertices, final.vertices.astype(np.float32))
+    assert final.vertices[:, 0].max() == float(np.nextafter(np.float32(-16.15), np.float32(-np.inf)))
+    checker = MeshAcceptance(final, domain, CONFIG, SETTINGS)
+    forbidden, preserve = checker.forbidden(), checker.preserve()
+    assert all(row["passed"] and max(row["intersection_by_body_mm3"].values()) <= SETTINGS["volume_tolerance_mm3"] for row in forbidden.values())
+    assert preserve["pad"]["passed"] and max(preserve["pad"]["missing_by_body_mm3"].values()) <= SETTINGS["volume_tolerance_mm3"]
+
 def test_envelope_detects_material_outside():
     assert acceptance(BLOCK, []).envelope()["passed"]
     report = acceptance(trimesh.creation.box(bounds=[[1, 1, -0.1], [10, 10, 5]]), []).envelope()
@@ -424,9 +456,13 @@ def mounted():
     mesh, report, field = build_implicit(domain, density, SMALL)
     return domain, mesh, report, field
 
+def easy_reference(mesh, domain):
+    metrics = surface_metrics(mesh, domain)
+    return {key: 4*metrics[key]+0.1 for key in ("free_sharp_edge_length_per_area_per_mm", "free_axis_normal_area_fraction")}
+
 def test_connected_mounts_pass_every_acceptance_check(mounted):
     domain, mesh, report, field = mounted
-    result = validate_implicit(mesh, domain, field, report)
+    result = validate_implicit(mesh, domain, field, report, reference_metrics=easy_reference(mesh, domain))
     assert result["passed"] and not result["violations"] and set(result["checks"]) == set(VALIDATION_CHECKS)
     checks = result["checks"]
     assert all(checks["connectivity"]["witnesses"].values()) and checks["connectivity"]["mesh_body_count"] == 1
@@ -435,13 +471,29 @@ def test_connected_mounts_pass_every_acceptance_check(mounted):
     assert checks["deviation"]["free_zone"]["candidate_to_density"]["free_sample_count"] >= CONFIG["free_zone_minimum_samples"]
     assert checks["forbidden"]["bore"]["passed"] and checks["preserve"]["m1"]["missing_volume_mm3"] <= SETTINGS["volume_tolerance_mm3"]
     assert result["settings"]["maximum_wall_samples"] == CONFIG["maximum_wall_samples"]
+    assert checks["surface_maturity"]["passed"] and checks["gates"]["values"]["surface_deviation_mm"] == CONFIG["surface_deviation_mm"]
+    assert checks["envelope"]["outside_grid_box_by_body_mm3"]["stl"] <= SETTINGS["volume_tolerance_mm3"] and np.array_equal(mesh.vertices, mesh.vertices.astype(np.float32))
+
+def test_surface_maturity_fails_closed(mounted):
+    domain, mesh, report, field = mounted
+    checker = MeshAcceptance(mesh, domain, CONFIG, SETTINGS)
+    assert not checker.maturity(None)["passed"] and "No reference" in checker.maturity(None)["reason"]
+    metrics = checker.metrics
+    blocky = {key: metrics[key]*1.5 for key in ("free_sharp_edge_length_per_area_per_mm", "free_axis_normal_area_fraction")}
+    assert not checker.maturity(blocky)["passed"] and not checker.maturity({key: 0.0 for key in blocky})["passed"]
+    assert checker.maturity({key: 4*value+0.1 for key, value in blocky.items()})["passed"]
+
+def test_weakened_report_settings_fail_validation(mounted):
+    domain, mesh, report, field = mounted
+    result = validate_implicit(mesh, domain, field, {**report, "settings": {**report["settings"], "surface_deviation_mm": 25.0}}, reference_metrics=easy_reference(mesh, domain))
+    assert not result["passed"] and "gates" in result["violations"] and "cannot be weakened" in result["checks"]["gates"]["reason"]
 
 def test_unevaluable_checks_fail(mounted):
     domain, mesh, report, field = mounted
     result = validate_implicit(mesh, domain, None, report)
     assert not result["passed"] and {"features", "deviation"} <= set(result["violations"])
     assert result["checks"]["deviation"]["reason"].startswith("Not evaluable")
-    sparse = validate_implicit(mesh, domain, field, {**report, "settings": {**report["settings"], "free_zone_minimum_samples": 10**9}})
+    sparse = validate_implicit(mesh, domain, field, {**report, "settings": {**report["settings"], "free_zone_minimum_samples": 10**9}}, reference_metrics=easy_reference(mesh, domain))
     assert sparse["violations"] == ["deviation"] and "not evaluable" in sparse["checks"]["deviation"]["free_zone"]["reason"]
 
 def test_deviation_from_density_isosurface_is_detected(mounted):

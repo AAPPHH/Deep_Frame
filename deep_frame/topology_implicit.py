@@ -15,7 +15,7 @@ from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS, configure
 from deep_frame.topology_geometry import _primitive_wall_checks, _trapped_voids, region_bounds, region_contains
 from deep_frame.topology_pipeline import _file_digest
 from deep_frame.topology_surface import _domain_field, _mesh_summary, _one_mesh, _progress, _statistics, _upsample
-from deep_frame.topology_surface_validation import _self_intersection_screen, _settings as _validation_settings, _strict_selected_pair_certificates, _triangle_samples
+from deep_frame.topology_surface_validation import _self_intersection_screen, _settings as _validation_settings, _strict_selected_pair_certificates, _triangle_samples, surface_maturity, surface_metrics
 
 AXES = {"x": 0, "y": 1, "z": 2}
 SIX = generate_binary_structure(3, 1)
@@ -23,6 +23,8 @@ EXTENSIONS = ("none", "preserve", "preserve_forbidden")
 NONNEGATIVE = ("density_sigma_mm", "transition_radius_mm", "preserve_inflation_mm", "constraint_offset_mm", "opening_radius_mm", "ripple_sigma_mm")
 PROPAGATION_PASSES = 2
 COLUMN_JITTER = 1e-4*np.array([np.sqrt(2), np.sqrt(3)])
+GATE_MAXIMA = ("surface_deviation_mm", "relative_volume_change", "segment_tolerance_mm", "penetration_tolerance_mm", "penetration_sample_spacing_mm", "free_zone_preserve_mm", "free_zone_constraint_mm", "free_zone_modified_mm", "mesh_boundary_deviation_mm")
+GATE_MINIMA = ("free_zone_minimum_samples", "free_zone_opening_cells", "mesh_minimum_sicn")
 
 class ImplicitError(ValueError):
     def __init__(self, status, message, report, mesh=None):
@@ -37,7 +39,14 @@ def implicit_settings(settings):
             raise ValueError("Implicit setting must be finite and " + ("nonnegative: " if key in NONNEGATIVE else "positive: ") + key)
     if not 0 < config["threshold"] < 1:
         raise ValueError("Implicit density threshold must lie in (0,1)")
+    weakened = [key for key in GATE_MAXIMA if config[key] > IMPLICIT_CONFIG[key]]+[key for key in GATE_MINIMA if config[key] < IMPLICIT_CONFIG[key]]
+    if weakened:
+        raise ValueError("Frozen implicit acceptance gates cannot be weakened: " + ", ".join(weakened))
     return config
+
+def frozen_gates(settings):
+    config = implicit_settings(settings)
+    return config, {"passed": True, "values": {key: config[key] for key in GATE_MAXIMA+GATE_MINIMA}, "method": "Build settings re-validated against IMPLICIT_CONFIG; acceptance gates may only be tightened"}
 
 def _bounds(region):
     if region["kind"] == "sphere":
@@ -369,6 +378,8 @@ def surface_fidelity(reference, approximation):
             "relative_volume_change": float(approximation.volume/reference.volume-1), "runtime_s": perf_counter()-started}
 
 def segments(radius, tolerance):
+    if not tolerance > 0:
+        raise ValueError("Segment tolerance must exceed the float32 margins")
     count = max(8, int(np.ceil(np.pi/np.arccos(1/(1+tolerance/radius)))))
     while radius/np.cos(np.pi/count)-radius > tolerance:
         count += 1
@@ -378,17 +389,34 @@ def _envelope(domain):
     lower = np.asarray(domain["grid"]["origin_mm"], dtype=float)
     return {"name": "envelope", "role": "envelope", "kind": "box", "min_mm": lower, "max_mm": lower+np.asarray(domain["grid"]["spacing_mm"], dtype=float)*np.asarray(domain["grid"]["shape"])}
 
-def region_manifold(region, tolerance, inscribed=False):
-    from manifold3d import Manifold
+def float32_margin(domain):
+    envelope = _envelope(domain)
+    return 2*float(np.spacing(np.float32(np.abs(np.concatenate((envelope["min_mm"], envelope["max_mm"]))).max())))
+
+def _float32(value, direction):
+    rounded = np.float32(value)
+    if (float(rounded)-value)*direction < 0:
+        rounded = np.nextafter(rounded, np.float32(direction*np.inf))
+    return float(rounded)
+
+def realised_bounds(region, side=0):
     low, high = region_bounds(region)
+    if side:
+        low, high = np.array([_float32(value, -side) for value in low]), np.array([_float32(value, side) for value in high])
+    return low, high
+
+def region_manifold(region, tolerance, margin=0.0, grow=0, side=0, inscribed=False):
+    from manifold3d import Manifold
+    low, high = realised_bounds(region, side)
     if region["kind"] == "box":
         return Manifold.hull_points(np.array(list(product(*zip(low, high))), dtype=float)), None
     if region["kind"] != "cylinder":
         raise ValueError("Exact Booleans support box and cylinder regions only")
     axis = AXES[region.get("axis", "z")]
     radial = [i for i in range(3) if i != axis]
-    count = segments(region["radius_mm"], tolerance)
-    outer = region["radius_mm"] if inscribed else region["radius_mm"]/np.cos(np.pi/count)
+    count = segments(region["radius_mm"], tolerance-2*margin)
+    circumscribed = region["radius_mm"]/np.cos(np.pi/count)
+    outer = region["radius_mm"] if inscribed else circumscribed+grow*margin
     angles = 2*np.pi*np.arange(count)/count
     points = np.empty((2*count, 3))
     for index, level in enumerate((low[axis], high[axis])):
@@ -396,7 +424,8 @@ def region_manifold(region, tolerance, inscribed=False):
         points[rows, axis] = level
         points[rows, radial[0]] = region["center_mm"][radial[0]]+outer*np.cos(angles)
         points[rows, radial[1]] = region["center_mm"][radial[1]]+outer*np.sin(angles)
-    return Manifold.hull_points(points), {"name": region["name"], "role": region["role"], "radius_mm": region["radius_mm"], "segments": count, "circumscribed_radius_mm": outer, "oversize_mm": outer-region["radius_mm"]}
+    return Manifold.hull_points(points), {"name": region["name"], "role": region["role"], "radius_mm": region["radius_mm"], "segments": count, "circumscribed_radius_mm": circumscribed, "cut_radius_mm": circumscribed+margin,
+                                          "reference_radius_mm": circumscribed+2*margin, "float32_margin_mm": margin, "oversize_mm": circumscribed+2*margin-region["radius_mm"]}
 
 def _manifold(mesh):
     from manifold3d import Manifold, Mesh64
@@ -404,8 +433,8 @@ def _manifold(mesh):
 
 def _snap_planes(mesh, regions, tolerance=1e-9):
     planes = [set() for _ in range(3)]
-    for region in regions:
-        low, high = region_bounds(region)
+    for region, side in regions:
+        low, high = realised_bounds(region, side)
         for axis in range(3):
             if region["kind"] == "box" or axis == AXES[region.get("axis", "z")]:
                 planes[axis] |= {float(low[axis]), float(high[axis])}
@@ -421,6 +450,14 @@ def _snap_planes(mesh, regions, tolerance=1e-9):
     mesh.vertices = vertices
     return {"method": "vertex coordinates within the tolerance of an exact axis-aligned constraint plane are set onto it; Boolean round-off only", "tolerance_mm": tolerance, "moved_coordinates": moved, "maximum_displacement_mm": largest}
 
+def _round_float32(mesh, margin):
+    rounded = np.asarray(mesh.vertices, dtype=np.float32).astype(float)
+    shift = float(np.abs(rounded-mesh.vertices).max(initial=0))
+    merged = len(rounded)-len(np.unique(rounded, axis=0))
+    mesh.vertices = rounded
+    return {"method": "all vertices rounded to binary32 so the validated mesh equals the delivered STL; constraint planes are binary32 values rounded to the safe side and cut cylinders lie one margin outside the checked polygon, so rounding cannot enter a keep-out",
+            "margin_mm": margin, "maximum_rounding_mm": shift, "merged_vertices": merged, "passed": merged == 0 and shift*np.sqrt(3) < margin}
+
 def _trimesh(body):
     mesh = body.to_mesh64()
     return trimesh.Trimesh(np.asarray(mesh.vert_properties)[:, :3], np.asarray(mesh.tri_verts, dtype=np.int64), process=False)
@@ -429,18 +466,19 @@ def exact_booleans(mesh, domain, config):
     from manifold3d import Error, Manifold, OpType
     started = perf_counter()
     body = _manifold(mesh)
-    report = {"method": "manifold3d float64: (field mesh + union(preserves) - union(forbidden)) ^ envelope; boxes exact, cylinders circumscribed polygons",
+    margin = float32_margin(domain)
+    report = {"method": "manifold3d float64: (field mesh + union(preserves) - union(forbidden)) ^ envelope; box planes rounded to binary32 outward (preserve, forbidden) or inward (envelope), cylinders circumscribed polygons grown by the binary32 margin",
               "input_status": str(body.status()), "input_volume_mm3": body.volume(), "cylinders": []}
     operands = {}
     for role in ("preserve", "forbidden"):
         operands[role] = []
         for region in domain["regions"]:
             if region["role"] == role:
-                solid, row = region_manifold(region, config["segment_tolerance_mm"])
+                solid, row = region_manifold(region, config["segment_tolerance_mm"], margin, 1, 1)
                 operands[role].append(solid)
                 if row is not None:
                     report["cylinders"].append(row)
-    operands["envelope"] = [region_manifold(_envelope(domain), config["segment_tolerance_mm"])[0]]
+    operands["envelope"] = [region_manifold(_envelope(domain), config["segment_tolerance_mm"], side=-1)[0]]
     for name, role, operation in (("preserve_added_mm3", "preserve", OpType.Add), ("forbidden_removed_mm3", "forbidden", OpType.Subtract), ("envelope_removed_mm3", "envelope", OpType.Intersect)):
         before = body.volume()
         if operands[role]:
@@ -451,8 +489,9 @@ def exact_booleans(mesh, domain, config):
     report.update(status=str(body.status()), components=len(body.decompose()), genus=int(body.genus()), volume_mm3=body.volume(),
                   maximum_cylinder_oversize_mm=max((row["oversize_mm"] for row in report["cylinders"]), default=0.0), runtime_s=perf_counter()-started)
     mesh = _trimesh(body)
-    report["plane_snap"] = _snap_planes(mesh, [region for region in domain["regions"] if region["role"] in ("preserve", "forbidden")]+[_envelope(domain)])
-    report["passed"] = body.status() == Error.NoError and report["components"] == 1
+    report["plane_snap"] = _snap_planes(mesh, [(region, 1) for region in domain["regions"] if region["role"] in ("preserve", "forbidden")]+[(_envelope(domain), -1)])
+    report["float32"] = _round_float32(mesh, margin)
+    report["passed"] = body.status() == Error.NoError and report["components"] == 1 and report["maximum_cylinder_oversize_mm"] <= config["segment_tolerance_mm"] and report["float32"]["passed"]
     return mesh, report
 
 def _vector(first, second):
@@ -742,9 +781,14 @@ class MeshAcceptance:
         manufacturing = domain["manufacturing"]
         self.minimum = max(manufacturing["nozzle_width_mm"]*manufacturing["minimum_wall_nozzles"], manufacturing["minimum_feature_mm"])
         self.regions = {role: [region for region in domain["regions"] if region["role"] == role] for role in ("allowed", "preserve", "forbidden")}
-        self.body = _manifold(mesh)
+        self.margin = float32_margin(domain)
         self.stl, self.stl_report = stl_roundtrip(mesh)
-        self.cavities = None
+        self.bodies = {"float64": _manifold(mesh), "stl": _manifold(self.stl)}
+        self.body, self.cavities, self.metrics = self.bodies["float64"], None, None
+
+    def volumes(self, operation):
+        values = {name: operation(body).volume() for name, body in self.bodies.items()}
+        return max(values.values()), values
 
     def topology(self):
         checks = mesh_checks(self.mesh)
@@ -758,22 +802,23 @@ class MeshAcceptance:
     def envelope(self):
         tolerance = self.config["segment_tolerance_mm"]
         envelope = _envelope(self.domain)
-        outside = (self.body-region_manifold(envelope, tolerance)[0]).volume()
-        allowed = _union([region_manifold(region, tolerance, inscribed=True)[0] for region in self.regions["allowed"]])
-        outside_allowed = (self.body-allowed).volume() if allowed is not None else outside
+        box = region_manifold(envelope, tolerance)[0]
+        outside, by_body = self.volumes(lambda body: body-box)
+        allowed = _union([region_manifold(region, tolerance, self.margin, inscribed=True)[0] for region in self.regions["allowed"]])
+        outside_allowed, allowed_by_body = self.volumes(lambda body: body-allowed) if allowed is not None else (outside, by_body)
         stl_outside = max(float(-primitive_distance(self.stl.vertices.T, envelope).min()), 0.0)
-        return {"outside_grid_box_mm3": outside, "outside_allowed_regions_mm3": outside_allowed, "stl_maximum_vertex_outside_mm": stl_outside,
+        return {"outside_grid_box_mm3": outside, "outside_allowed_regions_mm3": outside_allowed, "outside_grid_box_by_body_mm3": by_body, "outside_allowed_regions_by_body_mm3": allowed_by_body, "stl_maximum_vertex_outside_mm": stl_outside,
                 "passed": max(outside, outside_allowed) <= self.tolerance and stl_outside <= self.config["penetration_tolerance_mm"],
-                "method": "manifold3d float64 differences against the exact envelope box and the inscribed allowed polyhedra; binary STL vertices against the exact box"}
+                "method": "manifold3d differences of the float64 mesh and of the reloaded binary STL against the exact envelope box and the inscribed allowed polyhedra, the larger gated; binary STL vertices against the exact box"}
 
     def forbidden(self):
         rows, spacing = {}, self.config["penetration_sample_spacing_mm"]
         bounds = [(item, (item.triangles.min(axis=1), item.triangles.max(axis=1))) for item in (self.mesh, self.stl)]
         for region in self.regions["forbidden"]:
-            solid, polygon = region_manifold(region, self.config["segment_tolerance_mm"])
-            volume = (self.body ^ solid).volume()
+            solid, polygon = region_manifold(region, self.config["segment_tolerance_mm"], self.margin)
+            volume, by_body = self.volumes(lambda body: body ^ solid)
             penetration, stl_penetration = (_penetration(item, box, region, spacing) for item, box in bounds)
-            rows[region["name"]] = {"intersection_mm3": volume, "circumscribed": polygon, "maximum_penetration_mm": penetration, "stl_maximum_penetration_mm": stl_penetration,
+            rows[region["name"]] = {"intersection_mm3": volume, "intersection_by_body_mm3": by_body, "circumscribed": polygon, "maximum_penetration_mm": penetration, "stl_maximum_penetration_mm": stl_penetration,
                                     "passed": volume <= self.tolerance and all(value is None or value <= self.config["penetration_tolerance_mm"] for value in (penetration, stl_penetration))}
         return rows
 
@@ -781,13 +826,14 @@ class MeshAcceptance:
         rows = {}
         settings, tolerance = self.settings, self.config["segment_tolerance_mm"]
         depth, offsets = settings["attachment_probe_depth_mm"], settings["attachment_offsets_mm"]
-        forbidden = _union([region_manifold(region, tolerance)[0] for region in self.regions["forbidden"]])
+        forbidden = _union([region_manifold(region, tolerance, self.margin, 2, 1)[0] for region in self.regions["forbidden"]])
         for region in self.regions["preserve"]:
-            solid = region_manifold(region, tolerance)[0]
+            solid = region_manifold(region, tolerance, self.margin)[0]
             required = solid-forbidden if forbidden is not None else solid
             low, high = region_bounds(region)
             pad = max(offsets)+depth+tolerance+1e-6
-            local = self.body ^ _cube(low-pad, high+pad)
+            window = _cube(low-pad, high+pad)
+            local = self.bodies["stl"] ^ window
             levels = []
             for offset in offsets:
                 sections = {}
@@ -800,9 +846,11 @@ class MeshAcceptance:
             area = region.get("attachment_area_min_mm2", self.domain["manufacturing"]["minimum_attachment_area_mm2"])
             attachment = {"passed": all(level["summed_area_mm2"]+1e-6 >= area for level in levels), "minimum_required_area_mm2": area, "levels": levels,
                           "binding_offset_mm": min(levels, key=lambda level: level["summed_area_mm2"])["offset_mm"],
-                          "method": "Summed mean areas of manifold3d intersections with six slabs outside the exact preserve AABB at all prescribed offsets"}
+                          "method": "Summed mean areas of manifold3d intersections of the reloaded binary STL with six slabs outside the exact preserve AABB at all prescribed offsets"}
             walls = _primitive_wall_checks(region, self.regions["forbidden"], max(self.minimum, region.get("minimum_wall_mm", self.minimum)))
-            rows[region["name"]] = {"required_volume_mm3": required.volume(), "missing_volume_mm3": (required-local).volume(), "walls": walls, "attachment": attachment}
+            missing, by_body = self.volumes(lambda body: required-(body ^ window))
+            rows[region["name"]] = {"required_volume_mm3": required.volume(), "missing_volume_mm3": missing, "missing_by_body_mm3": by_body, "walls": walls, "attachment": attachment,
+                                    "required": "circumscribed preserve minus the forbidden polygons grown by two binary32 margins (the cut holes plus rounding); missing volume gated on the float64 mesh and the reloaded binary STL"}
             rows[region["name"]]["passed"] = rows[region["name"]]["required_volume_mm3"] > self.tolerance and rows[region["name"]]["missing_volume_mm3"] <= self.tolerance and walls["passed"] and attachment["passed"]
         return rows
 
@@ -884,15 +932,21 @@ class MeshAcceptance:
         result["passed"] = all(witnesses.values()) and result["final_field_single_component"] and result["mesh_body_count"] == 1 and present
         return result
 
+    def maturity(self, reference):
+        self.metrics = surface_metrics(self.mesh, self.domain, self.settings)
+        if reference is None:
+            return {"passed": False, "reason": "No reference geometry supplied; geometry screen alone cannot establish maturity"}
+        return surface_maturity(self.metrics, reference, self.settings)
+
     def material_change(self, reference):
         other = _manifold(reference)
         added, removed = (self.body-other).volume(), (other-self.body).volume()
         return {"added_volume_mm3": added, "removed_volume_mm3": removed, "symmetric_difference_volume_mm3": added+removed, "net_volume_change_mm3": self.body.volume()-other.volume(),
                 "method": "manifold3d float64 differences in both directions; diagnostic only"}
 
-VALIDATION_CHECKS = ("topology", "self_intersections", "envelope", "forbidden", "preserve", "features", "supports", "deviation", "connectivity")
+VALIDATION_CHECKS = ("gates", "topology", "self_intersections", "envelope", "forbidden", "preserve", "features", "supports", "deviation", "connectivity", "surface_maturity")
 
-def validate_implicit(mesh, domain, field, report, settings=None, reference_mesh=None, progress=None):
+def validate_implicit(mesh, domain, field, report, settings=None, reference_metrics=None, reference_mesh=None, progress=None):
     started = perf_counter()
     settings = _validation_settings({"maximum_wall_samples": report["settings"]["maximum_wall_samples"], **(settings or {})})
     checks, timings, material = {}, {}, None
@@ -904,10 +958,12 @@ def validate_implicit(mesh, domain, field, report, settings=None, reference_mesh
             checks[name] = {"passed": False, "complete": False, "reason": "Not evaluable: "+type(error).__name__+": "+str(error)}
         timings[name] = perf_counter()-clock
         _progress(progress, "validation_"+name, checks[name])
+    acceptance = None
     try:
-        acceptance = MeshAcceptance(mesh, domain, report["settings"], settings)
+        config, checks["gates"] = frozen_gates(report["settings"])
+        acceptance = MeshAcceptance(mesh, domain, config, settings)
     except Exception as error:
-        acceptance, checks["topology"] = None, {"passed": False, "reason": "Not evaluable: "+type(error).__name__+": "+str(error)}
+        checks["topology" if "gates" in checks else "gates"] = {"passed": False, "reason": "Not evaluable: "+type(error).__name__+": "+str(error)}
     if acceptance is not None:
         run("topology", acceptance.topology)
         checks["self_intersections"] = getattr(acceptance, "intersections", {"passed": False, "reason": "Not evaluable without the topology check"})
@@ -918,6 +974,7 @@ def validate_implicit(mesh, domain, field, report, settings=None, reference_mesh
             run("features", acceptance.features, field, report)
             run("supports", acceptance.supports)
             run("deviation", acceptance.deviation, field, report)
+            run("surface_maturity", acceptance.maturity, reference_metrics)
             if reference_mesh is not None:
                 try:
                     material = acceptance.material_change(reference_mesh)
@@ -933,5 +990,5 @@ def validate_implicit(mesh, domain, field, report, settings=None, reference_mesh
             violations.extend(key+":"+name for name, item in value.items() if not item["passed"])
         elif not value["passed"]:
             violations.append(key)
-    return {"passed": not violations, "violations": violations, "checks": checks, "material_change": material, "settings": settings, "timings_s": timings, "runtime_s": perf_counter()-started,
-            "acceptance_scope": "Geometry screens on the exact float64 final mesh and its binary STL; surface maturity, mechanical verification and render review remain mandatory"}
+    return {"passed": not violations, "violations": violations, "checks": checks, "surface_metrics": getattr(acceptance, "metrics", None), "material_change": material, "settings": settings, "timings_s": timings, "runtime_s": perf_counter()-started,
+            "acceptance_scope": "Geometry screens and surface maturity on the final mesh and its reloaded binary STL; mechanical verification and render review remain mandatory"}

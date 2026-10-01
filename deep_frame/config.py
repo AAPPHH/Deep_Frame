@@ -715,6 +715,8 @@ TOPOLOGY_CONFIG = {
     "additional_regions": [],
 }
 
+SURFACE_FIDELITY = {"maximum_surface_deviation_mm": 0.20, "maximum_relative_volume_change": 0.01}
+
 IMPLICIT_CONFIG = {
     "subdivisions": 10,
     "interpolation_method": "pchip",
@@ -732,8 +734,8 @@ IMPLICIT_CONFIG = {
     "remesh_feature_deg": 60.0,
     "remesh_max_surface_distance_mm": 0.05,
     "segment_tolerance_mm": 0.01,
-    "surface_deviation_mm": 0.20,
-    "relative_volume_change": 0.01,
+    "surface_deviation_mm": SURFACE_FIDELITY["maximum_surface_deviation_mm"],
+    "relative_volume_change": SURFACE_FIDELITY["maximum_relative_volume_change"],
     "free_zone_preserve_mm": 3.0,
     "free_zone_constraint_mm": 2.0,
     "free_zone_minimum_samples": 1000,
