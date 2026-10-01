@@ -1,14 +1,20 @@
+from fractions import Fraction
 from functools import reduce
-from itertools import product
+from itertools import combinations, product
 from time import perf_counter
 
 import numpy as np
+import trimesh
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
 from scipy.ndimage import binary_dilation, distance_transform_edt, gaussian_filter, generate_binary_structure, label
-from skimage.measure import euler_number
+from skimage.measure import euler_number, marching_cubes
 
 from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS, configure
 from deep_frame.topology_geometry import region_bounds, region_contains
-from deep_frame.topology_surface import _domain_field, _progress, _upsample
+from deep_frame.topology_pipeline import _file_digest
+from deep_frame.topology_surface import _domain_field, _mesh_summary, _one_mesh, _progress, _statistics, _upsample
+from deep_frame.topology_surface_validation import _self_intersection_screen, _strict_selected_pair_certificates
 
 AXES = {"x": 0, "y": 1, "z": 2}
 SIX = generate_binary_structure(3, 1)
@@ -175,6 +181,31 @@ class ImplicitField:
         report.update(after_volume_mm3=self.volume(after), removed_volume_mm3=self.volume(before & ~after), added_volume_mm3=self.volume(after & ~before), components_after=int(label(after, SIX)[1]))
         return report
 
+    def extract(self):
+        started = perf_counter()
+        padded = np.pad(self.values, 1, constant_values=-np.float32(self.spacing.max()))
+        vertices, faces, _, _ = marching_cubes(padded, 0.0, method="lewiner", allow_degenerate=False, gradient_direction="ascent")
+        exact, shift = _edge_vertices(padded, vertices)
+        mesh = trimesh.Trimesh(self.origin-self.spacing+exact*self.spacing, faces, process=False)
+        return mesh, {"method": "Lewiner marching cubes on the field padded by one negative sample; vertices recomputed in float64 on their grid edges",
+                      "float32_vertex_shift_samples": shift, "mesh": _mesh_summary(mesh), "runtime_s": perf_counter()-started}
+
+def _edge_vertices(values, vertices):
+    vertices = vertices.astype(float)
+    rows = np.arange(len(vertices))
+    axis = np.argmax(np.abs(vertices-np.rint(vertices)), axis=1)
+    low = np.rint(vertices).astype(np.int64)
+    low[rows, axis] = np.floor(vertices[rows, axis])
+    high = low.copy()
+    high[rows, axis] = np.minimum(high[rows, axis]+1, np.asarray(values.shape)[axis]-1)
+    first, second = values[tuple(low.T)].astype(float), values[tuple(high.T)].astype(float)
+    exact = low.astype(float)
+    exact[rows, axis] += np.divide(first, first-second, out=vertices[rows, axis]-low[rows, axis], where=first != second)
+    shift = float(np.abs(exact-vertices).max(initial=0))
+    if shift > 1e-3:
+        raise RuntimeError("Marching cubes vertex is not on its grid edge")
+    return exact, shift
+
 def extend_density(domain, density, extension):
     masks = {name: np.asarray(domain[name], dtype=bool) for name in ("allowed", "preserve", "forbidden")}
     free = masks["allowed"] & ~masks["preserve"]
@@ -241,16 +272,16 @@ def build_field(domain, density, settings, progress=None):
     occupied = _composition(reference.values, preserve, forbidden, envelope)
     report["volumes_mm3"]["density_composition"] = field.volume(occupied)
     report["witness"] = mount_witness(field, occupied, preserves, forbidden)
-    if not report["witness"]["passed"]:
-        raise ImplicitError("mount_disconnected", "Required mounts are not connected by the density; they are rejected, never bridged", report)
-    if config["extension"] != "none":
+    if report["witness"]["passed"] and config["extension"] != "none":
         guard = {"original": _topology(occupied), "extended": _topology(_composition(field.values, preserve, forbidden, envelope))}
         guard["passed"] = guard["original"] == guard["extended"]
         report["extension_guard"] = guard
-        if not guard["passed"]:
-            raise ImplicitError("extension_changed_topology", "Density extension changed components or Euler number of the hard composition", report)
     del occupied
     lap("witness")
+    if not report["witness"]["passed"]:
+        raise ImplicitError("mount_disconnected", "Required mounts are not connected by the density; they are rejected, never bridged", report)
+    if not report.get("extension_guard", {"passed": True})["passed"]:
+        raise ImplicitError("extension_changed_topology", "Density extension changed components or Euler number of the hard composition", report)
     _progress(progress, "field_witness", report)
     field.reinitialize(config["reinit_band_cells"])
     lap("reinit")
@@ -283,3 +314,264 @@ def build_field(domain, density, settings, progress=None):
     report["status"] = "field_built"
     _progress(progress, "field_built", report)
     return field, report
+
+def remesh(mesh, config):
+    import pymeshlab
+    meshes = pymeshlab.MeshSet()
+    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
+    meshes.meshing_isotropic_explicit_remeshing(iterations=config["remesh_iterations"], targetlen=pymeshlab.PureValue(config["remesh_target_mm"]), featuredeg=config["remesh_feature_deg"],
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(config["remesh_max_surface_distance_mm"]))
+    meshes.meshing_remove_unreferenced_vertices()
+    result = meshes.current_mesh()
+    return trimesh.Trimesh(result.vertex_matrix(), result.face_matrix(), process=False)
+
+def _surface_distances(source, target):
+    import pymeshlab
+    triangles = source.triangles
+    meshes = pymeshlab.MeshSet()
+    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.concatenate((triangles.mean(axis=1), (triangles[:, 0]+triangles[:, 1])/2, (triangles[:, 1]+triangles[:, 2])/2, (triangles[:, 0]+triangles[:, 2])/2, source.vertices))))
+    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(target.vertices, dtype=np.float64), face_matrix=np.asarray(target.faces, dtype=np.int32)))
+    meshes.compute_scalar_by_distance_from_another_mesh_per_vertex(measuremesh=0, refmesh=1, signeddist=False, maxdist=pymeshlab.PureValue(float(np.linalg.norm(np.ptp(np.vstack((source.bounds, target.bounds)), axis=0)))))
+    distances = meshes.mesh(0).vertex_scalar_array()
+    return {"sample_count": len(distances), "surface_distance_mm": _statistics(distances)}
+
+def surface_fidelity(reference, approximation):
+    started = perf_counter()
+    forward, reverse = _surface_distances(reference, approximation), _surface_distances(approximation, reference)
+    return {"method": "bidirectional vertices, centroids and all edge midpoints; exact nearest-surface distance by MeshLab per-vertex distance", "reference_to_approximation": forward, "approximation_to_reference": reverse,
+            "maximum_sampled_deviation_mm": max(forward["surface_distance_mm"]["max"], reverse["surface_distance_mm"]["max"]),
+            "relative_volume_change": float(approximation.volume/reference.volume-1), "runtime_s": perf_counter()-started}
+
+def segments(radius, tolerance):
+    count = max(8, int(np.ceil(np.pi/np.arccos(1/(1+tolerance/radius)))))
+    while radius/np.cos(np.pi/count)-radius > tolerance:
+        count += 1
+    return count
+
+def region_manifold(region, tolerance):
+    from manifold3d import Manifold
+    low, high = region_bounds(region)
+    if region["kind"] == "box":
+        return Manifold.hull_points(np.array(list(product(*zip(low, high))), dtype=float)), None
+    if region["kind"] != "cylinder":
+        raise ValueError("Exact Booleans support box and cylinder regions only")
+    axis = AXES[region.get("axis", "z")]
+    radial = [i for i in range(3) if i != axis]
+    count = segments(region["radius_mm"], tolerance)
+    outer = region["radius_mm"]/np.cos(np.pi/count)
+    angles = 2*np.pi*np.arange(count)/count
+    points = np.empty((2*count, 3))
+    for index, level in enumerate((low[axis], high[axis])):
+        rows = slice(index*count, (index+1)*count)
+        points[rows, axis] = level
+        points[rows, radial[0]] = region["center_mm"][radial[0]]+outer*np.cos(angles)
+        points[rows, radial[1]] = region["center_mm"][radial[1]]+outer*np.sin(angles)
+    return Manifold.hull_points(points), {"name": region["name"], "role": region["role"], "radius_mm": region["radius_mm"], "segments": count, "circumscribed_radius_mm": outer, "oversize_mm": outer-region["radius_mm"]}
+
+def _manifold(mesh):
+    from manifold3d import Manifold, Mesh64
+    return Manifold(Mesh64(vert_properties=np.array(mesh.vertices, dtype=np.float64, order="C"), tri_verts=np.array(mesh.faces, dtype=np.uint64, order="C")))
+
+def _snap_planes(mesh, regions, tolerance=1e-9):
+    planes = [set() for _ in range(3)]
+    for region in regions:
+        low, high = region_bounds(region)
+        for axis in range(3):
+            if region["kind"] == "box" or axis == AXES[region.get("axis", "z")]:
+                planes[axis] |= {float(low[axis]), float(high[axis])}
+    vertices = np.array(mesh.vertices)
+    moved, largest = 0, 0.0
+    for axis, values in enumerate(planes):
+        values = np.array(sorted(values))
+        index = np.clip(np.searchsorted(values, vertices[:, axis]), 1, len(values)-1)
+        nearest = np.where(np.abs(vertices[:, axis]-values[index-1]) < np.abs(vertices[:, axis]-values[index]), values[index-1], values[index])
+        snap = (np.abs(vertices[:, axis]-nearest) <= tolerance) & (vertices[:, axis] != nearest)
+        moved, largest = moved+int(snap.sum()), max(largest, float(np.abs(vertices[snap, axis]-nearest[snap]).max(initial=0)))
+        vertices[snap, axis] = nearest[snap]
+    mesh.vertices = vertices
+    return {"method": "vertex coordinates within the tolerance of an exact axis-aligned constraint plane are set onto it; Boolean round-off only", "tolerance_mm": tolerance, "moved_coordinates": moved, "maximum_displacement_mm": largest}
+
+def _trimesh(body):
+    mesh = body.to_mesh64()
+    return trimesh.Trimesh(np.asarray(mesh.vert_properties)[:, :3], np.asarray(mesh.tri_verts, dtype=np.int64), process=False)
+
+def exact_booleans(mesh, domain, config):
+    from manifold3d import Error, Manifold, OpType
+    started = perf_counter()
+    body = _manifold(mesh)
+    report = {"method": "manifold3d float64: (field mesh + union(preserves) - union(forbidden)) ^ envelope; boxes exact, cylinders circumscribed polygons",
+              "input_status": str(body.status()), "input_volume_mm3": body.volume(), "cylinders": []}
+    operands = {}
+    for role in ("preserve", "forbidden"):
+        operands[role] = []
+        for region in domain["regions"]:
+            if region["role"] == role:
+                solid, row = region_manifold(region, config["segment_tolerance_mm"])
+                operands[role].append(solid)
+                if row is not None:
+                    report["cylinders"].append(row)
+    lower = np.asarray(domain["grid"]["origin_mm"], dtype=float)
+    upper = lower+np.asarray(domain["grid"]["spacing_mm"], dtype=float)*np.asarray(domain["grid"]["shape"])
+    operands["envelope"] = [region_manifold({"kind": "box", "min_mm": lower, "max_mm": upper}, config["segment_tolerance_mm"])[0]]
+    for name, role, operation in (("preserve_added_mm3", "preserve", OpType.Add), ("forbidden_removed_mm3", "forbidden", OpType.Subtract), ("envelope_removed_mm3", "envelope", OpType.Intersect)):
+        before = body.volume()
+        if operands[role]:
+            body = Manifold.batch_boolean([body, Manifold.batch_boolean(operands[role], OpType.Add)], operation)
+        report[name] = abs(body.volume()-before)
+        if body.status() != Error.NoError:
+            break
+    report.update(status=str(body.status()), components=len(body.decompose()), genus=int(body.genus()), volume_mm3=body.volume(),
+                  maximum_cylinder_oversize_mm=max((row["oversize_mm"] for row in report["cylinders"]), default=0.0), runtime_s=perf_counter()-started)
+    mesh = _trimesh(body)
+    report["plane_snap"] = _snap_planes(mesh, [region for region in domain["regions"] if region["role"] in ("preserve", "forbidden")]+[{"kind": "box", "min_mm": lower, "max_mm": upper}])
+    report["passed"] = body.status() == Error.NoError and report["components"] == 1
+    return mesh, report
+
+def _vector(first, second):
+    return [a-b for a, b in zip(first, second)]
+
+def _cross(first, second):
+    return [first[1]*second[2]-first[2]*second[1], first[2]*second[0]-first[0]*second[2], first[0]*second[1]-first[1]*second[0]]
+
+def _dot(first, second):
+    return sum(a*b for a, b in zip(first, second))
+
+def _origin_in_hull(points):
+    edges = [_vector(point, points[0]) for point in points[1:]]
+    volume = _dot(_cross(edges[0], edges[1]), edges[2])
+    if volume:
+        signs = []
+        for index in range(4):
+            replaced = [[0, 0, 0] if i == index else point for i, point in enumerate(points)]
+            edges = [_vector(point, replaced[0]) for point in replaced[1:]]
+            signs.append(_dot(_cross(edges[0], edges[1]), edges[2])*volume)
+        return all(sign >= 0 for sign in signs)
+    normal = next((normal for normal in (_cross(edges[i], edges[j]) for i, j in combinations(range(3), 2)) if any(normal)), None)
+    if normal is None:
+        direction = next((edge for edge in edges if any(edge)), None)
+        if direction is not None and any(_cross(points[0], direction)):
+            return False
+        raise ValueError("Degenerate adjacent triangle cones")
+    if _dot(normal, points[0]):
+        return False
+    keep = [axis for axis in range(3) if axis != max(range(3), key=lambda axis: abs(normal[axis]))]
+    planar = [[point[axis] for axis in keep] for point in points]
+    def orient(a, b, c):
+        return (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
+    for triple in combinations(planar, 3):
+        area = orient(*triple)
+        if area and all(orient(triple[i], triple[(i+1) % 3], [0, 0])*area >= 0 for i in range(3)):
+            return True
+    return False
+
+def _adjacent_pair(first, second, shared):
+    if len(shared) == 1:
+        apex = first[shared[0][0]]
+        cones = [_vector(point, apex) for i, point in enumerate(first) if i != shared[0][0]]+[_vector(apex, point) for i, point in enumerate(second) if i != shared[0][1]]
+        return not _origin_in_hull(cones)
+    if len(shared) == 2:
+        start, end = first[shared[0][0]], first[shared[1][0]]
+        other = [first[next(i for i in range(3) if i not in (shared[0][0], shared[1][0]))], second[next(i for i in range(3) if i not in (shared[0][1], shared[1][1]))]]
+        axis = _vector(end, start)
+        normal = _cross(axis, _vector(other[0], start))
+        if _dot(normal, _vector(other[1], start)):
+            return True
+        return _dot(normal, _cross(axis, _vector(other[1], start))) < 0
+    return False
+
+def adjacent_refinement(mesh, intersections):
+    report = {"method": "MeshLab-selected face pairs: index-sharing pairs need exact proof that they meet only in the shared vertex or edge (tangent-cone hull and coplanar fold predicates in binary64 rationals); other pairs need the existing strict exact separation certificate",
+              "passed": False, "complete": False, "pairs": 0, "adjacent_certified": 0, "separated_certified": 0, "unresolved_pairs": []}
+    if not intersections.get("complete") or not intersections.get("exact_refinement_selection_coverage") or intersections["self_intersecting_face_count"] > 100 or not (intersections["native_mesh_unchanged"] and intersections["input_mesh_unchanged"]):
+        report["reason"] = "MeshLab selection is incomplete, unpinned or larger than the recorded face list"
+        return report
+    selected = intersections["self_intersecting_faces_first_100"]
+    try:
+        exact = {face: [[Fraction.from_float(float(value)) for value in point] for point in mesh.triangles[face]] for face in selected}
+        for first, second in combinations(selected, 2):
+            report["pairs"] += 1
+            shared = [(i, j) for i, a in enumerate(mesh.faces[first]) for j, b in enumerate(mesh.faces[second]) if a == b]
+            if shared:
+                certified = _adjacent_pair(exact[first], exact[second], shared)
+                report["adjacent_certified"] += certified
+            else:
+                certified = _strict_selected_pair_certificates(mesh.triangles[[first, second]], [0, 1])["passed"]
+                report["separated_certified"] += certified
+            if not certified:
+                report["unresolved_pairs"].append([int(first), int(second)])
+        report["complete"] = True
+        report["passed"] = not report["unresolved_pairs"]
+    except Exception as error:
+        report["reason"] = type(error).__name__+": "+str(error)
+    return report
+
+def vertex_manifold(mesh):
+    faces = np.asarray(mesh.faces)
+    links = np.concatenate([faces[:, [i, (i+1) % 3, (i+2) % 3]] for i in range(3)])
+    nodes, inverse = np.unique(np.concatenate((links[:, [0, 1]], links[:, [0, 2]])), axis=0, return_inverse=True)
+    inverse = inverse.ravel()
+    graph = coo_matrix((np.ones(len(links)), (inverse[:len(links)], inverse[len(links):])), shape=(len(nodes), len(nodes)))
+    count, labels = connected_components(graph, directed=False)
+    fans = np.bincount(nodes[np.unique(labels, return_index=True)[1], 0], minlength=len(mesh.vertices))
+    referenced = np.zeros(len(mesh.vertices), dtype=bool)
+    referenced[faces.ravel()] = True
+    return {"pinched_vertices": int(np.count_nonzero(fans[referenced] != 1)), "unreferenced_vertices": int(np.count_nonzero(~referenced)), "passed": bool(np.all(fans[referenced] == 1) and referenced.all())}
+
+def mesh_checks(mesh):
+    from manifold3d import Error
+    started = perf_counter()
+    topology = {**_mesh_summary(mesh), "single_closed_oriented_body": _one_mesh(mesh), "manifold3d_status": str(_manifold(mesh).status()), "vertex_manifold": vertex_manifold(mesh)}
+    topology["passed"] = topology["single_closed_oriented_body"] and topology["manifold3d_status"] == str(Error.NoError) and topology["vertex_manifold"]["passed"]
+    intersections = _self_intersection_screen(mesh)
+    if intersections["complete"] and not intersections["passed"]:
+        intersections["adjacent_refinement"] = adjacent_refinement(mesh, intersections)
+        intersections["passed"] = intersections["adjacent_refinement"]["passed"]
+    return {"topology": topology, "self_intersections": intersections, "passed": topology["passed"] and intersections["passed"], "runtime_s": perf_counter()-started}
+
+def export_mesh(mesh, directory):
+    vertices = np.zeros(len(mesh.vertices), dtype=[("vertex", "<f8", (3,))])
+    vertices["vertex"] = mesh.vertices
+    faces = np.zeros(len(mesh.faces), dtype=[("count", "u1"), ("index", "<i4", (3,))])
+    faces["count"], faces["index"] = 3, mesh.faces
+    header = ["ply", "format binary_little_endian 1.0", f"element vertex {len(vertices)}", *(f"property double {axis}" for axis in "xyz"), f"element face {len(faces)}", "property list uchar int vertex_indices", "end_header", ""]
+    (directory/"geometry.ply").write_bytes("\n".join(header).encode("ascii")+vertices.tobytes()+faces.tobytes())
+    mesh.export(directory/"geometry.stl")
+    return {name: {"sha256": _file_digest(directory/name), "size_bytes": (directory/name).stat().st_size} for name in ("geometry.ply", "geometry.stl")}
+
+def build_implicit(domain, density, settings, progress=None):
+    field, report = build_field(domain, density, settings, progress)
+    config, timings = report["settings"], report["timings_s"]
+    def fail(stage, message, mesh):
+        report["failure_stage"] = stage
+        raise ImplicitError("geometry_invalid", message, report, mesh)
+    report["status"] = "extracting"
+    started = perf_counter()
+    raw, report["extraction"] = field.extract()
+    timings["extraction"] = perf_counter()-started
+    _progress(progress, "extraction", report, mesh=raw)
+    if not _one_mesh(raw):
+        fail("extraction", "Marching cubes surface is not one closed oriented body", raw)
+    started = perf_counter()
+    remeshed = remesh(raw, config)
+    timings["remesh"] = perf_counter()-started
+    fidelity = surface_fidelity(raw, remeshed)
+    fidelity["passed"] = fidelity["maximum_sampled_deviation_mm"] <= config["surface_deviation_mm"] and abs(fidelity["relative_volume_change"]) <= config["relative_volume_change"]
+    report["remesh"] = {"checks": mesh_checks(remeshed), "fidelity": fidelity}
+    timings["remesh_checks"] = perf_counter()-started-timings["remesh"]
+    _progress(progress, "remesh", report, mesh=remeshed)
+    if not report["remesh"]["checks"]["passed"] or not fidelity["passed"]:
+        fail("remesh", "Remeshed surface failed closure, self-intersection or fidelity gates", remeshed)
+    report["status"] = "booleans"
+    started = perf_counter()
+    final, report["exact_booleans"] = exact_booleans(remeshed, domain, config)
+    timings["booleans"] = perf_counter()-started
+    if not report["exact_booleans"]["passed"]:
+        fail("booleans", "Exact Booleans did not yield one valid manifold", final)
+    started = perf_counter()
+    report["final_mesh"] = mesh_checks(final)
+    timings["final_checks"] = perf_counter()-started
+    _progress(progress, "booleans", report, mesh=final)
+    if not report["final_mesh"]["passed"]:
+        fail("final_mesh", "Final mesh failed closure, orientation or self-intersection checks", final)
+    report["status"] = "geometry_built"
+    return final, report, field

@@ -1,0 +1,3 @@
+-r requirements-surface.txt
+-r requirements-fea.txt
+manifold3d==3.5.4

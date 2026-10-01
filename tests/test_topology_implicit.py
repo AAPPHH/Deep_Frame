@@ -1,8 +1,12 @@
+from fractions import Fraction
+
 import numpy as np
 import pytest
+import trimesh
+from scipy.ndimage import gaussian_filter
 
 from deep_frame.topology_geometry import rasterize_regions, region_contains
-from deep_frame.topology_implicit import ImplicitError, ImplicitField, build_field, extend_density, implicit_settings, primitive_distance
+from deep_frame.topology_implicit import ImplicitError, _adjacent_pair, ImplicitField, build_field, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
 
 def box(name, role, low, high, **extra):
     return {"name": name, "role": role, "kind": "box", "min_mm": list(low), "max_mm": list(high), **extra}
@@ -158,3 +162,143 @@ def test_extension_that_closes_a_corner_gap_is_rejected():
 def test_invalid_implicit_settings_fail(changes):
     with pytest.raises(ValueError):
         implicit_settings({**SMALL, **changes})
+
+def edge_free(points, low, high, h):
+    near = (np.abs(points-low) <= h) | (np.abs(points-high) <= h)
+    return near.sum(axis=1) == 1
+
+@pytest.mark.parametrize("region, volume, tolerance", [({"kind": "sphere", "center_mm": [0, 0, 0], "radius_mm": 10.0}, 4000*np.pi/3, 0.003), (box("b", "preserve", [-10, -5, -3], [10, 5, 3]), 1200.0, 0.01), (cylinder("c", "preserve", [0, 0, 0], 5.0, 10.0), 250*np.pi, 0.005)])
+def test_extraction_volume_distance_and_planes(region, volume, tolerance):
+    h = 0.25
+    field = ImplicitField.from_function([-12.05, -12.1, -12.15], h, (98, 98, 98), lambda x, y, z: primitive_distance([x, y, z], region))
+    mesh, report = field.extract()
+    assert mesh.is_watertight and mesh.is_winding_consistent and mesh.body_count == 1 and mesh.vertices.dtype == np.float64
+    assert abs(mesh.volume/volume-1) <= tolerance and report["float32_vertex_shift_samples"] < 1e-4
+    vertices = mesh.vertices
+    distance = np.abs(primitive_distance([vertices[:, 0], vertices[:, 1], vertices[:, 2]], region))
+    if region["kind"] == "sphere":
+        assert distance.max() <= 0.01
+    elif region["kind"] == "box":
+        low, high = np.asarray(region["min_mm"]), np.asarray(region["max_mm"])
+        free = edge_free(vertices, low, high, h)
+        assert distance[free].max() <= 0.01
+        for axis in range(3):
+            for plane in (low[axis], high[axis]):
+                face = free & (np.abs(vertices[:, axis]-plane) <= h)
+                assert face.any() and np.abs(vertices[face, axis]-plane).max() <= 1e-6
+    else:
+        radial, axial = np.hypot(vertices[:, 0], vertices[:, 1]), np.abs(vertices[:, 2])
+        lateral, cap = axial < 5-h, radial < 5-h
+        assert np.abs(radial[lateral]-5).max() <= 0.01 and np.abs(axial[cap]-5).max() <= 1e-6
+
+def stage_checks(mesh):
+    checks = mesh_checks(mesh)
+    assert mesh.is_watertight and mesh.is_winding_consistent and mesh.body_count == 1 and mesh.volume > 0
+    assert checks["passed"] and checks["self_intersections"]["passed"] and checks["topology"]["manifold3d_status"] == "Error.NoError"
+
+CONFIG = implicit_settings({"threshold": 0.35, "extension": "preserve"})
+
+def random_field(seed):
+    noise = gaussian_filter(np.random.default_rng(seed).normal(size=(64, 64, 64)), 6)
+    noise *= 2.0/np.abs(noise).max()
+    return lambda x, y, z: 6-np.sqrt(x**2+y**2+z**2)+noise
+
+@pytest.mark.parametrize("function", [lambda x, y, z: 6-np.sqrt(x**2+y**2+z**2), lambda x, y, z: primitive_distance([x, y, z], box("b", "preserve", [-6, -4, -3], [6, 4, 3])), lambda x, y, z: primitive_distance([x, y, z], cylinder("c", "preserve", [0, 0, 0], 4.0, 8.0)), random_field(1), random_field(2), random_field(3)])
+def test_extract_remesh_and_booleans_stay_closed_and_self_intersection_free(function):
+    field = ImplicitField.from_function([-9.05]*3, 0.3, (64, 64, 64), function)
+    raw, _ = field.extract()
+    stage_checks(raw)
+    remeshed = remesh(raw, CONFIG)
+    stage_checks(remeshed)
+    assert surface_fidelity(raw, remeshed)["maximum_sampled_deviation_mm"] <= 0.2
+    domain = {"grid": {"origin_mm": [-8.5, -8.5, -8.5], "spacing_mm": [1.0]*3, "shape": [17, 17, 17]}, "regions": [cylinder("bore", "forbidden", [0.3, -0.2, 0], 1.4, 30.0), box("cut", "forbidden", [-20, 2.5, -20], [20, 20, -1.5])]}
+    final, report = exact_booleans(remeshed, domain, CONFIG)
+    assert report["passed"] and report["components"] == 1
+    stage_checks(final)
+
+def composite_domain():
+    regions = [box("m1", "preserve", [2, 3, 0], [6, 7, 6]), box("m2", "preserve", [24, 3, 0], [28, 7, 6]), cylinder("bore", "forbidden", [4, 5, 3], 1.1, 8.0, rasterize=False), box("keepout", "forbidden", [11, 0, 4.5], [17, 10, 9])]
+    domain = make_domain((30, 10, 6), regions)
+    density = np.where(domain["preserve"], 1.0, 0.0)
+    density[6:24, 3:7, 1:5] = 1.0
+    density[domain["forbidden"]] = 0.0
+    return domain, density
+
+def test_composite_build_has_exact_planes_bore_and_clearance():
+    domain, density = composite_domain()
+    mesh, report, field = build_implicit(domain, density, SMALL)
+    assert report["status"] == "geometry_built" and report["final_mesh"]["passed"] and report["remesh"]["fidelity"]["passed"]
+    stage_checks(mesh)
+    for plane, sign in ((0.0, -1), (6.0, 1)):
+        on_plane = np.all(mesh.triangles[:, :, 2] == plane, axis=1)
+        assert on_plane.any() and np.all(np.sign(mesh.face_normals[on_plane, 2]) == sign)
+    bore = report["exact_booleans"]["cylinders"][0]
+    wall = np.hypot(mesh.vertices[:, 0]-4, mesh.vertices[:, 1]-5) < 1.2
+    assert wall.any() and np.allclose(np.hypot(mesh.vertices[wall, 0]-4, mesh.vertices[wall, 1]-5), bore["circumscribed_radius_mm"], atol=1e-9)
+    above = (mesh.vertices[:, 0] > 11) & (mesh.vertices[:, 0] < 17)
+    assert mesh.vertices[above, 2].max() <= 4.5
+    assert set(report["timings_s"]) >= {"extraction", "remesh", "booleans", "final_checks"}
+
+@pytest.mark.parametrize("radius", [1.1, 1.4, 1.5, 9.5, 34.5])
+def test_segment_rule_bounds_circumscribed_oversize(radius):
+    count = segments(radius, 0.01)
+    assert radius/np.cos(np.pi/count)-radius <= 0.01 and (count == 8 or radius/np.cos(np.pi/(count-1))-radius > 0.01)
+
+def test_default_manifold_segments_would_undersize_a_bore():
+    import manifold3d
+    count = manifold3d.get_circular_segments(1.4)
+    assert count == 8 and 1.4*(1-np.cos(np.pi/count)) > 0.1 and segments(1.4, 0.01) > 20
+
+@pytest.mark.parametrize("region", [cylinder("z11", "forbidden", [0.3, -0.7, 0], 1.1, 20.0), cylinder("z14", "forbidden", [-1.25, 2.0, 0], 1.4, 20.0), cylinder("z15", "forbidden", [1.0, 1.0, 0], 1.5, 20.0), cylinder("x14", "forbidden", [0, 0.4, -0.6], 1.4, 30.0, axis="x"), cylinder("x15", "forbidden", [0, -1.0, 0.5], 1.5, 30.0, axis="x"), box("slot", "forbidden", [-1, -6, -10], [1, 6, 10])])
+def test_bores_and_slots_are_dimensionally_exact(region):
+    block = trimesh.creation.box(bounds=[[-8, -8, -4], [8, 8, 4]])
+    domain = {"grid": {"origin_mm": [-10, -10, -10], "spacing_mm": [1.0]*3, "shape": [20, 20, 20]}, "regions": [region]}
+    final, report = exact_booleans(block, domain, CONFIG)
+    stage_checks(final)
+    if region["kind"] == "box":
+        assert block.volume-final.volume == pytest.approx(2*12*8, rel=1e-9)
+        return
+    row = report["cylinders"][0]
+    axis = "xyz".index(region["axis"])
+    radial = [i for i in range(3) if i != axis]
+    length = 8.0 if axis == 2 else 16.0
+    radius = np.linalg.norm((final.vertices-np.asarray(region["center_mm"]))[:, radial], axis=1)
+    wall = radius < region["radius_mm"]+0.5
+    assert wall.sum() == 2*row["segments"]
+    assert np.all((radius[wall] >= region["radius_mm"]-1e-6) & (radius[wall] <= region["radius_mm"]+0.01+1e-6))
+    assert np.allclose(radius[wall], row["circumscribed_radius_mm"], atol=1e-9)
+    area = row["segments"]*row["circumscribed_radius_mm"]**2*np.sin(2*np.pi/row["segments"])/2
+    assert block.volume-final.volume == pytest.approx(area*length, rel=1e-6)
+
+def test_exported_ply_is_exact_and_stl_is_written(tmp_path):
+    domain, density = composite_domain()
+    mesh = exact_booleans(trimesh.creation.box(bounds=[[1, 1, 1], [9.2, 8.1, 5.3]]), domain, CONFIG)[0]
+    artifacts = export_mesh(mesh, tmp_path)
+    loaded = trimesh.load(tmp_path/"geometry.ply", process=False)
+    assert np.array_equal(loaded.vertices, mesh.vertices) and np.array_equal(loaded.faces, mesh.faces)
+    assert set(artifacts) == {"geometry.ply", "geometry.stl"} and all(len(row["sha256"]) == 64 for row in artifacts.values())
+
+def exact(points):
+    return [[Fraction(value) for value in point] for point in points]
+
+@pytest.mark.parametrize("second, certified", [([[0, 0, 0], [-1, 0, 0], [-1, -1, 0]], True), ([[0, 0, 0], [1, 1, 0], [-1, 1, 0]], False), ([[0, 0, 0], [0.2, 0.2, -1], [0.3, 0.1, 1]], False), ([[0, 0, 0], [-1, 0, 1], [0, -1, 1]], True), ([[0, 0, 0], [-1, 0, 0], [0, -1, 0]], True), ([[0, 0, 0], [2, 0, 0], [0, -1, 0]], False)])
+def test_vertex_sharing_pairs_are_certified_only_when_they_meet_in_the_vertex(second, certified):
+    assert _adjacent_pair(exact([[0, 0, 0], [1, 0, 0], [0, 1, 0]]), exact(second), [(0, 0)]) is certified
+
+@pytest.mark.parametrize("other, certified", [([0.5, -1, 0], True), ([0.5, 1, 0], False), ([0.5, 0.5, 1], True), ([2, 0.5, 0], False)])
+def test_edge_sharing_pairs_reject_coplanar_folds(other, certified):
+    assert _adjacent_pair(exact([[0, 0, 0], [1, 0, 0], [0.5, 1, 0]]), exact([[0, 0, 0], [1, 0, 0], other]), [(0, 0), (1, 1)]) is certified
+
+def test_real_self_intersection_and_pinched_vertex_are_rejected():
+    folded = trimesh.creation.box(extents=(4, 4, 4))
+    folded.vertices[7] = [-3, -1, -1]
+    checks = mesh_checks(folded)
+    assert folded.is_watertight and not checks["passed"] and not checks["self_intersections"]["passed"]
+    first = trimesh.creation.box(bounds=[[0, 0, 0], [1, 1, 1]])
+    second = trimesh.creation.box(bounds=[[1, 1, 1], [2, 2, 2]])
+    pinched = trimesh.Trimesh(np.vstack((first.vertices, second.vertices)), np.vstack((first.faces, second.faces+8)), process=False)
+    pinched.merge_vertices()
+    assert pinched.is_watertight and len(pinched.vertices) == 15
+    report = vertex_manifold(pinched)
+    assert not report["passed"] and report["pinched_vertices"] == 1
+    assert vertex_manifold(first)["passed"]
