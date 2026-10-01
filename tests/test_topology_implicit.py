@@ -166,6 +166,7 @@ def test_touching_mount_chain_builds_one_connected_field():
     assert report["opening"]["components_after"] == 1
     assert set(report["timings_s"]) >= {"extension", "upsample", "primitives", "witness", "reinit", "smoothing", "density_witness", "composition", "opening", "ripple", "reopening", "restore"}
     assert report["reopening"]["components_after"] == 1 and report["volumes_mm3"]["reopened"] <= report["volumes_mm3"]["ripple_smoothed"]
+    assert field.layers["reopening_modified"].shape == field.values.shape and report["reopening"]["modified_sample_fraction"] == pytest.approx(field.layers["reopening_modified"].mean())
     shell = field.primitives([region for region in domain["regions"] if region["role"] == "preserve"], 3.0)+0.3
     assert reopening_flips(field, 1.35, shell > -report["settings"]["transition_radius_mm"]) == 0
 

@@ -290,8 +290,10 @@ class MeshAcceptance:
         extraction["passed"] = extraction["maximum_sampled_deviation_mm"] <= config["surface_deviation_mm"] and abs(extraction["relative_volume_change"]) <= config["relative_volume_change"]
         margin = float(np.linalg.norm(field.spacing))/2
         stencil = maximum_filter(np.pad(field.layers["extension_changed"], 2), size=4, origin=-1)[np.ix_(*(np.arange(n)//config["subdivisions"]+1 for n in field.values.shape))]
-        modified = _dilate(field.layers["opening_modified"] | stencil, field.spacing, config["free_zone_modified_mm"]+margin)
+        first = _dilate(field.layers["opening_modified"] | stencil, field.spacing, config["free_zone_modified_mm"]+margin)
         del stencil
+        reopened = field.layers.get("reopening_modified")
+        modified = first | _dilate(reopened, field.spacing, config["free_zone_modified_mm"]+margin) if reopened is not None else first
         constraint = config["constraint_offset_mm"]+config["free_zone_constraint_mm"]
         pad = max(config["free_zone_preserve_mm"], constraint)+2*margin
         near = field.primitives(self.regions["preserve"], pad) > -config["free_zone_preserve_mm"]-margin
@@ -318,7 +320,13 @@ class MeshAcceptance:
         free_zone.update(passed=free_zone["evaluable"] and free_zone["maximum_deviation_mm"] <= config["surface_deviation_mm"], reference="processed field: smoothed density after composition, manufacturing opening, ripple smoothing and the final reopening, as extracted",
                          method="Bidirectional exact MeshLab nearest-surface distances between the final mesh and marching cubes of the processed field, the CAD-route density_isosurface definition, on free-zone samples beyond the preserve and constraint distances from every exact primitive and the envelope; grid lookups add half the sample diagonal")
         free_zone["density_diagnostic"] = compare(field.layers["reference"], near | modified)
-        free_zone["density_diagnostic"].update(gated=False, reference="unextended, unsmoothed density minus threshold", method="Same distances against the raw density iso-surface, additionally outside the opening- or extension-modified samples dilated by the configured distance; recorded, not gated")
+        free_zone["density_diagnostic"].update(gated=False, limit_mm=config["surface_deviation_mm"], within_limit=free_zone["density_diagnostic"]["evaluable"] and free_zone["density_diagnostic"]["maximum_deviation_mm"] <= config["surface_deviation_mm"],
+                                               reference="unextended, unsmoothed density minus threshold", method="Same distances against the raw density iso-surface, additionally outside the opening-, reopening- or extension-modified samples dilated by the configured distance; recorded, not gated")
+        if reopened is not None:
+            free_zone["density_diagnostic_first_opening"] = compare(field.layers["reference"], near | first)
+            free_zone["density_diagnostic_first_opening"].update(gated=False, reference="unextended, unsmoothed density minus threshold", reopening_modified_sample_fraction=float(reopened.mean()),
+                                                                 method="Same as density_diagnostic but excluding only the first opening and the extension, so the shape change of the final reopening against the density is included; recorded, not gated")
+        del first, modified
         return {"extraction": extraction, "free_zone": free_zone, "passed": extraction["passed"] and free_zone["passed"]}
 
     def connectivity(self, report, preserve):

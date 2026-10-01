@@ -39,7 +39,7 @@ Zwei bewusste Entscheidungen gehen ueber "nur Bohrungen exakt" hinaus:
 | preserve | Fehlvolumen <= 1e-5 mm3, Bohrungsraender, Anhaftungsflaeche |
 | features | exakte float64-Strahlen entlang der Innennormalen; Mindestwand 2 mm. Nur Sehnen, deren beide Enden auf vorgeschriebenen Bohrungen liegen, duerfen um die Summe der Polygon-Uebermasse (aus Segmentzahl und Radius) kuerzer sein. |
 | supports | Ueberhaenge und Zugaenglichkeit (eingeschlossene Hohlraeume) |
-| deviation | Abstand zum verarbeiteten Feld (nach Glaettung und Opening, wie `density_isosurface` der CAD-Route) in der freien Zone <= 0,20 mm; Abstand zur rohen Dichte-Isoflaeche nur als Diagnose |
+| deviation | Abstand zum verarbeiteten Feld (nach Glaettung und Opening, wie `density_isosurface` der CAD-Route) in der freien Zone <= 0,20 mm; Abstand zur rohen Dichte-Isoflaeche nur als Diagnose (`density_diagnostic` ohne, `density_diagnostic_first_opening` mit den Aenderungen des erneuten Openings). Diese Diagnose liegt derzeit auf beiden Rahmen ueber 0,20 mm (gpu708 t025: 0,257 mm vor, 0,313 mm nach dem erneuten Opening; fine c01: 0,345 bzw. 0,377 mm); der Gate sieht das erneute Opening konstruktionsbedingt nicht |
 | connectivity | Feldzeugen, ein Koerper, alle Preserves vorhanden |
 | surface_maturity | scharfe Kantenlaenge je freier Flaeche und achsparalleler Flaechenanteil hoechstens 0,5 x Referenz (Voxelroute grid4_iter300 t01) |
 

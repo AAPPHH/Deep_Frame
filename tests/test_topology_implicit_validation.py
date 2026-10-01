@@ -196,6 +196,14 @@ def test_raw_density_deviation_is_recorded_but_not_gated(mounted):
     deviation = MeshAcceptance(mesh, domain, {**CONFIG, "free_zone_minimum_samples": 500}, SETTINGS).deviation(shifted, report)
     assert deviation["passed"] and deviation["free_zone"]["maximum_deviation_mm"] <= CONFIG["surface_deviation_mm"]
     assert not deviation["free_zone"]["density_diagnostic"]["gated"] and deviation["free_zone"]["density_diagnostic"]["maximum_deviation_mm"] > 0.4
+    assert not deviation["free_zone"]["density_diagnostic"]["within_limit"] and deviation["free_zone"]["density_diagnostic"]["limit_mm"] == CONFIG["surface_deviation_mm"]
+    reopened = np.zeros(field.values.shape, dtype=bool)
+    reopened[:, : field.values.shape[1]//2] = True
+    shifted.layers["reopening_modified"] = reopened
+    split = MeshAcceptance(mesh, domain, {**CONFIG, "free_zone_minimum_samples": 1}, SETTINGS).deviation(shifted, report)["free_zone"]
+    both, first = split["density_diagnostic"], split["density_diagnostic_first_opening"]
+    assert not first["gated"] and first["reopening_modified_sample_fraction"] == pytest.approx(reopened.mean())
+    assert first["excluded_sample_fraction"] < both["excluded_sample_fraction"] and first["free_area_fraction"] > both["free_area_fraction"]
 
 def test_extraction_error_against_processed_field_fails_the_gate(mounted):
     domain, mesh, report, field = mounted
