@@ -563,7 +563,6 @@ def render_main(overrides):
     def journal(stage):
         record.update(stage=stage, elapsed_s=perf_counter()-started)
         (config["output"] / "render_manifest.json").write_text(json.dumps(record, indent=2, allow_nan=False), encoding="utf-8")
-        print(stage, flush=True)
     journal("STEP import")
     solid = import_step(config["step"])
     journal("CAD tessellation")
