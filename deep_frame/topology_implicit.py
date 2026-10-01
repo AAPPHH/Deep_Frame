@@ -25,6 +25,7 @@ PROPAGATION_PASSES = 2
 COLUMN_JITTER = 1e-4*np.array([np.sqrt(2), np.sqrt(3)])
 GATE_MAXIMA = ("surface_deviation_mm", "relative_volume_change", "segment_tolerance_mm", "penetration_tolerance_mm", "penetration_sample_spacing_mm", "free_zone_preserve_mm", "free_zone_constraint_mm", "free_zone_modified_mm", "mesh_boundary_deviation_mm")
 GATE_MINIMA = ("free_zone_minimum_samples", "free_zone_opening_cells", "mesh_minimum_sicn")
+BUDGETS = ("maximum_wall_samples", "maximum_void_columns")
 
 class ImplicitError(ValueError):
     def __init__(self, status, message, report, mesh=None):
@@ -948,7 +949,8 @@ VALIDATION_CHECKS = ("gates", "topology", "self_intersections", "envelope", "for
 
 def validate_implicit(mesh, domain, field, report, settings=None, reference_metrics=None, reference_mesh=None, progress=None):
     started = perf_counter()
-    settings = _validation_settings({"maximum_wall_samples": report["settings"]["maximum_wall_samples"], **(settings or {})})
+    overrides = settings or {}
+    settings = _validation_settings({"maximum_wall_samples": report["settings"]["maximum_wall_samples"], **{key: value for key, value in overrides.items() if key in BUDGETS}})
     checks, timings, material = {}, {}, None
     def run(name, function, *arguments):
         clock = perf_counter()
@@ -960,6 +962,8 @@ def validate_implicit(mesh, domain, field, report, settings=None, reference_metr
         _progress(progress, "validation_"+name, checks[name])
     acceptance = None
     try:
+        if set(overrides)-set(BUDGETS):
+            raise ValueError("Only the validation sample budgets may be overridden; frozen gates cannot be weakened: " + ", ".join(sorted(set(overrides)-set(BUDGETS))))
         config, checks["gates"] = frozen_gates(report["settings"])
         acceptance = MeshAcceptance(mesh, domain, config, settings)
     except Exception as error:

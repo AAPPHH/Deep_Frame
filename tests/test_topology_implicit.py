@@ -487,6 +487,8 @@ def test_weakened_report_settings_fail_validation(mounted):
     domain, mesh, report, field = mounted
     result = validate_implicit(mesh, domain, field, {**report, "settings": {**report["settings"], "surface_deviation_mm": 25.0}}, reference_metrics=easy_reference(mesh, domain))
     assert not result["passed"] and "gates" in result["violations"] and "cannot be weakened" in result["checks"]["gates"]["reason"]
+    result = validate_implicit(mesh, domain, field, report, settings={"volume_tolerance_mm3": 1.0}, reference_metrics=easy_reference(mesh, domain))
+    assert not result["passed"] and "gates" in result["violations"] and result["settings"]["volume_tolerance_mm3"] == SETTINGS["volume_tolerance_mm3"]
 
 def test_unevaluable_checks_fail(mounted):
     domain, mesh, report, field = mounted
