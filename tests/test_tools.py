@@ -13,6 +13,7 @@ import trimesh
 
 import deep_frame
 from deep_frame import topology_surface
+from deep_frame.config import command_line, configure
 from deep_frame.topology_optimization import _settings
 from deep_frame.topology_pipeline import _artifact, _file_digest, _read, _save
 from deep_frame.topology_surface import SurfaceReconstructionError
@@ -738,3 +739,44 @@ def test_atomic_writer_exhausted_retry_budget_preserves_original_error_and_targe
     assert caught.value is error and len(attempts) == 21 and sleeps == [0.05]*20
     assert _read(target) == {"state": "old"}
     assert _read(target.with_name(target.name + ".tmp")) == {"state": "new"}
+
+DEFAULTS = {"name": None, "count": 3, "scale": 1.0, "flag": False, "path": None, "mode": "a", "shape": [1, 2, 3], "items": ["x"]}
+KINDS = {"name": "text", "count": "int", "scale": "float", "flag": "flag", "path": "path", "mode": ("a", "b"),
+         "shape": ["int"] * 3, "items": ["text"]}
+
+def test_configure_converts_known_keys_and_keeps_defaults_untouched():
+    config = configure(DEFAULTS, KINDS, {"name": "n", "count": "5", "scale": 2, "flag": True, "path": "a/b", "mode": "b",
+                                         "shape": (4, 5, 6), "items": ["y", "z"]}, ("name",))
+    assert config == {"name": "n", "count": 5, "scale": 2.0, "flag": True, "path": Path("a/b"), "mode": "b",
+                      "shape": [4, 5, 6], "items": ["y", "z"]}
+    assert configure(DEFAULTS, KINDS, {}) == DEFAULTS and DEFAULTS["shape"] == [1, 2, 3]
+
+@pytest.mark.parametrize("overrides", [[1], "name", None, 3])
+def test_configure_rejects_non_object_overrides(overrides):
+    with pytest.raises(ValueError, match="JSON object"):
+        configure(DEFAULTS, KINDS, overrides)
+
+def test_configure_rejects_unknown_keys_and_missing_required():
+    with pytest.raises(ValueError, match="Unknown configuration keys: other, zeta"):
+        configure(DEFAULTS, KINDS, {"zeta": 1, "other": 2, "count": 1})
+    with pytest.raises(ValueError, match="Missing required configuration: name, path"):
+        configure(DEFAULTS, KINDS, {"count": 1}, ("name", "path"))
+
+@pytest.mark.parametrize("key, value", [("count", True), ("count", "5.5"), ("count", 5.5), ("count", None), ("scale", False),
+                                        ("scale", "fast"), ("scale", [1.0]), ("name", 3), ("flag", 1), ("flag", "true"),
+                                        ("path", 3), ("mode", "c"), ("mode", ["a"]), ("shape", [1, 2]), ("shape", [1, 2, "x"]),
+                                        ("shape", 3), ("items", []), ("items", "x"), ("items", [1])])
+def test_configure_rejects_wrong_types_and_invalid_choices(key, value):
+    with pytest.raises(ValueError, match="Invalid configuration value for " + key):
+        configure(DEFAULTS, KINDS, {key: value})
+
+@pytest.mark.parametrize("argv", [[], ["other"], ["run", "a.json", "b.json"]])
+def test_command_line_rejects_bad_invocations_with_usage(argv):
+    with pytest.raises(SystemExit, match=r"^usage: \{run,plot\} \[config.json\]$"):
+        command_line({"run": pytest.fail, "plot": pytest.fail}, argv)
+
+def test_command_line_passes_parsed_json_or_empty_overrides(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text('{"count": 4}', encoding="utf-8-sig")
+    assert command_line({"run": lambda overrides: overrides}, ["run", str(path)]) == {"count": 4}
+    assert command_line({"run": lambda overrides: overrides}, ["run"]) == {}
