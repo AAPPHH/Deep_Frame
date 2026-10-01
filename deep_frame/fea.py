@@ -16,7 +16,10 @@ import numpy as np
 
 if __name__ != "__main__":
     from build123d import export_step
+    from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS
     from deep_frame.frame import assembly_placements, build_components, build_geometry, motor_positions
+    MESH_ATTEMPTS = IMPLICIT_KINDS["tet_attempts"][0]
+    MESH_KEYS = ("tet_attempts", "mesh_minimum_sicn", "mesh_boundary_deviation_mm", *(key for key in IMPLICIT_CONFIG if key.startswith("fea_")))
 
 def resolve_solver(settings):
     explicit = settings.get("solver_path") or os.environ.get("CALCULIX_PATH")
@@ -231,7 +234,16 @@ def _validate(solid, material, point_masses, load_cases, settings):
     threads = settings.get("threads", 2)
     if not isinstance(threads, int) or isinstance(threads, bool) or threads < 1:
         raise ValueError("threads must be a positive integer")
-    if len(solid.solids()) != 1 or not solid.is_valid or solid.volume <= 0:
+    if _is_mesh(solid):
+        if not (np.all(np.isfinite(solid.vertices)) and solid.is_watertight and solid.is_winding_consistent and solid.body_count == 1 and solid.volume > 0):
+            raise ValueError("FEA requires one closed, consistently oriented triangle mesh with positive volume")
+        if not settings["tet_attempts"] or not set(settings["tet_attempts"]) <= set(MESH_ATTEMPTS):
+            raise ValueError(f"tet_attempts must be a non-empty subset of {MESH_ATTEMPTS}")
+        if not all(isinstance(settings[key], (int, float)) and not isinstance(settings[key], bool) and 0 < settings[key] < math.inf for key in MESH_KEYS[2:]) or not isinstance(settings["fea_remesh_iterations"], int):
+            raise ValueError(f"{', '.join(MESH_KEYS[2:])} must be finite and positive, fea_remesh_iterations an integer")
+        if not 0 < settings["mesh_minimum_sicn"] < 1:
+            raise ValueError("mesh_minimum_sicn must lie in (0, 1)")
+    elif len(solid.solids()) != 1 or not solid.is_valid or solid.volume <= 0:
         raise ValueError("FEA requires exactly one valid solid with positive volume")
     for key in ("young_modulus_mpa", "density_g_cm3"):
         if not math.isfinite(material[key]) or material[key] <= 0:
@@ -250,11 +262,55 @@ def _validate(solid, material, point_masses, load_cases, settings):
             raise ValueError("Point masses must be finite and positive")
         _vector(mass["position_mm"], "position_mm")
 
+def _is_mesh(solid):
+    return hasattr(solid, "is_winding_consistent")
+
+def _mesh_settings(settings):
+    return {**{key: deepcopy(IMPLICIT_CONFIG[key]) for key in MESH_KEYS}, **settings}
+
+def _volume_mesh(solid, directory, settings, result):
+    timeout, threads = settings.get("mesh_timeout_s", 180), settings.get("threads", 2)
+    def mesher(name, **request):
+        path = directory / name
+        path.write_text(json.dumps({**request, "output_dir": str(directory), "settings": settings}), encoding="utf-8")
+        return [sys.executable, "-m", "deep_frame.fea", str(path)]
+    if not _is_mesh(solid):
+        export_step(solid, directory / "solid.step")
+        _run(mesher("mesh_request.json", step_path=str(directory / "solid.step")), directory, timeout, threads, directory / "gmsh.log")
+        result["mesh"] = json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8"))
+        return _read_mesh(directory / "mesh.inp")
+    np.savez(directory / "surface.npz", vertices=np.asarray(solid.vertices, dtype=np.float64), faces=np.asarray(solid.faces, dtype=np.int64))
+    angle = float(np.degrees(solid.face_angles.min()))
+    attempts = []
+    result["mesh"] = {"attempts": attempts, "input_face_count": len(solid.faces), "input_minimum_angle_deg": angle}
+    for name in settings["tet_attempts"]:
+        start = time.monotonic()
+        attempt = {"name": name, "status": "failed"}
+        attempts.append(attempt)
+        try:
+            for stale in ("mesh.inp", "mesh.msh", "mesh_metadata.json"):
+                (directory / stale).unlink(missing_ok=True)
+            if name == "direct_hxt" and angle < settings["fea_direct_minimum_angle_deg"]:
+                attempt.update(status="skipped", diagnostic=f"minimum input triangle angle {angle:.3g} deg below {settings['fea_direct_minimum_angle_deg']} deg")
+                continue
+            _run(mesher(f"mesh_request_{name}.json", surface_path=str(directory / "surface.npz"), attempt=name), directory, timeout, threads, directory / f"gmsh_{name}.log")
+            nodes, elements = _read_mesh(directory / "mesh.inp")
+            result["mesh"].update(json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8")))
+            attempt["status"] = "ok"
+            return nodes, elements
+        except Exception as error:
+            attempt["diagnostic"] = f"{type(error).__name__}: {str(error)[-800:]}"
+        finally:
+            attempt["runtime_s"] = time.monotonic() - start
+    raise RuntimeError("All tetrahedral meshing attempts failed: " + ", ".join(f"{attempt['name']} {attempt['status']}" for attempt in attempts))
+
 def evaluate(solid, material, point_masses, load_cases, settings):
     start = time.monotonic()
     result = {"status": "failed", "mass_g": None, "eigenfrequencies_hz": [], "max_displacement_mm": None, "max_von_mises_mpa": None, "stiffness_n_per_mm": None, "load_cases": {}, "diagnostics": [], "artifacts": {}}
     directory = None
     try:
+        if _is_mesh(solid):
+            settings = _mesh_settings(settings)
         _validate(solid, material, point_masses, load_cases, settings)
         result.update(linear_solver=settings.get("linear_solver"), solver_threads=settings.get("threads", 2))
         solver = resolve_solver(settings)
@@ -262,14 +318,7 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         base.mkdir(parents=True, exist_ok=True)
         directory = Path(mkdtemp(prefix="evaluation_", dir=base))
         result["artifacts"]["directory"] = str(directory)
-        step_path = directory / "solid.step"
-        export_step(solid, step_path)
-        request = {"step_path": str(step_path), "output_dir": str(directory), "settings": settings}
-        request_path = directory / "mesh_request.json"
-        request_path.write_text(json.dumps(request), encoding="utf-8")
-        _run([sys.executable, "-m", "deep_frame.fea", str(request_path)], directory, settings.get("mesh_timeout_s", 180), settings.get("threads", 2), directory / "gmsh.log")
-        nodes, elements = _read_mesh(directory / "mesh.inp")
-        result["mesh"] = json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8"))
+        nodes, elements = _volume_mesh(solid, directory, settings, result)
         result["mesh"]["node_count"] = len(nodes)
         model, coupling = _model_lines(nodes, elements, material, point_masses)
         result["point_mass_coupling"] = coupling
@@ -319,6 +368,69 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         (directory / "result.json").write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     return result
 
+def _prepare_surface(source, settings, refine):
+    import pymeshlab
+    import trimesh
+    from deep_frame.topology_implicit import mesh_checks
+    start = time.monotonic()
+    meshes = pymeshlab.MeshSet()
+    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(source.vertices, dtype=np.float64), face_matrix=np.asarray(source.faces, dtype=np.int32)))
+    if refine:
+        meshes.meshing_surface_subdivision_midpoint(iterations=64, threshold=pymeshlab.PureValue(settings["fea_refine_edge_mm"]))
+    meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_remesh_iterations"], targetlen=pymeshlab.PureValue(settings["fea_remesh_target_mm"]), featuredeg=settings["fea_remesh_feature_deg"],
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_remesh_max_surface_distance_mm"]))
+    meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(settings["fea_merge_distance_mm"]))
+    meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)
+    meshes.meshing_remove_null_faces()
+    meshes.meshing_remove_unreferenced_vertices()
+    current = meshes.current_mesh()
+    surface = trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
+    checks = mesh_checks(surface)
+    report = {"refined_input": refine, "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())), "topology_passed": checks["topology"]["passed"],
+              "self_intersections_passed": checks["self_intersections"]["passed"], "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179))), "runtime_s": time.monotonic() - start}
+    if not checks["passed"] or report["folded_edges"]:
+        raise ValueError(f"Prepared FEA surface is not one closed, oriented, fold- and self-intersection-free body: {report}")
+    return surface, report
+
+def _surface_model(gmsh, request, settings):
+    import trimesh
+    data = np.load(request["surface_path"])
+    source = trimesh.Trimesh(data["vertices"], data["faces"], process=False)
+    attempt = request["attempt"]
+    report = {"attempt": attempt}
+    surface = source
+    if attempt.startswith(("remesh", "refine")):
+        surface, report["prepared_surface"] = _prepare_surface(source, settings, attempt.startswith("refine"))
+    tag = gmsh.model.addDiscreteEntity(2)
+    gmsh.model.mesh.addNodes(2, tag, np.arange(1, len(surface.vertices) + 1), np.asarray(surface.vertices, dtype=np.float64).ravel())
+    gmsh.model.mesh.addElementsByType(tag, 2, [], np.asarray(surface.faces, dtype=np.int64).ravel() + 1)
+    if attempt.startswith("classify"):
+        gmsh.model.mesh.classifySurfaces(math.radians(settings["fea_classify_angle_deg"]), True, True, math.pi)
+        gmsh.model.mesh.createGeometry()
+    gmsh.model.geo.addVolume([gmsh.model.geo.addSurfaceLoop([entity for _, entity in gmsh.model.getEntities(2)])])
+    gmsh.model.geo.synchronize()
+    gmsh.option.setNumber("Mesh.Algorithm3D", 1 if attempt.endswith("delaunay") else 10)
+    return source, report
+
+def _boundary_report(gmsh, source, settings):
+    import trimesh
+    from deep_frame.topology_implicit import surface_fidelity
+    tags, coordinates, _ = gmsh.model.mesh.getNodes()
+    lookup = np.zeros(int(tags.max()) + 1, dtype=np.int64)
+    lookup[tags] = np.arange(len(tags))
+    coordinates = coordinates.reshape(-1, 3)
+    types, _, connectivity = gmsh.model.mesh.getElements(2)
+    if list(types) != [2]:
+        raise ValueError("The tetrahedral boundary must consist of linear triangles")
+    boundary = trimesh.Trimesh(coordinates, lookup[connectivity[0].astype(np.int64)].reshape(-1, 3), process=False)
+    boundary.remove_unreferenced_vertices()
+    _, distance, _ = trimesh.proximity.closest_point(source, boundary.vertices)
+    fidelity = surface_fidelity(source, boundary)
+    report = {"boundary_node_count": len(boundary.vertices), "boundary_node_deviation_mm": float(distance.max()), "boundary_fidelity": fidelity}
+    if not distance.max() <= settings["mesh_boundary_deviation_mm"]:
+        raise ValueError(f"Boundary nodes deviate {distance.max():.4g} mm from the input surface (limit {settings['mesh_boundary_deviation_mm']} mm)")
+    return report
+
 def generate_mesh(request_path):
     import gmsh
     request = json.loads(Path(request_path).read_text(encoding="utf-8"))
@@ -339,13 +451,19 @@ def generate_mesh(request_path):
             raise ValueError("Explicit boolean mesh_second_order_linear and optimization mode 0..4 required")
         gmsh.option.setNumber("Mesh.SecondOrderLinear", int(second_order_linear))
         gmsh.model.add("frame")
-        gmsh.model.occ.importShapes(request["step_path"])
-        gmsh.model.occ.synchronize()
+        source, surface = None, {}
+        if "surface_path" in request:
+            source, surface = _surface_model(gmsh, request, settings)
+        else:
+            gmsh.model.occ.importShapes(request["step_path"])
+            gmsh.model.occ.synchronize()
         volumes = gmsh.model.getEntities(3)
         if len(volumes) != 1:
             raise ValueError("The STEP input must contain exactly one volume")
         gmsh.model.addPhysicalGroup(3, [volumes[0][1]], name="FRAME")
         gmsh.model.mesh.generate(3)
+        if source is not None:
+            surface.update(_boundary_report(gmsh, source, settings))
         gmsh.model.mesh.setOrder(2)
         if high_order_optimize in (2, 3):
             gmsh.model.mesh.optimize("HighOrderElastic")
@@ -359,6 +477,11 @@ def generate_mesh(request_path):
         quality = gmsh.model.mesh.getElementQualities(tags[0], "minDetJac")
         if not np.all(np.isfinite(quality)) or np.min(quality) <= 0:
             raise ValueError("The mesh contains a non-positive Jacobian")
+        if source is not None:
+            sicn = gmsh.model.mesh.getElementQualities(tags[0], "minSICN")
+            surface.update(minimum_sicn=float(np.min(sicn)), elements_below_sicn=int(np.sum(sicn < settings["mesh_minimum_sicn"])))
+            if not np.all(np.isfinite(sicn)) or np.min(sicn) < settings["mesh_minimum_sicn"]:
+                raise ValueError(f"Minimum SICN {np.min(sicn):.4g} below {settings['mesh_minimum_sicn']}")
         gmsh.write(str(destination / "mesh.inp"))
         gmsh.write(str(destination / "mesh.msh"))
         metadata = {
@@ -370,6 +493,7 @@ def generate_mesh(request_path):
             "second_order_linear": second_order_linear,
             "high_order_optimize": high_order_optimize,
             "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes" if second_order_linear else "quadratic boundary nodes projected to CAD",
+            **surface,
         }
         (destination / "mesh_metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     finally:

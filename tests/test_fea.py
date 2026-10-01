@@ -5,10 +5,11 @@ from copy import deepcopy
 from pathlib import Path
 
 import pytest
+import trimesh
 from build123d import Align, Box, Pos, Solid
 
 from deep_frame.config import CONFIG, FEA_CONFIG
-from deep_frame.fea import FrameEvaluator, _run, evaluate, prepare_frame_case
+from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _read_mesh, _run, _select, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, build_geometry, intersection_shape, motor_positions, reference_parameters
 
 def beam_inputs(directory):
@@ -35,11 +36,8 @@ def beam_results(tmp_path_factory):
     assert loaded["status"] == "ok", loaded["diagnostics"]
     return unloaded, loaded
 
-def analytical_beam(tip_mass_kg=0):
-    length, width, height = 0.080, 0.008, 0.004
+def analytical_beam(tip_mass_kg=0, area=0.008 * 0.004, inertia=0.008 * 0.004 ** 3 / 12, length=0.080):
     young, density = 4430e6, 1090.0
-    area = width * height
-    inertia = width * height ** 3 / 12
     mass = density * area * length
     ratio = tip_mass_kg / mass
     def characteristic(beta):
@@ -307,3 +305,132 @@ def test_density_mismatch_cannot_silently_change_mass_scope():
     changed["material"]["density_g_cm3"] = 1.20
     with pytest.raises(ValueError, match="densities must agree"):
         prepare_frame_case(parameters, changed)
+
+def box_beam_mesh():
+    return trimesh.creation.box(extents=(80, 8, 4), transform=trimesh.transformations.translation_matrix((40, 0, 0)))
+
+def cylinder_beam_mesh():
+    return trimesh.creation.cylinder(radius=4.0, height=100.0, sections=64, transform=trimesh.transformations.translation_matrix((50, 0, 0)) @ trimesh.transformations.rotation_matrix(math.pi / 2, (0, 1, 0)))
+
+def mesh_section(mesh):
+    length = mesh.bounds[1, 0] - mesh.bounds[0, 0]
+    inertia = mesh.moment_inertia
+    return {"area": mesh.volume / length * 1e-6, "inertia": (inertia[0, 0] + inertia[1, 1] - inertia[2, 2]) / 2 / length * 1e-12, "length": length * 1e-3}
+
+def cylinder_cases(cases):
+    cases = deepcopy(cases)
+    cases[0]["fixed_regions"][0].update(min_mm=[-0.01, -5, -5], max_mm=[0.01, 5, 5])
+    cases[0]["loads"][0]["region"].update(min_mm=[99.99, -5, -5], max_mm=[100.01, 5, 5])
+    cases[1]["fixed_regions"] = deepcopy(cases[0]["fixed_regions"])
+    return cases
+
+@pytest.fixture(scope="module")
+def mesh_beam_results(tmp_path_factory):
+    _, material, cases, settings, tip = beam_inputs(tmp_path_factory.mktemp("mesh_beam_fea"))
+    settings["mesh_second_order_linear"] = True
+    masses = [{"name": "tip_mass", "mass_g": 1.5, "position_mm": [80, 0, 0], "attachment_region": tip}]
+    results = {"box": evaluate(box_beam_mesh(), material, [], cases, settings), "box_mass": evaluate(box_beam_mesh(), material, masses, cases, settings),
+               "cylinder": evaluate(cylinder_beam_mesh(), material, [], cylinder_cases(cases), settings)}
+    for result in results.values():
+        assert result["status"] == "ok", (result["diagnostics"], result.get("mesh"))
+    return results
+
+@pytest.mark.parametrize("name, mesh", [("box", box_beam_mesh), ("cylinder", cylinder_beam_mesh)])
+def test_closed_triangle_mesh_beam_matches_analytical_solution(mesh_beam_results, name, mesh):
+    measured, solid = mesh_beam_results[name], mesh()
+    expected = analytical_beam(**mesh_section(solid))
+    displacement = measured["load_cases"]["tip"]["loads"][0]["directional_displacement_mm"]
+    assert displacement == pytest.approx(expected["deflection_mm"], rel=0.03)
+    assert measured["eigenfrequencies_hz"][0] == pytest.approx(expected["frequency_hz"], rel=0.03)
+    assert measured["mass_g"] == pytest.approx(solid.volume * 1.09e-3, rel=1e-10)
+    assert measured["stiffness_n_per_mm"] == pytest.approx(1 / displacement, rel=1e-10)
+    assert measured["load_cases"]["modes"]["discarded_rigid_modes"] == 0
+    assert measured["load_cases"]["tip"]["fixed_node_count"] >= 3 and measured["load_cases"]["tip"]["loads"][0]["node_count"] >= 3
+    report = measured["mesh"]
+    assert report["element_type"] == "C3D10" and report["minimum_jacobian_mm3"] > 0
+    attempts = report["attempts"]
+    assert attempts[-1]["status"] == "ok" and report["attempt"] == attempts[-1]["name"] and all(attempt["diagnostic"] for attempt in attempts[:-1])
+    assert report["minimum_sicn"] >= 0.01 and report["elements_below_sicn"] == 0
+    assert report["boundary_node_deviation_mm"] <= 0.05
+    assert abs(report["boundary_fidelity"]["relative_volume_change"]) < 0.03
+    if report["attempt"].startswith(("remesh", "refine")):
+        assert report["prepared_surface"]["topology_passed"] and report["prepared_surface"]["self_intersections_passed"] and report["prepared_surface"]["folded_edges"] == 0
+    json.dumps(measured, allow_nan=False)
+
+def test_mesh_point_mass_matches_tip_mass_beam(mesh_beam_results):
+    bare, loaded = mesh_beam_results["box"], mesh_beam_results["box_mass"]
+    assert loaded["eigenfrequencies_hz"][0] == pytest.approx(analytical_beam(0.0015)["frequency_hz"], rel=0.03)
+    assert loaded["mass_g"] == pytest.approx(bare["mass_g"] + 1.5)
+    assert loaded["stiffness_n_per_mm"] == pytest.approx(bare["stiffness_n_per_mm"], rel=0.005)
+
+def test_tetrahedral_mesher_failure_is_failure_with_recorded_attempts(tmp_path):
+    _, material, cases, settings, _ = beam_inputs(tmp_path)
+    settings["mesh_minimum_sicn"] = 0.99
+    result = evaluate(box_beam_mesh(), material, [], cases, settings)
+    assert result["status"] == "failed"
+    assert "All tetrahedral meshing attempts failed" in result["diagnostics"][0]
+    attempts = result["mesh"]["attempts"]
+    assert [attempt["name"] for attempt in attempts] == list(MESH_ATTEMPTS)
+    assert [attempt["status"] for attempt in attempts] == ["failed"] * (len(MESH_ATTEMPTS) - 1) + ["skipped"]
+    assert all(attempt["diagnostic"] for attempt in attempts)
+    assert any("SICN" in attempt["diagnostic"] for attempt in attempts)
+    assert result["mass_g"] is None and result["eigenfrequencies_hz"] == []
+    assert not list(tmp_path.rglob("mesh.inp")) and not list(tmp_path.rglob("case_*.inp"))
+    json.dumps(result, allow_nan=False)
+
+def open_mesh():
+    mesh = box_beam_mesh()
+    return trimesh.Trimesh(mesh.vertices, mesh.faces[1:], process=False)
+
+def inverted_mesh():
+    mesh = box_beam_mesh()
+    return trimesh.Trimesh(mesh.vertices, mesh.faces[:, ::-1], process=False)
+
+@pytest.mark.parametrize("mesh, override, message", [
+    (open_mesh, {}, "closed"), (inverted_mesh, {}, "closed"), (box_beam_mesh, {"tet_attempts": ["fTetWild"]}, "tet_attempts"),
+    (box_beam_mesh, {"tet_attempts": []}, "tet_attempts"), (box_beam_mesh, {"mesh_minimum_sicn": 0.0}, "mesh_minimum_sicn"),
+    (box_beam_mesh, {"fea_remesh_target_mm": 0.0}, "fea_remesh_target_mm"), (box_beam_mesh, {"fea_remesh_iterations": 2.5}, "fea_remesh_iterations")])
+def test_invalid_triangle_mesh_input_rejected_before_meshing(tmp_path, mesh, override, message):
+    directory = tmp_path / "must_not_be_created"
+    _, material, cases, settings, _ = beam_inputs(directory)
+    settings.update(override)
+    result = evaluate(mesh(), material, [], cases, settings)
+    assert result["status"] == "invalid"
+    assert message in result["diagnostics"][0]
+    assert result["artifacts"] == {} and not directory.exists()
+
+def synthetic_frame_mesh(parameters):
+    from manifold3d import Manifold, OpType
+    frame, motors = parameters["frame"], motor_positions(parameters).values()
+    height = frame["arm_height_mm"]
+    def cylinder(radius, x, y):
+        return Manifold.cylinder(height, radius, circular_segments=64).translate((x, y, 0))
+    parts = [cylinder(frame["motor_pad_radius_mm"], x, y) for x, y in motors] + [Manifold.batch_hull([cylinder(4.0, 0, 0), cylinder(4.0, x, y)]) for x, y in motors]
+    parts.append(Manifold.cube((frame["deck_width_mm"], frame["body_length_mm"], frame["deck_top_mm"])).translate((-frame["deck_width_mm"] / 2, -frame["body_length_mm"] / 2, 0)))
+    parts.append(Manifold.cube((20.0, frame["camera_y_mm"] + 12.0, frame["cage_height_mm"])).translate((-10.0, 0, 0)))
+    mesh = Manifold.batch_boolean(parts, OpType.Add).to_mesh64()
+    return trimesh.Trimesh(mesh.vert_properties[:, :3], mesh.tri_verts.astype(int), process=False)
+
+def test_every_frame_selector_meets_tetrahedralized_triangle_mesh_on_exact_planes(tmp_path):
+    parameters = reference_parameters()
+    model = prepare_frame_case(parameters)
+    mesh = synthetic_frame_mesh(parameters)
+    assert mesh.is_watertight and mesh.body_count == 1
+    settings = {**model["settings"], "work_dir": str(tmp_path), "mesh_size_mm": 4.0, "mesh_second_order_linear": True}
+    result = evaluate(mesh, model["material"], model["point_masses"], model["load_cases"], settings)
+    assert result["status"] == "ok", (result["diagnostics"], result.get("mesh"))
+    assert result["mesh"]["attempt"] in MESH_ATTEMPTS and result["mesh"]["attempts"][-1] == {**result["mesh"]["attempts"][-1], "name": result["mesh"]["attempt"], "status": "ok"}
+    assert result["frame_mass_g"] == pytest.approx(mesh.volume * model["material"]["density_g_cm3"] / 1000, rel=1e-12)
+    assert set(result["load_cases"]) == {case["name"] for case in model["load_cases"]} and len(result["eigenfrequencies_hz"]) > 0
+    assert result["point_mass_coupling"][0]["attachment_nodes"] >= 3
+    nodes, _ = _read_mesh(Path(result["artifacts"]["directory"]) / "mesh.inp")
+    regions = [model["point_masses"][0]["attachment_region"]]
+    for case in model["load_cases"]:
+        measured = result["load_cases"][case["name"]]
+        assert measured["fixed_node_count"] >= 3 and all(load["node_count"] >= 3 for load in measured.get("loads", []))
+        regions.extend(case["fixed_regions"] + [load["region"] for load in case.get("loads", [])])
+    for region in regions:
+        heights = [nodes[node][2] for node in _select(nodes, region)]
+        if region["max_mm"][2] - region["min_mm"][2] < 0.05:
+            assert max(abs(z - (region["min_mm"][2] + region["max_mm"][2]) / 2) for z in heights) < 1e-6
+    json.dumps(result, allow_nan=False)
