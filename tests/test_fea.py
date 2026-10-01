@@ -10,7 +10,7 @@ import trimesh
 from build123d import Align, Box, Pos, Solid
 
 from deep_frame.config import CONFIG, FEA_CONFIG, IMPLICIT_CONFIG
-from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _read_mesh, _run, _select, evaluate, prepare_frame_case
+from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, _read_mesh, _run, _select, _volume_mesh, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
 from tests.test_frame import frame
 
@@ -386,13 +386,14 @@ def test_mesh_point_mass_matches_tip_mass_beam(mesh_beam_results):
 
 def test_tetrahedral_mesher_failure_is_failure_with_recorded_attempts(tmp_path):
     _, material, cases, settings, _ = beam_inputs(tmp_path)
-    settings["mesh_minimum_sicn"] = 0.99
+    settings.update(mesh_minimum_sicn=0.99, fea_remesh_targets_mm=[2.0, 1.5])
     result = evaluate(box_beam_mesh(), material, [], cases, settings)
     assert result["status"] == "failed"
     assert "All tetrahedral meshing attempts failed" in result["diagnostics"][0]
     attempts = result["mesh"]["attempts"]
-    assert [attempt["name"] for attempt in attempts] == list(MESH_ATTEMPTS)
-    assert [attempt["status"] for attempt in attempts] == ["failed"] * (len(MESH_ATTEMPTS) - 1) + ["skipped"]
+    assert [(attempt["name"], attempt["target_mm"]) for attempt in attempts] == [("remesh_hxt", 2.0), ("remesh_delaunay", 2.0), ("remesh_hxt", 1.5), ("remesh_delaunay", 1.5), ("refine_hxt", 2.0)] + [(name, None) for name in MESH_ATTEMPTS[3:]]
+    assert [attempt["status"] for attempt in attempts] == ["failed"] * (len(attempts) - 1) + ["skipped"]
+    assert all(attempt["runtime_s"] >= 0 and not attempt.get("over_budget") for attempt in attempts)
     assert all(attempt["diagnostic"] for attempt in attempts)
     assert any("SICN" in attempt["diagnostic"] for attempt in attempts)
     assert result["mass_g"] is None and result["eigenfrequencies_hz"] == []
@@ -419,7 +420,8 @@ def inverted_mesh():
 @pytest.mark.parametrize("mesh, override, message", [
     (open_mesh, {}, "closed"), (inverted_mesh, {}, "closed"), (box_beam_mesh, {"tet_attempts": ["fTetWild"]}, "tet_attempts"),
     (box_beam_mesh, {"tet_attempts": []}, "tet_attempts"), (box_beam_mesh, {"mesh_minimum_sicn": 0.0}, "mesh_minimum_sicn"),
-    (box_beam_mesh, {"fea_remesh_target_mm": 0.0}, "fea_remesh_target_mm"), (box_beam_mesh, {"relative_volume_change": 0.0}, "relative_volume_change"), (box_beam_mesh, {"fea_remesh_iterations": 2.5}, "fea_remesh_iterations")])
+    (box_beam_mesh, {"fea_remesh_targets_mm": [2.0, 0.0]}, "fea_remesh_targets_mm"), (box_beam_mesh, {"fea_remesh_targets_mm": []}, "fea_remesh_targets_mm"),
+    (box_beam_mesh, {"fea_remesh_targets_mm": [1.0, 1.5]}, "fea_remesh_targets_mm"), (box_beam_mesh, {"fea_memory_per_element_kb": 0.0}, "fea_memory_per_element_kb"), (box_beam_mesh, {"relative_volume_change": 0.0}, "relative_volume_change"), (box_beam_mesh, {"fea_remesh_iterations": 2.5}, "fea_remesh_iterations")])
 def test_invalid_triangle_mesh_input_rejected_before_meshing(tmp_path, mesh, override, message):
     directory = tmp_path / "must_not_be_created"
     _, material, cases, settings, _ = beam_inputs(directory)
@@ -428,6 +430,27 @@ def test_invalid_triangle_mesh_input_rejected_before_meshing(tmp_path, mesh, ove
     assert result["status"] == "invalid"
     assert message in result["diagnostics"][0]
     assert result["artifacts"] == {} and not directory.exists()
+
+def test_attempt_over_the_element_budget_fails_and_finer_targets_are_skipped(tmp_path):
+    _, material, cases, settings, _ = beam_inputs(tmp_path)
+    settings.update(tet_attempts=["remesh_hxt", "remesh_delaunay", "refine_hxt"], fea_remesh_targets_mm=[2.0, 1.5], fea_memory_per_element_kb=1e12)
+    result = evaluate(box_beam_mesh(), material, [], cases, settings)
+    assert result["status"] == "failed" and result["mesh"]["memory_budget"]["elements"] == 0
+    first, *rest = result["mesh"]["attempts"]
+    assert first["status"] == "failed" and first["over_budget"] and first["linear_element_count"] > 0 and "element budget" in first["diagnostic"]
+    assert [(attempt["name"], attempt["target_mm"], attempt["status"]) for attempt in rest] == [("remesh_delaunay", 2.0, "skipped"), ("remesh_hxt", 1.5, "skipped"), ("remesh_delaunay", 1.5, "skipped"), ("refine_hxt", 2.0, "failed")]
+    assert all("exceeds the budget" in attempt["diagnostic"] for attempt in rest[:-1]) and rest[-1]["over_budget"] and "element budget" in rest[-1]["diagnostic"]
+    assert not list(tmp_path.rglob("mesh.inp")) and not list(tmp_path.rglob("case_*.inp"))
+
+def test_folded_coarse_surface_falls_back_to_a_finer_remesh_target(tmp_path):
+    settings = _mesh_settings({**beam_inputs(tmp_path)[3], "tet_attempts": ["remesh_hxt", "remesh_delaunay"], "fea_remesh_targets_mm": [4.0, 1.0]})
+    result = {}
+    nodes, elements = _volume_mesh(trimesh.creation.cylinder(radius=2.0, height=30.0, sections=64), tmp_path, settings, result)
+    attempts = result["mesh"]["attempts"]
+    assert [(attempt["name"], attempt["target_mm"], attempt["status"]) for attempt in attempts] == [("remesh_hxt", 4.0, "failed"), ("remesh_delaunay", 4.0, "skipped"), ("remesh_hxt", 1.0, "ok")]
+    assert attempts[0]["surface_failed"] and "Prepared FEA surface" in attempts[0]["diagnostic"] and "already failed" in attempts[1]["diagnostic"]
+    assert result["mesh"]["target_mm"] == 1.0 and result["mesh"]["prepared_surface"]["folded_edges"] == 0 and not result["mesh"]["over_budget"]
+    assert result["mesh"]["element_count"] == len(elements) == attempts[2]["linear_element_count"] <= result["mesh"]["memory_budget"]["elements"] and nodes
 
 def synthetic_frame_mesh(parameters):
     from manifold3d import Manifold, OpType

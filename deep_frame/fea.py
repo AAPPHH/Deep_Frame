@@ -20,6 +20,7 @@ if __name__ != "__main__":
     from deep_frame.frame import assembly_placements, build_components, build_geometry, motor_positions
     MESH_ATTEMPTS = IMPLICIT_KINDS["tet_attempts"][0]
     MESH_KEYS = ("tet_attempts", "mesh_minimum_sicn", "mesh_boundary_deviation_mm", "surface_deviation_mm", "relative_volume_change", *(key for key in IMPLICIT_CONFIG if key.startswith("fea_")))
+    MESH_NUMBERS = tuple(key for key in MESH_KEYS[2:] if key != "fea_remesh_targets_mm")
 
 def resolve_solver(settings):
     explicit = settings.get("solver_path") or os.environ.get("CALCULIX_PATH")
@@ -244,8 +245,11 @@ def _validate(solid, material, point_masses, load_cases, settings):
             raise ValueError("FEA requires one closed, consistently oriented triangle mesh with positive volume")
         if not settings["tet_attempts"] or not set(settings["tet_attempts"]) <= set(MESH_ATTEMPTS):
             raise ValueError(f"tet_attempts must be a non-empty subset of {MESH_ATTEMPTS}")
-        if not all(isinstance(settings[key], (int, float)) and not isinstance(settings[key], bool) and 0 < settings[key] < math.inf for key in MESH_KEYS[2:]) or not isinstance(settings["fea_remesh_iterations"], int):
+        targets = settings["fea_remesh_targets_mm"]
+        if not all(isinstance(value, (int, float)) and not isinstance(value, bool) and 0 < value < math.inf for value in [*(settings[key] for key in MESH_NUMBERS), *targets]) or not isinstance(settings["fea_remesh_iterations"], int):
             raise ValueError(f"{', '.join(MESH_KEYS[2:])} must be finite and positive, fea_remesh_iterations an integer")
+        if not targets or any(finer >= coarser for coarser, finer in zip(targets, targets[1:])):
+            raise ValueError("fea_remesh_targets_mm must be a non-empty, strictly decreasing list")
         if not 0 < settings["mesh_minimum_sicn"] < 1:
             raise ValueError("mesh_minimum_sicn must lie in (0, 1)")
     elif len(solid.solids()) != 1 or not solid.is_valid or solid.volume <= 0:
@@ -273,6 +277,30 @@ def _is_mesh(solid):
 def _mesh_settings(settings):
     return {**{key: deepcopy(IMPLICIT_CONFIG[key]) for key in MESH_KEYS}, **settings}
 
+def _element_budget(settings):
+    import psutil
+    own = psutil.Process().memory_info()
+    process_mb, available_mb = getattr(own, "private", own.rss)/2**20, psutil.virtual_memory().available/2**20
+    memory_mb = min(settings["fea_memory_budget_mb"]-process_mb, available_mb)
+    return {"elements": max(0, int(memory_mb*1024/settings["fea_memory_per_element_kb"])), "solver_memory_mb": memory_mb, "process_mb": process_mb, "available_mb": available_mb,
+            "memory_budget_mb": settings["fea_memory_budget_mb"], "memory_per_element_kb": settings["fea_memory_per_element_kb"]}
+
+def _mesh_plan(settings):
+    names, targets = settings["tet_attempts"], settings["fea_remesh_targets_mm"]
+    return [(name, target) for target in targets for name in names if name.startswith("remesh")] + [(name, targets[0] if name == "refine_hxt" else None) for name in names if not name.startswith("remesh")]
+
+def _skip_reason(name, target, attempts, angle, settings):
+    if name == "direct_hxt" and angle < settings["fea_direct_minimum_angle_deg"]:
+        return f"minimum input triangle angle {angle:.3g} deg below {settings['fea_direct_minimum_angle_deg']} deg"
+    if not name.startswith("remesh"):
+        return None
+    for attempt in attempts:
+        if attempt.get("over_budget") and attempt["name"].startswith("remesh") and attempt["target_mm"] >= target:
+            return f"predicted element count exceeds the budget: {attempt['name']} at the coarser or equal surface target {attempt['target_mm']} mm already had {attempt['linear_element_count']} elements"
+        if attempt.get("surface_failed") and attempt["target_mm"] == target and attempt["name"].startswith("remesh"):
+            return f"prepared surface at {target} mm already failed in {attempt['name']}"
+    return None
+
 def _volume_mesh(solid, directory, settings, result):
     timeout, threads = settings.get("mesh_timeout_s", 180), settings.get("threads", 2)
     def mesher(name, **request):
@@ -286,25 +314,30 @@ def _volume_mesh(solid, directory, settings, result):
         return _read_mesh(directory / "mesh.inp")
     np.savez(directory / "surface.npz", vertices=np.asarray(solid.vertices, dtype=np.float64), faces=np.asarray(solid.faces, dtype=np.int64))
     angle = float(np.degrees(solid.face_angles.min()))
-    attempts = []
-    result["mesh"] = {"attempts": attempts, "input_face_count": len(solid.faces), "input_minimum_angle_deg": angle}
-    for name in settings["tet_attempts"]:
+    attempts, budget = [], _element_budget(settings)
+    result["mesh"] = {"attempts": attempts, "input_face_count": len(solid.faces), "input_minimum_angle_deg": angle, "memory_budget": budget}
+    for index, (name, target) in enumerate(_mesh_plan(settings)):
         start = time.monotonic()
-        attempt = {"name": name, "status": "failed"}
+        attempt = {"name": name, "target_mm": target, "status": "failed"}
         attempts.append(attempt)
         try:
-            for stale in ("mesh.inp", "mesh.msh", "mesh_metadata.json"):
+            for stale in ("mesh.inp", "mesh.msh", "mesh_metadata.json", "attempt_metadata.json"):
                 (directory / stale).unlink(missing_ok=True)
-            if name == "direct_hxt" and angle < settings["fea_direct_minimum_angle_deg"]:
-                attempt.update(status="skipped", diagnostic=f"minimum input triangle angle {angle:.3g} deg below {settings['fea_direct_minimum_angle_deg']} deg")
+            reason = _skip_reason(name, target, attempts[:-1], angle, settings)
+            if reason:
+                attempt.update(status="skipped", diagnostic=reason)
                 continue
-            _run(mesher(f"mesh_request_{name}.json", surface_path=str(directory / "surface.npz"), attempt=name), directory, timeout, threads, directory / f"gmsh_{name}.log")
+            label = f"{index:02d}_{name}" + (f"_{target:g}" if target else "")
+            _run(mesher(f"mesh_request_{label}.json", surface_path=str(directory / "surface.npz"), attempt=name, target_mm=target, element_budget=budget["elements"]), directory, timeout, threads, directory / f"gmsh_{label}.log")
             nodes, elements = _read_mesh(directory / "mesh.inp")
             result["mesh"].update(json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8")))
-            attempt["status"] = "ok"
+            attempt.update(status="ok", linear_element_count=result["mesh"]["linear_element_count"])
             return nodes, elements
         except Exception as error:
             attempt["diagnostic"] = f"{type(error).__name__}: {str(error)[-800:]}"
+            if (directory / "attempt_metadata.json").exists():
+                attempt.update(json.loads((directory / "attempt_metadata.json").read_text(encoding="utf-8")))
+            attempt["surface_failed"] = "Prepared FEA surface" in attempt["diagnostic"]
         finally:
             attempt["runtime_s"] = time.monotonic() - start
     raise RuntimeError("All tetrahedral meshing attempts failed: " + ", ".join(f"{attempt['name']} {attempt['status']}" for attempt in attempts))
@@ -375,7 +408,7 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         (directory / "result.json").write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     return result
 
-def _prepare_surface(source, settings, refine):
+def _prepare_surface(source, settings, refine, target):
     import pymeshlab
     import trimesh
     from deep_frame.topology_implicit import mesh_checks
@@ -384,7 +417,7 @@ def _prepare_surface(source, settings, refine):
     meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(source.vertices, dtype=np.float64), face_matrix=np.asarray(source.faces, dtype=np.int32)))
     if refine:
         meshes.meshing_surface_subdivision_midpoint(iterations=64, threshold=pymeshlab.PureValue(settings["fea_refine_edge_mm"]))
-    meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_remesh_iterations"], targetlen=pymeshlab.PureValue(settings["fea_remesh_target_mm"]), featuredeg=settings["fea_remesh_feature_deg"],
+    meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_remesh_iterations"], targetlen=pymeshlab.PureValue(target), featuredeg=settings["fea_remesh_feature_deg"],
                                                 checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_refine_max_surface_distance_mm" if refine else "fea_remesh_max_surface_distance_mm"]))
     meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(settings["fea_merge_distance_mm"]))
     meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)
@@ -393,7 +426,7 @@ def _prepare_surface(source, settings, refine):
     current = meshes.current_mesh()
     surface = trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
     checks = mesh_checks(surface)
-    report = {"refined_input": refine, "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())), "topology_passed": checks["topology"]["passed"],
+    report = {"refined_input": refine, "target_mm": target, "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())), "topology_passed": checks["topology"]["passed"],
               "self_intersections_passed": checks["self_intersections"]["passed"], "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179))), "runtime_s": time.monotonic() - start}
     if not checks["passed"] or report["folded_edges"]:
         raise ValueError(f"Prepared FEA surface is not one closed, oriented, fold- and self-intersection-free body: {report}")
@@ -404,10 +437,10 @@ def _surface_model(gmsh, request, settings):
     data = np.load(request["surface_path"])
     source = trimesh.Trimesh(data["vertices"], data["faces"], process=False)
     attempt = request["attempt"]
-    report = {"attempt": attempt}
+    report = {"attempt": attempt, "target_mm": request["target_mm"]}
     surface = source
     if attempt.startswith(("remesh", "refine")):
-        surface, report["prepared_surface"] = _prepare_surface(source, settings, attempt.startswith("refine"))
+        surface, report["prepared_surface"] = _prepare_surface(source, settings, attempt.startswith("refine"), request["target_mm"])
     tag = gmsh.model.addDiscreteEntity(2)
     gmsh.model.mesh.addNodes(2, tag, np.arange(1, len(surface.vertices) + 1), np.asarray(surface.vertices, dtype=np.float64).ravel())
     gmsh.model.mesh.addElementsByType(tag, 2, [], np.asarray(surface.faces, dtype=np.int64).ravel() + 1)
@@ -478,6 +511,12 @@ def generate_mesh(request_path):
         gmsh.model.addPhysicalGroup(3, [volumes[0][1]], name="FRAME")
         gmsh.model.mesh.generate(3)
         if source is not None:
+            count = len(gmsh.model.mesh.getElements(3)[1][0])
+            measured = {"linear_element_count": count, "element_budget": request["element_budget"], "over_budget": count > request["element_budget"]}
+            (destination / "attempt_metadata.json").write_text(json.dumps(measured), encoding="utf-8")
+            surface.update(measured)
+            if measured["over_budget"]:
+                raise ValueError(f"{count} tetrahedra exceed the element budget of {request['element_budget']} derived from available memory")
             surface.update(_boundary_report(gmsh, source, settings))
         gmsh.model.mesh.setOrder(2)
         if high_order_optimize in (2, 3):

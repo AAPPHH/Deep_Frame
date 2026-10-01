@@ -762,7 +762,9 @@ IMPLICIT_CONFIG = {
     "tet_attempts": ["remesh_hxt", "remesh_delaunay", "refine_hxt", "classify_hxt", "classify_delaunay", "direct_hxt"],
     "mesh_minimum_sicn": 0.01,
     "mesh_boundary_deviation_mm": 0.05,
-    "fea_remesh_target_mm": 2.0,
+    "fea_remesh_targets_mm": [2.0, 1.5, 1.2, 1.0],
+    "fea_memory_budget_mb": 9728.0,
+    "fea_memory_per_element_kb": 38.0,
     "fea_remesh_iterations": 5,
     "fea_remesh_feature_deg": 40.0,
     "fea_remesh_max_surface_distance_mm": 0.05,
@@ -783,6 +785,7 @@ IMPLICIT_KINDS = {
     "thresholds": ["float"],
     "extensions": [("none", "preserve", "preserve_forbidden")],
     "tet_attempts": [("remesh_hxt", "remesh_delaunay", "refine_hxt", "classify_hxt", "classify_delaunay", "direct_hxt")],
+    "fea_remesh_targets_mm": ["float"],
 }
 
 CONFIG = {
