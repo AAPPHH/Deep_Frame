@@ -166,6 +166,11 @@ def test_touching_mount_chain_builds_one_connected_field():
     assert report["opening"]["components_after"] == 1
     assert set(report["timings_s"]) >= {"extension", "upsample", "primitives", "witness", "reinit", "smoothing", "density_witness", "composition", "opening", "restore"}
 
+def test_ambiguous_cube_interior_vertex_is_kept_and_surface_stays_closed():
+    cube = np.array([0.03667267, -0.02387328, -0.02498563, 0.03812484, 0.00452967, -0.04602556, -0.04827231, 0.02583875], dtype=np.float32).reshape(2, 2, 2)
+    mesh, report = ImplicitField([0, 0, 0], 1.0, np.pad(cube, 1, constant_values=-0.05)).extract()
+    assert report["interior_cube_vertices"] == 1 and report["float32_vertex_shift_samples"] < 1e-6 and mesh.is_watertight and mesh.is_winding_consistent
+
 def test_preserve_restore_is_clipped_by_keepout_and_envelope_offsets():
     domain, density = chain_domain(0)
     keepout = box("side", "forbidden", [1, 7.1, 1], [7, 9, 7], rasterize=False)

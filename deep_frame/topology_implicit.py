@@ -215,10 +215,10 @@ class ImplicitField:
         started = perf_counter()
         padded = np.pad(self.values, 1, constant_values=-np.float32(self.spacing.max()))
         vertices, faces, _, _ = marching_cubes(padded, 0.0, method="lewiner", allow_degenerate=False, gradient_direction="ascent")
-        exact, shift = _edge_vertices(padded, vertices)
+        exact, shift, interior = _edge_vertices(padded, vertices)
         mesh = trimesh.Trimesh(self.origin-self.spacing+exact*self.spacing, faces, process=False)
-        return mesh, {"method": "Lewiner marching cubes on the field padded by one negative sample; vertices recomputed in float64 on their grid edges",
-                      "float32_vertex_shift_samples": shift, "mesh": _mesh_summary(mesh), "runtime_s": perf_counter()-started}
+        return mesh, {"method": "Lewiner marching cubes on the field padded by one negative sample; edge vertices recomputed in float64 on their grid edges, Lewiner cube-interior vertices of ambiguous cases kept",
+                      "float32_vertex_shift_samples": shift, "interior_cube_vertices": interior, "mesh": _mesh_summary(mesh), "runtime_s": perf_counter()-started}
 
 def _edge_vertices(values, vertices):
     vertices = vertices.astype(float)
@@ -233,10 +233,12 @@ def _edge_vertices(values, vertices):
     exact[rows, axis] += np.divide(first, first-second, out=vertices[rows, axis]-low[rows, axis], where=first != second)
     node = np.abs(vertices-np.rint(vertices)).max(axis=1) <= 1e-6
     exact[node] = np.rint(vertices[node])
+    interior = np.sort(np.abs(vertices-np.rint(vertices)), axis=1)[:, 1] > 1e-6
+    exact[interior] = vertices[interior]
     shift = float(np.abs(exact-vertices).max(initial=0))
     if shift > 1e-3:
         raise RuntimeError("Marching cubes vertex is not on its grid edge")
-    return exact, shift
+    return exact, shift, int(interior.sum())
 
 def extend_density(domain, density, extension):
     masks = {name: np.asarray(domain[name], dtype=bool) for name in ("allowed", "preserve", "forbidden")}
