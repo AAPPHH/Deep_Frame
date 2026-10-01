@@ -180,7 +180,7 @@ def test_raw_density_deviation_is_recorded_but_not_gated(mounted):
     domain, mesh, report, field = mounted
     shifted = ImplicitField(field.origin, field.spacing, field.values)
     shifted.layers = {**field.layers, "reference": np.roll(field.layers["reference"], 2, axis=1)}
-    deviation = MeshAcceptance(mesh, domain, CONFIG, SETTINGS).deviation(shifted, report)
+    deviation = MeshAcceptance(mesh, domain, {**CONFIG, "free_zone_minimum_samples": 500}, SETTINGS).deviation(shifted, report)
     assert deviation["passed"] and deviation["free_zone"]["maximum_deviation_mm"] <= CONFIG["surface_deviation_mm"]
     assert not deviation["free_zone"]["density_diagnostic"]["gated"] and deviation["free_zone"]["density_diagnostic"]["maximum_deviation_mm"] > 0.4
 

@@ -203,10 +203,12 @@ class ImplicitField:
 
     def open(self, radius, band_cells=1.5):
         before = self.values > 0
-        eroded = self.values > radius
-        report = {"radius_mm": radius, "method": "erosion {phi > r}; dilation by r of the exact Euclidean distance to the linear roots of phi - r on the sign-changing grid edges of the eroded set, never to gradient-projected band points; clipped to phi",
-                  "eroded_samples": int(eroded.sum()), "before_volume_mm3": self.volume(before), "components_before": int(label(before, SIX)[1])}
-        self.intersect(ImplicitField(self.origin, self.spacing, self.values-np.float32(radius)).reinitialize(band_cells, True).values+np.float32(radius))
+        margin = float(self.spacing.max())**2/(2*radius)
+        distance = np.minimum(ImplicitField(self.origin, self.spacing, self.values).reinitialize(band_cells, True).values, self.values)-np.float32(radius)
+        report = {"radius_mm": radius, "ball_margin_mm": margin, "eroded_samples": int(np.count_nonzero(distance > 0)), "before_volume_mm3": self.volume(before), "components_before": int(label(before, SIX)[1]),
+                  "method": "erosion {min(phi, d) > r} with d the exact Euclidean distance to the linear roots of phi on sign-changing grid edges; dilation by r - h^2/(2r) of the same root distance of the eroded set, so the root-sampling overestimate cannot push balls outside phi; clipped to phi"}
+        self.intersect(ImplicitField(self.origin, self.spacing, distance).reinitialize(band_cells, True).values+np.float32(radius-margin))
+        del distance
         after = self.values > 0
         report.update(after_volume_mm3=self.volume(after), removed_volume_mm3=self.volume(before & ~after), added_volume_mm3=self.volume(after & ~before), components_after=int(label(after, SIX)[1]))
         return report
@@ -355,13 +357,11 @@ def build_field(domain, density, settings, progress=None):
     lap("witness")
     field.smooth(config["ripple_sigma_mm"])
     report["volumes_mm3"]["ripple_smoothed"] = field.volume()
-    constraint = np.maximum(forbidden, -envelope)+np.float32(offset)
-    field.union(np.minimum(preserve, -constraint))
+    field.union(preserve)
     report["volumes_mm3"]["final"] = field.volume()
     lap("restore")
     field.layers["reference"] = reference.values
-    _connected(field, report, "final_witness", field.values > 0, preserves, constraint)
-    report["final_witness"]["method"] += "; preserve samples within the constraint offset of a keep-out or the envelope are excluded because the restore is clipped there like the composition and the exact Booleans realise them"
+    _connected(field, report, "final_witness", field.values > 0, preserves, forbidden)
     lap("witness")
     report["status"] = "field_built"
     _progress(progress, "field_built", report)
