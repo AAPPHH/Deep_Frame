@@ -6,7 +6,7 @@ import trimesh
 from scipy.ndimage import gaussian_filter
 
 from deep_frame.topology_geometry import rasterize_regions, region_contains
-from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, build_field, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
+from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, build_field, capped_faces, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
 
 def box(name, role, low, high, **extra):
     return {"name": name, "role": role, "kind": "box", "min_mm": list(low), "max_mm": list(high), **extra}
@@ -288,6 +288,26 @@ def test_composite_build_has_exact_planes_bore_and_clearance():
     above = (mesh.vertices[:, 0] > 11) & (mesh.vertices[:, 0] < 17)
     assert mesh.vertices[above, 2].max() <= 4.5
     assert set(report["timings_s"]) >= {"extraction", "remesh", "booleans", "final_checks"}
+
+def test_preserve_shell_stops_at_capped_faces_outside_the_eroded_keepout():
+    pad, cap, far = box("pad", "preserve", [0, 0, 0], [4, 4, 2]), box("cap", "forbidden", [-1, -1, 2], [4.1, 5, 5]), box("far", "forbidden", [-1, -1, -5], [5, 5, -1])
+    assert [(axis, level, sign) for axis, level, sign, _ in capped_faces(pad, [cap, far], 0.3)] == [(2, 2.0, 1)]
+    field = ImplicitField.from_function([-1.5]*3, 0.05, (160, 160, 120), lambda x, y, z: 0*x)
+    shell, report = field.shell([pad], [cap, far], 0.3, None)
+    assert report["capped"] == {"pad": ["cap"]}
+    x, y, z = (np.broadcast_to(axis, shell.shape) for axis in field.axes())
+    outside = (x > 3.8+1e-6) | (x < -0.7-1e-6) | (y > 4.7+1e-6) | (y < -0.7-1e-6)
+    assert shell[outside & (z > 1.7+1e-6)].max() <= 1e-6 and shell[(x > 4.0) & (x < 4.1) & (z > 2) & (y > 1) & (y < 3)].max() < 0
+    def at(*point):
+        return shell[tuple(int(round((value+1.5)/0.05)) for value in point)]
+    assert at(4.2, 2, 1) == pytest.approx(0.1, abs=1e-5) and at(2, 2, -0.2) == pytest.approx(0.1, abs=1e-5) and at(2, 2, 2.2) == pytest.approx(0.1, abs=1e-5)
+
+def test_field_mesh_on_a_preserve_grid_plane_is_snapped_before_the_union():
+    domain = {"grid": {"origin_mm": [-10, -10, 0], "spacing_mm": [1.0]*3, "shape": [20, 20, 10]}, "regions": [box("pad", "preserve", [-2.4, -2, 0], [0.7, 2, 2.5])]}
+    mesh = trimesh.creation.box(bounds=[[-6, -3, 0.5], [-2.4, 3, 2.2]])
+    mesh.vertices = mesh.vertices+np.outer(np.sin(7*mesh.vertices[:, 2]), [0, 1e-3, 0])
+    final, report = exact_booleans(mesh.subdivide().subdivide(), domain, CONFIG)
+    assert report["passed"] and report["float32"]["merged_vertices"] == 0 and report["input_plane_snap"]["moved_coordinates"] > 0 and report["input_plane_snap"]["maximum_displacement_mm"] <= 1e-6
 
 @pytest.mark.parametrize("radius", [1.1, 1.4, 1.5, 9.5, 34.5])
 def test_segment_rule_bounds_circumscribed_oversize(radius):
