@@ -739,7 +739,7 @@ IMPLICIT_CONFIG = {
     "preserve_inflation_mm": 0.3,
     "constraint_offset_mm": 0.3,
     "opening_radius_mm": 1.35,
-    "protected_opening": True,
+    "protected_opening": False,
     "ripple_sigma_mm": 0.25,
     "reinit_band_cells": 1.5,
     "remesh_target_mm": 0.6,
