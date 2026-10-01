@@ -1,0 +1,1355 @@
+{
+ "schema_version": "deep-frame-implicit-vs-cad-v1",
+ "code_commit": "567f2cc",
+ "columns": {
+  "a": {
+   "run": "gpu708_t025_shell",
+   "candidate": "c00",
+   "parameters": {
+    "threshold": 0.25,
+    "extension": "preserve",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "success": false,
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "checks_passed": {
+    "gates": true,
+    "topology": true,
+    "self_intersections": true,
+    "envelope": true,
+    "forbidden": null,
+    "preserve": null,
+    "features": false,
+    "supports": true,
+    "deviation": true,
+    "surface_maturity": true,
+    "connectivity": true
+   },
+   "thin_samples": 86,
+   "minimum_wall_mm": 0.020647335173981728,
+   "rays": null,
+   "unresolved": null,
+   "mass_g": 57.77004030038151,
+   "mass_screen": {
+    "ratio_to_v0": 1.796169956909775,
+    "maximum_ratio": 2.0,
+    "passed": true
+   },
+   "runtime_s": 122.68721140001435,
+   "in_record_fea_s": null,
+   "geometry_build_s": 91.33076299997629,
+   "validation_s": 26.778716999979224,
+   "metrics_s": 0.723325200000545,
+   "renders_s": 2.6032556000282057,
+   "timings_s": {
+    "extension": 0.0011790999851655215,
+    "upsample": 1.0952991000085603,
+    "primitives": 0.9158224999846425,
+    "witness": 1.5610563000082038,
+    "reinit": 9.014173000003211,
+    "smoothing": 9.024391999992076,
+    "density_witness": 15.720666400011396,
+    "composition": 0.5957807000086177,
+    "opening": 24.31752409998444,
+    "restore": 0.35406099999090657,
+    "extraction": 1.6907940999954008,
+    "remesh": 20.177881300012814,
+    "remesh_checks": 5.757848099980038,
+    "booleans": 0.24597150000045076,
+    "final_checks": 0.8245472999988124,
+    "export": 0.033766500011552125,
+    "validation": {
+     "topology": 0.6851318999833893,
+     "envelope": 0.010050699987914413,
+     "forbidden": 0.9180501999799162,
+     "preserve": 1.155536200007191,
+     "features": 9.148848300013924,
+     "supports": 0.2532255999976769,
+     "deviation": 11.99867160001304,
+     "surface_maturity": 2.60914249997586,
+     "connectivity": 6.000002031214535e-05
+    },
+    "metrics": 0.723325200000545,
+    "renders": 2.6032556000282057
+   },
+   "peak_rss_mb": 2639.13671875,
+   "final_mesh": {
+    "files": {
+     "geometry.ply": {
+      "sha256": "f04a02c9d0fec18776a4334d0e763788f07e8f88f3e6d5813987c39896382276",
+      "size_bytes": 3659225
+     },
+     "geometry.stl": {
+      "sha256": "a874082cfb86d2f867a48be0231f243894bcb0a2d253e85661f3c55b5c33b62f",
+      "size_bytes": 7322684
+     }
+    },
+    "faces": 146452,
+    "vertices": 73132,
+    "volume_mm3": 53000.03697282707
+   },
+   "fea": {
+    "status": "ok",
+    "source": "diagnostic_fea_1.2.json",
+    "frame_mass_g": 57.77004030038151,
+    "eigenfrequencies_hz": [
+     1041.46,
+     1207.583,
+     1423.711,
+     1517.837,
+     1921.625,
+     2488.774
+    ],
+    "f1_hz": 1041.46,
+    "arm_tip_stiffness_n_per_mm": 286.93024636532004,
+    "arm_tip_compliance_mm_per_n": 0.003485167606648197,
+    "max_displacement_mm": 0.005209511879681499,
+    "max_von_mises_mpa": 0.6741473059652516,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 286.93024636532004,
+      "max_displacement_mm": 0.005209511879681499,
+      "max_von_mises_mpa": 0.6046638707430001
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 3436.092403487626,
+      "max_displacement_mm": 0.00118136194168193,
+      "max_von_mises_mpa": 0.6741473059652516
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 9193.690188807936,
+      "max_displacement_mm": 0.0007321592319165073,
+      "max_von_mises_mpa": 0.5886757832741466
+     }
+    },
+    "elements": 179728,
+    "minimum_sicn": 0.07483138350243818,
+    "linear_solver": "SPOOLES",
+    "solver_threads": 1,
+    "runtime_s": 523.590610299987,
+    "fea_mesh_s": 15.129916999983834,
+    "fea_solve_s": 508.4606933000032,
+    "fea_remesh_target_mm": 1.2,
+    "peak_private_gb": 7.2298736572265625,
+    "comparison_diagnostic": {
+     "passed": true,
+     "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+     },
+     "ratios": {
+      "frame_mass_ratio": 1.796169956909775,
+      "stiffness_ratio": 55.56586713559188,
+      "frequency_ratio": 5.0926143253921685,
+      "displacement_ratio": 0.020395588873353458,
+      "stress_ratio": 0.11266774522748559
+     },
+     "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+     },
+     "candidate": {
+      "frame_mass_g": 57.77004030038151,
+      "stiffness_n_per_mm": 286.93024636532004,
+      "max_displacement_mm": 0.005209511879681499,
+      "max_von_mises_mpa": 0.6741473059652516,
+      "first_frequency_hz": 1041.46
+     },
+     "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+     },
+     "selection_score": 2.1435927490578743
+    },
+    "diagnostic_only": true
+   },
+   "diagnostics": [
+    "features"
+   ],
+   "record_sha256": "48b7bfabe9f297f0c005e0500886e4869dcca3a1d990d12c29ffd66ba7e2793f"
+  },
+  "b_c00": {
+   "run": "fine_robust_shell",
+   "candidate": "c00",
+   "parameters": {
+    "threshold": 0.5,
+    "extension": "preserve",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 5,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "success": false,
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "checks_passed": {
+    "gates": true,
+    "topology": true,
+    "self_intersections": true,
+    "envelope": true,
+    "forbidden": null,
+    "preserve": null,
+    "features": false,
+    "supports": true,
+    "deviation": true,
+    "surface_maturity": true,
+    "connectivity": true
+   },
+   "thin_samples": 116,
+   "minimum_wall_mm": 0.07942698083498118,
+   "rays": null,
+   "unresolved": null,
+   "mass_g": 42.71136878514888,
+   "mass_screen": {
+    "ratio_to_v0": 1.3279699482894725,
+    "maximum_ratio": 2.0,
+    "passed": true
+   },
+   "runtime_s": 114.9684860999987,
+   "in_record_fea_s": null,
+   "geometry_build_s": 85.6605340000533,
+   "validation_s": 25.226813699962804,
+   "metrics_s": 0.649582600017311,
+   "renders_s": 2.2995412000163924,
+   "timings_s": {
+    "extension": 0.010290100006386638,
+    "upsample": 1.6390072999929544,
+    "primitives": 0.8717899000039324,
+    "witness": 1.4476114999852143,
+    "reinit": 8.292006800009403,
+    "smoothing": 8.476490700006252,
+    "density_witness": 14.208317099983105,
+    "composition": 0.5817960000131279,
+    "opening": 22.22417790000327,
+    "restore": 0.3274571000074502,
+    "extraction": 1.6501973000122234,
+    "remesh": 19.657497999985935,
+    "remesh_checks": 5.27316549999523,
+    "booleans": 0.22037260001525283,
+    "final_checks": 0.7486109000165015,
+    "export": 0.03174530001706444,
+    "validation": {
+     "topology": 0.6109778999816626,
+     "envelope": 0.00979050001478754,
+     "forbidden": 0.8511443999886978,
+     "preserve": 1.2004737999814097,
+     "features": 8.777489800006151,
+     "supports": 0.26031589999911375,
+     "deviation": 11.167638400016585,
+     "surface_maturity": 2.348927199986065,
+     "connectivity": 5.57999883312732e-05
+    },
+    "metrics": 0.649582600017311,
+    "renders": 2.2995412000163924
+   },
+   "peak_rss_mb": 2513.203125,
+   "final_mesh": {
+    "files": {
+     "geometry.ply": {
+      "sha256": "fc915b920ad7dd57fe4b867f7ec494b1fbefbe4724052721dddca3962e35b8f3",
+      "size_bytes": 3312217
+     },
+     "geometry.stl": {
+      "sha256": "27bef333bb4760a50fd4e10445f8e15708c37418572233277583ec2bf9c4f7a3",
+      "size_bytes": 6628284
+     }
+    },
+    "faces": 132564,
+    "vertices": 66196,
+    "volume_mm3": 39184.74200472374
+   },
+   "fea": {
+    "status": "ok",
+    "source": "diagnostic_fea_1.json",
+    "frame_mass_g": 42.71136878514888,
+    "eigenfrequencies_hz": [
+     460.4294,
+     908.5888,
+     967.0461,
+     1108.64,
+     1290.757,
+     1306.605
+    ],
+    "f1_hz": 460.4294,
+    "arm_tip_stiffness_n_per_mm": 200.05480900160052,
+    "arm_tip_compliance_mm_per_n": 0.004998630150360442,
+    "max_displacement_mm": 0.007145800583884611,
+    "max_von_mises_mpa": 1.1966453500124379,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 200.05480900160052,
+      "max_displacement_mm": 0.007145800583884611,
+      "max_von_mises_mpa": 1.1560634421758467
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 2485.06252023933,
+      "max_displacement_mm": 0.0018934052733037717,
+      "max_von_mises_mpa": 1.1966453500124379
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 7573.223838551923,
+      "max_displacement_mm": 0.001046076312513413,
+      "max_von_mises_mpa": 0.5217222283012485
+     }
+    },
+    "elements": 203783,
+    "minimum_sicn": 0.08507142908439994,
+    "linear_solver": "SPOOLES",
+    "solver_threads": 1,
+    "runtime_s": 513.7027469000022,
+    "fea_mesh_s": 14.877921000006609,
+    "fea_solve_s": 498.82482589999563,
+    "fea_remesh_target_mm": 1.0,
+    "peak_private_gb": 7.689094543457031,
+    "comparison_diagnostic": {
+     "passed": true,
+     "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+     },
+     "ratios": {
+      "frame_mass_ratio": 1.3279699482894725,
+      "stiffness_ratio": 38.74188614701134,
+      "frequency_ratio": 2.251444470523804,
+      "displacement_ratio": 0.027976289189072755,
+      "stress_ratio": 0.19999091033941777
+     },
+     "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+     },
+     "candidate": {
+      "frame_mass_g": 42.71136878514888,
+      "stiffness_n_per_mm": 200.05480900160052,
+      "max_displacement_mm": 0.007145800583884611,
+      "max_von_mises_mpa": 1.1966453500124379,
+      "first_frequency_hz": 460.4294
+     },
+     "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+     },
+     "selection_score": 2.025908304161704
+    },
+    "diagnostic_only": true
+   },
+   "diagnostics": [
+    "features"
+   ],
+   "record_sha256": "516664111444eadf17ace1ceaffa6e671ecf9abb79a42246c6ae654847701fcc"
+  },
+  "b_c01": {
+   "run": "fine_robust_shell",
+   "candidate": "c01",
+   "parameters": {
+    "threshold": 0.5,
+    "extension": "preserve_forbidden",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 5,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "success": false,
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "checks_passed": {
+    "gates": true,
+    "topology": true,
+    "self_intersections": true,
+    "envelope": true,
+    "forbidden": null,
+    "preserve": null,
+    "features": false,
+    "supports": true,
+    "deviation": true,
+    "surface_maturity": true,
+    "connectivity": true
+   },
+   "thin_samples": 85,
+   "minimum_wall_mm": 0.2807919174644199,
+   "rays": null,
+   "unresolved": null,
+   "mass_g": 46.38636054921319,
+   "mass_screen": {
+    "ratio_to_v0": 1.4422317657329264,
+    "maximum_ratio": 2.0,
+    "passed": true
+   },
+   "runtime_s": 111.57120209999266,
+   "in_record_fea_s": null,
+   "geometry_build_s": 83.59904590001679,
+   "validation_s": 24.19147819999489,
+   "metrics_s": 0.6296521999756806,
+   "renders_s": 2.0342647999932524,
+   "timings_s": {
+    "extension": 0.8728035000094678,
+    "upsample": 1.649630999978399,
+    "primitives": 0.8644913000171073,
+    "witness": 1.4593878999876324,
+    "reinit": 7.820941100013442,
+    "smoothing": 8.062783300003503,
+    "density_witness": 13.424048299988499,
+    "composition": 0.5788784000033047,
+    "opening": 20.59092350001447,
+    "restore": 0.27801179999369197,
+    "extraction": 1.5807936000055633,
+    "remesh": 19.824574700003723,
+    "remesh_checks": 5.558279899996705,
+    "booleans": 0.22988400000031106,
+    "final_checks": 0.7721165999828372,
+    "export": 0.03149700001813471,
+    "validation": {
+     "topology": 0.6194950000208337,
+     "envelope": 0.010513799992622808,
+     "forbidden": 0.8554434000106994,
+     "preserve": 1.3003194000048097,
+     "features": 8.482775299984496,
+     "supports": 0.23884400000679307,
+     "deviation": 10.380900799995288,
+     "surface_maturity": 2.3031317999993917,
+     "connectivity": 5.469997995533049e-05
+    },
+    "metrics": 0.6296521999756806,
+    "renders": 2.0342647999932524
+   },
+   "peak_rss_mb": 2767.58203125,
+   "final_mesh": {
+    "files": {
+     "geometry.ply": {
+      "sha256": "2ed5dab79512cc25ea47b24ba4e68a6c6310ffc34f715e2975bc5564e24689bf",
+      "size_bytes": 3419175
+     },
+     "geometry.stl": {
+      "sha256": "bb82b59f707258026465e2b3ebe6d1f2f08eb2db39234d740165b563fec6e691",
+      "size_bytes": 6842584
+     }
+    },
+    "faces": 136850,
+    "vertices": 68331,
+    "volume_mm3": 42556.29408184696
+   },
+   "fea": {
+    "status": "ok",
+    "source": "diagnostic_fea_1.2.json",
+    "frame_mass_g": 46.38636054921319,
+    "eigenfrequencies_hz": [
+     763.2774,
+     1040.976,
+     1189.252,
+     1241.25,
+     1462.387,
+     1616.704
+    ],
+    "f1_hz": 763.2774,
+    "arm_tip_stiffness_n_per_mm": 291.2538055669186,
+    "arm_tip_compliance_mm_per_n": 0.003433431532520318,
+    "max_displacement_mm": 0.005032697428193046,
+    "max_von_mises_mpa": 0.5831837280694632,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 291.2538055669186,
+      "max_displacement_mm": 0.005032697428193046,
+      "max_von_mises_mpa": 0.5831837280694632
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 3206.0244165379213,
+      "max_displacement_mm": 0.0013302659972045817,
+      "max_von_mises_mpa": 0.47992299812696443
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 9440.349454379686,
+      "max_displacement_mm": 0.0008360427412209616,
+      "max_von_mises_mpa": 0.25372088853038316
+     }
+    },
+    "elements": 157165,
+    "minimum_sicn": 0.048907863886126814,
+    "linear_solver": "SPOOLES",
+    "solver_threads": 1,
+    "runtime_s": 350.78023520001443,
+    "fea_mesh_s": 14.250821699999506,
+    "fea_solve_s": 336.5294135000149,
+    "fea_remesh_target_mm": 1.2,
+    "peak_private_gb": 6.124233245849609,
+    "comparison_diagnostic": {
+     "passed": true,
+     "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+     },
+     "ratios": {
+      "frame_mass_ratio": 1.4422317657329264,
+      "stiffness_ratio": 56.40315187358012,
+      "frequency_ratio": 3.732334819856824,
+      "displacement_ratio": 0.019703348421135417,
+      "stress_ratio": 0.09746533897493952
+     },
+     "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+     },
+     "candidate": {
+      "frame_mass_g": 46.38636054921319,
+      "stiffness_n_per_mm": 291.2538055669186,
+      "max_displacement_mm": 0.005032697428193046,
+      "max_von_mises_mpa": 0.5831837280694632,
+      "first_frequency_hz": 763.2774
+     },
+     "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+     },
+     "selection_score": 1.8450587616001382
+    },
+    "diagnostic_only": true
+   },
+   "diagnostics": [
+    "features"
+   ],
+   "record_sha256": "c90b8add542117a918692b84d7c741e4e02657e3df820c919cb1fca65cc831b7"
+  },
+  "d": {
+   "run": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\candidate_study\\grid4_iter300\\candidates\\density_t01",
+   "status": "ok",
+   "frame_mass_g": 50.95297892131847,
+   "fea": {
+    "status": "ok",
+    "source": "record.json",
+    "frame_mass_g": 50.952978921316564,
+    "eigenfrequencies_hz": [
+     964.0308,
+     1034.19,
+     1258.949,
+     1435.334,
+     1836.414,
+     1950.414
+    ],
+    "f1_hz": 964.0308,
+    "arm_tip_stiffness_n_per_mm": 142.10801922428675,
+    "arm_tip_compliance_mm_per_n": 0.007036900559578671,
+    "max_displacement_mm": 0.011805356212589742,
+    "max_von_mises_mpa": 0.5755087878082749,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 142.10801922428675,
+      "max_displacement_mm": 0.011805356212589742,
+      "max_von_mises_mpa": 0.5755087878082749
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 2246.3518899054257,
+      "max_displacement_mm": 0.0018614078441663913,
+      "max_von_mises_mpa": 0.32322244306884046
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 4599.716834606967,
+      "max_displacement_mm": 0.0018040357637762203,
+      "max_von_mises_mpa": 0.27746379495355894
+     }
+    },
+    "elements": 58196,
+    "minimum_sicn": null,
+    "linear_solver": "PaStiX (native)",
+    "solver_threads": 2,
+    "runtime_s": 55.080722699989565,
+    "fea_mesh_s": null,
+    "fea_solve_s": null,
+    "fea_remesh_target_mm": null,
+    "peak_private_gb": null,
+    "comparison_diagnostic": null,
+    "diagnostic_only": false
+   },
+   "comparison": {
+    "passed": true,
+    "checks": {
+     "frame_mass": true,
+     "stiffness": true,
+     "frequency": true,
+     "displacement": true,
+     "stress": true
+    },
+    "ratios": {
+     "frame_mass_ratio": 1.584215788627751,
+     "stiffness_ratio": 27.520121754836545,
+     "frequency_ratio": 4.713994836286821,
+     "displacement_ratio": 0.0462187624054694,
+     "stress_ratio": 0.09618265460264847
+    },
+    "limits": {
+     "frame_mass_ratio_max": 2.0,
+     "stiffness_ratio_min": 0.5,
+     "frequency_ratio_min": 0.7,
+     "displacement_ratio_max": 2.0,
+     "stress_ratio_max": 2.0
+    },
+    "candidate": {
+     "frame_mass_g": 50.952978921316564,
+     "stiffness_n_per_mm": 142.10801922428675,
+     "max_displacement_mm": 0.011805356212589742,
+     "max_von_mises_mpa": 0.5755087878082749,
+     "first_frequency_hz": 964.0308
+    },
+    "reference": {
+     "frame_mass_g": 32.16290311400827,
+     "stiffness_n_per_mm": 5.163785992309858,
+     "max_displacement_mm": 0.25542346004471833,
+     "max_von_mises_mpa": 5.983498689923118,
+     "first_frequency_hz": 204.504
+    },
+    "selection_score": 1.9750885552779414
+   },
+   "step_sha256": "d10b4b10c7f5e4a6e115a4817caeedb76258357614dc7acaa4a714c82a831fee",
+   "reconstruction_method": "conservative_voxel_threshold_greedy_cuboids"
+  }
+ },
+ "cad_route": {
+  "gpu708_t025_ef_buffer050_preunion_root": {
+   "status": "failed",
+   "violations": null,
+   "diagnostics": [
+    "SurfaceReconstructionError: No decimation budget met the explicit surface deviation, volume and topology limits"
+   ],
+   "runtime_s": 17.463443400003598,
+   "mass_g": null,
+   "record_sha256": "c3bb25772c796ae2c8b33cb5721c1e9bc891e6bba8340d1da8bb43b578091ba9",
+   "independent_fea": false
+  },
+  "gpu708_grayopen125_t025_envelope_bounds_root": {
+   "status": "geometry_invalid",
+   "violations": [
+    "topology:closed_manifold_single_solid"
+   ],
+   "diagnostics": [],
+   "runtime_s": 270.5409686000057,
+   "mass_g": 61.31076530301041,
+   "record_sha256": "425a5f646bf754e04223d9c2fe67f014e6664f87c0b767e14d3eadc19a89f9fe",
+   "independent_fea": false
+  }
+ },
+ "shape_metrics": {
+  "a": {
+   "surface_area_mm2": 26118.408577348182,
+   "free_surface_area_mm2": 22364.90629626484,
+   "free_sharp_edge_length_per_area_per_mm": 0.04076769764547991,
+   "free_axis_normal_area_fraction": 0.15664565874715364,
+   "free_source_grid_plane_area_fraction": 0.008932450377169276,
+   "triangle_count": 146452,
+   "free_source_grid_plane_area_fraction_own_grid": 0.008932450377169276,
+   "own_grid_spacing_mm": 2.6666666666666665,
+   "volume_mm3": 53000.03697282707,
+   "watertight": true,
+   "curvature_abs_mean_per_mm": {
+    "max": 0.8620478021389947,
+    "p50": 0.09888023890978556,
+    "p95": 0.46488786788357467,
+    "p99": 0.5363466813529811,
+    "mean": 0.1453642466061794
+   },
+   "curvature_neighbour_rms_per_mm": 0.14733356643893508,
+   "curvature_neighbour_pairs": 1205
+  },
+  "b_c00": {
+   "surface_area_mm2": 23750.29330751439,
+   "free_surface_area_mm2": 20007.339910590144,
+   "free_sharp_edge_length_per_area_per_mm": 0.04771387562408308,
+   "free_axis_normal_area_fraction": 0.1848846902517001,
+   "free_source_grid_plane_area_fraction": 0.028399341155687936,
+   "triangle_count": 132564,
+   "free_source_grid_plane_area_fraction_own_grid": 0.057873593936938056,
+   "own_grid_spacing_mm": 1.3333333333333333,
+   "volume_mm3": 39184.74200472374,
+   "watertight": true,
+   "curvature_abs_mean_per_mm": {
+    "max": 0.8264093031118912,
+    "p50": 0.12344406168497338,
+    "p95": 0.48310976860150867,
+    "p99": 0.5836989979540402,
+    "mean": 0.16450700687504013
+   },
+   "curvature_neighbour_rms_per_mm": 0.17123593874155535,
+   "curvature_neighbour_pairs": 1702
+  },
+  "b_c01": {
+   "surface_area_mm2": 24549.51895632707,
+   "free_surface_area_mm2": 20800.04508436538,
+   "free_sharp_edge_length_per_area_per_mm": 0.05191329512710785,
+   "free_axis_normal_area_fraction": 0.20605560225694555,
+   "free_source_grid_plane_area_fraction": 0.010524671129910313,
+   "triangle_count": 136850,
+   "free_source_grid_plane_area_fraction_own_grid": 0.012863022798066242,
+   "own_grid_spacing_mm": 1.3333333333333333,
+   "volume_mm3": 42556.29408184696,
+   "watertight": true,
+   "curvature_abs_mean_per_mm": {
+    "max": 0.8252117011489382,
+    "p50": 0.11805971207726344,
+    "p95": 0.46817213492011184,
+    "p99": 0.5649083398877601,
+    "mean": 0.15711035347079255
+   },
+   "curvature_neighbour_rms_per_mm": 0.16743731561137942,
+   "curvature_neighbour_pairs": 1528
+  },
+  "d": {
+   "surface_area_mm2": 30082.104445529312,
+   "free_surface_area_mm2": 21243.936578131485,
+   "free_sharp_edge_length_per_area_per_mm": 0.2373515997083829,
+   "free_axis_normal_area_fraction": 1.0,
+   "free_source_grid_plane_area_fraction": 0.4635762340621163,
+   "triangle_count": 24308,
+   "free_source_grid_plane_area_fraction_own_grid": 1.0,
+   "own_grid_spacing_mm": 4.0,
+   "volume_mm3": 46745.43903227017,
+   "watertight": true,
+   "curvature_abs_mean_per_mm": {
+    "max": 1.2595313662384255,
+    "p50": 0.0,
+    "p95": 0.49991241258813934,
+    "p99": 0.831862303082543,
+    "mean": 0.17005983129829788
+   },
+   "curvature_neighbour_rms_per_mm": 0.2679745312578394,
+   "curvature_neighbour_pairs": 584
+  }
+ },
+ "shape_metrics_method": "surface_metrics(mesh, gpu708 domain) for all columns (identical regions in all three domains, asserted); grid-plane fraction additionally against each source grid; ball_curvature r=1 mm, 5000 samples, seed 0; (d) mesh = reference_geometry() OCCT tessellation 0.03 mm of the t01 STEP, the same mesh as the surface-maturity reference",
+ "sweep": [
+  {
+   "threshold_run": "t020",
+   "candidate": "c00",
+   "parameters": {
+    "threshold": 0.2,
+    "extension": "none",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "thin_samples": 178,
+   "minimum_wall_mm": 0.0004859913931141441,
+   "mass_g": 65.40496876081254,
+   "runtime_s": 124.76490529999137,
+   "in_record_fea_s": null,
+   "geometry_build_s": 91.5343938000442,
+   "validation_s": 28.423161299986532,
+   "extension": "none",
+   "fea": {
+    "status": "ok",
+    "source": "diagnostic_fea.json",
+    "f1_hz": 1087.948,
+    "arm_tip_stiffness_n_per_mm": 331.4970210007934,
+    "runtime_s": 255.42298039997695,
+    "fea_remesh_target_mm": null
+   },
+   "shell_rerun": true
+  },
+  {
+   "threshold_run": "t020",
+   "candidate": "c01",
+   "parameters": {
+    "threshold": 0.2,
+    "extension": "preserve",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "thin_samples": 169,
+   "minimum_wall_mm": 6.303993312157295e-06,
+   "mass_g": 64.18749641107996,
+   "runtime_s": 440.596400200011,
+   "in_record_fea_s": 265.0447834999941,
+   "geometry_build_s": 90.05846030006069,
+   "validation_s": 27.255446800030768,
+   "extension": "preserve",
+   "fea": {
+    "status": "ok",
+    "source": "record.json",
+    "f1_hz": 1102.29,
+    "arm_tip_stiffness_n_per_mm": 332.56719357553465,
+    "runtime_s": 265.01730609999504,
+    "fea_remesh_target_mm": null
+   },
+   "shell_rerun": true
+  },
+  {
+   "threshold_run": "t020",
+   "candidate": "c02",
+   "parameters": {
+    "threshold": 0.2,
+    "extension": "preserve_forbidden",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10
+   },
+   "status": "extension_changed_topology",
+   "failure_stage": "field",
+   "violations": null,
+   "thin_samples": null,
+   "minimum_wall_mm": null,
+   "mass_g": null,
+   "runtime_s": 3.2264176000026055,
+   "in_record_fea_s": null,
+   "geometry_build_s": 0,
+   "validation_s": null,
+   "extension": "preserve_forbidden",
+   "fea": {
+    "status": null,
+    "source": null,
+    "f1_hz": null,
+    "arm_tip_stiffness_n_per_mm": null,
+    "runtime_s": null,
+    "fea_remesh_target_mm": null
+   },
+   "shell_rerun": false
+  },
+  {
+   "threshold_run": "t025",
+   "candidate": "c00",
+   "parameters": {
+    "threshold": 0.25,
+    "extension": "none",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "thin_samples": 181,
+   "minimum_wall_mm": 0.0002906372596297716,
+   "mass_g": 59.40479591636032,
+   "runtime_s": 323.351940499997,
+   "in_record_fea_s": 204.03826000000117,
+   "geometry_build_s": 88.03692340003909,
+   "validation_s": 26.872188099951018,
+   "extension": "none",
+   "fea": {
+    "status": "ok",
+    "source": "record.json",
+    "f1_hz": 1038.536,
+    "arm_tip_stiffness_n_per_mm": 290.7224554465753,
+    "runtime_s": 204.01310649997322,
+    "fea_remesh_target_mm": null
+   },
+   "shell_rerun": true
+  },
+  {
+   "threshold_run": "t025",
+   "candidate": "c01",
+   "parameters": {
+    "threshold": 0.25,
+    "extension": "preserve_forbidden",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10
+   },
+   "status": "extension_changed_topology",
+   "failure_stage": "field",
+   "violations": null,
+   "thin_samples": null,
+   "minimum_wall_mm": null,
+   "mass_g": null,
+   "runtime_s": 3.127965399995446,
+   "in_record_fea_s": null,
+   "geometry_build_s": 0,
+   "validation_s": null,
+   "extension": "preserve_forbidden",
+   "fea": {
+    "status": null,
+    "source": null,
+    "f1_hz": null,
+    "arm_tip_stiffness_n_per_mm": null,
+    "runtime_s": null,
+    "fea_remesh_target_mm": null
+   },
+   "shell_rerun": false
+  },
+  {
+   "threshold_run": "t030",
+   "candidate": "c00",
+   "parameters": {
+    "threshold": 0.3,
+    "extension": "none",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "thin_samples": 149,
+   "minimum_wall_mm": 0.001565088535893108,
+   "mass_g": 54.0870637424262,
+   "runtime_s": 169.19261900000856,
+   "in_record_fea_s": 51.3208953999856,
+   "geometry_build_s": 87.04038520005997,
+   "validation_s": 26.710931000037817,
+   "extension": "none",
+   "fea": {
+    "status": "ok",
+    "source": "diagnostic_fea_retry_1.5.json",
+    "f1_hz": 996.2925,
+    "arm_tip_stiffness_n_per_mm": 243.66539756903506,
+    "runtime_s": 274.0469630000007,
+    "fea_remesh_target_mm": 1.5
+   },
+   "shell_rerun": true
+  },
+  {
+   "threshold_run": "t030",
+   "candidate": "c01",
+   "parameters": {
+    "threshold": 0.3,
+    "extension": "preserve",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10
+   },
+   "status": "extension_changed_topology",
+   "failure_stage": "field",
+   "violations": null,
+   "thin_samples": null,
+   "minimum_wall_mm": null,
+   "mass_g": null,
+   "runtime_s": 3.2518375999934506,
+   "in_record_fea_s": null,
+   "geometry_build_s": 0,
+   "validation_s": null,
+   "extension": "preserve",
+   "fea": {
+    "status": null,
+    "source": null,
+    "f1_hz": null,
+    "arm_tip_stiffness_n_per_mm": null,
+    "runtime_s": null,
+    "fea_remesh_target_mm": null
+   },
+   "shell_rerun": false
+  },
+  {
+   "threshold_run": "t030",
+   "candidate": "c02",
+   "parameters": {
+    "threshold": 0.3,
+    "extension": "preserve_forbidden",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10
+   },
+   "status": "extension_changed_topology",
+   "failure_stage": "field",
+   "violations": null,
+   "thin_samples": null,
+   "minimum_wall_mm": null,
+   "mass_g": null,
+   "runtime_s": 3.3019457000191323,
+   "in_record_fea_s": null,
+   "geometry_build_s": 0,
+   "validation_s": null,
+   "extension": "preserve_forbidden",
+   "fea": {
+    "status": null,
+    "source": null,
+    "f1_hz": null,
+    "arm_tip_stiffness_n_per_mm": null,
+    "runtime_s": null,
+    "fea_remesh_target_mm": null
+   },
+   "shell_rerun": false
+  }
+ ],
+ "sweep_success_rate": 0.0,
+ "sweep_geometry_success_rate": 0.0,
+ "sweep_runtime_median_s": 64.03342550000525,
+ "shell_before_after": [
+  {
+   "case": "gpu708 t025 preserve",
+   "before": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 180,
+    "min_wall": 0.001595534892504798,
+    "mass_g": 57.772707448027816,
+    "runtime_s": 737.6959867999831,
+    "fea_status": "ok",
+    "f1": 1021.429,
+    "arm_tip": 286.73109247284555,
+    "elements": 180877,
+    "fea_s": 567.4634082999837,
+    "fea_src": "record",
+    "peak_gb": null
+   },
+   "after": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 86,
+    "min_wall": 0.020647335173981728,
+    "mass_g": 57.77004030038151,
+    "runtime_s": 122.68721140001435,
+    "fea_status": "ok",
+    "f1": 1041.46,
+    "arm_tip": 286.93024636532004,
+    "elements": 179728,
+    "fea_s": 523.590610299987,
+    "fea_src": "diagnostic_fea_1.2.json",
+    "peak_gb": 7.2298736572265625
+   }
+  },
+  {
+   "case": "fine c00 t0.5 preserve",
+   "before": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 204,
+    "min_wall": 0.0004721485646599518,
+    "mass_g": 42.714103459066905,
+    "runtime_s": 107.90087969999877,
+    "fea_status": "ok",
+    "f1": 461.1074,
+    "arm_tip": 201.72173155197788,
+    "elements": 112976,
+    "fea_s": 205.98259759999928,
+    "fea_src": "diagnostic_fea_1.5.json",
+    "peak_gb": 4.303424835205078
+   },
+   "after": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 116,
+    "min_wall": 0.07942698083498118,
+    "mass_g": 42.71136878514888,
+    "runtime_s": 114.9684860999987,
+    "fea_status": "ok",
+    "f1": 460.4294,
+    "arm_tip": 200.05480900160052,
+    "elements": 203783,
+    "fea_s": 513.7027469000022,
+    "fea_src": "diagnostic_fea_1.json",
+    "peak_gb": 7.689094543457031
+   }
+  },
+  {
+   "case": "fine c01 t0.5 preserve_forbidden",
+   "before": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 164,
+    "min_wall": 0.00014916606124862133,
+    "mass_g": 46.38917686448595,
+    "runtime_s": 113.09192330000224,
+    "fea_status": "ok",
+    "f1": 762.6463,
+    "arm_tip": 288.9849625323956,
+    "elements": 218261,
+    "fea_s": 559.6576386000088,
+    "fea_src": "diagnostic_fea_1.json",
+    "peak_gb": 8.408550262451172
+   },
+   "after": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 85,
+    "min_wall": 0.2807919174644199,
+    "mass_g": 46.38636054921319,
+    "runtime_s": 111.57120209999266,
+    "fea_status": "ok",
+    "f1": 763.2774,
+    "arm_tip": 291.2538055669186,
+    "elements": 157165,
+    "fea_s": 350.78023520001443,
+    "fea_src": "diagnostic_fea_1.2.json",
+    "peak_gb": 6.124233245849609
+   }
+  },
+  {
+   "case": "sweep t020 none",
+   "before": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 178,
+    "min_wall": 0.0004859913931141441,
+    "mass_g": 65.40496876081254,
+    "runtime_s": 124.76490529999137,
+    "fea_status": "ok",
+    "f1": 1087.948,
+    "arm_tip": 331.4970210007934,
+    "elements": 104884,
+    "fea_s": 255.42298039997695,
+    "fea_src": "diagnostic_fea.json",
+    "peak_gb": null
+   },
+   "after": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 86,
+    "min_wall": 0.028092667234787948,
+    "mass_g": 65.40222721032221,
+    "runtime_s": 119.61636159999762,
+    "fea_status": "failed",
+    "f1": null,
+    "arm_tip": null,
+    "elements": null,
+    "fea_s": 15.491609999997308,
+    "fea_src": "diagnostic_fea_1.1.json",
+    "peak_gb": 1.79473876953125
+   }
+  },
+  {
+   "case": "sweep t020 preserve",
+   "before": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 169,
+    "min_wall": 6.303993312157295e-06,
+    "mass_g": 64.18749641107996,
+    "runtime_s": 440.596400200011,
+    "fea_status": "ok",
+    "f1": 1102.29,
+    "arm_tip": 332.56719357553465,
+    "elements": 106260,
+    "fea_s": 265.01730609999504,
+    "fea_src": "record",
+    "peak_gb": null
+   },
+   "after": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 82,
+    "min_wall": 0.008321388407913737,
+    "mass_g": 64.18527484709931,
+    "runtime_s": 118.87039060000097,
+    "fea_status": "ok",
+    "f1": 1114.528,
+    "arm_tip": 333.5157756109084,
+    "elements": 143419,
+    "fea_s": 377.9375821999856,
+    "fea_src": "diagnostic_fea_1.5.json",
+    "peak_gb": 5.802345275878906
+   }
+  },
+  {
+   "case": "sweep t025 none",
+   "before": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 181,
+    "min_wall": 0.0002906372596297716,
+    "mass_g": 59.40479591636032,
+    "runtime_s": 323.351940499997,
+    "fea_status": "ok",
+    "f1": 1038.536,
+    "arm_tip": 290.7224554465753,
+    "elements": 97995,
+    "fea_s": 204.01310649997322,
+    "fea_src": "record",
+    "peak_gb": null
+   },
+   "after": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 95,
+    "min_wall": 0.0015820050524032534,
+    "mass_g": 59.40229356721191,
+    "runtime_s": 108.47904099998414,
+    "fea_status": "ok",
+    "f1": 1097.564,
+    "arm_tip": 299.47788857095634,
+    "elements": 183432,
+    "fea_s": 502.0323492999887,
+    "fea_src": "diagnostic_fea_1.2.json",
+    "peak_gb": 7.427055358886719
+   }
+  },
+  {
+   "case": "sweep t030 none",
+   "before": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 149,
+    "min_wall": 0.001565088535893108,
+    "mass_g": 54.0870637424262,
+    "runtime_s": 169.19261900000856,
+    "fea_status": "ok",
+    "f1": 996.2925,
+    "arm_tip": 243.66539756903506,
+    "elements": 121626,
+    "fea_s": 274.07974449999165,
+    "fea_src": "diagnostic_fea_retry_1.5.json",
+    "peak_gb": null
+   },
+   "after": {
+    "status": "geometry_invalid",
+    "success": false,
+    "violations": [
+     "features"
+    ],
+    "thin": 43,
+    "min_wall": 0.07056512829176761,
+    "mass_g": 54.08475460234501,
+    "runtime_s": 111.72384419999435,
+    "fea_status": "ok",
+    "f1": 990.822,
+    "arm_tip": 238.9789594483495,
+    "elements": 170410,
+    "fea_s": 429.64438310000696,
+    "fea_src": "diagnostic_fea_1.2.json",
+    "peak_gb": 6.712127685546875
+   }
+  }
+ ],
+ "ledger_lines": {
+  "exports/run_log.jsonl": 6,
+  "exports/implicit/sweep/run_log.jsonl": 12
+ },
+ "render": {
+  "path": "implicit_vs_cad_gpu708_t025.png",
+  "sha256": "fa77253bd233c5adf2c67d4ee3f63dbe7f6369b1d7f97b722c9e7247e32e77d5",
+  "size_bytes": 583802,
+  "render_faces": 30000,
+  "views": [
+   "isometric",
+   "isometric_rear",
+   "top",
+   "low_front"
+  ]
+ }
+}
