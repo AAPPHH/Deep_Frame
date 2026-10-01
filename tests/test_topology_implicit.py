@@ -118,6 +118,15 @@ def chain_domain(gap):
 
 SMALL = {"subdivisions": 4, "threshold": 0.35, "extension": "preserve"}
 
+def test_extraction_crash_is_recorded_as_geometry_failure(monkeypatch):
+    def crash(self):
+        raise RuntimeError("Marching cubes vertex is not on its grid edge")
+    monkeypatch.setattr(ImplicitField, "extract", crash)
+    domain, density = chain_domain(0)
+    with pytest.raises(ImplicitError) as error:
+        build_implicit(domain, density, SMALL)
+    assert error.value.status == "geometry_invalid" and error.value.report["failure_stage"] == "extraction" and error.value.mesh is None
+
 @pytest.mark.parametrize("gap", [1, 6])
 def test_disconnected_mount_is_rejected_not_bridged(gap):
     domain, density = chain_domain(gap)

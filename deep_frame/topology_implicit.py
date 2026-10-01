@@ -682,7 +682,10 @@ def build_implicit(domain, density, settings, progress=None):
         raise ImplicitError("geometry_invalid", message, report, mesh)
     report["status"] = "extracting"
     started = perf_counter()
-    raw, report["extraction"] = field.extract()
+    try:
+        raw, report["extraction"] = field.extract()
+    except RuntimeError as error:
+        fail("extraction", str(error), None)
     timings["extraction"] = perf_counter()-started
     _progress(progress, "extraction", report, mesh=raw)
     if not _one_mesh(raw):
