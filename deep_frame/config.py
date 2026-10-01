@@ -718,6 +718,7 @@ TOPOLOGY_CONFIG = {
         "move_limit_late_beta": 8.0,
         "volume_target_relaxation": 0.2,
         "objective_window": 10,
+        "gpu_solver_residency": "resident",
     },
     "reconstruction": {
         "density_threshold": 0.35,

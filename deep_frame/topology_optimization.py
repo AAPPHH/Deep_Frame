@@ -285,12 +285,16 @@ def select_nodes(points, region):
     return selected
 
 class HexElasticity:
-    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu"):
+    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident"):
         if linear_solver not in ("cpu_superlu", "cuda_cudss"):
             raise ValueError("Unknown topology linear_solver")
+        if gpu_solver_residency not in ("resident", "transient"):
+            raise ValueError("Unknown topology gpu_solver_residency")
         self.linear_solver = linear_solver
+        self.gpu_solver_residency = gpu_solver_residency
         self.gpu_solvers = {}
         self.gpu_reanalyses = 0
+        self.gpu_transient_releases = 0
         self.gpu_solver_history = []
         self.domain = domain
         self.points, self.connectivity, self.dofs = regular_grid(domain["grid"])
@@ -429,6 +433,13 @@ class HexElasticity:
                 if key not in self.gpu_solvers:
                     self.gpu_solvers[key] = CudaDirectSolver(reduced, forces)
                 solutions = self.gpu_solvers[key].solve(reduced, forces)
+                if self.gpu_solver_residency == "transient":
+                    released = self.gpu_solvers.pop(key)
+                    self.gpu_solver_history.append(released.diagnostics())
+                    cleanup = released.close()
+                    if cleanup:
+                        raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
+                    self.gpu_transient_releases += 1
             residual = np.linalg.norm(reduced @ solutions - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
             tolerance = 1e-8 if self.linear_solver == "cuda_cudss" else 1e-4
             if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
@@ -485,7 +496,7 @@ class HexElasticity:
             errors.extend(solver.close())
         return errors
     def diagnostics(self):
-        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]})
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]})
 
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,
@@ -513,6 +524,7 @@ DEFAULT_SETTINGS = {
     "move_limit_late_beta": 8.0,
     "volume_target_relaxation": 0.2,
     "objective_window": 10,
+    "gpu_solver_residency": "resident",
 }
 
 def _settings(settings):
@@ -539,6 +551,8 @@ def _settings(settings):
         raise ValueError("Invalid topology interface_node_policy")
     if result["linear_solver"] not in ("cpu_superlu", "cuda_cudss"):
         raise ValueError("Invalid topology linear_solver")
+    if result["gpu_solver_residency"] not in ("resident", "transient"):
+        raise ValueError("Invalid topology gpu_solver_residency")
     if result["projection"] not in ("single", "robust"):
         raise ValueError("Invalid topology projection")
     delta = result["robust_delta"]
@@ -739,7 +753,7 @@ def optimize_topology(domain, settings, *, progress_callback=None):
         if np.count_nonzero(mapping.preserve) >= target:
             raise ValueError("The volume budget must exceed the preserve-cell volume")
         design = mapping.initial(target)
-        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"])
+        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
         scales = None
         converged = False
         stop_reason = "max_iterations"

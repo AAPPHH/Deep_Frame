@@ -303,7 +303,8 @@ def test_robust_optimization_is_deterministic_and_reports_three_fields():
 
 @pytest.mark.parametrize("settings", [{"volume_fraction": 0.1}, {"volume_fraction": float("nan")}, {"penalization": 0}, {"case_weights": {"missing": 1}}, {"max_iterations": 0},
                                       {"projection": "bogus"}, {"projection": "robust", "robust_delta": 0.5}, {"beta_schedule": [2, 1]}, {"beta_schedule": []},
-                                      {"move_limit_late": 0.0}, {"beta_interval": 0}, {"volume_target_relaxation": 0.0}, {"volume_target_relaxation": 1.5}, {"objective_window": 1}])
+                                      {"move_limit_late": 0.0}, {"beta_interval": 0}, {"volume_target_relaxation": 0.0}, {"volume_target_relaxation": 1.5}, {"objective_window": 1},
+                                      {"gpu_solver_residency": "swap"}])
 def test_invalid_settings_and_impossible_preserve_budget_fail_cleanly(settings):
     result = optimize_topology(beam_domain(), settings)
     assert result["status"] == "invalid"
@@ -510,3 +511,20 @@ def test_cuda_robust_continuation_matches_cpu(cuda_solver):
     for cpu, gpu in zip(reference["history"], actual["history"], strict=True):
         assert max(abs(gpu["compliances_n_mm"][name] / value - 1) for name, value in cpu["compliances_n_mm"].items()) < 1e-6
     assert abs(actual["summary"]["objective_final"] / reference["summary"]["objective_final"] - 1) < 1e-6
+
+def test_cuda_transient_residency_releases_factors_and_matches_resident(cuda_solver):
+    domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
+    settings = {**ROBUST_RUN, "volume_fraction": 0.5, "beta_schedule": [1, 4], "beta_interval": 2, "beta_minimum_iterations": 2,
+                "max_iterations": 4, "change_tolerance": 1e-12, "move_limit_late_beta": 4, "linear_solver": "cuda_cudss"}
+    resident = optimize_topology(deepcopy(domain), settings)
+    transient = optimize_topology(deepcopy(domain), {**settings, "gpu_solver_residency": "transient"})
+    assert resident["status"] == transient["status"] == "ok", transient["diagnostics"]
+    for key in ("density", "design_density", "eroded_density", "dilated_density"):
+        assert np.allclose(transient[key], resident[key], rtol=0, atol=1e-12)
+    system = transient["summary"]["system"]
+    evaluations = len(transient["history"]) * system["independent_fixtures"]
+    assert system["gpu_transient_releases"] == evaluations == len(system["gpu_solver_details"])
+    assert resident["summary"]["system"]["gpu_transient_releases"] == 0
+    assert HexElasticity(domain, gpu_solver_residency="transient").solve(np.full(domain["allowed"].size, 0.5))["tip"]["compliance_n_mm"] > 0
+    with pytest.raises(ValueError, match="gpu_solver_residency"):
+        HexElasticity(domain, gpu_solver_residency="swap")
