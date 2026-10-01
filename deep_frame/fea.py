@@ -42,9 +42,14 @@ def _run(command, directory, timeout, threads, log_path):
                         "NUMBER_OF_CPUS": str(threads)})
     environment["PYTHONPATH"] = os.pathsep.join(filter(None, [str(Path(__file__).resolve().parents[1]), environment.get("PYTHONPATH")]))
     flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-    with Path(log_path).open("w", encoding="utf-8") as log:
-        completed = subprocess.run(command, cwd=directory, stdout=log, stderr=subprocess.STDOUT, env=environment, timeout=timeout, creationflags=flags)
-    content = Path(log_path).read_text(encoding="utf-8", errors="replace")
+    log_path = Path(log_path)
+    for attempt in range(2):
+        with log_path.open("w", encoding="utf-8") as log:
+            completed = subprocess.run(command, cwd=directory, stdout=log, stderr=subprocess.STDOUT, env=environment, timeout=timeout, creationflags=flags)
+        if 0 <= completed.returncode < 0xC0000000 or attempt:
+            break
+        log_path.replace(log_path.with_suffix(".crash.log"))
+    content = log_path.read_text(encoding="utf-8", errors="replace")
     if completed.returncode or re.search(r"\*ERROR|\*FATAL", content, re.IGNORECASE):
         raise RuntimeError(f"External tool failed ({completed.returncode}); log: {log_path}; {content[-1200:]}")
     return content

@@ -1,5 +1,6 @@
 import json
 import math
+import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -187,6 +188,27 @@ def test_requested_thread_count_overrides_inherited_native_thread_environment(tm
     script = "import os,json; print(json.dumps({key:os.environ[key] for key in " + repr(keys) + "}))"
     content = _run([sys.executable, "-c", script], tmp_path, 10, 1, tmp_path / "environment.log")
     assert json.loads(content) == {key: "1" for key in keys}
+
+def scripted_run(monkeypatch, codes):
+    calls = []
+    def fake(command, stdout, **kwargs):
+        calls.append(command)
+        stdout.write(f"attempt {len(calls)}\n")
+        return subprocess.CompletedProcess(command, codes[len(calls) - 1])
+    monkeypatch.setattr("deep_frame.fea.subprocess.run", fake)
+    return calls
+
+def test_native_crash_is_retried_once_and_crash_log_kept(tmp_path, monkeypatch):
+    calls = scripted_run(monkeypatch, [0xC0000374, 0])
+    content = _run(["ccx"], tmp_path, 10, 1, tmp_path / "solve.log")
+    assert len(calls) == 2 and content == "attempt 2\n"
+    assert (tmp_path / "solve.crash.log").read_text(encoding="utf-8") == "attempt 1\n"
+
+def test_ordinary_failure_is_not_retried(tmp_path, monkeypatch):
+    calls = scripted_run(monkeypatch, [1, 0])
+    with pytest.raises(RuntimeError, match=r"failed \(1\)"):
+        _run(["ccx"], tmp_path, 10, 1, tmp_path / "solve.log")
+    assert len(calls) == 1 and not (tmp_path / "solve.crash.log").exists()
 
 def selector_shape(selector):
     minimum, maximum = selector["min_mm"], selector["max_mm"]
