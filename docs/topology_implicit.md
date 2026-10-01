@@ -13,8 +13,8 @@ Feinraster: `subdivisions = 10` auf dem 8/3-mm-Dichteraster ergibt h = 0,267 mm.
 3. **Reinitialisierung** mit bandkorrigierter EDT, danach Gauss-Glaettung sigma_d = 0,4 mm und erneute Reinitialisierung.
 4. **Anschluesse** werden als exakte Primitiv-SDFs per kubischem Smooth-Max eingefuegt. Die Uebergangsweite ist k = 2,0 mm, die Inflation delta = 0,3 mm.
 5. **Keep-outs und Bauraum** werden danach per hartem Minimum mit dem Abstand c = 0,3 mm abgezogen. Verrundungen koennen deshalb nie in Keep-outs wachsen.
-6. **Opening** mit r = 1,35 mm. Jedes verbleibende Merkmal enthaelt eine Kugel mit mindestens 1 mm Radius. Das ergibt die 2-mm-Mindestwand plus Raster- und Glaettungsreserve.
-7. **Ripple-Glaettung** (sigma_r = 0,25 mm) und harte Wiederherstellung der inflationierten Anschluesse.
+6. **Opening** mit r = 1,35 mm. Erosion {phi > r}; die Dilatation ist r minus der exakten Euklid-Distanz zu den linearen Nullstellen von phi - r auf den Gitterkanten mit Vorzeichenwechsel. Gradientenprojizierte Bandpunkte werden dafuer nicht verwendet, weil sie an Mittelachsen 0,25-0,3 mm zu weit reichten und Restschalen nahe null hinterliessen. Jedes verbleibende Merkmal enthaelt eine Kugel mit mindestens 1 mm Radius. Das ergibt die 2-mm-Mindestwand plus Raster- und Glaettungsreserve.
+7. **Ripple-Glaettung** (sigma_r = 0,25 mm) und harte Wiederherstellung der inflationierten Anschluesse, beschnitten mit demselben Keep-out- und Bauraumabstand c wie die Komposition. Den Rest bis zur exakten Flaeche liefern die exakten Booleans.
 
 Zeugen fuer die Verbindung werden im Feld geprueft, nie durch Ergaenzen erzeugt. Alle Pflichtanschluesse muessen in der unveraenderten Dichtekomposition und in der geglaetteten, geoeffneten Dichte vor dem Smooth-Union in einer 6-zusammenhaengenden Komponente liegen. Nach dem Opening und im Endfeld wird das erneut geprueft. Ein Verstoss ergibt `mount_disconnected`. Der Kandidat wird abgelehnt und nicht ueberbrueckt.
 
@@ -37,9 +37,9 @@ Zwei bewusste Entscheidungen gehen ueber "nur Bohrungen exakt" hinaus:
 | topology, self_intersections | geschlossen, orientiert, ein Koerper, keine Hohlraumschalen, STL-Rundreise; MeshLab plus exakte Paarzertifikate |
 | envelope, forbidden | Volumen ausserhalb bzw. im Keep-out <= 1e-5 mm3, zusaetzlich analytische Durchdringung <= 1e-4 mm |
 | preserve | Fehlvolumen <= 1e-5 mm3, Bohrungsraender, Anhaftungsflaeche |
-| features | exakte float64-Strahlen entlang der Innennormalen; Mindestwand 2 mm |
+| features | exakte float64-Strahlen entlang der Innennormalen; Mindestwand 2 mm. Nur Sehnen, deren beide Enden auf vorgeschriebenen Bohrungen liegen, duerfen um die Summe der Polygon-Uebermasse (aus Segmentzahl und Radius) kuerzer sein. |
 | supports | Ueberhaenge und Zugaenglichkeit (eingeschlossene Hohlraeume) |
-| deviation | Abstand zur Dichte-Isoflaeche in der freien Zone <= 0,20 mm |
+| deviation | Abstand zum verarbeiteten Feld (nach Glaettung und Opening, wie `density_isosurface` der CAD-Route) in der freien Zone <= 0,20 mm; Abstand zur rohen Dichte-Isoflaeche nur als Diagnose |
 | connectivity | Feldzeugen, ein Koerper, alle Preserves vorhanden |
 | surface_maturity | scharfe Kantenlaenge je freier Flaeche und achsparalleler Flaechenanteil hoechstens 0,5 x Referenz (Voxelroute grid4_iter300 t01) |
 

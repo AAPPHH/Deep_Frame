@@ -146,7 +146,7 @@ def test_connected_mounts_pass_every_acceptance_check(mounted):
     assert all(checks["connectivity"]["witnesses"].values()) and checks["connectivity"]["mesh_body_count"] == 1
     walls = checks["features"]["mesh_wall_screen"]
     assert checks["features"]["field_opening"]["passed"] and (walls["minimum_measured_mm"] is None or walls["minimum_measured_mm"] >= 2.0-SETTINGS["wall_tolerance_mm"])
-    assert checks["deviation"]["free_zone"]["candidate_to_density"]["free_sample_count"] >= CONFIG["free_zone_minimum_samples"]
+    assert checks["deviation"]["free_zone"]["candidate_to_reference"]["free_sample_count"] >= CONFIG["free_zone_minimum_samples"]
     assert checks["forbidden"]["bore"]["passed"] and checks["preserve"]["m1"]["missing_volume_mm3"] <= SETTINGS["volume_tolerance_mm3"]
     assert result["settings"]["maximum_wall_samples"] == CONFIG["maximum_wall_samples"]
     assert checks["surface_maturity"]["passed"] and checks["gates"]["values"]["surface_deviation_mm"] == CONFIG["surface_deviation_mm"]
@@ -176,12 +176,20 @@ def test_unevaluable_checks_fail(mounted):
     sparse = validate_implicit(mesh, domain, field, {**report, "settings": {**report["settings"], "free_zone_minimum_samples": 10**9}}, reference_metrics=easy_reference(mesh, domain))
     assert sparse["violations"] == ["deviation"] and "not evaluable" in sparse["checks"]["deviation"]["free_zone"]["reason"]
 
-def test_deviation_from_density_isosurface_is_detected(mounted):
+def test_raw_density_deviation_is_recorded_but_not_gated(mounted):
     domain, mesh, report, field = mounted
     shifted = ImplicitField(field.origin, field.spacing, field.values)
     shifted.layers = {**field.layers, "reference": np.roll(field.layers["reference"], 2, axis=1)}
-    result = validate_implicit(mesh, domain, shifted, report)
-    assert "deviation" in result["violations"] and result["checks"]["deviation"]["free_zone"]["maximum_deviation_mm"] > 0.4
+    deviation = MeshAcceptance(mesh, domain, CONFIG, SETTINGS).deviation(shifted, report)
+    assert deviation["passed"] and deviation["free_zone"]["maximum_deviation_mm"] <= CONFIG["surface_deviation_mm"]
+    assert not deviation["free_zone"]["density_diagnostic"]["gated"] and deviation["free_zone"]["density_diagnostic"]["maximum_deviation_mm"] > 0.4
+
+def test_extraction_error_against_processed_field_fails_the_gate(mounted):
+    domain, mesh, report, field = mounted
+    moved = mesh.copy().apply_translation([0.0, 0.0, 0.3])
+    deviation = MeshAcceptance(moved, domain, CONFIG, SETTINGS).deviation(field, report)
+    assert not deviation["passed"] and not deviation["free_zone"]["passed"] and deviation["free_zone"]["evaluable"]
+    assert 0.25 < deviation["free_zone"]["maximum_deviation_mm"] < 0.4
 
 def test_disconnected_mount_never_reaches_validation():
     domain, density = mounted_domain()

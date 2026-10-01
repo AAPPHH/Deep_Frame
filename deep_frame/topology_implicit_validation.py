@@ -288,32 +288,37 @@ class MeshAcceptance:
         config = self.config
         extraction = {key: report["remesh"]["fidelity"][key] for key in ("maximum_sampled_deviation_mm", "relative_volume_change")}
         extraction["passed"] = extraction["maximum_sampled_deviation_mm"] <= config["surface_deviation_mm"] and abs(extraction["relative_volume_change"]) <= config["relative_volume_change"]
-        reference = ImplicitField(field.origin, field.spacing, field.layers["reference"]).extract()[0]
         margin = float(np.linalg.norm(field.spacing))/2
         stencil = maximum_filter(np.pad(field.layers["extension_changed"], 2), size=4, origin=-1)[np.ix_(*(np.arange(n)//config["subdivisions"]+1 for n in field.values.shape))]
-        excluded = _dilate(field.layers["opening_modified"] | stencil, field.spacing, config["free_zone_modified_mm"]+margin)
+        modified = _dilate(field.layers["opening_modified"] | stencil, field.spacing, config["free_zone_modified_mm"]+margin)
         del stencil
         constraint = config["constraint_offset_mm"]+config["free_zone_constraint_mm"]
         pad = max(config["free_zone_preserve_mm"], constraint)+2*margin
-        excluded |= field.primitives(self.regions["preserve"], pad) > -config["free_zone_preserve_mm"]-margin
-        excluded |= field.primitives(self.regions["forbidden"], pad) > -constraint-margin
+        near = field.primitives(self.regions["preserve"], pad) > -config["free_zone_preserve_mm"]-margin
+        near |= field.primitives(self.regions["forbidden"], pad) > -constraint-margin
         envelope = _envelope(self.domain)
-        def free(points):
-            index = np.clip(np.rint((points-field.origin)/field.spacing).astype(np.int64), 0, np.asarray(field.values.shape)-1)
-            return ~excluded[tuple(index.T)] & (primitive_distance(points.T, envelope) > constraint)
-        rows = {}
-        for name, source, target in (("candidate_to_density", self.mesh, reference), ("density_to_candidate", reference, self.mesh)):
-            points = _surface_samples(source)
-            chosen = points[free(points)]
-            rows[name] = {"sample_count": len(points), "free_sample_count": len(chosen), "surface_distance_mm": _statistics(_point_distances(chosen, target)) if len(chosen) else None}
         area = self.mesh.area_faces
-        enough = all(row["free_sample_count"] >= config["free_zone_minimum_samples"] for row in rows.values())
-        largest = max(row["surface_distance_mm"]["max"] for row in rows.values()) if enough else None
-        free_zone = {**rows, "maximum_deviation_mm": largest, "free_area_fraction": float(area[free(self.mesh.triangles_center)].sum()/area.sum()), "excluded_sample_fraction": float(excluded.mean()),
-                     "reference_mesh": _mesh_summary(reference), "lookup_margin_mm": margin, "passed": enough and largest <= config["surface_deviation_mm"],
-                     "method": "Bidirectional exact MeshLab nearest-surface distances between the final mesh and marching cubes of the unextended, unsmoothed density minus threshold, on free-zone samples only: beyond the preserve and constraint distances from every exact primitive and the envelope and outside the opening- or extension-modified samples dilated by the configured distance; grid lookups add half the sample diagonal"}
-        if not enough:
-            free_zone["reason"] = "Too few free-zone samples; the deviation is not evaluable"
+        def compare(values, excluded):
+            reference = ImplicitField(field.origin, field.spacing, values).extract()[0]
+            def free(points):
+                index = np.clip(np.rint((points-field.origin)/field.spacing).astype(np.int64), 0, np.asarray(field.values.shape)-1)
+                return ~excluded[tuple(index.T)] & (primitive_distance(points.T, envelope) > constraint)
+            rows = {}
+            for name, source, target in (("candidate_to_reference", self.mesh, reference), ("reference_to_candidate", reference, self.mesh)):
+                points = _surface_samples(source)
+                chosen = points[free(points)]
+                rows[name] = {"sample_count": len(points), "free_sample_count": len(chosen), "surface_distance_mm": _statistics(_point_distances(chosen, target)) if len(chosen) else None}
+            enough = all(row["free_sample_count"] >= config["free_zone_minimum_samples"] for row in rows.values())
+            result = {**rows, "maximum_deviation_mm": max(row["surface_distance_mm"]["max"] for row in rows.values()) if enough else None, "free_area_fraction": float(area[free(self.mesh.triangles_center)].sum()/area.sum()),
+                      "excluded_sample_fraction": float(excluded.mean()), "reference_mesh": _mesh_summary(reference), "lookup_margin_mm": margin, "evaluable": enough}
+            if not enough:
+                result["reason"] = "Too few free-zone samples; the deviation is not evaluable"
+            return result
+        free_zone = compare(field.values, near)
+        free_zone.update(passed=free_zone["evaluable"] and free_zone["maximum_deviation_mm"] <= config["surface_deviation_mm"], reference="processed field: smoothed density after composition, manufacturing opening and ripple smoothing, as extracted",
+                         method="Bidirectional exact MeshLab nearest-surface distances between the final mesh and marching cubes of the processed field, the CAD-route density_isosurface definition, on free-zone samples beyond the preserve and constraint distances from every exact primitive and the envelope; grid lookups add half the sample diagonal")
+        free_zone["density_diagnostic"] = compare(field.layers["reference"], near | modified)
+        free_zone["density_diagnostic"].update(gated=False, reference="unextended, unsmoothed density minus threshold", method="Same distances against the raw density iso-surface, additionally outside the opening- or extension-modified samples dilated by the configured distance; recorded, not gated")
         return {"extraction": extraction, "free_zone": free_zone, "passed": extraction["passed"] and free_zone["passed"]}
 
     def connectivity(self, report, preserve):
