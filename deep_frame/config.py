@@ -1,4 +1,5 @@
 from copy import deepcopy
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -738,6 +739,12 @@ CONFIG = {
     },
     "frame_export_stem": "exports/frame_v0",
 }
+
+def _json_copy(value):
+    return json.loads(json.dumps(value, allow_nan=False))
+
+def _json_digest(value):
+    return hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 def _convert(kind, value, key):
     if isinstance(kind, tuple):

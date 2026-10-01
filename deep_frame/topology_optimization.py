@@ -1,5 +1,4 @@
 import ctypes
-import json
 import os
 from collections import defaultdict
 from copy import deepcopy
@@ -11,6 +10,8 @@ import numpy as np
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg import eigsh, splu
 from scipy.spatial import cKDTree
+
+from deep_frame.config import _json_copy
 
 def _library():
     try:
@@ -484,7 +485,7 @@ class HexElasticity:
             errors.extend(solver.close())
         return errors
     def diagnostics(self):
-        return json.loads(json.dumps({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]}, allow_nan=False))
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]})
 
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,

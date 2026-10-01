@@ -16,6 +16,7 @@ import numpy as np
 
 if __name__ != "__main__":
     from build123d import export_step
+    from deep_frame.config import _json_copy, _json_digest
     from deep_frame.frame import assembly_placements, build_components, build_geometry, motor_positions
 
 def resolve_solver(settings):
@@ -378,9 +379,6 @@ def generate_mesh(request_path):
 def _box(minimum, maximum):
     return {"kind": "box", "min_mm": list(minimum), "max_mm": list(maximum)}
 
-def _digest(value):
-    return hashlib.sha256(json.dumps(value, sort_keys=True, allow_nan=False).encode()).hexdigest()
-
 def solver_identity(settings):
     executable = resolve_solver(settings)
     flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
@@ -459,7 +457,7 @@ def prepare_frame_case(parameters, fea_config=None, integration_config=None):
         "coupling_model": "battery COM rigidly coupled to a narrow transverse band of the deck rails; local patch deformation suppressed; no battery rotational inertia",
         "impact_model": "equivalent static force, not a transient impact or crash strength prediction",
     }
-    return json.loads(json.dumps(result, allow_nan=False))
+    return _json_copy(result)
 
 class FrameEvaluator:
     def __init__(self, reference_parameters, fea_config=None, integration_config=None):
@@ -481,7 +479,7 @@ class FrameEvaluator:
             "toolchain": {key: value for key, value in self.toolchain.items() if key != "solver_path"},
             "source_sha256": sources,
         }
-        self.evaluation_id = self.integration_config["model_version"] + ":" + _digest(self.evaluation_contract)
+        self.evaluation_id = self.integration_config["model_version"] + ":" + _json_digest(self.evaluation_contract)
     def __call__(self, parameters):
         model = prepare_frame_case(parameters, self.fea_config, self.integration_config)
         solid = build_geometry(parameters)
@@ -489,7 +487,7 @@ class FrameEvaluator:
         result["evaluation_id"] = self.evaluation_id
         result["model_inputs"] = model
         result["evaluation_contract"] = deepcopy(self.evaluation_contract)
-        return json.loads(json.dumps(result, allow_nan=False))
+        return _json_copy(result)
 
 if __name__ == "__main__":
     generate_mesh(sys.argv[1])
