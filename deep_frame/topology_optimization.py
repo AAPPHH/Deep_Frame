@@ -503,6 +503,15 @@ DEFAULT_SETTINGS = {
     "max_runtime_s": None,
     "interface_node_policy": "allowed_adjacent",
     "linear_solver": "cpu_superlu",
+    "projection": "single",
+    "robust_delta": 0.25,
+    "beta_schedule": None,
+    "beta_interval": 50,
+    "beta_minimum_iterations": 20,
+    "beta_change_tolerance": 0.01,
+    "move_limit_late": None,
+    "move_limit_late_beta": 8.0,
+    "volume_update_interval": 20,
 }
 
 def _settings(settings):
@@ -529,6 +538,25 @@ def _settings(settings):
         raise ValueError("Invalid topology interface_node_policy")
     if result["linear_solver"] not in ("cpu_superlu", "cuda_cudss"):
         raise ValueError("Invalid topology linear_solver")
+    if result["projection"] not in ("single", "robust"):
+        raise ValueError("Invalid topology projection")
+    delta = result["robust_delta"]
+    if result["projection"] == "robust" and (not np.isfinite(delta) or delta <= 0 or not 0 < result["projection_eta"] - delta < result["projection_eta"] + delta < 1):
+        raise ValueError("Robust projection thresholds must lie within (0, 1)")
+    for name in ("beta_interval", "beta_minimum_iterations", "volume_update_interval"):
+        if isinstance(result[name], bool) or int(result[name]) != result[name] or result[name] < 1:
+            raise ValueError(f"{name} must be a positive integer")
+    result["beta_minimum_iterations"] = min(result["beta_minimum_iterations"], result["beta_interval"])
+    if result["beta_schedule"] is not None:
+        schedule = [float(beta) for beta in result["beta_schedule"]]
+        if not schedule or not np.all(np.isfinite(schedule)) or schedule[0] <= 0 or np.any(np.diff(schedule) <= 0):
+            raise ValueError("beta_schedule must be a nonempty strictly increasing list of positive values")
+        result["beta_schedule"] = schedule
+    late = result["move_limit_late"]
+    if late is not None and (not np.isfinite(late) or not 0 < late <= 1):
+        raise ValueError("move_limit_late must be in (0, 1] or None")
+    if not np.isfinite(result["beta_change_tolerance"]) or result["beta_change_tolerance"] <= 0 or not np.isfinite(result["move_limit_late_beta"]):
+        raise ValueError("Invalid beta continuation settings")
     return result
 
 def validate_masks(domain):
@@ -549,6 +577,10 @@ def validate_masks(domain):
 class DensityMap:
     def __init__(self, domain, settings):
         self.settings = settings
+        self.beta = settings["beta_schedule"][0] if settings["beta_schedule"] else settings["projection_beta"]
+        self.robust = settings["projection"] == "robust"
+        eta, delta = settings["projection_eta"], settings["robust_delta"]
+        self.thresholds = {"eroded": eta + delta, "intermediate": eta, "dilated": eta - delta} if self.robust else {"intermediate": eta}
         self.allowed, self.preserve, self.forbidden = validate_masks(domain)
         self.free = self.allowed & ~self.preserve
         self.n = self.allowed.size
@@ -566,14 +598,29 @@ class DensityMap:
         self.sums[self.forbidden] = 1
         if np.any(self.sums <= 0):
             raise ValueError("Density filter contains an empty allowed-cell neighborhood")
-    def physical(self, design):
+    def filtered(self, design):
         design = np.asarray(design, dtype=float).ravel()
         if design.size != self.n or not np.all(np.isfinite(design)) or np.any(design < 0) or np.any(design > 1):
             raise ValueError("Design densities must be finite and within [0, 1]")
-        filtered = np.asarray(self.filter @ design).ravel() / self.sums
-        beta = self.settings["projection_beta"]
-        eta = self.settings["projection_eta"]
-        if beta:
+        return np.asarray(self.filter @ design).ravel() / self.sums
+    def physical(self, design):
+        return self.project(self.filtered(design), self.settings["projection_eta"])
+    def fields(self, design):
+        filtered = self.filtered(design)
+        return {name: self.project(filtered, eta) for name, eta in self.thresholds.items()}, filtered
+    def volume(self, design):
+        if self.robust:
+            return float(np.sum(self.project(self.filtered(design), self.thresholds["dilated"])[0]))
+        return np.sum(self.physical(design)[0])
+    def project(self, filtered, eta):
+        beta = self.beta
+        if beta and self.robust:
+            denominator = np.tanh(beta * eta) + np.tanh(beta * (1 - eta))
+            shifted = beta * (filtered - eta)
+            decay = np.exp(-2 * np.abs(shifted))
+            physical = (np.tanh(beta * eta) + np.tanh(shifted)) / denominator
+            derivative = beta * 4 * decay / (1 + decay) ** 2 / denominator
+        elif beta:
             denominator = np.tanh(beta * eta) + np.tanh(beta * (1 - eta))
             physical = (np.tanh(beta * eta) + np.tanh(beta * (filtered - eta))) / denominator
             derivative = beta * (1 - np.tanh(beta * (filtered - eta)) ** 2) / denominator
@@ -593,33 +640,39 @@ class DensityMap:
         design[self.preserve] = 1
         lower = self.settings["minimum_design_density"]
         design[self.free] = lower
-        if np.sum(self.physical(design)[0]) > target + 1e-8:
+        if self.volume(design) > target + 1e-8:
             raise ValueError("Volume budget cannot contain preserves and their filtered transition")
         upper = 1.0
         for _ in range(70):
             value = (lower + upper) / 2
             design[self.free] = value
-            if np.sum(self.physical(design)[0]) > target:
+            if self.volume(design) > target:
                 upper = value
             else:
                 lower = value
         design[self.free] = lower
         return design
 
-def _oc_update(design, objective_derivative, volume_derivative, mapping, target, settings):
+def _oc_update(design, objective_derivative, volume_derivative, mapping, target, settings, move_limit):
     free = mapping.free
-    if np.any(volume_derivative[free] <= 0) or not np.all(np.isfinite(objective_derivative[free])):
+    volume_derivative = volume_derivative[free]
+    if np.any(volume_derivative < 0) or not np.all(np.isfinite(volume_derivative)) or not np.max(volume_derivative) > 0 or not np.all(np.isfinite(objective_derivative[free])):
         raise RuntimeError("Invalid OC sensitivities")
-    ratios = np.maximum(1e-30, -objective_derivative[free] / volume_derivative[free])
-    lower_density = np.maximum(settings["minimum_design_density"], design[free] - settings["move_limit"])
-    upper_density = np.minimum(1.0, design[free] + settings["move_limit"])
+    volume_derivative = np.maximum(volume_derivative, 1e-12 * np.max(volume_derivative))
+    ratios = np.maximum(1e-30, -objective_derivative[free] / volume_derivative)
+    lower_density = np.maximum(settings["minimum_design_density"], design[free] - move_limit)
+    upper_density = np.minimum(1.0, design[free] + move_limit)
     def proposal(multiplier):
         result = design.copy()
         result[free] = np.clip(design[free] * np.sqrt(ratios / max(multiplier, 1e-100)), lower_density, upper_density)
         return result
+    lowest = design.copy()
+    lowest[free] = lower_density
+    if mapping.volume(lowest) > target:
+        return lowest
     upper = max(float(np.max(ratios)), 1e-12)
     for _ in range(100):
-        if np.sum(mapping.physical(proposal(upper))[0]) <= target + 1e-9:
+        if mapping.volume(proposal(upper)) <= target + 1e-9:
             break
         upper *= 2
     else:
@@ -629,7 +682,7 @@ def _oc_update(design, objective_derivative, volume_derivative, mapping, target,
     for _ in range(70):
         multiplier = (lower + upper) / 2
         proposed = proposal(multiplier)
-        if np.sum(mapping.physical(proposed)[0]) > target:
+        if mapping.volume(proposed) > target:
             lower = multiplier
         else:
             upper = multiplier
@@ -661,6 +714,13 @@ def _history_entry(iteration, physical, solutions, scales, change, elapsed, fina
         "elapsed_s": elapsed,
     }
 
+def _stage_entry(mapping, fields, volume_target, move_limit):
+    entry = {"projection_beta": mapping.beta, "move_limit": move_limit}
+    if mapping.robust:
+        entry.update({"dilated_volume_target": volume_target, "eroded_density_sum": float(np.sum(fields["eroded"][0])),
+                      "dilated_density_sum": float(np.sum(fields["dilated"][0]))})
+    return entry
+
 def optimize_topology(domain, settings, *, progress_callback=None):
     started = perf_counter()
     history = []
@@ -679,32 +739,57 @@ def optimize_topology(domain, settings, *, progress_callback=None):
         scales = None
         converged = False
         stop_reason = "max_iterations"
+        schedule = settings["beta_schedule"] or [mapping.beta]
+        staged = mapping.robust or settings["beta_schedule"] is not None
+        stiffness_name, volume_name = ("eroded", "dilated") if mapping.robust else ("intermediate", "intermediate")
+        level = level_iterations = 0
+        since_update = None
+        volume_target = target
         for iteration in range(1, settings["max_iterations"] + 1):
-            physical, projection_derivative = mapping.physical(design)
+            fields, _ = mapping.fields(design)
+            physical = fields["intermediate"][0]
             density = physical.reshape(tuple(domain["grid"]["shape"]))
-            solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"])
+            if mapping.robust and (since_update is None or since_update >= settings["volume_update_interval"]):
+                volume_target = target * float(np.sum(fields[volume_name][0]) / np.sum(physical))
+                since_update = 0
+            solutions = system.solve(fields[stiffness_name][0], settings["penalization"], settings["min_stiffness_ratio"])
             if scales is None:
                 scales, normalization, weights = _case_scaling(solutions, settings)
             physical_gradient = sum(scales[name] * result["derivative"] for name, result in solutions.items())
-            gradient = mapping.pullback(physical_gradient, projection_derivative)
-            volume_gradient = mapping.pullback(np.ones(mapping.n), projection_derivative)
-            candidate = _oc_update(design, gradient, volume_gradient, mapping, target, settings)
+            gradient = mapping.pullback(physical_gradient, fields[stiffness_name][1])
+            volume_gradient = mapping.pullback(np.ones(mapping.n), fields[volume_name][1])
+            late = settings["move_limit_late"] is not None and mapping.beta >= settings["move_limit_late_beta"]
+            move_limit = settings["move_limit_late"] if late else settings["move_limit"]
+            candidate = _oc_update(design, gradient, volume_gradient, mapping, volume_target, settings, move_limit)
             change = float(np.max(np.abs(candidate - design)))
             history.append(_history_entry(iteration, physical, solutions, scales, change, perf_counter() - started))
+            if staged:
+                history[-1].update(_stage_entry(mapping, fields, volume_target, move_limit))
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
             design = candidate
-            if iteration >= settings["minimum_iterations"] and change < settings["change_tolerance"]:
-                converged = True
-                stop_reason = "change_tolerance"
-                break
+            level_iterations += 1
+            since_update = None if since_update is None else since_update + 1
+            if level == len(schedule) - 1:
+                if level_iterations >= settings["minimum_iterations"] and change < settings["change_tolerance"]:
+                    converged = True
+                    stop_reason = "change_tolerance"
+                    break
+            elif level_iterations >= settings["beta_interval"] or (level_iterations >= settings["beta_minimum_iterations"] and change < settings["beta_change_tolerance"]):
+                level += 1
+                level_iterations = 0
+                mapping.beta = schedule[level]
+                since_update = None
             if settings["max_runtime_s"] is not None and perf_counter() - started >= settings["max_runtime_s"]:
                 stop_reason = "max_runtime_s"
                 break
-        physical, _ = mapping.physical(design)
+        fields, filtered = mapping.fields(design)
+        physical = fields["intermediate"][0]
         density = physical.reshape(tuple(domain["grid"]["shape"]))
-        solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"], metrics=True)
+        solutions = system.solve(fields[stiffness_name][0], settings["penalization"], settings["min_stiffness_ratio"], metrics=True)
         final_entry = _history_entry(iteration + 1, physical, solutions, scales, None, perf_counter() - started, final=True)
+        if staged:
+            final_entry.update(_stage_entry(mapping, fields, volume_target, None))
         history.append(final_entry)
         if progress_callback is not None:
             progress_callback(deepcopy(final_entry))
@@ -735,9 +820,22 @@ def optimize_topology(domain, settings, *, progress_callback=None):
             "system": system.diagnostics(),
             "elapsed_s": perf_counter() - started,
         }
+        if staged:
+            summary["continuation"] = {"beta_schedule": schedule, "beta_final": mapping.beta, "final_level_reached": level == len(schedule) - 1,
+                                       "level_iterations_final": level_iterations}
+        outcome = {"status": "ok", "density": density.copy(), "design_density": design.reshape(density.shape).copy(), "summary": summary, "history": history, "diagnostics": diagnostics}
+        if mapping.robust:
+            allowed = np.count_nonzero(mapping.allowed)
+            summary["method"] = "3D Hex8 SIMP, spatial density filter, robust eroded/intermediate/dilated Heaviside projection with beta continuation, eroded-design normalized multi-load compliance, OC dilated-volume constraint"
+            summary["robust"] = {"thresholds": mapping.thresholds, "objective_field": "eroded", "volume_constraint_field": "dilated",
+                                 "reported_density_field": "intermediate", "dilated_volume_target_final": volume_target,
+                                 "eroded_volume_fraction": float(np.sum(fields["eroded"][0]) / allowed),
+                                 "dilated_volume_fraction": float(np.sum(fields["dilated"][0]) / allowed),
+                                 "dilated_frame_mass_g": float(np.sum(fields["dilated"][0]) * np.prod(system.spacing) * system.density / 1000)}
+            outcome.update({name + "_density": fields[name][0].reshape(density.shape).copy() for name in ("eroded", "dilated")})
+            outcome["filtered_density"] = filtered.reshape(density.shape).copy()
         if not converged:
             diagnostics.append(f"Density iteration stopped at {stop_reason}; convergence is not claimed")
-        outcome = {"status": "ok", "density": density.copy(), "design_density": design.reshape(density.shape).copy(), "summary": summary, "history": history, "diagnostics": diagnostics}
         return outcome
     except ValueError as error:
         outcome = {"status": "invalid", "density": density, "summary": {}, "history": history, "diagnostics": [str(error)]}

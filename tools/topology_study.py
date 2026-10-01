@@ -13,10 +13,12 @@ from deep_frame.topology_geometry import build_design_domain
 from deep_frame.topology_optimization import _settings, optimize_topology
 from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save
 
+OPTIMIZER_KINDS = {"filter_radius_mm": "float", "projection": ("single", "robust"), "beta_schedule": ["float"],
+                   "beta_interval": "int", "move_limit_late": "float", "volume_update_interval": "int"}
 RUN_CONFIG = {"directory": None, "shape": [34, 32, 8], "max_iterations": 300, "change_tolerance": 0.005,
-              "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu"}
+              "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu", **dict.fromkeys(OPTIMIZER_KINDS)}
 RUN_KINDS = {"directory": "text", "shape": ["int"] * 3, "max_iterations": "int", "change_tolerance": "float",
-             "max_runtime_s": "float", "linear_solver": ("cpu_superlu", "cuda_cudss")}
+             "max_runtime_s": "float", "linear_solver": ("cpu_superlu", "cuda_cudss"), **OPTIMIZER_KINDS}
 SUMMARIZE_CONFIG = {"root": "exports/topology/workstation_20260930/density_study", "runs": None,
                     "output": "docs/validation/workstation_density_study.json"}
 PLOT_CONFIG = {"root": "exports/topology/workstation_20260930/density_study", "runs": None,
@@ -37,7 +39,8 @@ def study_parameters(shape):
     parameters["topology"] = {"grid": {"shape": shape.tolist(), "spacing_mm": (extent / shape).tolist()}}
     return parameters
 
-def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu"):
+def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu", optimizer=None):
+    optimizer = optimizer or {}
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=False)
     started = perf_counter()
@@ -52,10 +55,10 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
         _save(directory / "request.json", {"parameters": parameters, "provenance": provenance,
                                            "requested_settings": {"max_iterations": max_iterations,
                                                                   "change_tolerance": change_tolerance,
-                                                                  "max_runtime_s": max_runtime_s, "linear_solver": linear_solver}})
+                                                                  "max_runtime_s": max_runtime_s, "linear_solver": linear_solver, **optimizer}})
         domain = build_design_domain(parameters)
         settings = _settings({**domain["optimizer_settings"], "max_iterations": max_iterations,
-                              "change_tolerance": change_tolerance, "max_runtime_s": max_runtime_s, "linear_solver": linear_solver})
+                              "change_tolerance": change_tolerance, "max_runtime_s": max_runtime_s, "linear_solver": linear_solver, **optimizer})
         masks = {name: domain[name] for name in ("allowed", "preserve", "forbidden")}
         np.savez_compressed(directory / "domain_masks.npz", **masks)
         inputs = {"parameters": parameters, "settings": settings,
@@ -78,9 +81,7 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
                 print(json.dumps({"event": "iteration", **{key: entry[key] for key in
                                  ("iteration", "final_evaluation", "objective", "maximum_design_change", "elapsed_s")}}), flush=True)
             result = optimize_topology(domain, settings, progress_callback=progress)
-        arrays = {**masks, "density": result["density"]}
-        if "design_density" in result:
-            arrays["design_density"] = result["design_density"]
+        arrays = {**masks, **{key: value for key, value in result.items() if isinstance(value, np.ndarray)}}
         np.savez_compressed(directory / "fields.npz", **arrays)
         report = {key: value for key, value in result.items() if not isinstance(value, np.ndarray)}
         if result["status"] == "ok":
@@ -114,7 +115,8 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
 def run_main(overrides):
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("directory",))
     status = run_study(config["directory"], config["shape"], config["max_iterations"], config["change_tolerance"],
-                       config["max_runtime_s"], config["linear_solver"])
+                       config["max_runtime_s"], config["linear_solver"],
+                       {key: config[key] for key in OPTIMIZER_KINDS if config[key] is not None})
     return 0 if status == "ok" else 1
 
 def verify_artifacts(directory, artifacts, required):
@@ -136,6 +138,7 @@ def verify_frozen_reference(directory):
                      ("optimization.json", "fields.npz", "run_manifest.json"))
 
 def verify_comparable_settings(reference, studied):
+    reference, studied = _settings(reference), _settings(studied)
     permitted = {"max_iterations", "minimum_iterations", "change_tolerance", "max_runtime_s"}
     if {key: value for key, value in reference.items() if key not in permitted} != {
             key: value for key, value in studied.items() if key not in permitted}:
