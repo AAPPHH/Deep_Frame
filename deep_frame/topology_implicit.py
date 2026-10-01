@@ -21,6 +21,8 @@ SIX = generate_binary_structure(3, 1)
 EXTENSIONS = ("none", "preserve", "preserve_forbidden")
 NONNEGATIVE = ("density_sigma_mm", "transition_radius_mm", "preserve_inflation_mm", "constraint_offset_mm", "opening_radius_mm", "ripple_sigma_mm")
 PROPAGATION_PASSES = 2
+ZERO_EDGE = 1e-9
+RESTORE_INSET_CELLS = 0.1
 INPUT_SNAP_MM = 1e-6
 GATE_MAXIMA = ("surface_deviation_mm", "relative_volume_change", "segment_tolerance_mm", "penetration_tolerance_mm", "penetration_sample_spacing_mm", "free_zone_preserve_mm", "free_zone_constraint_mm", "free_zone_modified_mm", "mesh_boundary_deviation_mm")
 GATE_MINIMA = ("free_zone_minimum_samples", "free_zone_opening_cells", "mesh_minimum_sicn")
@@ -34,7 +36,7 @@ class ImplicitError(ValueError):
 def implicit_settings(settings):
     config = configure({**IMPLICIT_CONFIG, "threshold": None, "extension": None}, {**IMPLICIT_KINDS, "threshold": "float", "extension": EXTENSIONS}, settings, ("threshold", "extension"))
     for key, value in config.items():
-        if isinstance(value, (int, float)) and (not np.isfinite(value) or value < 0 or value == 0 and key not in NONNEGATIVE):
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and (not np.isfinite(value) or value < 0 or value == 0 and key not in NONNEGATIVE):
             raise ValueError("Implicit setting must be finite and " + ("nonnegative: " if key in NONNEGATIVE else "positive: ") + key)
     if not 0 < config["threshold"] < 1:
         raise ValueError("Implicit density threshold must lie in (0,1)")
@@ -245,10 +247,10 @@ class ImplicitField:
         started = perf_counter()
         padded = np.pad(self.values, 1, constant_values=-np.float32(self.spacing.max()))
         vertices, faces, _, _ = marching_cubes(padded, 0.0, method="lewiner", allow_degenerate=False, gradient_direction="ascent")
-        exact, shift, interior = _edge_vertices(padded, vertices)
+        exact, shift, interior, degenerate = _edge_vertices(padded, vertices)
         mesh = trimesh.Trimesh(self.origin-self.spacing+exact*self.spacing, faces, process=False)
-        return mesh, {"method": "Lewiner marching cubes on the field padded by one negative sample; edge vertices recomputed in float64 on their grid edges, Lewiner cube-interior vertices of ambiguous cases kept",
-                      "float32_vertex_shift_samples": shift, "interior_cube_vertices": interior, "mesh": _mesh_summary(mesh), "runtime_s": perf_counter()-started}
+        return mesh, {"method": "Lewiner marching cubes on the field padded by one negative sample; edge vertices recomputed in float64 on their grid edges, Lewiner cube-interior vertices of ambiguous cases and vertices on edges with both samples at zero kept",
+                      "float32_vertex_shift_samples": shift, "interior_cube_vertices": interior, "zero_edge_vertices": degenerate, "mesh": _mesh_summary(mesh), "runtime_s": perf_counter()-started}
 
 def _edge_vertices(values, vertices):
     vertices = vertices.astype(float)
@@ -265,10 +267,12 @@ def _edge_vertices(values, vertices):
     exact[node] = np.rint(vertices[node])
     interior = np.sort(np.abs(vertices-np.rint(vertices)), axis=1)[:, 1] > 1e-6
     exact[interior] = vertices[interior]
+    degenerate = ~node & ~interior & (np.maximum(np.abs(first), np.abs(second)) <= ZERO_EDGE)
+    exact[degenerate] = vertices[degenerate]
     shift = float(np.abs(exact-vertices).max(initial=0))
     if shift > 1e-3:
         raise RuntimeError("Marching cubes vertex is not on its grid edge")
-    return exact, shift, int(interior.sum())
+    return exact, shift, int(interior.sum()), int(degenerate.sum())
 
 def extend_density(domain, density, extension):
     masks = {name: np.asarray(domain[name], dtype=bool) for name in ("allowed", "preserve", "forbidden")}
@@ -373,6 +377,7 @@ def build_field(domain, density, settings, progress=None):
     if not report["density_witness"]["passed"]:
         raise ImplicitError("mount_disconnected", "Smoothed and opened density does not connect the required mounts; the smooth union may not create the connection", report)
     shell, report["preserve_shell"] = field.shell(preserves, keepouts, delta, pad)
+    exact = preserve.copy() if config["protected_opening"] else None
     np.maximum(preserve, shell, out=preserve)
     field.smooth_union(shell, k).intersect(-forbidden-np.float32(offset)).intersect(envelope-np.float32(offset))
     report["volumes_mm3"]["composed"] = field.volume()
@@ -389,6 +394,10 @@ def build_field(domain, density, settings, progress=None):
     report["volumes_mm3"]["ripple_smoothed"] = field.volume()
     lap("ripple")
     if config["opening_radius_mm"]:
+        if config["protected_opening"]:
+            caps = field.primitives([region for region in keepouts if not (region["kind"] == "cylinder" and region.get("rasterize", True) is False)], pad)
+            field.union(shell).intersect(-caps-np.float32(offset)).intersect(envelope-np.float32(offset))
+            del caps
         field.reinitialize(config["reinit_band_cells"])
         before = field.values.copy()
         report["reopening"] = field.open(config["opening_radius_mm"], config["reinit_band_cells"])
@@ -398,8 +407,9 @@ def build_field(domain, density, settings, progress=None):
         del before
         report["volumes_mm3"]["reopened"] = field.volume()
     lap("reopening")
-    field.union(shell)
-    del shell
+    field.union(shell if exact is None else exact-np.float32(RESTORE_INSET_CELLS*float(field.spacing.max())))
+    report["restore"] = "exact preserve, inset by a tenth of a sample so its faces never sit on grid nodes, after the final opening of the shell union clipped by the envelope and all keep-outs except prescribed bores, which the exact booleans cut transversally" if config["protected_opening"] else "inflated preserve shell after the final opening"
+    del shell, exact
     report["volumes_mm3"]["final"] = field.volume()
     lap("restore")
     field.layers["reference"] = reference.values

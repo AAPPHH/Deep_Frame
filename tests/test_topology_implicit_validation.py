@@ -61,6 +61,19 @@ def test_prescribed_bore_web_tolerates_only_the_polygon_oversize():
     free = bore_block(4.5, 1.98)
     assert not free["passed"] and free["minimum_measured_mm"] == pytest.approx(1.98, abs=1e-9) and all(sample["position_mm"][0] >= 12-1e-9 for sample in free["thin_samples"])
 
+@pytest.mark.parametrize("protected", [False, True])
+def test_protected_final_opening_removes_shell_fin_beside_an_inset_keepout(protected):
+    regions = [box("m1", "preserve", [2, 3, 0], [6, 7, 6]), box("m2", "preserve", [24, 3, 0], [28, 7, 6]), box("cap", "forbidden", [2.2, 2.8, 6], [6.2, 7.2, 8])]
+    domain = make_domain((30, 10, 8), regions)
+    density = np.where(domain["preserve"], 1.0, 0.0)
+    density[6:24, 3:7, 1:5] = 1.0
+    density[domain["forbidden"]] = 0.0
+    mesh, report, field = build_implicit(domain, density, {**SMALL, "protected_opening": protected})
+    walls = wall_screen(mesh, 2.0, SETTINGS, CONFIG["remesh_feature_deg"])
+    assert walls["complete"] and walls["unresolved_sample_count"] == 0 and report["final_witness"]["passed"]
+    assert (walls["thin_sample_count"] == 0) is protected and (protected or walls["minimum_measured_mm"] < 0.1)
+    assert mesh.is_watertight and mesh.body_count == 1 and mesh.bounds[1][2] <= 8.0
+
 def test_capped_mount_leaves_no_shell_fin_beside_its_keepout():
     regions = [box("m1", "preserve", [2, 3, 0], [6, 7, 6]), box("m2", "preserve", [24, 3, 0], [28, 7, 6]), box("cap", "forbidden", [1.8, 2.8, 6], [6.2, 7.2, 8])]
     domain = make_domain((30, 10, 8), regions)

@@ -739,6 +739,7 @@ IMPLICIT_CONFIG = {
     "preserve_inflation_mm": 0.3,
     "constraint_offset_mm": 0.3,
     "opening_radius_mm": 1.35,
+    "protected_opening": True,
     "ripple_sigma_mm": 0.25,
     "reinit_band_cells": 1.5,
     "remesh_target_mm": 0.6,
@@ -782,6 +783,7 @@ IMPLICIT_CONFIG = {
 IMPLICIT_KINDS = {
     **{key: "float" if isinstance(value, float) else "int" for key, value in IMPLICIT_CONFIG.items() if isinstance(value, (int, float))},
     "interpolation_method": ("pchip", "cubic"),
+    "protected_opening": "flag",
     "thresholds": ["float"],
     "extensions": [("none", "preserve", "preserve_forbidden")],
     "tet_attempts": [("remesh_hxt", "remesh_delaunay", "refine_hxt", "classify_hxt", "classify_delaunay", "direct_hxt")],
