@@ -19,7 +19,7 @@ from deep_frame.topology_pipeline import _artifact, _file_digest, _read, _save
 from deep_frame.topology_surface import SurfaceReconstructionError
 from tools import mature_pipeline as pipeline
 from tools import workstation_study as workstation
-from tools.topology_study import field_comparison, verify_artifacts, verify_comparable_settings, verify_frozen_reference
+from tools.topology_study import field_comparison, plot_gpu, verify_artifacts, verify_comparable_settings, verify_frozen_reference
 
 def test_comparison_rejects_changed_physical_filter_but_allows_iteration_budget():
     reference = _settings({})
@@ -45,6 +45,23 @@ def test_frozen_reference_verification_rejects_corrupted_fields(tmp_path):
 def test_evidence_verification_requires_all_critical_artifact_entries(tmp_path):
     with pytest.raises(ValueError, match="Required evidence"):
         verify_artifacts(tmp_path, {}, ("inputs.json", "result.json", "fields.npz", "domain_masks.npz"))
+
+@pytest.mark.parametrize("cpu_key,gpu_key", [("cpu_superlu_wall_s", "cuda_cudss_wall_s"), ("cpu_wall_s", "gpu_wall_s")])
+def test_gpu_plot_reads_fresh_and_archived_benchmark_timings(tmp_path, cpu_key, gpu_key):
+    run = tmp_path / "grid8over3_gpu1000"
+    run.mkdir()
+    history = [{"iteration": index, "objective": 1 / index, "maximum_design_change": 0.5 / index, "final_evaluation": False}
+               for index in range(1, 26)]
+    _save(run / "result.json", {"history": history + [{"iteration": 26, "final_evaluation": True}]})
+    _save(run / "inputs.json", {})
+    np.savez_compressed(run / "fields.npz", density=np.zeros(1))
+    (run / "iterations.jsonl").write_text("{}\n", encoding="utf-8")
+    artifacts = {path.name: {"sha256": _file_digest(path), "size_bytes": path.stat().st_size} for path in run.iterdir()}
+    _save(run / "manifest.json", {"artifacts": artifacts})
+    (tmp_path / "three_updates").mkdir()
+    _save(tmp_path / "three_updates/comparison.json", {cpu_key: 12.0, gpu_key: 0.5, "speedup": 24.0})
+    plot_gpu(tmp_path, tmp_path / "plot.png")
+    assert _read(tmp_path / "plot.json")["image_sha256"] == _file_digest(tmp_path / "plot.png")
 
 def test_density_comparison_integrates_physical_overlap_between_resolutions():
     def fields(densities):

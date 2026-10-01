@@ -404,7 +404,8 @@ def plot_gpu(evidence, output):
     axes[1].scatter([iteration[-1]], [change[-1]], color="#007f83", zorder=3)
     axes[1].set(xlabel="Update", ylabel="Maximum design-density change", title=f"Criterion reached at update {iteration[-1]}")
     axes[1].legend(fontsize=8)
-    times = [benchmark["cpu_wall_s"], benchmark["gpu_wall_s"]]
+    times = [benchmark[key] if key in benchmark else benchmark[legacy] for key, legacy in
+             (("cpu_superlu_wall_s", "cpu_wall_s"), ("cuda_cudss_wall_s", "gpu_wall_s"))]
     bars = axes[2].bar(["CPU SuperLU", "GPU cuDSS"], times, color=["#66717e", "#007f83"], width=0.6)
     axes[2].bar_label(bars, labels=[f"{value:.3f} s" for value in times], padding=4)
     axes[2].set(ylabel="Complete elapsed time (s)", title=f"3 updates + final evaluation: {benchmark['speedup']:.2f}x")
