@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 from time import perf_counter
 
@@ -11,12 +12,12 @@ from deep_frame.config import TOPOLOGY_CONFIG, command_line, configure
 from deep_frame.frame import reference_parameters
 from deep_frame.topology_geometry import build_design_domain
 from deep_frame.topology_optimization import _settings, optimize_topology
-from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save
+from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save, log_run
 
 RUN_CONFIG = {"directory": None, "shape": [34, 32, 8], "max_iterations": 300, "change_tolerance": 0.005,
-              "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu"}
+              "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu", "run_log": None}
 RUN_KINDS = {"directory": "text", "shape": ["int"] * 3, "max_iterations": "int", "change_tolerance": "float",
-             "max_runtime_s": "float", "linear_solver": ("cpu_superlu", "cuda_cudss")}
+             "max_runtime_s": "float", "linear_solver": ("cpu_superlu", "cuda_cudss"), "run_log": "path"}
 SUMMARIZE_CONFIG = {"root": "exports/topology/workstation_20260930/density_study", "runs": None,
                     "output": "docs/validation/workstation_density_study.json"}
 PLOT_CONFIG = {"root": "exports/topology/workstation_20260930/density_study", "runs": None,
@@ -33,7 +34,15 @@ def study_parameters(shape):
     parameters["topology"] = {"grid": {"shape": shape.tolist(), "spacing_mm": (extent / shape).tolist()}}
     return parameters
 
-def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu"):
+def density_entry(directory, shape, max_iterations, linear_solver, status, started, result=None):
+    cupy = sys.modules.get("cupy")
+    return {"run_dir": str(directory), "kind": "density", "candidate": None, "source_sha256": None,
+            "parameters": {"shape": list(shape), "max_iterations": max_iterations, "linear_solver": linear_solver},
+            "success": status == "ok", "status": status, "failure_stage": None if status == "ok" else "optimization",
+            "runtime_s": perf_counter() - started, "timings_s": None, "iterations": (result or {}).get("summary", {}).get("iterations"),
+            "gpu_pool_mb": cupy.get_default_memory_pool().total_bytes() / 2**20 if cupy else None}
+
+def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu", run_log=None):
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=False)
     started = perf_counter()
@@ -96,6 +105,7 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
                                             "artifacts": artifacts, "elapsed_s": perf_counter() - started})
         _save(status_path, {"status": result["status"], "pid": os.getpid(), "summary": result["summary"],
                             "diagnostics": result["diagnostics"], "elapsed_s": perf_counter() - started})
+        log_run(run_log, density_entry(directory, shape, max_iterations, linear_solver, result["status"], started, result))
         print(json.dumps({"event": "finished", "status": result["status"],
                           "iterations": result["summary"].get("iterations"),
                           "stop_reason": result["summary"].get("stop_reason"),
@@ -105,12 +115,13 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
     except Exception as error:
         _save(status_path, {"status": "failed", "pid": os.getpid(), "error": str(error),
                             "elapsed_s": perf_counter() - started})
+        log_run(run_log, density_entry(directory, shape, max_iterations, linear_solver, "failed", started))
         raise
 
 def run_main(overrides):
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("directory",))
     status = run_study(config["directory"], config["shape"], config["max_iterations"], config["change_tolerance"],
-                       config["max_runtime_s"], config["linear_solver"])
+                       config["max_runtime_s"], config["linear_solver"], config["run_log"])
     return 0 if status == "ok" else 1
 
 def verify_artifacts(directory, artifacts, required):

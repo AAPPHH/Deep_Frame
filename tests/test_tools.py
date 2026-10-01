@@ -12,11 +12,14 @@ import pytest
 import trimesh
 
 import deep_frame
-from deep_frame import topology_surface
+from deep_frame import topology_pipeline, topology_surface
 from deep_frame.topology_optimization import _settings
 from deep_frame.topology_pipeline import _artifact, _file_digest, _read, _save
 from deep_frame.topology_surface import SurfaceReconstructionError
+from tests.test_topology_implicit_validation import mounted_domain
+from tools import implicit_study as implicit
 from tools import mature_pipeline as pipeline
+from tools import topology_study
 from tools import workstation_study as workstation
 from tools.topology_study import field_comparison, verify_artifacts, verify_comparable_settings, verify_frozen_reference
 
@@ -150,6 +153,10 @@ def test_cached_ok_result_still_requires_all_verification_cases(tmp_path):
     with pytest.raises(ValueError, match="modes"):
         workstation.verify_record(record, tmp_path, preparation)
 
+@pytest.fixture(autouse=True)
+def isolated_run_log(tmp_path, monkeypatch):
+    monkeypatch.setattr(topology_pipeline, "RUN_LOG", tmp_path / "default_run_log.jsonl")
+
 @pytest.fixture
 def study(tmp_path, monkeypatch):
     historical = _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
@@ -170,7 +177,7 @@ def study(tmp_path, monkeypatch):
     reference = tmp_path / "reference.step"
     export_step(Box(9, 9, 9), reference)
     args = pipeline.geometry_config({"source": str(source), "output": str(tmp_path / "output"),
-                                     "reference_step": str(reference), "thresholds": [0.3]})
+                                     "reference_step": str(reference), "thresholds": [0.3], "run_log": str(tmp_path / "run_log.jsonl")})
     calls = {"reconstruction": 0, "validation": 0, "fea": 0, "mesh": 0}
     validator = ModuleType("deep_frame.topology_surface_validation")
     validator._settings = lambda settings: {"tessellation_mm": 0.03, **settings}
@@ -736,3 +743,122 @@ def test_atomic_writer_exhausted_retry_budget_preserves_original_error_and_targe
     assert caught.value is error and len(attempts) == 21 and sleeps == [0.05]*20
     assert _read(target) == {"state": "old"}
     assert _read(target.with_name(target.name + ".tmp")) == {"state": "new"}
+
+def ledger(path):
+    return [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines()]
+
+def test_cad_study_logs_one_ledger_line_per_candidate(study):
+    args, _, _, _ = study
+    args["thresholds"] = [0.3, 0.4]
+    result = pipeline.run_study(args)
+    lines = ledger(args["run_log"])
+    assert [line["candidate"] for line in lines] == ["t00", "t01"] and all(line["kind"] == "cad" and line["success"] and line["failure_stage"] is None for line in lines)
+    assert all(line["source_sha256"] == result["source_manifest_sha256"] and line["runtime_s"] > 0 and "git_commit" in line for line in lines)
+
+def test_cad_study_ledger_names_the_failing_stage(study, monkeypatch):
+    args, _, _, _ = study
+    def fail(*a, **k):
+        raise RuntimeError("reconstruction crashed")
+    monkeypatch.setattr(topology_surface, "reconstruct_surface", fail)
+    pipeline.run_study(args)
+    line, = ledger(args["run_log"])
+    assert not line["success"] and line["status"] == "failed" and line["failure_stage"] == "reconstructing"
+
+def test_density_study_logs_its_run(tmp_path, monkeypatch):
+    def optimize(domain, settings, progress_callback):
+        return {"status": "ok", "density": np.full(domain["allowed"].shape, 0.5), "summary": {"iterations": 3}, "diagnostics": []}
+    monkeypatch.setattr(topology_study, "optimize_topology", optimize)
+    assert topology_study.run_main({"directory": str(tmp_path / "density"), "max_iterations": 3, "run_log": str(tmp_path / "run_log.jsonl")}) == 0
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert line["kind"] == "density" and line["success"] and line["iterations"] == 3 and line["run_dir"] == str((tmp_path / "density").resolve())
+
+def fake_fea(calls):
+    def evaluate(solid, material, masses, cases, settings):
+        calls.append(settings["work_dir"])
+        return {"status": "ok", "frame_mass_g": solid.volume * material["density_g_cm3"] / 1000, "stiffness_n_per_mm": 10.0, "max_displacement_mm": 0.1, "max_von_mises_mpa": 1.0,
+                "eigenfrequencies_hz": [100.0], "mesh": {"attempts": [{"name": "remesh_hxt", "status": "ok", "runtime_s": 0.5}]},
+                "load_cases": {case["name"]: {"analysis": case["analysis"], **({"eigenfrequencies_hz": [100.0]} if case["analysis"] == "modal" else {"max_displacement_mm": 0.1, "max_von_mises_mpa": 1.0})} for case in cases}}
+    return evaluate
+
+def implicit_source(tmp_path, connected=True):
+    historical = _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
+    domain, density = mounted_domain()
+    if not connected:
+        density[28:40] = 0.0
+    masks = {name: domain.pop(name) for name in ("allowed", "preserve", "forbidden")}
+    domain.update({name: historical["domain"][name] for name in ("material", "point_masses", "comparison_load_cases", "fea_settings")})
+    source = tmp_path / "source"
+    source.mkdir()
+    pipeline.write(source / "inputs.json", {"parameters": historical["parameters"], "domain": domain, "settings": {"linear_solver": "cpu_superlu"},
+                                            "mask_sha256": {name: hashlib.sha256(mask.tobytes()).hexdigest() for name, mask in masks.items()}})
+    pipeline.write(source / "result.json", {"status": "ok"})
+    np.savez_compressed(source / "fields.npz", density=density, **masks)
+    np.savez_compressed(source / "domain_masks.npz", **masks)
+    pipeline.write(source / "manifest.json", {"status": "ok", "artifacts": pipeline.artifacts(source)})
+    return source
+
+def implicit_config(tmp_path, source, **changes):
+    return {"source": str(source), "output": str(tmp_path / "study"), "reference_step": str(tmp_path / "reference.step"), "run_log": str(tmp_path / "run_log.jsonl"),
+            "subdivisions": 4, "thresholds": [0.35], "extensions": ["preserve"], "curvature_samples": 500, **changes}
+
+def test_implicit_study_accepts_connected_mounts_and_logs_success(tmp_path, monkeypatch):
+    source, calls = implicit_source(tmp_path), []
+    reference = {"source": "reference.step", "sha256": "0" * 64, "volume_mm3": 729.0, "curvature": None,
+                 "metrics": {"free_sharp_edge_length_per_area_per_mm": 1e3, "free_axis_normal_area_fraction": 1e3}}
+    monkeypatch.setattr(implicit, "reference_geometry", lambda path, domain, config: (trimesh.creation.box(extents=(9, 9, 9)), reference))
+    monkeypatch.setattr(implicit, "build_geometry", lambda parameters: Box(20, 20, 20))
+    monkeypatch.setattr(implicit, "evaluate", fake_fea(calls))
+    monkeypatch.setattr(implicit, "_provenance", lambda *args: {})
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(implicit_config(tmp_path, source, section_heights_mm=[7.0, 27.0])), encoding="utf-8")
+    assert implicit.main(["run", str(path)]) == 0
+    output = tmp_path / "study"
+    manifest = _read(output / "manifest.json")
+    assert manifest["status"] == "complete" and manifest["overall_acceptance"] and manifest["selected_id"] == "c00"
+    assert manifest["success_rate"] == 1.0 and manifest["geometry_success_rate"] == 1.0 and manifest["runtime_per_candidate_s"]["max"] > 0
+    assert manifest["candidates"][0]["record_sha256"] == _file_digest(output / "candidates/c00/record.json")
+    record = _read(output / "candidates/c00/record.json")
+    assert record["status"] == "accepted" and record["success"] and record["validation"]["passed"] and record["comparison"]["passed"]
+    assert {"extension", "extraction", "remesh", "booleans", "export", "validation", "metrics", "renders", "fea", "fea_mesh", "fea_solve"} <= set(record["timings_s"])
+    assert record["parameters"]["h_mm"] == pytest.approx(0.25) and record["curvature"]["sample_count"] > 0 and record["surface_metrics"]["triangle_count"] > 0
+    assert record["final_mesh"]["files"]["geometry.stl"]["sha256"] == _file_digest(output / "candidates/c00/geometry.stl")
+    assert sorted(record["renders"]["images"]) == ["section_z27", "section_z7", "view_front", "view_isometric", "view_side", "view_top"]
+    assert all(_file_digest(output / "candidates/c00/renders" / image["path"]) == image["sha256"] for image in record["renders"]["images"].values())
+    assert record["renders"]["sections"][0]["loops"] > 0 and record["renders"]["sections"][1]["loops"] == 0
+    assert len(calls) == 2 and _read(output / "baseline/record.json")["status"] == "ok"
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert line["kind"] == "implicit" and line["candidate"] == "c00" and line["success"] and line["failure_stage"] is None
+    assert line["source_sha256"] == manifest["source_manifest_sha256"] and line["timings_s"]["renders"] > 0 and line["parameters"]["extension"] == "preserve"
+
+def test_implicit_study_rejects_disconnected_mount_and_summarizes_ledger(tmp_path, monkeypatch):
+    source = implicit_source(tmp_path, connected=False)
+    export_step(Box(9, 9, 9), tmp_path / "reference.step")
+    monkeypatch.setattr(implicit, "build_geometry", lambda parameters: Box(20, 20, 20))
+    monkeypatch.setattr(implicit, "evaluate", lambda *a: pytest.fail("No FEA for a rejected candidate"))
+    monkeypatch.setattr(implicit, "_provenance", lambda *args: {})
+    assert implicit.run_main(implicit_config(tmp_path, source, geometry_only=True)) == 0
+    output = tmp_path / "study"
+    manifest = _read(output / "manifest.json")
+    assert manifest["status"] == "complete" and not manifest["overall_acceptance"] and manifest["success_rate"] == 0.0 and manifest["geometry_success_rate"] == 0.0
+    cached = _read(output / "reference_metrics.json")
+    assert cached["sha256"] == _file_digest(tmp_path / "reference.step") and cached["metrics"]["free_axis_normal_area_fraction"] == pytest.approx(1.0)
+    assert manifest["comparison_reference"]["sha256"] == cached["sha256"]
+    record = _read(output / "candidates/c00/record.json")
+    assert record["status"] == "mount_disconnected" and record["failure_stage"] == "field" and not (output / "candidates/c00/geometry.stl").exists()
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert not line["success"] and line["status"] == "mount_disconnected" and line["failure_stage"] == "field"
+    assert implicit.summarize_main({"run_log": str(tmp_path / "run_log.jsonl"), "output": str(tmp_path / "summary.json")}) == 0
+    run, = _read(tmp_path / "summary.json")["runs"]
+    assert run["kind"] == "implicit" and run["candidates"] == 1 and run["success_rate"] == 0.0 and run["statuses"] == {"mount_disconnected": 1}
+
+def test_implicit_study_rejects_unknown_keys_and_used_output(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"source": "s", "output": "o", "opening_radius": 1.0}), encoding="utf-8")
+    with pytest.raises(ValueError, match="Unknown configuration keys: opening_radius"):
+        implicit.main(["run", str(path)])
+    with pytest.raises(SystemExit):
+        implicit.main(["build", str(path)])
+    (tmp_path / "used").mkdir()
+    (tmp_path / "used/old.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="new empty output"):
+        implicit.run_main({"source": str(tmp_path), "output": str(tmp_path / "used")})

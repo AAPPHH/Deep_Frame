@@ -366,3 +366,14 @@ def validate_implicit(mesh, domain, field, report, settings=None, reference_metr
             violations.append(key)
     return {"passed": not violations, "violations": violations, "checks": checks, "surface_metrics": getattr(acceptance, "metrics", None), "material_change": material, "settings": settings, "timings_s": timings, "runtime_s": perf_counter()-started,
             "acceptance_scope": "Geometry screens and surface maturity on the final mesh and its reloaded binary STL; mechanical verification and render review remain mandatory"}
+
+def ball_curvature(mesh, radius, samples, seed=0):
+    from scipy.spatial import cKDTree
+    started = perf_counter()
+    points = trimesh.sample.sample_surface_even(mesh, samples, seed=seed)[0]
+    magnitude = np.abs(trimesh.curvature.discrete_mean_curvature_measure(mesh, points, radius))/(np.pi*radius**2)
+    pairs = cKDTree(points).query_pairs(1.5*radius, output_type="ndarray")
+    jumps = magnitude[pairs[:, 0]]-magnitude[pairs[:, 1]]
+    return {"radius_mm": radius, "requested_samples": samples, "sample_count": len(points), "seed": seed, "absolute_mean_curvature_per_mm": _statistics(magnitude) if len(points) else None,
+            "neighbour_distance_mm": 1.5*radius, "neighbour_pair_count": len(pairs), "neighbour_difference_rms_per_mm": float(np.sqrt(np.mean(jumps**2))) if len(pairs) else None, "elapsed_s": perf_counter()-started,
+            "method": "Cohen-Steiner/Morvan mean curvature measure of each ball around evenly sampled surface points divided by the disc area pi r^2 (sphere 1/R, cylinder 1/(2R), plane 0); RMS of the |H| differences of sample pairs closer than 1.5 r; independent of the triangulation, record only"}

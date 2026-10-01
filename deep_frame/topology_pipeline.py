@@ -6,6 +6,7 @@ import platform
 import subprocess
 import sys
 from copy import deepcopy
+from datetime import datetime, timezone
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from time import perf_counter
@@ -36,6 +37,9 @@ PIPELINE_CONFIG = {
         "stress_ratio_max": 2.0,
     },
 }
+
+RUN_LOG = Path(__file__).resolve().parents[1]/"exports/run_log.jsonl"
+FAILURE_STAGES = {"geometry_invalid": "validation", "mechanically_rejected": "comparison"}
 
 def _jsonable(value):
     if isinstance(value, dict):
@@ -95,6 +99,29 @@ def _callable_identity(function):
         source = repr(type(function))
     return {"name": function.__module__ + "." + getattr(function, "__qualname__", type(function).__qualname__), "source_sha256": hashlib.sha256(source.encode()).hexdigest()}
 
+def _git_state():
+    source_dir = Path(__file__).parent
+    try:
+        revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=source_dir, capture_output=True, text=True, check=True, timeout=10).stdout.strip()
+        dirty = bool(subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=source_dir, capture_output=True, text=True, check=True, timeout=10).stdout.strip())
+    except (OSError, subprocess.SubprocessError):
+        revision, dirty = None, None
+    return revision, dirty
+
+def log_run(path, entry):
+    revision, dirty = _git_state()
+    line = {"time": datetime.now(timezone.utc).isoformat(timespec="seconds"), "git_commit": revision, "git_tracked_dirty": dirty, **entry}
+    path = Path(path or RUN_LOG)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as ledger:
+        ledger.write(json.dumps(_jsonable(line), allow_nan=False)+"\n")
+    return line
+
+def candidate_entry(kind, run_dir, record, source_sha256):
+    failure = None if record["status"] == "accepted" else record.get("failure_stage") or FAILURE_STAGES.get(record["status"], record["status"])
+    return {"run_dir": str(run_dir), "kind": kind, "candidate": record["id"], "parameters": record.get("parameters", {"threshold": record.get("threshold")}), "source_sha256": source_sha256,
+            "success": record["status"] == "accepted", "status": record["status"], "failure_stage": failure, "runtime_s": record.get("runtime_s"), "timings_s": record.get("timings_s")}
+
 def _provenance(functions, fea_settings, real_evaluator):
     packages = {}
     for name in ("numpy", "scipy", "build123d", "gmsh", "trimesh", "cadquery-ocp-novtk"):
@@ -102,13 +129,8 @@ def _provenance(functions, fea_settings, real_evaluator):
             packages[name] = version(name)
         except PackageNotFoundError:
             packages[name] = None
-    source_dir = Path(__file__).parent
-    sources = {path.name: _file_digest(path) for path in sorted(source_dir.glob("*.py"))}
-    try:
-        revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=source_dir, capture_output=True, text=True, check=True, timeout=10).stdout.strip()
-        dirty = bool(subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=source_dir, capture_output=True, text=True, check=True, timeout=10).stdout.strip())
-    except (OSError, subprocess.SubprocessError):
-        revision, dirty = None, None
+    sources = {path.name: _file_digest(path) for path in sorted(Path(__file__).parent.glob("*.py"))}
+    revision, dirty = _git_state()
     result = {"packages": packages, "python_version": sys.version, "platform": platform.platform(), "source_sha256": sources, "callbacks": {name: _callable_identity(function) for name, function in functions.items()}, "git_revision": revision, "git_tracked_dirty": dirty}
     if real_evaluator:
         result["solver"] = solver_identity(fea_settings)

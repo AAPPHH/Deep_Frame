@@ -1,0 +1,68 @@
+# Implizite Geometrie-Route
+
+Die implizite Route ersetzt auf dem kritischen Pfad die Kette Dichte -> Dreiecksnetz -> B-Rep -> OCCT-Booleans. Alle Formoperationen laufen in einem Distanzfeld. Danach folgen genau eine Extraktion und ein exakter Boolean-Batch mit manifold3d. Das Ergebnis ist ein geschlossenes Dreiecksnetz (`geometry.stl`, `geometry.ply`). Genau dieses Netz wird geprueft, an die FEA gegeben und gedruckt. STEP ist nur noch optionale Ansicht.
+
+Code: Feld, Extraktion und Booleans in [deep_frame/topology_implicit.py](../deep_frame/topology_implicit.py), Abnahme und Kruemmungsmass in [deep_frame/topology_implicit_validation.py](../deep_frame/topology_implicit_validation.py), Treiber in [tools/implicit_study.py](../tools/implicit_study.py). Alle Einstellungen stehen im einfachen Dict `IMPLICIT_CONFIG` in [deep_frame/config.py](../deep_frame/config.py). Wand-, Anhaftungs-, Volumen- und Reifegrenzen werden aus `SURFACE_VALIDATION_SETTINGS` referenziert und nicht kopiert.
+
+## Feld-Pipeline
+
+Feinraster: `subdivisions = 10` auf dem 8/3-mm-Dichteraster ergibt h = 0,267 mm. Werte sind float32 und innen positiv.
+
+1. **Preserve-Erweiterung:** Preserve-Zellen erhalten die Dichte der naechsten freien Zelle. Die Variante `preserve_forbidden` erweitert zusaetzlich nur teilweise verbotene Zellen. Ein Topologie-Guard vergleicht die Komponentenzahl und die Euler-Zahl der harten Komposition mit und ohne Erweiterung. Bei einer Abweichung endet der Kandidat mit `extension_changed_topology`.
+2. **Upsampling** (PCHIP, gemeinsam mit der CAD-Route) und Pegelfeld rho - t.
+3. **Reinitialisierung** mit bandkorrigierter EDT, danach Gauss-Glaettung sigma_d = 0,4 mm und erneute Reinitialisierung.
+4. **Anschluesse** werden als exakte Primitiv-SDFs per kubischem Smooth-Max eingefuegt. Die Uebergangsweite ist k = 2,0 mm, die Inflation delta = 0,3 mm.
+5. **Keep-outs und Bauraum** werden danach per hartem Minimum mit dem Abstand c = 0,3 mm abgezogen. Verrundungen koennen deshalb nie in Keep-outs wachsen.
+6. **Opening** mit r = 1,35 mm. Jedes verbleibende Merkmal enthaelt eine Kugel mit mindestens 1 mm Radius. Das ergibt die 2-mm-Mindestwand plus Raster- und Glaettungsreserve.
+7. **Ripple-Glaettung** (sigma_r = 0,25 mm) und harte Wiederherstellung der inflationierten Anschluesse.
+
+Zeugen fuer die Verbindung werden im Feld geprueft, nie durch Ergaenzen erzeugt. Alle Pflichtanschluesse muessen in der unveraenderten Dichtekomposition und in der geglaetteten, geoeffneten Dichte vor dem Smooth-Union in einer 6-zusammenhaengenden Komponente liegen. Nach dem Opening und im Endfeld wird das erneut geprueft. Ein Verstoss ergibt `mount_disconnected`. Der Kandidat wird abgelehnt und nicht ueberbrueckt.
+
+## Extraktion, Booleans und Bohrungen
+
+Marching Cubes (Lewiner) laeuft auf dem mit -h umrandeten Feld. Danach folgt isotropes Remeshing mit pymeshlab (Ziel 0,6 mm). Die Gates sind dieselben wie bei der Dezimierung in der CAD-Route: hoechstens 0,20 mm Abweichung und hoechstens 1 % Volumenaenderung. Danach berechnet manifold3d in einem Batch ((Netz + Preserves) - alle Forbidden-Koerper) geschnitten mit dem Bauraum.
+
+Zwei bewusste Entscheidungen gehen ueber "nur Bohrungen exakt" hinaus:
+
+- **Exakte Booleans auch fuer Preserves und Keep-outs.** Ein abgetastetes Feld erreicht die unveraenderten Grenzen nicht: 1e-5 mm3 Fehlvolumen und Durchdringung sowie exakte Ebenen bei z = 0, 4 und 29 mm fuer die FEA-Selektoren. Die Feld-Offsets delta und c sorgen dafuer, dass diese Booleans nur quer schneiden oder nichts aendern. Sie schaben nie tangential.
+- **Zylinder als umschriebene Polygone.** Die Segmentzahl folgt aus einer Toleranz von 0,01 mm. Bohrungen sind dadurch nie zu klein und hoechstens 0,01 mm zu gross; das Uebermass wird je Bohrung gespeichert. Die Voreinstellung von manifold3d (8 Segmente, 0,107 mm zu klein bei r = 1,4) wird nie verwendet.
+
+## Abnahme auf dem Endnetz
+
+`validate_implicit` prueft das Endnetz und dessen erneut geladenes Binaer-STL. Eine Pruefung, die sich nicht auswerten laesst, gilt als nicht bestanden.
+
+| Pruefung | Inhalt |
+|---|---|
+| gates | eingefrorene Grenzwerte; nur Stichprobenbudgets duerfen ueberschrieben werden |
+| topology, self_intersections | geschlossen, orientiert, ein Koerper, keine Hohlraumschalen, STL-Rundreise; MeshLab plus exakte Paarzertifikate |
+| envelope, forbidden | Volumen ausserhalb bzw. im Keep-out <= 1e-5 mm3, zusaetzlich analytische Durchdringung <= 1e-4 mm |
+| preserve | Fehlvolumen <= 1e-5 mm3, Bohrungsraender, Anhaftungsflaeche |
+| features | exakte float64-Strahlen entlang der Innennormalen; Mindestwand 2 mm |
+| supports | Ueberhaenge und Zugaenglichkeit (eingeschlossene Hohlraeume) |
+| deviation | Abstand zur Dichte-Isoflaeche in der freien Zone <= 0,20 mm |
+| connectivity | Feldzeugen, ein Koerper, alle Preserves vorhanden |
+| surface_maturity | scharfe Kantenlaenge je freier Flaeche und achsparalleler Flaechenanteil hoechstens 0,5 x Referenz (Voxelroute grid4_iter300 t01) |
+
+Danach folgen der Massen-Screen (hoechstens 2,0 x v0) und die FEA, siehe [fea.md](fea.md). Die FEA erhaelt das Endnetz ueber den STL-Zweig. Die Tetraeder-Versuche laufen nacheinander in jeweils eigenen Prozessen (`tet_attempts`). Gates sind minSICN >= 0,01 und die Randabweichung, die derzeit nur an den Knoten geprueft wird. Lastfaelle, Material, Punktmasse und Vergleichsgrenzen sind identisch zu [topology_pipeline.md](topology_pipeline.md).
+
+## Formqualitaet und Bilder
+
+- `surface_metrics` liefert die vorhandenen Masse fuer scharfe Kanten je freier Flaeche und den achsparallelen Flaechenanteil. Fuer Netze gilt dasselbe wie fuer CAD.
+- `ball_curvature` integriert das Cohen-Steiner/Morvan-Mittelkruemmungsmass ueber 1-mm-Kugeln um 5000 gleichmaessig verteilte, geseedete Oberflaechenpunkte. Normiert wird mit pi r^2: Kugel 1/R, Zylinder 1/(2R), Ebene 0. Gespeichert werden p50/p95/p99/max von |H| und die RMS der |H|-Spruenge zwischen Nachbarpunkten unter 1,5 mm. Das Mass haengt nicht von der Triangulierung ab. Es wird nur protokolliert und ist kein Gate.
+- `render_views` erzeugt headless mit matplotlib Agg vier Ansichten (Isometrie, oben, vorne, seitlich) einer nur fuer die Darstellung dezimierten Kopie. Dazu kommen exakte Schnitte des vollstaendigen Netzes bei z = 2 und 27 mm mit Preserve- und Forbidden-Umrissen. Alle PNGs werden mit SHA-256 im Record gespeichert. Die Sichtpruefung bleibt Pflicht.
+
+## Treiber, Records und Lauf-Ledger
+
+```powershell
+.\.venv\Scripts\python.exe tools/implicit_study.py run study.json
+.\.venv\Scripts\python.exe tools/implicit_study.py render render.json
+.\.venv\Scripts\python.exe tools/implicit_study.py summarize summary.json
+```
+
+`run` benoetigt `source` (hashgepruefte Dichtequelle) und `output` (neues, leeres Verzeichnis). Alle Schluessel aus `IMPLICIT_CONFIG` sowie `geometry_only`, `reference_step`, `study_timeout_s`, `run_log` und `section_heights_mm` lassen sich ueberschreiben; unbekannte Schluessel werden abgelehnt. Kandidaten sind das Produkt `thresholds x extensions` mit den IDs cNN.
+
+Das Ausgabelayout entspricht der CAD-Studie: `manifest.json` (Schema `deep-frame-implicit-geometry-study-v1`), `status.json`, `density_source/`, `provenance/`, `baseline/` und `reference_metrics.json`. Je Kandidat gibt es `candidates/cNN/` mit `record.json`, `progress.jsonl`, Endnetz, `renders/`, `raw_fea_result.json` und bei Fehlern `failure/`. Der Record enthaelt Parameter, Status, `failure_stage`, Laufzeiten je Stufe (`timings_s`: Feldschritte, extraction, remesh, booleans, export, validation je Pruefung, metrics, renders, fea, fea_mesh, fea_solve), Spitzen-RSS, Pruefergebnisse, Formmasse, Kruemmung, Masse, FEA und Vergleich. Das Manifest fasst `success_rate`, `geometry_success_rate` und `runtime_per_candidate_s` zusammen.
+
+Jeder Kandidat jedes Laufs haengt eine JSON-Zeile an `exports/run_log.jsonl` an (`topology_pipeline.log_run`). Das gilt fuer implizite Studien, die CAD-Route (`tools/mature_pipeline.py geometry`) und Dichtelaeufe (`tools/topology_study.py run`). Jede Zeile enthaelt Zeit, Git-Commit, Laufverzeichnis, Art (`implicit`, `cad`, `density`), Kandidat, Quell-Hash, Erfolg, Status, Fehlerstufe, Laufzeit und Stufenzeiten. `summarize` fasst daraus je Lauf Erfolgsrate, Statusverteilung und Laufzeit je Kandidat zusammen.
+
+Die Belege des Vergleichs auf der gespeicherten gpu708-Dichte folgen in `docs/validation/implicit_gpu708.{json,md}`.

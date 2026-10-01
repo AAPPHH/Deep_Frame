@@ -4,7 +4,7 @@ import trimesh
 
 from deep_frame.config import TOPOLOGY_CONFIG
 from deep_frame.topology_implicit import ImplicitError, ImplicitField, _trimesh, build_implicit, exact_booleans, primitive_distance, remesh
-from deep_frame.topology_implicit_validation import VALIDATION_CHECKS, MeshAcceptance, validate_implicit, wall_screen
+from deep_frame.topology_implicit_validation import VALIDATION_CHECKS, MeshAcceptance, ball_curvature, validate_implicit, wall_screen
 from deep_frame.topology_surface_validation import _settings as _validation_settings, surface_metrics
 from tests.test_topology_implicit import CONFIG, SMALL, box, cylinder, make_domain
 
@@ -170,3 +170,32 @@ def test_disconnected_mount_never_reaches_validation():
     with pytest.raises(ImplicitError) as error:
         build_implicit(domain, density, SMALL)
     assert error.value.status == "mount_disconnected" and error.value.mesh is None
+
+def open_domain():
+    return {"grid": {"origin_mm": [-30.0, -30.0, -30.0], "spacing_mm": [0.7, 0.7, 0.7], "shape": [86, 86, 86]}, "regions": []}
+
+def test_ball_curvature_matches_analytic_mean_curvature():
+    sphere = ball_curvature(trimesh.creation.icosphere(subdivisions=5, radius=10), 1.0, 1000)
+    cylinder = ball_curvature(trimesh.creation.cylinder(radius=5, height=40, sections=256), 1.0, 2000)
+    block = ball_curvature(trimesh.creation.box(extents=(40, 40, 40)), 1.0, 2000)
+    assert sphere["sample_count"] >= 900 and sphere["absolute_mean_curvature_per_mm"]["p50"] == pytest.approx(0.1, rel=0.02)
+    assert sphere["absolute_mean_curvature_per_mm"]["max"] < 0.105 and sphere["neighbour_difference_rms_per_mm"] < 0.005
+    assert cylinder["absolute_mean_curvature_per_mm"]["p50"] == pytest.approx(0.1, rel=0.02)
+    assert block["absolute_mean_curvature_per_mm"]["p50"] == pytest.approx(0.0, abs=1e-9) and block["absolute_mean_curvature_per_mm"]["p99"] > 0.3
+    assert block["neighbour_difference_rms_per_mm"] > 10*sphere["neighbour_difference_rms_per_mm"]
+
+def test_ball_curvature_is_independent_of_the_triangulation():
+    coarse = ball_curvature(trimesh.creation.icosphere(subdivisions=4, radius=10), 1.0, 1000)
+    fine = ball_curvature(trimesh.creation.icosphere(subdivisions=6, radius=10), 1.0, 1000)
+    block = ball_curvature(trimesh.creation.box(extents=(40, 40, 40)), 1.0, 1000)
+    refined = ball_curvature(trimesh.creation.box(extents=(40, 40, 40)).subdivide().subdivide(), 1.0, 1000)
+    assert coarse["absolute_mean_curvature_per_mm"]["p50"] == pytest.approx(fine["absolute_mean_curvature_per_mm"]["p50"], rel=0.03)
+    assert block["absolute_mean_curvature_per_mm"]["p95"] == pytest.approx(refined["absolute_mean_curvature_per_mm"]["p95"], rel=0.05)
+    assert ball_curvature(trimesh.creation.box(extents=(40, 40, 40)), 1.0, 1000) == {**block, "elapsed_s": pytest.approx(block["elapsed_s"], abs=60)}
+
+def test_surface_metrics_separate_smooth_and_axis_aligned_shapes():
+    sphere = surface_metrics(trimesh.creation.icosphere(subdivisions=5, radius=10), open_domain())
+    block = surface_metrics(trimesh.creation.box(extents=(10, 8, 6)), open_domain())
+    assert sphere["prescribed_triangle_count"] == 0 and sphere["free_sharp_edge_length_mm"] == 0.0 and sphere["free_axis_normal_area_fraction"] < 0.01
+    assert block["free_axis_normal_area_fraction"] == pytest.approx(1.0)
+    assert block["free_sharp_edge_length_per_area_per_mm"] == pytest.approx(4*(10+8+6)/(2*(10*8+10*6+8*6)))

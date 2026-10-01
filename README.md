@@ -32,6 +32,7 @@ Die isotrope PA6-CF-Annahme, grobe Diskretisierung, statischen Crash-Ersatzlaste
 | Designraum, Anschluesse, verbleibende Formannahmen, Rekonstruktion und Fertigungschecks | [topology_geometry.md](docs/topology_geometry.md) |
 | SIMP, Hex8, optionaler GPU-Loeser, Gradienten- und Balkenpruefungen | [topology_optimization.md](docs/topology_optimization.md) |
 | Vollautomatischer Lauf, Akzeptanz, Pareto, Datensatz, Vergleichsbilder und Phase-1-Abnahme | [topology_pipeline.md](docs/topology_pipeline.md) |
+| Implizite Route: Distanzfeld, exakte Booleans, Netzabnahme, Formqualitaet, Lauf-Ledger | [topology_implicit.md](docs/topology_implicit.md) |
 | Parametrischer Frame v0, Komponenten und Geometriechecks | [frame.md](docs/frame.md) |
 | Unabhaengige FEA, Materialannahmen und Frame-Integration | [fea.md](docs/fea.md) |
 | Parametrische Optuna-Optimierung | [optimization.md](docs/optimization.md) |
