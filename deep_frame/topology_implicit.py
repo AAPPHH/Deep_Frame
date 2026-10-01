@@ -123,7 +123,24 @@ class ImplicitField:
             total = term if total is None else np.add(total, term, out=total)
         return np.sqrt(total, out=total)
 
-    def reinitialize(self, band_cells=1.5):
+    def _roots(self, inside, interface):
+        index = np.nonzero(interface)
+        own = self.values[index].astype(float)
+        nearest, offset = np.full(len(own), np.inf), np.zeros((len(own), 3))
+        for axis, step in product(range(3), (1, -1)):
+            neighbour = list(index)
+            neighbour[axis] = np.clip(index[axis]+step, 0, inside.shape[axis]-1)
+            neighbour = tuple(neighbour)
+            other = self.values[neighbour].astype(float)
+            cross = (neighbour[axis] != index[axis]) & (inside[index] != inside[neighbour])
+            root = np.divide(own, own-other, out=np.full(len(own), np.inf), where=cross)
+            better = cross & (root < nearest)
+            nearest[better] = root[better]
+            offset[better] = 0
+            offset[better, axis] = step*root[better]
+        return index, np.column_stack([self.origin[i]+(index[i]+offset[:, i])*self.spacing[i] for i in range(3)])
+
+    def reinitialize(self, band_cells=1.5, roots=False):
         inside = self.values > 0
         interface = np.zeros(inside.shape, dtype=bool)
         for axis in range(3):
@@ -133,17 +150,21 @@ class ImplicitField:
         if not interface.any():
             self.values = np.where(inside, 1, -1).astype(np.float32)*np.float32(np.sum(np.asarray(inside.shape)*self.spacing))
             return self
-        gradient = np.gradient(self.values, *self.spacing)
-        norm = np.maximum(np.sqrt(sum(value**2 for value in gradient)), np.float32(1e-12))
-        limit = band_cells*float(self.spacing.max())
-        band = interface | (np.abs(self.values) < limit*norm) & binary_dilation(interface, generate_binary_structure(3, 3), int(np.ceil(band_cells)))
-        index = np.nonzero(band)
-        norm = norm[index].astype(float)
-        local = np.clip(self.values[index]/norm, -limit, limit)
-        points = np.column_stack([self.origin[i]+index[i]*self.spacing[i]-local/norm*gradient[i][index] for i in range(3)])
-        del gradient
+        if roots:
+            band = interface
+            index, points = self._roots(inside, interface)
+        else:
+            gradient = np.gradient(self.values, *self.spacing)
+            norm = np.maximum(np.sqrt(sum(value**2 for value in gradient)), np.float32(1e-12))
+            limit = band_cells*float(self.spacing.max())
+            band = interface | (np.abs(self.values) < limit*norm) & binary_dilation(interface, generate_binary_structure(3, 3), int(np.ceil(band_cells)))
+            index = np.nonzero(band)
+            norm = norm[index].astype(float)
+            local = np.clip(self.values[index]/norm, -limit, limit)
+            points = np.column_stack([self.origin[i]+index[i]*self.spacing[i]-local/norm*gradient[i][index] for i in range(3)])
+            del gradient
         identifier = np.full(inside.shape, -1, dtype=np.int64)
-        identifier[index] = np.arange(len(local))
+        identifier[index] = np.arange(len(points))
         identifier = identifier[tuple(distance_transform_edt(~band, sampling=self.spacing, return_distances=False, return_indices=True))]
         closest = [points[:, i].astype(np.float32)[identifier] for i in range(3)]
         del identifier
@@ -183,9 +204,9 @@ class ImplicitField:
     def open(self, radius, band_cells=1.5):
         before = self.values > 0
         eroded = self.values > radius
-        report = {"radius_mm": radius, "method": "erosion {phi >= r}; its reinitialized signed distance plus r is the dilation; clipped to phi",
+        report = {"radius_mm": radius, "method": "erosion {phi > r}; dilation by r of the exact Euclidean distance to the linear roots of phi - r on the sign-changing grid edges of the eroded set, never to gradient-projected band points; clipped to phi",
                   "eroded_samples": int(eroded.sum()), "before_volume_mm3": self.volume(before), "components_before": int(label(before, SIX)[1])}
-        self.intersect(ImplicitField(self.origin, self.spacing, self.values-np.float32(radius)).reinitialize(band_cells).values+np.float32(radius))
+        self.intersect(ImplicitField(self.origin, self.spacing, self.values-np.float32(radius)).reinitialize(band_cells, True).values+np.float32(radius))
         after = self.values > 0
         report.update(after_volume_mm3=self.volume(after), removed_volume_mm3=self.volume(before & ~after), added_volume_mm3=self.volume(after & ~before), components_after=int(label(after, SIX)[1]))
         return report
@@ -332,11 +353,13 @@ def build_field(domain, density, settings, progress=None):
     lap("witness")
     field.smooth(config["ripple_sigma_mm"])
     report["volumes_mm3"]["ripple_smoothed"] = field.volume()
-    field.union(preserve)
+    constraint = np.maximum(forbidden, -envelope)+np.float32(offset)
+    field.union(np.minimum(preserve, -constraint))
     report["volumes_mm3"]["final"] = field.volume()
     lap("restore")
     field.layers["reference"] = reference.values
-    _connected(field, report, "final_witness", field.values > 0, preserves, forbidden)
+    _connected(field, report, "final_witness", field.values > 0, preserves, constraint)
+    report["final_witness"]["method"] += "; preserve samples within the constraint offset of a keep-out or the envelope are excluded because the restore is clipped there like the composition and the exact Booleans realise them"
     lap("witness")
     report["status"] = "field_built"
     _progress(progress, "field_built", report)

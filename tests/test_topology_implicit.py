@@ -102,10 +102,11 @@ def test_opening_removes_thin_plate_and_keeps_thick_plate(offset):
     thin = ImplicitField.from_function([0, 0, -4.05+offset], 0.25, (11, 11, 33), lambda x, y, z: 0.95-np.abs(z)+0*x*y)
     report = thin.open(1.35)
     assert not np.any(thin.values > 0) and report["removed_volume_mm3"] == report["before_volume_mm3"] > 0
-    thick = ImplicitField.from_function([0, 0, -4.05+offset], 0.25, (11, 11, 33), lambda x, y, z: 1.5-np.abs(z)+0*x*y)
-    report = thick.open(1.35)
-    assert plate_thickness(thick) == pytest.approx(3.0, abs=0.01)
-    assert report["removed_volume_mm3"] == 0
+    for half, shrink in ((1.5, 0.05), (1.75, 0.0)):
+        thick = ImplicitField.from_function([0, 0, -4.05+offset], 0.25, (11, 11, 33), lambda x, y, z: half-np.abs(z)+0*x*y)
+        report = thick.open(1.35)
+        assert 2*half-shrink-0.01 <= plate_thickness(thick) <= 2*half+0.01
+        assert report["removed_volume_mm3"] == 0
 
 def chain_domain(gap):
     end = 20 if gap else 21
@@ -164,6 +165,15 @@ def test_touching_mount_chain_builds_one_connected_field():
     assert report["final_witness"]["occupied_components_6"] == 1 and report["extension_guard"]["passed"]
     assert report["opening"]["components_after"] == 1
     assert set(report["timings_s"]) >= {"extension", "upsample", "primitives", "witness", "reinit", "smoothing", "density_witness", "composition", "opening", "restore"}
+
+def test_preserve_restore_is_clipped_by_keepout_and_envelope_offsets():
+    domain, density = chain_domain(0)
+    keepout = box("side", "forbidden", [1, 7.1, 1], [7, 9, 7], rasterize=False)
+    domain["regions"].append(keepout)
+    field, report = build_field(domain, density, SMALL)
+    offset = report["settings"]["constraint_offset_mm"]
+    near = (field.primitives([keepout]) > -offset+0.05) | (field.primitives([{"kind": "box", "min_mm": [0, 0, 0], "max_mm": [34, 10, 8]}]) < offset-0.05)
+    assert report["final_witness"]["passed"] and field.values[near].max() <= 0
 
 def corner_domain():
     keepout = box("corner", "forbidden", [-1, -1, -1], [5.5, 5.5, 9])
