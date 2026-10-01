@@ -568,13 +568,16 @@ def _wall_ray_screen(solid, minimum):
             unresolved.append(face_index)
     return {"method": "exact inward CAD normal rays, nine UV samples per face with projected largest-triangle fallback", "minimum_required_mm": minimum, "minimum_measured_mm": min(measurements) if measurements else None, "ray_count": len(measurements), "thin_samples": thin[:30], "thin_sample_count": len(thin), "unresolved_faces": unresolved, "passed": bool(measurements) and not thin and not unresolved, "limitations": "Finite surface sampling is a geometric screen, not a proof of global minimum thickness between samples"}
 
+def _trapped_voids(occupied):
+    background = np.pad(~occupied, 1, constant_values=True)
+    labels, _ = label(background, generate_binary_structure(3, 1))
+    return int(np.sum(background & (labels != labels[0, 0, 0])))
+
 def _support_accessibility(solid, occupied):
     cavities = max(0, len(solid.shells()) - 1)
     if occupied is None:
         return {"passed": False, "reason": "No occupancy field available"}
-    background = np.pad(~occupied, 1, constant_values=True)
-    labels, _ = label(background, generate_binary_structure(3, 1))
-    inaccessible = int(np.sum(background & (labels != labels[0, 0, 0])))
+    inaccessible = _trapped_voids(occupied)
     return {"closed_cad_cavities": cavities, "trapped_void_voxels": inaccessible, "passed": cavities == 0 and inaccessible == 0, "method": "closed-shell cavity count plus face-connected flood fill from padded exterior", "limitations": "Coarse accessibility screen; support-tool reach and removal through narrow exact passages need slicer/physical review"}
 
 def _validate_topology(solid, domain: dict, settings: dict) -> dict:

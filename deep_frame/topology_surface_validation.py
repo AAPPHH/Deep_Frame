@@ -25,9 +25,8 @@ from OCP.TopAbs import TopAbs_OUT, TopAbs_REVERSED
 from OCP.gp import gp_Dir, gp_Lin, gp_Pnt
 from OCP.collections import List_TopoDS_Shape
 from rtree import index as rtree_index
-from scipy.ndimage import generate_binary_structure, label
 
-from deep_frame.topology_geometry import _compound, _primitive_wall_checks, _volume, region_shape
+from deep_frame.topology_geometry import _compound, _primitive_wall_checks, _trapped_voids, _volume, region_shape
 
 SURFACE_VALIDATION_SETTINGS = {
     "boolean_fuzzy_mm": 1e-7,
@@ -606,9 +605,7 @@ def _accessibility(solid, domain, settings, progress=None):
                 occupied[i, j] |= (zvalues > bottom) & (zvalues < top)
         if progress is not None and (i + 1) % 10 == 0:
             progress({"stage": "accessibility", "column_count": (i + 1) * int(shape[1]), "unresolved_columns": unresolved, "elapsed_s": perf_counter() - started})
-    background = np.pad(~occupied, 1, constant_values=True)
-    labels, _ = label(background, generate_binary_structure(3, 1))
-    trapped = int(np.sum(background & (labels != labels[0, 0, 0])))
+    trapped = _trapped_voids(occupied)
     cavities = max(0, len(solid.shells()) - 1)
     return {"passed": not trapped and not cavities and not unresolved, "closed_cad_cavities": cavities, "trapped_void_cells": trapped, "unresolved_columns": unresolved, "grid_spacing_mm": spacing, "grid_shape": shape.tolist(), "occupied_cells": int(occupied.sum()), "spatial_index": ray_index.report(), "elapsed_s": perf_counter() - started, "method": "Fresh final-CAD exact vertical intersection pairs rasterized at cell centers, then six-connected exterior void flood fill plus closed CAD shell count", "limitations": "Finite geometric access screen; passages narrower than the grid may close numerically. Actual support generation, tool reach and support removal require slicer/physical review."}
 
