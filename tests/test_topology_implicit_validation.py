@@ -3,8 +3,8 @@ import pytest
 import trimesh
 
 from deep_frame.config import TOPOLOGY_CONFIG
-from deep_frame.topology_implicit import ImplicitError, ImplicitField, _trimesh, build_implicit, exact_booleans, primitive_distance, remesh
-from deep_frame.topology_implicit_validation import VALIDATION_CHECKS, MeshAcceptance, ball_curvature, validate_implicit, wall_screen
+from deep_frame.topology_implicit import ImplicitError, ImplicitField, _trimesh, build_implicit, exact_booleans, primitive_distance, region_manifold, remesh
+from deep_frame.topology_implicit_validation import VALIDATION_CHECKS, MeshAcceptance, ball_curvature, prescribed_bores, validate_implicit, wall_screen
 from deep_frame.topology_surface_validation import _settings as _validation_settings, surface_metrics
 from tests.test_topology_implicit import CONFIG, SMALL, box, cylinder, make_domain
 
@@ -41,6 +41,25 @@ def test_wall_screen_follows_the_surface_on_remeshed_roundings_but_keeps_creases
     wedge = trimesh.convex.convex_hull([(x, y, z) for x, y in ((0, 0), (12, -half), (12, half)) for z in (0, 10)])
     knife = wall_screen(wedge, 2.0, SETTINGS, CONFIG["remesh_feature_deg"])
     assert not knife["passed"] and knife["thin_sample_count"] > 0 and knife["minimum_measured_mm"] < 1.0
+
+def bore_block(distance, slab=None):
+    regions = [cylinder("shaft", "forbidden", [0, 0, 2], 1.4, 6.0, rasterize=False), cylinder("screw", "forbidden", [distance, 0, 2], 1.1, 6.0, rasterize=False)]
+    body = region_manifold(box("block", "preserve", [-5, -5, 0], [10, 5, 4]), 0.01)[0]
+    for region in regions:
+        body = body-region_manifold(region, 0.01, 0.0, 1, 1)[0]
+    if slab is not None:
+        body = body+region_manifold(box("fin", "preserve", [12, -5, 0], [12+slab, 5, 4]), 0.01)[0]
+    return wall_screen(_trimesh(body), 2.0, SETTINGS, CONFIG["remesh_feature_deg"], prescribed_bores(regions, 0.01, 0.0))
+
+def test_prescribed_bore_web_tolerates_only_the_polygon_oversize():
+    web = bore_block(4.5)
+    allowance = web["prescribed_bore_web"]["maximum_allowance_mm"]
+    assert web["passed"] and web["thin_sample_count"] == 0 and web["prescribed_bore_web"]["sample_count"] > 0
+    assert 2.0-allowance-1e-5 <= web["prescribed_bore_web"]["minimum_measured_mm"] < 2.0-1e-5 and allowance == pytest.approx(region_manifold(cylinder("a", "forbidden", [0, 0, 0], 1.4, 1.0), 0.01)[1]["oversize_mm"]+region_manifold(cylinder("b", "forbidden", [0, 0, 0], 1.1, 1.0), 0.01)[1]["oversize_mm"])
+    narrow = bore_block(4.47)
+    assert not narrow["passed"] and narrow["thin_sample_count"] > 0
+    free = bore_block(4.5, 1.98)
+    assert not free["passed"] and free["minimum_measured_mm"] == pytest.approx(1.98, abs=1e-9) and all(sample["position_mm"][0] >= 12-1e-9 for sample in free["thin_samples"])
 
 def acceptance(mesh, regions, shape=(20, 12, 8)):
     domain = make_domain(shape, regions)

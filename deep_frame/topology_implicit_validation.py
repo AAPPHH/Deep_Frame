@@ -7,7 +7,7 @@ import trimesh
 from scipy.ndimage import distance_transform_edt, maximum_filter
 
 from deep_frame.topology_geometry import _primitive_wall_checks, _trapped_voids, region_bounds
-from deep_frame.topology_implicit import ImplicitField, _bounds, _envelope, _manifold, _point_distances, _surface_samples, float32_margin, frozen_gates, mesh_checks, primitive_distance, region_manifold
+from deep_frame.topology_implicit import AXES, ImplicitField, _bounds, _envelope, _manifold, _point_distances, _surface_samples, float32_margin, frozen_gates, mesh_checks, primitive_distance, region_manifold
 from deep_frame.topology_surface import _mesh_summary, _progress, _statistics
 from deep_frame.topology_surface_validation import _settings as _validation_settings, _triangle_samples, surface_maturity, surface_metrics
 
@@ -49,7 +49,20 @@ def corner_normals(mesh, crease_deg):
         result[start:start+batch] = np.where(length > 1e-12, total/np.maximum(length, 1e-300), normals[start:start+batch, None])
     return result
 
-def wall_screen(mesh, minimum, settings, crease_deg):
+def prescribed_bores(regions, tolerance, margin):
+    return [(region, region_manifold(region, tolerance, margin)[1]) for region in regions if region["role"] == "forbidden" and region["kind"] == "cylinder" and region.get("rasterize", True) is False]
+
+def bore_allowance(points, bores, margin):
+    allowance = np.full(len(points), np.nan)
+    for region, polygon in bores:
+        axis = AXES[region.get("axis", "z")]
+        low, high = region_bounds(region)
+        radial = np.sqrt(sum((points[:, i]-region["center_mm"][i])**2 for i in range(3) if i != axis))
+        on = (radial >= region["radius_mm"]-margin) & (radial <= polygon["cut_radius_mm"]+margin) & (points[:, axis] >= low[axis]-margin) & (points[:, axis] <= high[axis]+margin)
+        allowance[on] = np.fmax(allowance[on], polygon["oversize_mm"])
+    return allowance
+
+def wall_screen(mesh, minimum, settings, crease_deg, bores=(), margin=0.0):
     started = perf_counter()
     spacing, tolerance, guard = settings["wall_sample_spacing_mm"], settings["wall_tolerance_mm"], 1e-7
     triangles = mesh.triangles
@@ -76,6 +89,12 @@ def wall_screen(mesh, minimum, settings, crease_deg):
     thickness = np.full(len(points), np.inf)
     np.minimum.at(thickness, rays[beyond], distances[beyond])
     thin = thickness < minimum-tolerance
+    candidates = np.flatnonzero(thin)
+    allowance = bore_allowance(points[candidates], bores, margin)+bore_allowance(points[candidates]-thickness[candidates, None]*directions[candidates], bores, margin)
+    web = np.isfinite(allowance)
+    bore_web = np.zeros(len(points), dtype=bool)
+    bore_web[candidates[web]] = True
+    thin[candidates[web]] = thickness[candidates[web]] < minimum-tolerance-allowance[web]
     unresolved = np.zeros(len(points), dtype=bool)
     unresolved[rays[other & (np.abs(distances) <= guard)]] = True
     unresolved &= ~thin
@@ -85,6 +104,8 @@ def wall_screen(mesh, minimum, settings, crease_deg):
             "minimum_measured_mm": float(thickness[lowest]) if lowest is not None else None,
             "minimum_sample": {"face": int(sources[lowest]), "position_mm": points[lowest].tolist(), "thickness_mm": float(thickness[lowest])} if lowest is not None else None,
             "ray_count": len(points), "rays_clear_through_upper_bound": int(np.count_nonzero(~measured)), "thin_sample_count": int(thin.sum()), "unresolved_sample_count": int(unresolved.sum()),
+            "prescribed_bore_web": {"sample_count": int(bore_web.sum()), "minimum_measured_mm": float(thickness[bore_web].min()) if bore_web.any() else None, "maximum_allowance_mm": float(allowance[web].max()) if web.any() else None,
+                                    "method": "Chords whose origin and hit both lie on the realised circumscribed polygon of a prescribed bore (rasterize=False keep-out cylinder, radial band [r, cut radius] within the binary32 margin) may fall short of the minimum by the sum of the two polygons' oversize from segment count and radius; all other chords keep the strict minimum"},
             "thin_samples": [{"face": int(sources[i]), "position_mm": points[i].tolist(), "thickness_mm": float(thickness[i])} for i in np.flatnonzero(thin)[:30]],
             "unresolved_samples": [{"face": int(sources[i]), "position_mm": points[i].tolist()} for i in np.flatnonzero(unresolved)[:30]],
             "ray_origin_exclusion_mm": guard, "maximum_sample_triangle_edge_mm": spacing, "normal_crease_deg": crease_deg, "elapsed_s": perf_counter()-started,
@@ -231,7 +252,7 @@ class MeshAcceptance:
         opening = {"opening_radius_mm": config["opening_radius_mm"], "required_radius_mm": required, "applied": report.get("opening") is not None,
                    "method": "Opening radius covers half the minimum wall plus the EDT error h*sqrt(3)/2, the ripple-smoothing shrink sigma^2/minimum and the remeshing surface distance"}
         opening["passed"] = bool(opening["applied"] and config["opening_radius_mm"] >= required)
-        rays = wall_screen(self.mesh, self.minimum, self.settings, config["remesh_feature_deg"])
+        rays = wall_screen(self.mesh, self.minimum, self.settings, config["remesh_feature_deg"], prescribed_bores(self.regions["forbidden"], config["segment_tolerance_mm"], self.margin), self.margin)
         return {"minimum_wall_mm": self.minimum, "field_opening": opening, "mesh_wall_screen": rays, "passed": opening["passed"] and rays["passed"]}
 
     def supports(self):
