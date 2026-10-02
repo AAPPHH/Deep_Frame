@@ -591,15 +591,24 @@ def _snap_planes(mesh, regions, tolerance=1e-9):
 def _round_float32(mesh, margin):
     rounded = np.asarray(mesh.vertices, dtype=np.float32).astype(float)
     shift = float(np.abs(rounded-mesh.vertices).max(initial=0))
-    unique, inverse = np.unique(rounded, axis=0, return_inverse=True)
-    faces = inverse.ravel()[np.asarray(mesh.faces)]
-    collapsed = (faces[:, 0] == faces[:, 1]) | (faces[:, 1] == faces[:, 2]) | (faces[:, 0] == faces[:, 2])
-    index, counts = np.unique(np.sort(faces, axis=1), axis=0, return_inverse=True, return_counts=True)[1:]
-    coincident = ~collapsed & (counts[index.ravel()] > 1)
-    result = trimesh.Trimesh(unique, faces[~collapsed & ~coincident], process=False)
-    result.remove_unreferenced_vertices()
-    return result, {"method": "all vertices rounded to binary32 so the validated mesh equals the delivered STL; constraint planes are binary32 values rounded to the safe side and cut cylinders lie one margin outside the checked polygon, so rounding cannot enter a keep-out; Boolean edges shorter than the binary32 spacing collapse, their degenerate faces and coincident face pairs are dropped and the final mesh checks re-verify closure and manifoldness",
-                    "margin_mm": margin, "maximum_rounding_mm": shift, "merged_vertices": len(rounded)-len(unique), "collapsed_faces": int(collapsed.sum()), "coincident_faces": int(coincident.sum()), "passed": shift*np.sqrt(3) < margin}
+    _, first, inverse = np.unique(rounded, axis=0, return_index=True, return_inverse=True)
+    faces = first[inverse.ravel()][mesh.faces]
+    merged = len(rounded)-len(first)
+    edges = {tuple(edge) for edge in np.sort(mesh.edges_unique, axis=1).tolist()}
+    pairs = np.sort(np.column_stack((first[inverse.ravel()], np.arange(len(rounded)))), axis=1)
+    pairs = pairs[pairs[:, 0] != pairs[:, 1]]
+    adjacent = all(tuple(pair) in edges for pair in pairs.tolist())
+    degenerate = (faces[:, 0] == faces[:, 1]) | (faces[:, 1] == faces[:, 2]) | (faces[:, 0] == faces[:, 2])
+    collapsed = trimesh.Trimesh(rounded, faces[~degenerate], process=False)
+    collapsed.remove_unreferenced_vertices()
+    valid = adjacent and len(np.unique(np.sort(collapsed.faces, axis=1), axis=0)) == len(collapsed.faces) and collapsed.is_watertight and collapsed.is_winding_consistent and collapsed.euler_number == mesh.euler_number
+    if merged and valid:
+        mesh = collapsed
+    else:
+        mesh.vertices = rounded
+    return mesh, {"method": "all vertices rounded to binary32 so the validated mesh equals the delivered STL; constraint planes are binary32 values rounded to the safe side and cut cylinders lie one margin outside the checked polygon, so rounding cannot enter a keep-out; Boolean edges shorter than the binary32 spacing are collapsed onto their common rounded vertex when the collapse keeps the mesh closed, oriented, duplicate-free and of equal Euler characteristic",
+                  "margin_mm": margin, "maximum_rounding_mm": shift, "merged_vertices": merged, "collapsed_edges": len(pairs) if merged and valid else 0, "removed_faces": int(degenerate.sum()) if merged and valid else 0, "collapsed_faces": int(degenerate.sum()) if merged and valid else 0,
+                  "passed": (not merged or valid) and shift*np.sqrt(3) < margin}
 
 def _trimesh(body):
     mesh = body.to_mesh64()

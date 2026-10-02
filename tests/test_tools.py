@@ -892,6 +892,7 @@ def test_implicit_study_accepts_connected_mounts_and_logs_success(tmp_path, monk
     assert manifest["status"] == "complete" and manifest["overall_acceptance"] and manifest["selected_id"] == "c00"
     assert manifest["success_rate"] == 1.0 and manifest["geometry_success_rate"] == 1.0 and manifest["runtime_per_candidate_s"]["max"] > 0
     assert manifest["candidates"][0]["record_sha256"] == _file_digest(output / "candidates/c00/record.json")
+    assert manifest["domain_currency"]["regions_current"] is False
     record = _read(output / "candidates/c00/record.json")
     assert record["status"] == "accepted" and record["success"] and record["validation"]["passed"] and record["comparison"]["passed"]
     assert {"extension", "extraction", "remesh", "booleans", "export", "validation", "metrics", "renders", "fea", "fea_mesh", "fea_solve"} <= set(record["timings_s"])
@@ -980,6 +981,18 @@ def test_diagnostic_fea_runs_only_when_features_is_the_only_failing_check(tmp_pa
     assert not manifest["overall_acceptance"] and manifest["success_rate"] == 0.0
     line, = ledger(tmp_path / "run_log.jsonl")
     assert line["status"] == "geometry_invalid" and not line["success"]
+
+def test_implicit_study_flags_sources_built_on_older_prescribed_geometry():
+    from deep_frame.topology_geometry import build_design_domain
+    parameters = topology_study.study_parameters([34, 32, 8])
+    built = build_design_domain(parameters)
+    domain = {**json.loads(json.dumps({key: built[key] for key in ("grid", "regions")})), **{name: built[name].copy() for name in ("allowed", "preserve", "forbidden")}}
+    assert implicit.domain_currency(parameters, domain) == {"regions_current": True, "grid_current": True, "mask_cells_changed": {"allowed": 0, "preserve": 0, "forbidden": 0}, "prescribed_clearance_passed": True}
+    contact = next(region for region in domain["regions"] if region["name"] == "battery_contact_1_1")
+    contact["max_mm"][2] = 29.0
+    domain["preserve"].flat[np.flatnonzero(domain["preserve"])[0]] = False
+    stale = implicit.domain_currency(parameters, domain)
+    assert not stale["regions_current"] and stale["mask_cells_changed"]["preserve"] == 1
 
 def test_implicit_study_rejects_unknown_keys_and_used_output(tmp_path):
     path = tmp_path / "config.json"

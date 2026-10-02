@@ -14,24 +14,34 @@ Die Standarddiskretisierung besitzt 34 x 32 x 8 Zellen mit 4 mm Kantenlaenge. Ze
 | --- | ---: | ---: |
 | Gesamter Quader | 8704 | 557056 mm3 |
 | Zulaessiger Materialraum | 5842 | 373888 mm3 |
-| Feste lokale Anschluesse | 158 | 10112 mm3 |
-| Frei optimierbare Zellen | 5684 | 363776 mm3 |
+| Feste lokale Anschluesse | 162 | 10368 mm3 |
+| Frei optimierbare Zellen | 5680 | 363520 mm3 |
 | Gesperrt | 2862 | 183168 mm3 |
 
-Die Preserve-Zellen belegen **2.7046 Prozent** des zulaessigen Raums. **97.2954 Prozent** bleiben freie Optimierungsvariablen. Diese Angaben betreffen das Raster; exakte Kontaktgrenzen und Bohrungen aendern das physische Endvolumen. Die Preserve-Maske enthaelt mehrere getrennte Komponenten und kann allein keinen tragenden Frame bilden.
+Die Preserve-Zellen belegen **2.7730 Prozent** des zulaessigen Raums. **97.2270 Prozent** bleiben freie Optimierungsvariablen. Diese Angaben betreffen das Raster; exakte Kontaktgrenzen und Bohrungen aendern das physische Endvolumen. Die Preserve-Maske enthaelt mehrere getrennte Komponenten und kann allein keinen tragenden Frame bilden.
 
 `volume_fraction = 0.10` begrenzt das SIMP-Dichtevolumen auf 37388.8 mm3, entsprechend 40.754 g bei 1.09 g/cm3. Dies ist kein vorweggenommenes Ergebnisgewicht: Dichteschwelle, exakte lokale Anschluesse, Ausschnitte und Qualitaetspruefungen bestimmen das tatsaechliche Gewicht. Die zugehoerigen Werte und die tatsaechlichen Masken werden je Lauf gespeichert.
 
 ### Feste funktionale Anschluesse
 
-- Vier lokale Motorkontakte: 9.5 mm Radius, Oberkante an der Motorunterseite. M2-Bohrungen und Wellenfreigang werden exakt ausgeschnitten. Es gibt keine vorgeschriebenen Verbindungen zu einem Zentrum.
-- Vier AIO15-Bosse: 3.2 mm Radius, Oberkante 5.5 mm, Bohrungen gemaess dem bestehenden 25.5-mm-M2-Lochbild. Der umgebende Boden bleibt frei.
-- Vier einzelne Akku-Auflageflaechen sowie zwei kurze Koppelflaechen an der Querlinie y = 0. Ihre Oberseite liegt bei z = 29 mm. Die Koppelflaechen dienen derselben 37-g-Akku-Punktmasse wie im Vergleichsmodell.
-- Vier lokale Strap-Oesen mit 2-mm-Rand, deren Schlitze seitlich neben der 30-mm-Akkubreite liegen. Durch sie laeuft der Strap ueber die breite Akkuflaeche. Die tragende Verbindung der Oesen wird optimiert.
-- Zwei kleine Kamera-Schraublaschen und zwei obere Schutz-/Lastkontaktflaechen. Ihre lokale Breite von 6 mm erreicht die Rastergrenze x = +/-16 mm; dies verhindert subvoxelduenne Reste zwischen Schraubbohrung und freiem Material. Die Breite ist eine eigene Diskretisierungs-/Montageannahme, keine kopierte v0-Geometrie. Dazwischen ist weder eine Kaefigwand noch ein Verbindungsbogen vorgeschrieben.
-- Lokale XT30- und Balancer-Auflagen mit zugaenglichen Enden fuer die Befestigung durch Band oder Kleber sowie eine VTX-Antennenaufnahme mit 3-mm-Bohrung. Befestigungsmethode, Steckerbelegung und Kabelradien sind vorlaeufige Montageannahmen.
+- Vier lokale Motorkontakte: 9.7 mm Radius (2.1 mm Rand um die 7.6-mm-Motorhuelle), Oberkante 0.5 mm in die Motorhuelle hinein; der exakte Schnitt legt die Auflage auf die Motorunterseite z = 4 mm. M2-Bohrungen und Wellenfreigang werden exakt ausgeschnitten. Es gibt keine vorgeschriebenen Verbindungen zu einem Zentrum.
+- Vier AIO15-Bosse: 3.2 mm Radius, Oberkante buendig bei 5.5 mm (nur 0.2 mm neben der AIO-Huellwand, deshalb nicht verlaengert), Bohrungen gemaess dem bestehenden 25.5-mm-M2-Lochbild. Der umgebende Boden bleibt frei.
+- Vier einzelne Akku-Auflageflaechen sowie zwei kurze Koppelflaechen an der Querlinie y = 0. Ihre Oberseite liegt 0.5 mm in der Akkuhuelle; die exakte Auflage bleibt bei z = 29 mm. Ausserhalb der Akkuhuelle (|x| > 15.5 mm) stehen die Koppelflaechen dadurch 0.5 mm hoeher. Die Koppelflaechen dienen derselben 37-g-Akku-Punktmasse wie im Vergleichsmodell.
+- Vier lokale Strap-Oesen mit 2.1-mm-Rand (`strap_rim_mm`), Oberkante wie die Akkuauflagen 0.5 mm ueber z = 29 mm, deren Schlitze seitlich neben der 30-mm-Akkubreite liegen. Durch sie laeuft der Strap ueber die breite Akkuflaeche. Die tragende Verbindung der Oesen wird optimiert.
+- Zwei kleine Kamera-Schraublaschen (Radius 4.1 mm, 2.1-mm-Rand um den 2-mm-Werkzeugkorridor) und zwei obere Schutz-/Lastkontaktflaechen. Ihre lokale Breite von 6 mm erreicht die Rastergrenze x = +/-16 mm; dies verhindert subvoxelduenne Reste zwischen Schraubbohrung und freiem Material. Die Breite ist eine eigene Diskretisierungs-/Montageannahme, keine kopierte v0-Geometrie. Dazwischen ist weder eine Kaefigwand noch ein Verbindungsbogen vorgeschrieben.
+- Lokale XT30- und Balancer-Auflagen mit zugaenglichen Enden fuer die Befestigung durch Band oder Kleber (Oberkante 0.5 mm in der Steckerhuelle, Enden ausserhalb dadurch 3.0 statt 2.5 mm hoch) sowie eine VTX-Antennenaufnahme mit 3-mm-Bohrung und 4.3 mm Aussenradius (`antenna_eyelet_radius_mm`), die die Balancer-Auflagenecke einschliesst. Befestigungsmethode, Steckerbelegung und Kabelradien sind vorlaeufige Montageannahmen.
 
 Diese lokalen Primitiven sind menschliche Formannahmen fuer die notwendigen Schnittstellen. Sie duerfen nicht als frei optimierte Geometrie ausgegeben werden. Die tragenden Verbindungen zwischen ihnen entstehen aus dem freien Materialfeld.
+
+### Preserve-Geometrie gegen Keep-outs
+
+Die implizite Route blaeht jede Preserve-Primitive um `preserve_inflation_mm` = 0.18 mm auf und schneidet Keep-outs danach exakt. Liegt eine Preserve-Flaeche buendig auf einer Keep-out-Flaeche, trifft dieser Schnitt die Kappe der aufgeblaehten Schale; uebrig bleiben Stufen in Hoehe der Aufblaehung und Schneiden mit Wandmessungen von 0.0005 bis 0.7 mm (Akkuauflagen z = 29, XT30/Balancer z = 2.5, Motorkappen z = 4). Die Wandpruefung bleibt streng; korrigiert wird die vorgegebene Geometrie:
+
+- Buendige horizontale Kontakte (Preserve-Oberseite = Keep-out-Unterseite bei gemeinsamer Grundflaeche) werden um `flush_overlap_mm` = 0.5 mm in das Keep-out verlaengert und dort als Preserve-Ausschnitt deklariert, ausser die Preserve-Primitive liegt naeher als Aufblaehung plus Reserve (0.28 mm) an einer Seitenwand des Keep-outs; dann wuerde die Schale als Splitter austreten, der Kontakt bleibt buendig und ist eine Verletzung der Selbstpruefung (keine Ausnahme). Die AIO-Bosse haben deshalb r = 3.1 mm (`aio_boss_radius_mm`, 0.3 mm Abstand zur AIO-Huellwand, Rand um die Schraubbohrung 2.0 mm); die Klemmselektoren behalten `aio_contact_radius_mm` = 3.2 mm. Der exakte Schnitt laeuft dann durch die senkrechte Schalenwand; die wirksame Auflageebene bleibt unveraendert. Keep-outs innerhalb einer koaxialen vorgeschriebenen Bohrung (Antennen-Einfuehrkanal) zaehlen nicht. Die Liste steht in `metadata.flush_contact_extensions`.
+- Jede Keep-out-Wand, die eine Preserve-Primitive schneidet, und jedes koaxiale Keep-out-Zylinderpaar muss einen Rand von mindestens 2.0 mm plus `prescribed_wall_margin_mm` = 0.1 mm lassen (Polygon- und Float-Reserve).
+- Zwei Preserve-Primitiven ueberlappen oder liegen weiter als dieser Rand plus beide Aufblaehungen auseinander.
+
+`prescribed_clearance` prueft diese Regeln nach der Verlaengerung und speichert das Ergebnis in `metadata.prescribed_clearance`; die Standarddomaene muss sie bestehen. Vorgeschriebene Bohrungen sind ausgenommen, ihre Stege regelt die C6-Bohrungstoleranz. Die Ebene z = 0 ist Bauraumgrenze, kein Keep-out, und bleibt unveraendert. Messung auf den gespeicherten Dichten: `docs/validation/implicit_domain_ledges.md`.
 
 ### Verbotene Volumina und Montage
 
