@@ -15,6 +15,7 @@ import numpy as np
 from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS, command_line, configure
 from deep_frame.fea import MESH_KEYS, evaluate
 from deep_frame.frame import build_geometry
+from deep_frame.topology_geometry import build_design_domain
 from deep_frame.topology_implicit import ImplicitError, build_implicit, export_mesh
 from deep_frame.topology_implicit_validation import ball_curvature, validate_implicit
 from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save, _verify_cases, candidate_entry, compare_to_baseline, log_run, run_log_path
@@ -117,6 +118,13 @@ def render_views(mesh, domain, directory, label, footer, faces, heights):
     record["elapsed_s"] = perf_counter()-started
     return record
 
+def domain_currency(parameters, domain):
+    current = build_design_domain(parameters)
+    same = current["grid"]["shape"] == domain["grid"]["shape"]
+    return {"regions_current": json.loads(json.dumps(current["regions"])) == domain["regions"], "grid_current": same,
+            "mask_cells_changed": {name: int(np.count_nonzero(current[name] != domain[name])) if same else None for name in ("allowed", "preserve", "forbidden")},
+            "prescribed_clearance_passed": current["metadata"]["prescribed_clearance"]["passed"]}
+
 def reference_geometry(path, domain, config):
     from build123d import import_step
     from deep_frame.topology_surface_validation import _mesh, _settings
@@ -153,7 +161,7 @@ class ImplicitStudy:
         _save(self.output/"reference_metrics.json", self.reference)
         self.baseline_solid = build_geometry(deepcopy(inputs["parameters"]))
         self.baseline_mass = self.baseline_solid.volume*self.domain["material"]["density_g_cm3"]/1000
-        self.manifest.update(source_manifest_sha256=_file_digest(snapshot/"manifest.json"), density_status=density_result["status"],
+        self.manifest.update(source_manifest_sha256=_file_digest(snapshot/"manifest.json"), density_status=density_result["status"], domain_currency=domain_currency(inputs["parameters"], self.domain),
                              implicit_settings={key: config[key] for key in IMPLICIT_CONFIG}, fea_settings=self.settings, mesh_settings={key: config[key] for key in MESH_KEYS},
                              comparison_reference={key: self.reference[key] for key in ("source", "sha256", "volume_mm3", "metrics")},
                              material=self.domain["material"], point_masses=self.domain["point_masses"], load_cases=self.domain["comparison_load_cases"], relative_constraints=self.constraints,
