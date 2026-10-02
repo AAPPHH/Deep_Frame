@@ -25,9 +25,8 @@ from OCP.TopAbs import TopAbs_OUT, TopAbs_REVERSED
 from OCP.gp import gp_Dir, gp_Lin, gp_Pnt
 from OCP.collections import List_TopoDS_Shape
 from rtree import index as rtree_index
-from scipy.ndimage import generate_binary_structure, label
 
-from deep_frame.topology_geometry import _compound, _primitive_wall_checks, _volume, region_shape
+from deep_frame.topology_geometry import _compound, _primitive_wall_checks, _trapped_voids, _volume, region_shape
 
 SURFACE_VALIDATION_SETTINGS = {
     "boolean_fuzzy_mm": 1e-7,
@@ -412,6 +411,14 @@ def surface_metrics(mesh, domain, settings=None):
         "settings": {key: settings[key] for key in ("prescribed_surface_tolerance_mm", "axis_normal_angle_deg", "sharp_edge_angle_deg", "source_plane_tolerance_mm", "tessellation_mm", "tessellation_angle_rad")},
     }
 
+def surface_maturity(metrics, reference, settings):
+    ratios = {}
+    for key, limit_name in (("free_sharp_edge_length_per_area_per_mm", "maximum_free_crease_ratio"), ("free_axis_normal_area_fraction", "maximum_free_axis_fraction_ratio")):
+        candidate_value, reference_value = metrics[key], reference[key]
+        ratio = candidate_value / reference_value if candidate_value is not None and reference_value is not None and reference_value > 0 else None
+        ratios[key] = {"candidate": candidate_value, "reference": reference_value, "ratio": ratio, "maximum_ratio": settings[limit_name], "passed": ratio is not None and ratio <= settings[limit_name]}
+    return {"passed": all(value["passed"] for value in ratios.values()), "ratios": ratios, "reference_metrics": reference}
+
 def _triangle_samples(triangle, spacing):
     pending = [triangle]
     while pending:
@@ -606,9 +613,7 @@ def _accessibility(solid, domain, settings, progress=None):
                 occupied[i, j] |= (zvalues > bottom) & (zvalues < top)
         if progress is not None and (i + 1) % 10 == 0:
             progress({"stage": "accessibility", "column_count": (i + 1) * int(shape[1]), "unresolved_columns": unresolved, "elapsed_s": perf_counter() - started})
-    background = np.pad(~occupied, 1, constant_values=True)
-    labels, _ = label(background, generate_binary_structure(3, 1))
-    trapped = int(np.sum(background & (labels != labels[0, 0, 0])))
+    trapped = _trapped_voids(occupied)
     cavities = max(0, len(solid.shells()) - 1)
     return {"passed": not trapped and not cavities and not unresolved, "closed_cad_cavities": cavities, "trapped_void_cells": trapped, "unresolved_columns": unresolved, "grid_spacing_mm": spacing, "grid_shape": shape.tolist(), "occupied_cells": int(occupied.sum()), "spatial_index": ray_index.report(), "elapsed_s": perf_counter() - started, "method": "Fresh final-CAD exact vertical intersection pairs rasterized at cell centers, then six-connected exterior void flood fill plus closed CAD shell count", "limitations": "Finite geometric access screen; passages narrower than the grid may close numerically. Actual support generation, tool reach and support removal require slicer/physical review."}
 
@@ -739,12 +744,7 @@ def _validate_surface(solid, domain: dict, settings: dict, *, reference_solid=No
         reference_mesh = _mesh(reference_solid, reference_settings)
         reference = surface_metrics(reference_mesh, domain, settings)
         reference["tessellation"] = reference_mesh.metadata["adaptive_tessellation"]
-        ratios = {}
-        for key, limit_name in (("free_sharp_edge_length_per_area_per_mm", "maximum_free_crease_ratio"), ("free_axis_normal_area_fraction", "maximum_free_axis_fraction_ratio")):
-            candidate_value, reference_value = metrics[key], reference[key]
-            ratio = candidate_value / reference_value if candidate_value is not None and reference_value is not None and reference_value > 0 else None
-            ratios[key] = {"candidate": candidate_value, "reference": reference_value, "ratio": ratio, "maximum_ratio": settings[limit_name], "passed": ratio is not None and ratio <= settings[limit_name]}
-        checks["surface_maturity"] = {"passed": all(value["passed"] for value in ratios.values()), "ratios": ratios, "reference_metrics": reference}
+        checks["surface_maturity"] = surface_maturity(metrics, reference, settings)
         if progress is not None:
             progress({"stage": "surface_maturity", "status": "completed", "result": checks["surface_maturity"]})
             progress({"stage": "material_difference", "status": "started"})

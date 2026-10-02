@@ -1,47 +1,38 @@
 from copy import deepcopy
 import hashlib
 import json
+from math import atan2, degrees
 from pathlib import Path
 import sys
 
-COMPONENT_DEFAULTS = {
-    "aio15": {
-        "width_mm": 31.3,
-        "length_mm": 31.3,
-        "stack_height_mm": 6.0,
-        "mount_pitch_mm": 25.5,
-        "screw_diameter_mm": 2.0,
-        "mass_g": 7.2,
-        "source": "user: HDZero AIO15 dimensions, M2 mounting pattern and mass",
+COMPONENT_LIBRARY = {
+    "GTS V3 1203": {
+        "type": "motor",
+        "dimensions_mm": {"diameter": 15.76, "height": 9.9, "shaft_diameter": 1.5},
+        "mass_g": 4.5,
+        "hole_pattern": {"layout": "bolt_circle", "count": 4, "pitch_mm": 9.0, "screw_diameter_mm": 2.0, "clearance_diameter_mm": 2.2},
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "screws",
+        "data": {"kv": 8000, "thrust_n": 1.80},
+        "source": "Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg (RCinPower GTS V3 1203 8000KV data sheet)",
+        "model": "RCinPower GTS V3 1203 8000KV (user decision)",
         "parameter_sources": {
-            "stack_height_mm": "PROVISIONAL: complete populated board envelope; measure actual stack",
+            "diameter_mm": "data sheet: motor dimension 15.76 x 9.9 mm",
+            "height_mm": "data sheet: body length 9.9 mm, shaft tip excluded",
+            "shaft_diameter_mm": "data sheet drawing: shaft tip 1.5 mm",
+            "mount_layout": "data sheet drawing: 4 x M2 on 9 mm bolt circle, cross pattern",
+            "mass_g": "data sheet: 4.5 g with 3 cm wire",
+            "thrust_n": "data sheet: GF 65R, 7.4 V, 100 % throttle, 184 g pull = 1.80 N",
+            "screw_clearance_mm": "design: 0.2 mm diametral clearance for M2",
         },
     },
-    "camera": {
-        "length_mm": 14.0,
-        "width_mm": 16.0,
-        "height_mm": 14.0,
-        "tilt_deg": 20.0,
-        "mass_g": 2.3,
-        "source": "user: HDZero Lux dimensions and mass",
-        "parameter_sources": {"tilt_deg": "design: adjustable initial camera tilt"},
-    },
-    "battery": {
-        "length_mm": 63.0,
-        "width_mm": 30.0,
-        "height_mm": 11.0,
-        "mass_g": 37.0,
-        "source": "user: GNB5502S120A dimensions and mass",
-        "mass_scope": "battery including leads and connectors; represented at battery center",
-    },
-    "motor": {
-        "diameter_mm": 14.2,
-        "height_mm": 14.6,
-        "mount_pitch_mm": 9.0,
-        "mount_layout": "bolt_circle",
-        "screw_diameter_mm": 2.0,
-        "screw_clearance_mm": 2.2,
+    "GEPRC GR1105": {
+        "type": "motor",
+        "dimensions_mm": {"diameter": 14.2, "height": 14.6},
         "mass_g": 5.9,
+        "hole_pattern": {"layout": "bolt_circle", "count": 4, "pitch_mm": 9.0, "screw_diameter_mm": 2.0, "clearance_diameter_mm": 2.2},
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "screws",
         "source": "https://geprc.com/product/gep-gr1105-motor/",
         "model": "PROVISIONAL: GEPRC GR1105 envelope, not a selected motor",
         "parameter_sources": {
@@ -53,43 +44,136 @@ COMPONENT_DEFAULTS = {
             "screw_clearance_mm": "design: 0.2 mm diametral clearance for M2",
         },
     },
-    "prop": {
-        "diameter_mm": 65.0,
-        "thickness_mm": 0.8,
-        "mass_g": 0.7,
-        "source": "user: 65 mm swept disk; intentionally larger than exact 2.5 inch (63.5 mm)",
+    "HQProp T2.5X2X3V2S": {
+        "type": "prop",
+        "dimensions_mm": {"diameter": 63.5, "hub_diameter": 9.8, "hub_height": 5.0, "shaft_diameter": 1.5},
+        "mass_g": 1.2,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 2.0},
+        "mounting": "shaft",
+        "data": {"size_in": 2.5, "pitch_in": 2.0, "blades": 3, "material": "polycarbonate", "rotation": "2 CW + 2 CCW", "adaptor_rings": False, "thrust_g_estimate": 206.0, "thrust_n_estimate": 2.02},
+        "source": "user decision: HQProp T2.5X2X3V2S (HQ Durable Prop T2.5X2X3 V2S), 2 CW + 2 CCW, polycarbonate, 1.5 mm shaft, no adaptor rings",
+        "model": "HQProp T2.5X2X3V2S 2.5 x 2 x 3 (user decision)",
         "parameter_sources": {
-            "thickness_mm": "PROVISIONAL: swept disk thickness; excludes blade flex",
-            "mass_g": "PROVISIONAL: prop model not selected; equivalent uniform disk inertia",
+            "diameter_mm": "HQProp data: 2.5 inch = 63.5 mm",
+            "hub_diameter_mm": "HQProp data: hub diameter 9.8 mm",
+            "hub_height_mm": "HQProp data: hub thickness 5 mm; used as the axial extent of the swept prop disc",
+            "shaft_diameter_mm": "HQProp data: 1.5 mm shaft bore, matches GTS V3 1203 shaft tip",
+            "mass_g": "HQProp data: 1.2 g",
+            "thrust_n_estimate": "ESTIMATE: Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg, GTS V3 1203 8000KV table, row HQ T65R, 7.4 V, 100 % throttle: 206 g pull = 2.02 N; T65R is a 65 mm 3-blade HQ prop, not the T2.5X2X3V2S itself",
+            "keep_out_clearance_mm": "design: radial and axial prop clearance as TOPOLOGY_CONFIG prop_clearance_mm",
         },
     },
-    "xt30": {
-        "width_mm": 10.2,
-        "length_mm": 12.4,
-        "height_mm": 5.2,
+    "HDZero AIO15": {
+        "type": "aio",
+        "dimensions_mm": {"width": 31.3, "length": 31.3, "stack_height": 6.0, "grommet_height": 3.0},
+        "mass_g": 7.2,
+        "hole_pattern": {"layout": "square", "count": 4, "pitch_mm": 25.5, "screw_diameter_mm": 2.0},
+        "keep_out": {"clearance_mm": 0.5, "elrs_antenna_mm": 3.0},
+        "mounting": "grommets",
+        "source": "user: HDZero AIO15 dimensions, M2 mounting pattern and mass",
+        "parameter_sources": {
+            "stack_height_mm": "PROVISIONAL: complete populated board envelope; measure actual stack",
+            "grommet_height_mm": "PROVISIONAL: HDZero manual, soft mount on the 4 included rubber grommets; height not given, typical whoop grommet",
+            "elrs_antenna_clearance_mm": "HDZero AIO15 manual: lift the ELRS antenna at least 3 mm off the board",
+            "vtx_antenna": "HDZero AIO15 manual: UFL VTX antenna mounted outward; rear antenna eyelet keeps it outboard",
+        },
+    },
+    "HDZero Lux": {
+        "type": "camera",
+        "dimensions_mm": {"length": 14.0, "width": 16.0, "height": 14.0},
+        "mass_g": 2.3,
+        "hole_pattern": {"layout": "side_pair", "count": 2, "screw_diameter_mm": 2.0, "clearance_diameter_mm": 2.2},
+        "keep_out": {"clearance_mm": 0.5, "side_mm": 2.0, "bottom_mm": 2.0},
+        "mounting": "screws",
+        "source": "user: HDZero Lux dimensions and mass",
+        "parameter_sources": {"clearance_diameter_mm": "frame v0: 2.2 mm side screw bore", "keep_out": "frame v0: 2 mm side and bottom camera clearance"},
+    },
+    "GNB5502S120A": {
+        "type": "battery",
+        "dimensions_mm": {"length": 63.0, "width": 30.0, "height": 11.0},
+        "mass_g": 37.0,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "strap",
+        "data": {"cells": 2, "capacity_mah": 550, "power_connector": "AMASS XT30U-F", "balance_connector": "JST XHP-3"},
+        "source": "user: GNB5502S120A dimensions and mass",
+        "mass_scope": "battery including leads and connectors; represented at battery center",
+    },
+    "HDZero VTX + ELRS": {
+        "type": "antennas",
+        "dimensions_mm": {"bore": 3.0, "holder_height": 10.0},
         "mass_g": 0.0,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "eyelet",
+        "data": {"vtx": "UFL VTX antenna mounted outward through the rear eyelet", "elrs": "wire antenna lifted at least 3 mm above the AIO board"},
+        "source": "frame v0 antenna eyelet; HDZero AIO15 manual for VTX and ELRS routing",
+        "mass_scope": "PROVISIONAL: antenna mass not measured, neglected",
+    },
+    "AMASS XT30U-F": {
+        "type": "connector",
+        "dimensions_mm": {"width": 10.2, "length": 12.4, "height": 5.2},
+        "mass_g": 0.0,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "strap",
         "source": "https://images.100y.com.tw/pdf_file/AMASS-XT30U.pdf#page=2",
         "model": "AMASS XT30U-F bounding envelope",
         "mass_scope": "already_in_battery",
-        "parameter_sources": {
-            "mass_g": "battery mass includes leads and connectors; avoid double counting",
-        },
+        "parameter_sources": {"mass_g": "battery mass includes leads and connectors; avoid double counting"},
     },
-    "balancer": {
-        "width_mm": 9.8,
-        "length_mm": 7.5,
-        "height_mm": 5.7,
-        "pins": 3,
+    "JST XHP-3": {
+        "type": "connector",
+        "dimensions_mm": {"width": 9.8, "length": 7.5, "height": 5.7},
         "mass_g": 0.0,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "strap",
+        "data": {"pins": 3},
         "source": "https://www.jst-mfg.com/product/pdf/eng/eXH.pdf#page=4",
         "model": "PROVISIONAL: JST XHP-3 housing envelope; verify actual GNB connector",
         "mass_scope": "already_in_battery",
-        "parameter_sources": {
-            "pins": "user: 3-pin balance connector",
-            "mass_g": "battery mass includes leads and connectors; avoid double counting",
-        },
+        "parameter_sources": {"pins": "user: 3-pin balance connector", "mass_g": "battery mass includes leads and connectors; avoid double counting"},
     },
 }
+
+LIBRARY_FIELDS = {
+    "common": ["type", "dimensions_mm", "mass_g", "hole_pattern", "keep_out.clearance_mm", "mounting", "source"],
+    "motor": ["dimensions_mm.diameter", "dimensions_mm.height", "hole_pattern.layout", "hole_pattern.pitch_mm", "hole_pattern.screw_diameter_mm", "hole_pattern.clearance_diameter_mm", "data.thrust_n"],
+    "aio": ["dimensions_mm.width", "dimensions_mm.length", "dimensions_mm.stack_height", "dimensions_mm.grommet_height", "hole_pattern.layout", "hole_pattern.pitch_mm", "hole_pattern.screw_diameter_mm", "keep_out.elrs_antenna_mm"],
+    "camera": ["dimensions_mm.length", "dimensions_mm.width", "dimensions_mm.height", "hole_pattern.clearance_diameter_mm", "keep_out.side_mm", "keep_out.bottom_mm"],
+    "battery": ["dimensions_mm.length", "dimensions_mm.width", "dimensions_mm.height", "data.power_connector", "data.balance_connector"],
+    "antennas": ["dimensions_mm.bore", "dimensions_mm.holder_height"],
+    "connector": ["dimensions_mm.width", "dimensions_mm.length", "dimensions_mm.height"],
+    "prop": ["dimensions_mm.diameter", "dimensions_mm.hub_diameter", "dimensions_mm.hub_height", "dimensions_mm.shaft_diameter", "data.size_in", "data.pitch_in", "data.blades"],
+}
+MOUNTING_TYPES = ("grommets", "screws", "strap", "eyelet", "shaft")
+PROP_RULE = {"swept_margin_mm": 1.5, "thickness_mm": 0.8, "mass_g": 0.7, "source": "PROVISIONAL layout rule for prop sizes without a library entry: swept disk = prop size x 25.4 mm + 1.5 mm margin",
+             "parameter_sources": {"thickness_mm": "PROVISIONAL: swept disk thickness; excludes blade flex", "mass_g": "PROVISIONAL: prop model not selected; equivalent uniform disk inertia"}}
+LEGACY_HOLE_KEYS = {"layout": "mount_layout", "pitch_mm": "mount_pitch_mm", "screw_diameter_mm": "screw_diameter_mm", "clearance_diameter_mm": "screw_clearance_mm"}
+
+def component_spec(entry):
+    spec = {key + "_mm": value for key, value in entry["dimensions_mm"].items()}
+    spec.update({LEGACY_HOLE_KEYS[key]: value for key, value in (entry["hole_pattern"] or {}).items() if key in LEGACY_HOLE_KEYS})
+    if "elrs_antenna_mm" in entry["keep_out"]:
+        spec["elrs_antenna_clearance_mm"] = entry["keep_out"]["elrs_antenna_mm"]
+    spec.update(deepcopy(entry.get("data", {})))
+    spec["mass_g"] = entry["mass_g"]
+    spec.update({key: deepcopy(entry[key]) for key in ("source", "model", "mass_scope", "parameter_sources") if key in entry})
+    return spec
+
+def prop_spec(size_in, entry=None, rule=PROP_RULE):
+    if entry is not None and entry["data"]["size_in"] == size_in:
+        return {**component_spec(entry), "thickness_mm": entry["dimensions_mm"]["hub_height"]}
+    return {"diameter_mm": round(size_in * 25.4 + rule["swept_margin_mm"], 3), **{key: deepcopy(value) for key, value in rule.items() if key != "swept_margin_mm"}}
+
+DEFAULT_SELECTION = {"aio15": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "motor": "GTS V3 1203", "xt30": "AMASS XT30U-F", "balancer": "JST XHP-3"}
+DEFAULT_PROP = "HQProp T2.5X2X3V2S"
+COMPONENT_DEFAULTS = {name: component_spec(COMPONENT_LIBRARY[part]) for name, part in DEFAULT_SELECTION.items()}
+COMPONENT_DEFAULTS["camera"]["tilt_deg"] = 20.0
+COMPONENT_DEFAULTS["camera"]["parameter_sources"]["tilt_deg"] = "design: adjustable initial camera tilt"
+COMPONENT_DEFAULTS["prop"] = prop_spec(2.5, COMPONENT_LIBRARY[DEFAULT_PROP])
 
 FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'lateral_longitudinal_ratio': 1.3658536585365855,
@@ -107,7 +191,7 @@ FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'aio_standoff_mm': 3.0,
  'deck_width_mm': 40.0,
  'deck_length_mm': 70.0,
- 'deck_top_mm': 29.0,
+ 'deck_top_mm': 28.0,
  'deck_thickness_mm': 2.5,
  'battery_margin_mm': 5.0,
  'support_length_mm': 56.0,
@@ -142,7 +226,7 @@ FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'antenna_y_mm': 56.0,
  'cable_slot_width_mm': 4.0,
  'cable_slot_height_mm': 3.0,
- 'prop_motor_gap_mm': 2.0}
+ 'prop_motor_gap_mm': 0.0}
 
 FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                   'kind': 'design_assumption',
@@ -284,15 +368,17 @@ FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                     'rationale': 'Aus AIO15- und Akkuhuelle, Stegbreiten '
                                  'und2-mm-Mindestwand abgeleitete eigene '
                                  'Druckabmessung.'},
- 'deck_top_mm': {'value': 29.0,
+ 'deck_top_mm': {'value': 28.0,
                  'kind': 'design_assumption',
                  'frame_ids': ['tadpole_hd_3', 'tadpole_2_5'],
                  'principle_ids': ['deck_load_path',
                                    'functional_voids',
                                    'component_driven'],
-                 'rationale': 'Eigene OberkanteZ29; Boardunterseite5.5 plus '
-                              'Stack6, Deckunterseite26.5. Gecko22mm hat '
-                              'unklaren Hoehenbezug und wird nicht kopiert.'},
+                 'rationale': 'Eigene OberkanteZ28 auf einer gemeinsamen '
+                              'Knotenebene der 4-, 2-, 4/3- und 1-mm-Gitter; '
+                              'Boardunterseite5.5 plus Stack6, '
+                              'Deckunterseite25.5. Gecko22mm hat unklaren '
+                              'Hoehenbezug und wird nicht kopiert.'},
  'deck_thickness_mm': {'value': 2.5,
                        'kind': 'design_assumption',
                        'frame_ids': ['tadpole_hd_3', 'tadpole_2_5'],
@@ -562,15 +648,15 @@ FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                           'rationale': 'Aus Steckerhuellen, Clearance und '
                                        'Propellerfreigang abgeleitete eigene '
                                        'Heckabmessung.'},
- 'prop_motor_gap_mm': {'value': 2.0,
+ 'prop_motor_gap_mm': {'value': 0.0,
                        'kind': 'design_assumption',
                        'frame_ids': ['tadpole_hd_3', 'tadpole_2_5'],
                        'principle_ids': ['deck_load_path',
                                          'functional_voids',
                                          'component_driven'],
-                       'rationale': 'Aus AIO15- und Akkuhuelle, Stegbreiten '
-                                    'und2-mm-Mindestwand abgeleitete eigene '
-                                    'Druckabmessung.'}}
+                       'rationale': 'HQProp T2.5X2X3V2S ohne Adapterringe: die '
+                                    '5-mm-Nabe sitzt direkt auf der Motorglocke, '
+                                    'die Propscheibe beginnt an der Motoroberkante.'}}
 
 FEA_CONFIG = {
     "material": {
@@ -603,10 +689,95 @@ FEA_CONFIG = {
     },
 }
 
+PRINT_MATERIAL = {
+    "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+    "young_modulus_mpa": 4430.0,
+    "poisson_ratio": 0.30,
+    "density_g_cm3": 1.09,
+    "orthotropic": {"e_xy_mpa": 4430.0, "e_z_mpa": 2170.0, "nu_xy": 0.30, "nu_xz": 0.30, "g_xy_mpa": 1703.8, "g_z_mpa": 834.6},
+    "strength_xy_mpa": 102.0,
+    "strength_z_mpa": 48.0,
+    "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+    "measured": ["E_xy 4430 +/- 310 MPa", "E_z 2170 +/- 230 MPa", "tensile strength XY 102 +/- 7 MPa", "tensile strength Z 48 +/- 6 MPa", "density 1.09 g/cm3"],
+    "assumptions": {"nu_xy": "0.30 not in the TDS", "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)", "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+                    "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS", "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"},
+}
+
+EVALUATION_CONFIG = {
+    "name": None,
+    "stl": None,
+    "output": None,
+    "print_axis": [0.0, 0.0, 1.0],
+    "prop_diameter_mm": 65.0,
+    "motors": None,
+    "motor_up": {},
+    "ours": False,
+    "domain": None,
+    "datasheet": None,
+    "components": [],
+    "mount_patterns": [],
+    "keep_outs": [],
+    "connectors": [],
+    "selectors": None,
+    "domain_grid": [102, 96, 24],
+    "parts": ["geometry", "walls", "fea", "slicer"],
+    "python": sys.executable,
+    "compute": "C:/clones/Deep_Frame-int/tools/compute.py",
+    "voxel_mm": 0.4,
+    "loop_closing_mm": 3.0,
+    "overhang_deg": 45.0,
+    "bed_tolerance_mm": 0.2,
+    "fit_tolerance_mm3": 1.0,
+    "hub_radius_mm": COMPONENT_DEFAULTS["motor"]["diameter_mm"] / 2,
+    "section_voxel_mm": 0.05,
+    "hole_tolerance_mm": 0.6,
+    "screw_head_radius_mm": 1.9,
+    "tool_skip_mm": 3.0,
+    "connector_radius_mm": 2.0,
+    "surface_samples": 5000,
+    "curvature_radius_mm": 1.0,
+    "seed": 0,
+    "loads": {"arm_tip_force_n": 3.6, "all_up_mass_g": 125.0, "standard_gravity_m_s2": 9.80665, "crash_front_g": 25.0, "crash_arm_g": 12.5, "crash_back_g": 12.5, "safety_factor": 2.0,
+              "sources": {"arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+                          "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+                          "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+                          "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+                          "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"}},
+    "fea_settings": {"threads": 4, "mesh_threads": 4, "mesh_timeout_s": 900.0, "solver_timeout_s": 900.0, "fea_memory_budget_mb": 9728.0, "mesh_minimum_sicn": 0.005, "fea_remesh_targets_mm": [2.0, 1.5], "num_modes": 6},
+    "slicer": {"executable": "C:/clones/prusaslicer/PrusaSlicer-2.9.6/prusa-slicer-console.exe", "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
+               "options": ["--nozzle-diameter", "0.4", "--layer-height", "0.2", "--first-layer-height", "0.2", "--perimeters", "2", "--fill-density", "15%", "--filament-diameter", "1.75", "--filament-density", "1.09",
+                           "--bed-shape", "0x0,256x0,256x256,0x256", "--max-print-height", "256", "--center", "128,128"],
+               "support": ["--support-material", "--support-material-auto"], "timeout_s": 1800.0,
+               "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed"},
+    "targets": {"airflow": ["geometry.airflow.prop_ring_share", None, 0.15], "overhang": ["geometry.printability.overhang_share", None, 0.25],
+                "support": ["scaled.support_per_volume", None, 1.5], "strut_min": ["geometry.form.strut_width_mm.p10", 1.19, None], "symmetry": ["scaled.symmetry_per_wheelbase", None, 0.0025],
+                "arm_tip_slope": ["scaled.arm_tip_slope", None, 0.007], "f1": ["fea.eigenfrequencies_hz.0", 330.0, None]},
+    "warnings": {"strut_max": ["geometry.form.strut_width_mm.p90", None, 6.5], "section_ratio": ["geometry.form.section_ratio.p50", 1.0, 1.4], "top_view_material": ["geometry.airflow.bbox_share", None, 0.45],
+                 "loops": ["geometry.form.loops.loops", 20, None], "roughness": ["geometry.form.roughness.curvature_neighbour_rms_per_mm", None, 0.18], "height": ["scaled.height_per_wheelbase", None, 0.4],
+                 "cog_offset": ["scaled.cog_offset_per_wheelbase", None, 0.01], "inertia_z": ["scaled.izz_per_mass_arm2", None, 0.45], "print_time": ["scaled.print_min_per_g", None, 16.0]},
+}
+
+EVALUATION_KINDS = {"name": "text", "stl": "path", "output": "path", "print_axis": ["float", "float", "float"], "prop_diameter_mm": "float", "motors": "object", "motor_up": "object", "ours": "flag", "domain": "path", "datasheet": "path", "components": "list",
+                    "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "slicer")], "python": "text", "compute": "text", "targets": "object", "warnings": "object",
+                    **{key: "float" for key in ("voxel_mm", "loop_closing_mm", "overhang_deg", "bed_tolerance_mm", "fit_tolerance_mm3", "hub_radius_mm", "section_voxel_mm", "hole_tolerance_mm", "screw_head_radius_mm", "tool_skip_mm", "connector_radius_mm", "curvature_radius_mm")},
+                    "surface_samples": "int", "seed": "int", "loads": "object", "fea_settings": "object", "slicer": "object"}
+
 INTEGRATION_CONFIG = {
     "model_version": "frame-v0-linear-fixtures-v1",
-    "arm_tip_force_n": 1.0,
+    "arm_tip_force_n": 3.6,
     "arm_tip_motor": "front_left",
+    "thrust_safety_factor": 2.0,
+    "all_up_mass_g": 125.0,
+    "crash_front_g_factor": 25.0,
+    "crash_arm_g_factor": 12.5,
+    "crash_directions": [],
+    "load_sources": {
+        "arm_tip_force_n": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V, 100 %) x safety factor 2",
+        "thrust_all": "all four motors at full thrust x 2 upward against the AIO mounts",
+        "crash_front": "all-up mass ~125 g x 25 g equivalent static deceleration = 30.7 N rearward on the camera hoops",
+        "crash_arm": "half the all-up mass x 25 g = 15.3 N on one motor ring, oblique (inward, tangential, downward)",
+        "crash_directions": "opt-in optimizer set replacing crash_front and crash_arm: every listed direction carries the crash_front magnitude (30.7 N); front -Y on the camera hoops, side +-X on the two motor rings of one side, arm oblique on each motor ring, below +Z on the camera hoops, back -Z on the battery band",
+    },
     "battery_impact_g_factor": 10.0,
     "standard_gravity_m_s2": 9.80665,
     "camera_side_force_n": 5.0,
@@ -619,6 +790,8 @@ INTEGRATION_CONFIG = {
     "camera_upper_height_fraction": 0.25,
     "camera_length_fraction": 0.5,
 }
+
+CRASH_DIRECTIONS = ["front", "side_left", "side_right", "arm_front_left", "arm_front_right", "arm_rear_left", "arm_rear_right", "below", "back"]
 
 OPTIMIZATION_CONFIG = {
     "n_trials": 6,
@@ -674,15 +847,21 @@ TOPOLOGY_CONFIG = {
     },
     "component_clearance_mm": 0.5,
     "prop_clearance_mm": 2.0,
-    "motor_contact_radius_mm": 9.5,
+    "motor_contact_radius_mm": 7.7,
     "aio_contact_radius_mm": 3.2,
+    "aio_boss_radius_mm": 3.1,
+    "camera_mount_radius_mm": 4.1,
+    "antenna_eyelet_radius_mm": 4.3,
+    "flush_overlap_mm": 0.5,
+    "prescribed_wall_margin_mm": 0.1,
     "contact_depth_mm": 4.0,
     "camera_contact_width_mm": 6.0,
     "camera_tool_radius_mm": 2.0,
     "camera_contact_length_mm": 8.0,
-    "battery_contact_width_mm": 8.0,
-    "battery_contact_length_mm": 8.0,
-    "battery_contact_y_mm": 20.0,
+    "battery_contact_width_mm": 3.5,
+    "battery_contact_length_mm": 50.0,
+    "battery_contact_y_mm": 0.0,
+    "battery_rail_edge_inset_mm": 0.0,
     "connection_proof_force_n": 0.05,
     "manufacturing": {
         "nozzle_width_mm": 0.4,
@@ -708,6 +887,17 @@ TOPOLOGY_CONFIG = {
         "change_tolerance": 0.015,
         "move_limit": 0.12,
         "projection_beta": 1.0,
+        "projection": "single",
+        "robust_delta": 0.25,
+        "beta_schedule": None,
+        "beta_interval": 50,
+        "beta_minimum_iterations": 20,
+        "beta_change_tolerance": 0.01,
+        "move_limit_late": None,
+        "move_limit_late_beta": 8.0,
+        "volume_target_relaxation": 0.2,
+        "objective_window": 10,
+        "gpu_solver_residency": "resident",
     },
     "reconstruction": {
         "density_threshold": 0.35,
@@ -715,6 +905,208 @@ TOPOLOGY_CONFIG = {
     },
     "additional_regions": [],
 }
+
+SURFACE_FIDELITY = {"maximum_surface_deviation_mm": 0.20, "maximum_relative_volume_change": 0.01}
+
+IMPLICIT_CONFIG = {
+    "subdivisions": 10,
+    "interpolation_method": "pchip",
+    "thresholds": [0.25, 0.35],
+    "extensions": ["preserve", "preserve_forbidden"],
+    "density_sigma_mm": 0.4,
+    "transition_radius_mm": 2.0,
+    "preserve_inflation_mm": 0.18,
+    "constraint_offset_mm": 0.3,
+    "opening_radius_mm": 1.35,
+    "protected_opening": False,
+    "diagnostic_fea": False,
+    "wall_screen_blocking": False,
+    "wall_voxel_mm": 0.1,
+    "wall_opening_radius_mm": 1.0,
+    "wall_deep_mm": 0.45,
+    "wall_deep_max_fraction": 0.005,
+    "wall_deep_component_max_mm3": 5.0,
+    "wall_motor_zone_margin_mm": 2.0,
+    "wall_tile_voxels": 120,
+    "wall_thin_max_fraction": 0.01,
+    "wall_very_thin_mm": 1.5,
+    "wall_very_thin_max_fraction": 0.0005,
+    "detached_volume_max_fraction": 0.005,
+    "ripple_sigma_mm": 0.25,
+    "reinit_band_cells": 1.5,
+    "remesh_target_mm": 0.6,
+    "remesh_iterations": 5,
+    "remesh_feature_deg": 60.0,
+    "remesh_max_surface_distance_mm": 0.05,
+    "segment_tolerance_mm": 0.01,
+    "surface_deviation_mm": SURFACE_FIDELITY["maximum_surface_deviation_mm"],
+    "relative_volume_change": SURFACE_FIDELITY["maximum_relative_volume_change"],
+    "free_zone_preserve_mm": 3.0,
+    "free_zone_constraint_mm": 2.0,
+    "free_zone_minimum_samples": 1000,
+    "free_zone_modified_mm": 1.0,
+    "free_zone_opening_cells": 0.5,
+    "penetration_tolerance_mm": 1e-4,
+    "penetration_sample_spacing_mm": 0.25,
+    "maximum_wall_samples": 2000000,
+    "curvature_radius_mm": 1.0,
+    "curvature_samples": 5000,
+    "render_faces": 30000,
+    "tet_attempts": ["remesh_hxt", "remesh_delaunay", "refine_hxt", "classify_hxt", "classify_delaunay", "direct_hxt"],
+    "mesh_minimum_sicn": 0.01,
+    "mesh_boundary_deviation_mm": 0.05,
+    "fea_remesh_targets_mm": [2.0, 1.5, 1.2, 1.0],
+    "fea_memory_budget_mb": 9728.0,
+    "fea_memory_per_element_kb": 38.0,
+    "fea_remesh_iterations": 5,
+    "fea_remesh_feature_deg": 40.0,
+    "fea_remesh_max_surface_distance_mm": 0.05,
+    "fea_sliver_target_mm": 0.4,
+    "fea_sliver_iterations": 8,
+    "fea_sliver_collapse_mm": 0.02,
+    "fea_refine_edge_mm": 1.0,
+    "fea_refine_max_surface_distance_mm": 0.01,
+    "fea_merge_relative_tolerance": 1e-9,
+    "fea_t_vertex_ratio": 20.0,
+    "fea_classify_angle_deg": 40.0,
+    "fea_direct_minimum_angle_deg": 10.0,
+    "fea_fallback_timeout_s": 120.0,
+    "mesh_timeout_s": 900.0,
+    "solver_timeout_s": 900.0,
+    "candidate_timeout_s": 1800.0,
+}
+
+IMPLICIT_KINDS = {
+    **{key: "float" if isinstance(value, float) else "int" for key, value in IMPLICIT_CONFIG.items() if isinstance(value, (int, float))},
+    "interpolation_method": ("pchip", "cubic"),
+    "protected_opening": "flag",
+    "diagnostic_fea": "flag",
+    "wall_screen_blocking": "flag",
+    "thresholds": ["float"],
+    "extensions": [("none", "preserve", "preserve_forbidden")],
+    "tet_attempts": [("remesh_hxt", "remesh_delaunay", "refine_hxt", "classify_hxt", "classify_delaunay", "direct_hxt")],
+    "fea_remesh_targets_mm": ["float"],
+}
+
+DESIGN_RECONSTRUCTION_CONFIG = {
+    "source": None,
+    "output": None,
+    "fine_shape": [204, 192, 48],
+    "density_sigma_cells": 1.0,
+    "threshold": 0.5,
+    "spur_factor": 2.0,
+    "spur_minimum_mm": 3.0,
+    "prune_passes": 3,
+    "path_sigma_samples": 4.0,
+    "section_sigma_samples": 6.0,
+    "minimum_radius_mm": 0.5,
+    "maximum_aspect": 4.0,
+    "volume_match": True,
+    "shell_aspect": 2.2,
+    "shell_sigma_mm": 1.0,
+    "transition_radius_mm": 1.5,
+    "voxel_mm": 0.25,
+    "target_volume_mm3": 0.0,
+    "calibration_steps": 4,
+    "calibration_voxel_mm": 0.5,
+    "selector_half_band_mm": 1.0,
+    "fea_surface_mm": 0.5,
+    "fea_surface_taubin": 10,
+    "boolean_offset_mm": 0.3,
+    "closing_radius_mm": 0.0,
+    "reference_subdivisions": 2,
+    "preserve_blend_mm": 2.5,
+    "preserve_round_mm": 0.8,
+    "preserve_flush_mm": 0.02,
+    "member_smooth_mm": 0.5,
+    "root_preserves": "motor_contact",
+    "root_distance_mm": 3.0,
+    "root_taper_mm": 6.0,
+    "root_taper_slope": 0.5,
+    "root_slope_floor_mm": 1.0,
+    "minimum_scale": 0.9,
+    "maximum_scale": 1.15,
+    "calibration_tolerance": 0.03,
+}
+
+DESIGN_RECONSTRUCTION_KINDS = {
+    **{key: "float" if isinstance(value, float) else "int" for key, value in DESIGN_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},
+    "source": "path",
+    "output": "path",
+    "fine_shape": ["int", "int", "int"],
+    "volume_match": "flag",
+    "root_preserves": "text",
+}
+
+MATERIALS = {
+    "PA6-CF": {
+        **{key: PRINT_MATERIAL[key] for key in ("name", "density_g_cm3", "young_modulus_mpa", "poisson_ratio", "strength_xy_mpa", "strength_z_mpa", "source")},
+        "e_z_mpa": PRINT_MATERIAL["orthotropic"]["e_z_mpa"],
+        "value_sources": {"density_g_cm3": "TDS ISO 1183", "young_modulus_mpa": "TDS ISO 527 XY 4430 +/- 310 MPa", "e_z_mpa": "TDS ISO 527 Z 2170 +/- 230 MPa",
+                          "strength_xy_mpa": "TDS XY 102 +/- 7 MPa", "strength_z_mpa": "TDS Z 48 +/- 6 MPa", "poisson_ratio": "ASSUMPTION: not in the TDS"},
+    },
+}
+
+LAYOUT_RULES = {
+    "x_types": {"compressed_x": {"arm_angle_deg": degrees(atan2(112, 82)), "source": "Gecko3 112 mm lateral x 82 mm longitudinal motor spacing"},
+                "true_x": {"arm_angle_deg": 45.0, "source": "square X"},
+                "stretched_x": {"arm_angle_deg": degrees(atan2(82, 112)), "source": "Gecko3 spacing rotated: 82 mm lateral x 112 mm longitudinal"}},
+    "prop_tip_gap_mm": 14.7,
+    "wheelbase_step_mm": 0.5,
+    "envelope": {"origin_mm": [-68.0, -64.0, 0.0], "size_mm": [136.0, 128.0, 32.0]},
+    "battery_mounts": {"top": {"deck_top_mm": 28.0, "headroom_mm": 3.0}, "bottom": {"gap_mm": 1.0}},
+    "battery_prop_clearance_mm": 2.0,
+    "camera": {"stack_gap_mm": 12.35, "top_clearance_mm": 3.0},
+    "antennas": {"angle_deg": 0.0, "connector_clearance_mm": 0.5, "eyelet_radius_mm": 4.3, "envelope_margin_mm": 3.7},
+    "connectors": {"stack_gap_mm": 13.75},
+    "cg_tolerance_mm": 3.0,
+    "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3},
+    "hoop": {"side_gap_mm": 4.0, "radius_mm": 1.6, "path_yz_mm": [[-11.0, 27.5], [-1.0, 26.0], [7.0, 23.5], [11.5, 18.0], [12.5, 11.0], [10.5, 5.0], [6.0, 2.0], [-2.0, 1.5]],
+             "load_y_min_mm": 9.0, "load_z_mm": [4.0, 22.0]},
+    "neural": {"max_frequency_per_mm": 0.2, "reference_width_mm": 2.0},
+}
+
+LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float"},
+                    "antennas": {"angle_deg": "float", "y_mm": "float"}, "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"}}
+
+STYLES = {
+    "freestyle": {"crash_directions": ["front", "side_left", "side_right", "arm_front_left", "arm_front_right", "arm_rear_left", "arm_rear_right", "below", "back"],
+                  "flight_cases": ["arm_tip", "thrust_all"], "torsion": True, "hoops": True},
+}
+
+DURABILITY = {
+    "crash_resistant": {"crash_weight": 2.0, "safety_factor": 2.5, "minimum_width_mm": 2.4, "volume_fraction": 0.06},
+    "standard": {"crash_weight": 1.0, "safety_factor": 2.0, "minimum_width_mm": 2.0, "volume_fraction": 0.05},
+    "light": {"crash_weight": 0.5, "safety_factor": 1.5, "minimum_width_mm": 2.0, "volume_fraction": 0.04},
+}
+
+FRAME_REQUEST = {"name": None, "style": "freestyle", "durability": "standard", "prop_size_in": 2.5, "layout": {"x_type": "compressed_x", "battery_mount": "top"},
+                 "components": {"motor": "GTS V3 1203", "aio": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "antennas": "HDZero VTX + ELRS", "prop": "HQProp T2.5X2X3V2S"},
+                 "material": "PA6-CF", "print": {"nozzle_mm": 0.4, "layer_mm": 0.2}, "overrides": {}, "grid": "coarse"}
+FRAME_REQUEST_KINDS = {"name": "text", "style": tuple(STYLES), "durability": tuple(DURABILITY), "prop_size_in": "float", "layout": "object", "components": "object",
+                       "material": tuple(MATERIALS), "print": "object", "overrides": "object", "grid": ("coarse", "fine")}
+FRAME_LAYOUT_KINDS = {"x_type": tuple(LAYOUT_RULES["x_types"]), "battery_mount": tuple(LAYOUT_RULES["battery_mounts"])}
+FRAME_PRINT_KINDS = {"nozzle_mm": "float", "layer_mm": "float"}
+FRAME_COMPONENT_KINDS = {"motor": "text", "aio": "text", "camera": "text", "battery": "text", "antennas": "text", "prop": "text"}
+
+RUN_GRIDS = {
+    "coarse": {"shape": [68, 64, 24], "fine_shape": [136, 128, 48], "neural": {"max_iterations": 60, "minimum_iterations": 30, "sharpness_iterations": 45, "max_runtime_s": 900.0},
+               "reconstruction": {"voxel_mm": 0.5, "calibration_voxel_mm": 1.0}, "evaluation": {"voxel_mm": 0.5},
+               "compute": {"reconstruction": "geometry"}},
+    "fine": {"shape": [102, 96, 24], "fine_shape": [204, 192, 48], "neural": {}, "reconstruction": {}, "evaluation": {}, "compute": {}},
+}
+
+STAGES = {
+    "optimization": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu/.venv/Scripts/python.exe"},
+    "reconstruction": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "geometry": {"worktree": "C:/clones/Deep_Frame-int", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "evaluation": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "datasheet": {"worktree": "C:/clones/Deep_Frame-int", "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "renders": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/neural_study.py", "argv": ["render_views"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+}
+RUN_SETTINGS = {"root": "exports/runs", "compute": "C:/clones/Deep_Frame-int/tools/compute.py", "domain_stage": "optimization", "domain_compute": "cpu",
+                "views": {"iso": [[0.55, -0.85, -0.62], [0, 0, 1]], "top": [[0, 0, -1], [0, 1, 0]], "side": [[-1, 0, 0], [0, 0, 1]], "front": [[0, -1, 0], [0, 0, 1]]},
+                "datasheet_voxel_mm": 0.5}
 
 CONFIG = {
     "length_mm": 30.0,
@@ -756,8 +1148,14 @@ def _convert(kind, value, key):
     elif kind == "flag":
         if isinstance(value, bool):
             return value
+    elif kind == "object":
+        if isinstance(value, dict):
+            return value
     elif kind == "text":
         if isinstance(value, str):
+            return value
+    elif kind in ("object", "list"):
+        if isinstance(value, dict if kind == "object" else list):
             return value
     elif kind == "path":
         if isinstance(value, (str, Path)):

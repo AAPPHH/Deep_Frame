@@ -2,3 +2,4 @@
 -r requirements-fea.txt
 -r requirements-optimization.txt
 -r requirements-topology.txt
+-r requirements-implicit.txt

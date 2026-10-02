@@ -1,0 +1,406 @@
+{
+ "schema": "deep-frame-robust-fine-run-v1",
+ "step": "S10",
+ "density_source": "C:/clones/Deep_Frame-robust/exports/topology/robust_fine/grid4over3_robust",
+ "run": "exports/topology/robust_fine/grid4over3_robust",
+ "status": "ok",
+ "manifest_sha256": "d54b8e4600f03c6b7f1d685e508c9e4e5258e12b4715e97062ac0e14e6a6b764",
+ "fields_sha256": "74c6a697c372eda9eea70e412f1be77da2ea5381bb3ed5670f7354793c562b10",
+ "fields": {
+  "allowed": [
+   102,
+   96,
+   24
+  ],
+  "preserve": [
+   102,
+   96,
+   24
+  ],
+  "forbidden": [
+   102,
+   96,
+   24
+  ],
+  "density": [
+   102,
+   96,
+   24
+  ],
+  "design_density": [
+   102,
+   96,
+   24
+  ],
+  "eroded_density": [
+   102,
+   96,
+   24
+  ],
+  "dilated_density": [
+   102,
+   96,
+   24
+  ],
+  "filtered_density": [
+   102,
+   96,
+   24
+  ]
+ },
+ "grid": {
+  "origin_mm": [
+   -68.0,
+   -64.0,
+   0.0
+  ],
+  "spacing_mm": [
+   1.3333333333333333,
+   1.3333333333333333,
+   1.3333333333333333
+  ],
+  "shape": [
+   102,
+   96,
+   24
+  ],
+  "axis_order": "xyz",
+  "order": "C"
+ },
+ "domain_counts": {
+  "allowed_cells": 177280,
+  "preserve_cells": 4274,
+  "forbidden_cells": 57728,
+  "free_cells": 173006
+ },
+ "settings": {
+  "beta_change_tolerance": 0.01,
+  "beta_interval": 40,
+  "beta_minimum_iterations": 20,
+  "beta_schedule": [
+   1.0,
+   2.0,
+   4.0,
+   8.0,
+   16.0
+  ],
+  "change_tolerance": 0.005,
+  "filter_radius_mm": 3.4,
+  "gpu_solver_residency": "transient",
+  "interface_node_policy": "preserve_adjacent",
+  "linear_solver": "cuda_cudss",
+  "max_iterations": 360,
+  "max_runtime_s": 9900.0,
+  "min_stiffness_ratio": 1e-06,
+  "minimum_design_density": 0.001,
+  "minimum_iterations": 10,
+  "move_limit": 0.12,
+  "move_limit_late": 0.05,
+  "move_limit_late_beta": 8.0,
+  "objective_window": 10,
+  "penalization": 3.0,
+  "projection": "robust",
+  "projection_beta": 1.0,
+  "projection_eta": 0.5,
+  "robust_delta": 0.25,
+  "volume_fraction": 0.1,
+  "volume_target_relaxation": 0.2
+ },
+ "physical_inputs_match_gpu708": {
+  "regions": true,
+  "load_cases": true,
+  "comparison_load_cases": true,
+  "material": true,
+  "point_masses": true,
+  "manufacturing": true
+ },
+ "settings_differences_vs_gpu708_beyond_robust_and_stopping": {
+  "gpu_solver_residency": [
+   null,
+   "transient"
+  ]
+ },
+ "iterations": 116,
+ "stop_reason": "objective_stall",
+ "converged": true,
+ "continuation": {
+  "beta_schedule": [
+   1.0,
+   2.0,
+   4.0,
+   8.0,
+   16.0
+  ],
+  "beta_final": 16.0,
+  "final_level_reached": true,
+  "level_iterations_final": 14
+ },
+ "elapsed_s": 2770.7522787000053,
+ "manifest_elapsed_s": 2771.824742099998,
+ "s_per_iteration": {
+  "first": 30.061622100009117,
+  "median_from_3": 24.66946605000703,
+  "mean_from_3": 23.61082512543847,
+  "max": 30.061622100009117
+ },
+ "projection_500_s": 12334.733025003516,
+ "gpu_device_min_free_mib": 7912.0,
+ "gpu_device_peak_used_mib": 8463.5,
+ "max_relative_residual": 3.799949795284176e-09,
+ "beta_levels": [
+  1.0,
+  2.0,
+  4.0,
+  8.0,
+  16.0
+ ],
+ "first_iteration_at_beta": {
+  "1.0": 1,
+  "2.0": 41,
+  "4.0": 61,
+  "8.0": 83,
+  "16.0": 103
+ },
+ "objective_initial": 1.0,
+ "objective_final": 0.002570186661946541,
+ "volume_fraction_intermediate": 0.10017266829686845,
+ "target_volume_fraction": 0.1,
+ "density_frame_mass_g": 45.88298807200957,
+ "robust": {
+  "thresholds": {
+   "eroded": 0.75,
+   "intermediate": 0.5,
+   "dilated": 0.25
+  },
+  "objective_field": "eroded",
+  "volume_constraint_field": "dilated",
+  "reported_density_field": "intermediate",
+  "dilated_volume_target_final": 23324.23261765811,
+  "eroded_volume_fraction": 0.074487026040721,
+  "dilated_volume_fraction": 0.13156719661268979,
+  "dilated_frame_mass_g": 60.262906194707995
+ },
+ "gray_fraction_free": 0.015155543738367456,
+ "final_change": 0.050000000000000044,
+ "final_compliances_main": {
+  "arm_tip": 0.005898915711166576,
+  "battery_impact": 0.006126284933920666,
+  "camera_side": 0.005002926740947024
+ },
+ "fields_nested_eroded_le_intermediate_le_dilated": true,
+ "connectivity_threshold_0_5": {
+  "eroded_density": {
+   "components": 3,
+   "components_touching_preserves": 1
+  },
+  "density": {
+   "components": 1,
+   "components_touching_preserves": 1
+  },
+  "dilated_density": {
+   "components": 1,
+   "components_touching_preserves": 1
+  }
+ },
+ "length_scale": {
+  "method": "filtered field trilinear upsampled x4 (h/4), forbidden 0, preserve 1, iso at eta; thin = phase voxels not covered by a morphological opening with a ball of the given diameter (EDT); free zone = farther than 2 mm from forbidden, preserve and envelope faces",
+  "results": [
+   {
+    "field": "eroded",
+    "iso_filtered": 0.75,
+    "phase": "solid",
+    "volume_mm3": 28798.4074074074,
+    "thin_d2mm_fraction_all": 0.11280716397640302,
+    "thin_d2mm_fraction_free_zone": 0.0442980241403463,
+    "thin_d2mm_volume_free_zone_mm3": 402.8888888888888,
+    "thin_d3mm_fraction_all": 0.20840787234890817,
+    "thin_d3mm_fraction_free_zone": 0.12064879216823313,
+    "thin_d3mm_volume_free_zone_mm3": 1097.296296296296,
+    "free_zone_local_thickness_mm": {
+     "1": 1.3333333333333333,
+     "5": 1.3333333333333333,
+     "50": 2.0
+    }
+   },
+   {
+    "field": "eroded",
+    "iso_filtered": 0.75,
+    "phase": "void",
+    "volume_mm3": 391420.85185185174,
+    "thin_d2mm_fraction_all": 0.008394109854099448,
+    "thin_d2mm_fraction_free_zone": 4.093324442095816e-05,
+    "thin_d2mm_volume_free_zone_mm3": 9.037037037037035,
+    "thin_d3mm_fraction_all": 0.010668445056249488,
+    "thin_d3mm_fraction_free_zone": 8.186648884191632e-05,
+    "thin_d3mm_volume_free_zone_mm3": 18.07407407407407,
+    "free_zone_local_thickness_mm": {
+     "1": 5.333333333333333,
+     "5": 5.333333333333333,
+     "50": 8.0
+    }
+   },
+   {
+    "field": "intermediate",
+    "iso_filtered": 0.5,
+    "phase": "solid",
+    "volume_mm3": 41084.62962962962,
+    "thin_d2mm_fraction_all": 0.04034761129917019,
+    "thin_d2mm_fraction_free_zone": 0.002653899090663122,
+    "thin_d2mm_volume_free_zone_mm3": 41.777777777777764,
+    "thin_d3mm_fraction_all": 0.09045466223738714,
+    "thin_d3mm_fraction_free_zone": 0.013453009752138059,
+    "thin_d3mm_volume_free_zone_mm3": 211.77777777777771,
+    "free_zone_local_thickness_mm": {
+     "1": 4.0,
+     "5": 4.0,
+     "50": 4.666666666666666
+    }
+   },
+   {
+    "field": "intermediate",
+    "iso_filtered": 0.5,
+    "phase": "void",
+    "volume_mm3": 379134.62962962955,
+    "thin_d2mm_fraction_all": 0.005878005809526275,
+    "thin_d2mm_fraction_free_zone": 4.0301280612108995e-05,
+    "thin_d2mm_volume_free_zone_mm3": 8.629629629629628,
+    "thin_d3mm_fraction_all": 0.008189409898858364,
+    "thin_d3mm_fraction_free_zone": 0.00011986604061884778,
+    "thin_d3mm_volume_free_zone_mm3": 25.66666666666666,
+    "free_zone_local_thickness_mm": {
+     "1": 5.333333333333333,
+     "5": 5.333333333333333,
+     "50": 8.0
+    }
+   },
+   {
+    "field": "dilated",
+    "iso_filtered": 0.25,
+    "phase": "solid",
+    "volume_mm3": 55428.185185185175,
+    "thin_d2mm_fraction_all": 0.024981273733579855,
+    "thin_d2mm_fraction_free_zone": 0.0011579202056290318,
+    "thin_d2mm_volume_free_zone_mm3": 27.29629629629629,
+    "thin_d3mm_fraction_all": 0.041869993939438487,
+    "thin_d3mm_fraction_free_zone": 0.002571934025257429,
+    "thin_d3mm_volume_free_zone_mm3": 60.62962962962961,
+    "free_zone_local_thickness_mm": {
+     "1": 4.216370213557839,
+     "5": 4.666666666666666,
+     "50": 5.333333333333333
+    }
+   },
+   {
+    "field": "dilated",
+    "iso_filtered": 0.25,
+    "phase": "void",
+    "volume_mm3": 364791.074074074,
+    "thin_d2mm_fraction_all": 0.005151705811515247,
+    "thin_d2mm_fraction_free_zone": 9.533208509941557e-05,
+    "thin_d2mm_volume_free_zone_mm3": 19.66666666666666,
+    "thin_d3mm_fraction_all": 0.007490030569502036,
+    "thin_d3mm_fraction_free_zone": 0.000262836483211948,
+    "thin_d3mm_volume_free_zone_mm3": 54.22222222222221,
+    "free_zone_local_thickness_mm": {
+     "1": 5.333333333333333,
+     "5": 5.333333333333333,
+     "50": 8.0
+    }
+   }
+  ]
+ },
+ "per_beta_level": {
+  "1.0": {
+   "first_iteration": 1,
+   "iterations": 40,
+   "move_limit": 0.12,
+   "max_design_change_min": 0.11999999999999998,
+   "objective_last": 0.0025723554674740965,
+   "objective_stall_last": 0.0112966913222411
+  },
+  "2.0": {
+   "first_iteration": 41,
+   "iterations": 20,
+   "move_limit": 0.12,
+   "max_design_change_min": 0.12,
+   "objective_last": 0.002858378932727849,
+   "objective_stall_last": 0.009506234200538533
+  },
+  "4.0": {
+   "first_iteration": 61,
+   "iterations": 22,
+   "move_limit": 0.12,
+   "max_design_change_min": 0.12,
+   "objective_last": 0.003077404099058012,
+   "objective_stall_last": 0.009709015429877838
+  },
+  "8.0": {
+   "first_iteration": 83,
+   "iterations": 20,
+   "move_limit": 0.05,
+   "max_design_change_min": 0.050000000000000044,
+   "objective_last": 0.002855971969152991,
+   "objective_stall_last": 0.008646729285056708
+  },
+  "16.0": {
+   "first_iteration": 103,
+   "iterations": 14,
+   "move_limit": 0.05,
+   "max_design_change_min": 0.050000000000000044,
+   "objective_last": 0.0025703598905291152,
+   "objective_stall_last": 0.004934329270487198
+  }
+ },
+ "design_change_at_move_limit_every_iteration": true,
+ "convergence_note": "stop by objective_stall (relative objective spread over 10 iterations < 0.005 at beta 16); change_tolerance 0.005 never met, max design change equals the move limit in every iteration",
+ "memory": {
+  "nvidia_smi_device_peak_mib": 11962,
+  "nvidia_smi_before_run_mib": 4163,
+  "nvidia_smi_min_during_run_mib": 1695,
+  "in_process_device_peak_after_solve_mib": 8463.5,
+  "device_total_mib": 16376,
+  "note": "nvidia-smi values are device-wide and include other processes; in-process value is total minus free after each solve and misses transient factorization peaks"
+ },
+ "runner": {
+  "exit_code": 0,
+  "reason": "exited",
+  "wall_s": 2775.8250381946564,
+  "timeout_s": 10800.0,
+  "gpu_samples": 2749,
+  "journal_lines": 117
+ },
+ "smoke": {
+  "iterations": 20,
+  "s_per_iteration": {
+   "first": 23.07176819999586,
+   "median_from_3": 25.876685800001724,
+   "mean_from_3": 25.407756333333154,
+   "max": 26.778656000009505
+  },
+  "projection_500_s": 12938.342900000862,
+  "decision": "500-iteration projection above 2.7 h, so beta_interval 40 and max_iterations 360 per plan; resident FP64 factors ran out of device memory, so transient solver residency"
+ },
+ "gpu708_reference": {
+  "grid_spacing_mm": 2.6666666666666665,
+  "filter_radius_mm": 6.0,
+  "iterations": 708,
+  "stop_reason": "change_tolerance",
+  "elapsed_s": 576.1642286999995,
+  "density_frame_mass_g": 42.219785480047555,
+  "volume_fraction": 0.09999999999660367,
+  "gray_fraction_free": 0.15498173447430316,
+  "minimum_ray_thickness_mm": 0.89
+ },
+ "plan_conformance": {
+  "converged_per_plan": false,
+  "stop": "objective_stall at beta 16 after 14 iterations (minimum_iterations 10); converged=true in the record means only this stall stop",
+  "plan_rule": "stop only on change_tolerance 0.005 at beta 16; beta advance on change < 0.01 after >= 20 iterations or after the interval; max_iterations 400 contingency",
+  "deviations": [
+   "beta transitions 2->4, 4->8, 8->16 by objective stall",
+   "beta 16 ran 14 iterations, plan 20 per level",
+   "max_iterations 360, plan contingency 400",
+   "design change at move limit every iteration"
+  ],
+  "rerun": false
+ }
+}

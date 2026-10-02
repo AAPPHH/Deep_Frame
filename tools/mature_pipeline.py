@@ -23,8 +23,9 @@ from OCP.TopAbs import TopAbs_OUT
 from deep_frame.config import command_line, configure
 from deep_frame.fea import evaluate
 from deep_frame.frame import build_geometry
-from deep_frame.topology_geometry import _merge, region_shape
-from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _verify_cases, compare_to_baseline
+from deep_frame.topology_geometry import _merge, build_design_domain, region_shape
+from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _verify_cases, candidate_entry, compare_to_baseline, log_run, run_log_path
+from tools.topology_study import density_entry
 from tools.workstation_study import load_source
 
 SURFACE_CONFIG = {"subdivisions": 4, "interpolation_method": "pchip", "thresholds": [0.20, 0.25, 0.30, 0.35, 0.40, 0.50],
@@ -43,13 +44,13 @@ SURFACE_KINDS = {"subdivisions": "int", "interpolation_method": ("pchip", "cubic
 RUN_CONFIG = {"output": None, "reference_step": None, "source": None, "density_python": Path(sys.executable),
               "density_workspace": ROOT, "geometry_python": Path(sys.executable), "shape": [51, 48, 12], "max_iterations": 1000,
               "max_runtime_s": 1200, "change_tolerance": 0.005, "density_backend": "cpu_superlu",
-              "density_finalization_timeout_s": 600, "geometry_timeout_s": 14400, **SURFACE_CONFIG}
+              "density_finalization_timeout_s": 600, "geometry_timeout_s": 14400, "run_log": None, **SURFACE_CONFIG}
 RUN_KINDS = {"output": "path", "reference_step": "path", "source": "path", "density_python": "path",
              "density_workspace": "path", "geometry_python": "path", "shape": ["int"] * 3, "max_iterations": "int",
              "max_runtime_s": "float", "change_tolerance": "float", "density_backend": ("cuda_cudss", "cpu_superlu"),
-             "density_finalization_timeout_s": "float", "geometry_timeout_s": "float", **SURFACE_KINDS}
-GEOMETRY_CONFIG = {"source": None, "output": None, "reference_step": None, **SURFACE_CONFIG, "study_timeout_s": 14400}
-GEOMETRY_KINDS = {"source": "path", "output": "path", "reference_step": "path", **SURFACE_KINDS, "study_timeout_s": "float"}
+             "density_finalization_timeout_s": "float", "geometry_timeout_s": "float", "run_log": "path", **SURFACE_KINDS}
+GEOMETRY_CONFIG = {"source": None, "output": None, "reference_step": None, **SURFACE_CONFIG, "study_timeout_s": 14400, "run_log": None}
+GEOMETRY_KINDS = {"source": "path", "output": "path", "reference_step": "path", **SURFACE_KINDS, "study_timeout_s": "float", "run_log": "path"}
 RENDER_CONFIG = {"step": None, "output": None,
                  "inputs": Path("C:/clones/Deep_Frame/exports/topology/workstation_20260930/density_study/grid8over3_iter150/inputs.json"),
                  "validation": None}
@@ -167,12 +168,13 @@ def run_main(overrides):
         raise ValueError("A new empty output directory is required")
     output.mkdir(parents=True, exist_ok=True)
     source = config["source"].resolve() if config["source"] else output / "density"
+    ledger = run_log_path(config["run_log"])
     stages = {"density": None if config["source"] else {
                   "directory": str(source), "shape": config["shape"], "max_iterations": config["max_iterations"],
                   "max_runtime_s": config["max_runtime_s"], "change_tolerance": config["change_tolerance"],
-                  "linear_solver": config["density_backend"]},
+                  "linear_solver": config["density_backend"], "run_log": str(ledger)},
               "geometry": {"source": str(source), "output": str(output / "geometry"), "reference_step": str(output / "reference.step"),
-                           **{key: config[key] for key in SURFACE_CONFIG}, "study_timeout_s": config["geometry_timeout_s"]}}
+                           **{key: config[key] for key in SURFACE_CONFIG}, "study_timeout_s": config["geometry_timeout_s"], "run_log": str(ledger)}}
     configs = {}
     for name, values in stages.items():
         configs[name] = None
@@ -199,7 +201,7 @@ def run_main(overrides):
                           "maximum_wall_samples": config["maximum_wall_samples"],
                           "geometry_and_fea_process_s": config["geometry_timeout_s"], "mesh_per_run_s": config["mesh_timeout_s"],
                           "solver_per_case_s": config["solver_timeout_s"]},
-              "orchestrator_sha256": _file_digest(__file__),
+              "orchestrator_sha256": _file_digest(__file__), "run_log": str(ledger),
               "commands": {"density": density_command, "geometry": geometry_command}, "configs": configs, "stages": {}}
     write(output/"run.json", report)
     write(output/"status.json", {"status": "running", "stage": "preparing"})
@@ -219,6 +221,10 @@ def run_main(overrides):
             report["stages"]["density"] = execute(density_command, config["density_workspace"].resolve(), output/"density.log", config["max_runtime_s"]+config["density_finalization_timeout_s"])
             write(output/"run.json", report)
             if report["stages"]["density"]["returncode"] != 0:
+                if not density_logged(ledger, source):
+                    status = "timed_out" if report["stages"]["density"].get("timed_out") else "failed"
+                    log_run(ledger, {**density_entry(source, config["shape"], config["max_iterations"], config["density_backend"], status,
+                                                     time.perf_counter()-report["stages"]["density"].get("runtime_s", 0.0)), "gpu_pool_mb": None})
                 raise RuntimeError("Density stage failed; inspect density.log and persisted stage evidence")
         else:
             report["stages"]["density"] = {"status": "reused", "directory": str(source)}
@@ -249,6 +255,10 @@ def run_main(overrides):
           | ({"error": report["error"]} if "error" in report else {}))
     print(json.dumps(report), flush=True)
     return 0 if report["overall_acceptance"] else (2 if report["status"] == "complete" else 1)
+
+def density_logged(ledger, directory):
+    lines = ledger.read_text(encoding="utf-8").splitlines() if ledger.is_file() else []
+    return any(entry.get("kind") == "density" and entry.get("run_dir") == str(directory) for entry in map(json.loads, filter(str.strip, lines)))
 
 def write(path, data):
     path = Path(path)
@@ -307,6 +317,47 @@ def export_final_mesh(solid, candidate, validator, settings):
     write(candidate / "final_mesh.json", report)
     return report
 
+def baseline_fea(directory, solid, domain, settings, evaluator):
+    directory.mkdir(exist_ok=True)
+    result = evaluator(solid, domain["material"], domain["point_masses"], domain["comparison_load_cases"],
+                       {**settings, "work_dir": str(directory / "fea")})
+    write(directory / "raw_fea_result.json", result)
+    _verify_cases(result, domain["comparison_load_cases"])
+    write(directory / "record.json", {"status": "ok", "result": result, "artifacts": artifacts(directory)})
+    return result
+
+def snapshot_source(source, output):
+    source_manifest = _read(source / "manifest.json")
+    snapshot = output / "density_source"
+    snapshot.mkdir()
+    for name in [*source_manifest["artifacts"], "manifest.json"]:
+        original = (source / name).resolve()
+        if not original.is_relative_to(source):
+            raise ValueError("Density artifact path escapes its source directory: " + name)
+        target = snapshot / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(original, target)
+    return source_manifest, snapshot
+
+def comparison_inputs(inputs, domain, mesh_timeout_s, solver_timeout_s):
+    historical = _read(ROOT / "docs/validation/topology_phase1/inputs.json")
+    rebuilt = build_design_domain(deepcopy(inputs["parameters"]))
+    for name in ("material", "point_masses", "comparison_load_cases"):
+        if domain[name] != rebuilt[name]:
+            raise ValueError("Saved physics is not consistent with the saved parameters: " + name)
+    settings = _merge(domain["fea_settings"], historical["settings"]["fea_settings"])
+    settings.update(mesh_size_mm=3.0, mesh_threads=1, threads=1, linear_solver="SPOOLES",
+                    mesh_timeout_s=mesh_timeout_s, solver_timeout_s=solver_timeout_s)
+    return historical, settings
+
+def save_provenance(output, tools):
+    provenance = output / "provenance"
+    for path in list((ROOT / "deep_frame").glob("*.py")) + list(ROOT.glob("requirements*.txt")) + tools:
+        target = provenance / path.relative_to(ROOT)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, target)
+    return artifacts(provenance)
+
 def run_candidate(candidate, record, domain, density, reconstruction, validator, validation_settings,
                   reference, baseline_solid, baseline_mass, baseline, settings, constraints, geometry_only, progress):
     from deep_frame.topology_surface import reconstruct_surface
@@ -347,14 +398,7 @@ def run_candidate(candidate, record, domain, density, reconstruction, validator,
     if baseline is None:
         record["status"] = "baseline_fea"
         progress({"stage": "baseline_fea"})
-        directory = candidate.parents[1] / "baseline"
-        directory.mkdir(exist_ok=True)
-        result = evaluate(baseline_solid, domain["material"], domain["point_masses"], domain["comparison_load_cases"],
-                          {**settings, "work_dir": str(directory / "fea")})
-        write(directory / "raw_fea_result.json", result)
-        _verify_cases(result, domain["comparison_load_cases"])
-        baseline = result
-        write(directory / "record.json", {"status": "ok", "result": baseline, "artifacts": artifacts(directory)})
+        baseline = baseline_fea(candidate.parents[1] / "baseline", baseline_solid, domain, settings, evaluate)
     record["status"] = "candidate_fea"
     progress({"stage": "candidate_fea"})
     result = evaluate(imported, domain["material"], domain["point_masses"], domain["comparison_load_cases"],
@@ -387,31 +431,10 @@ def run_study(config):
         if not config["reference_step"].is_file():
             raise ValueError("A reference STEP file is required for surface maturity")
         load_source(source)
-        source_manifest = _read(source / "manifest.json")
-        snapshot = output / "density_source"
-        snapshot.mkdir()
-        for name in [*source_manifest["artifacts"], "manifest.json"]:
-            original = (source / name).resolve()
-            if not original.is_relative_to(source):
-                raise ValueError("Density artifact path escapes its source directory: " + name)
-            target = snapshot / name
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(original, target)
+        source_manifest, snapshot = snapshot_source(source, output)
         inputs, density_result, domain, density = load_source(snapshot)
-        historical = _read(ROOT / "docs/validation/topology_phase1/inputs.json")
-        for name in ("material", "point_masses", "comparison_load_cases"):
-            if domain[name] != historical["domain"][name]:
-                raise ValueError("Physical comparison input changed: " + name)
-        if {k: v for k, v in inputs["parameters"].items() if k != "topology"} != {k: v for k, v in historical["parameters"].items() if k != "topology"}:
-            raise ValueError("Historical v0 geometry parameters changed")
-        provenance = output / "provenance"
-        for path in list((ROOT / "deep_frame").glob("*.py")) + list(ROOT.glob("requirements*.txt")) + [Path(__file__), ROOT / "tools/workstation_study.py"]:
-            target = provenance / path.relative_to(ROOT)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, target)
-        settings = _merge(domain["fea_settings"], historical["settings"]["fea_settings"])
-        settings.update(mesh_size_mm=3.0, mesh_threads=1, threads=1, linear_solver="SPOOLES",
-                        mesh_timeout_s=config["mesh_timeout_s"], solver_timeout_s=config["solver_timeout_s"])
+        historical, settings = comparison_inputs(inputs, domain, config["mesh_timeout_s"], config["solver_timeout_s"])
+        source_artifacts = save_provenance(output, [Path(__file__), ROOT / "tools/workstation_study.py"])
         reconstruction = {"interpolation_subdivisions": config["subdivisions"], "interpolation_method": config["interpolation_method"],
                           "density_smoothing_sigma_mm": config["density_smoothing_sigma_mm"],
                           "manufacturing_opening_radius_mm": config["manufacturing_opening_radius_mm"],
@@ -433,7 +456,7 @@ def run_study(config):
                         comparison_reference={"source": str(config["reference_step"].resolve()), "sha256": _file_digest(output / "reference.step"), "volume_mm3": reference.volume},
                         material=domain["material"], point_masses=domain["point_masses"], load_cases=domain["comparison_load_cases"],
                         packages={p: importlib.metadata.version(p) for p in ("build123d", "numpy", "scipy", "trimesh", "gmsh", "scikit-image", "fast-simplification", "rtree", "pymeshlab")},
-                        source_artifacts=artifacts(provenance),
+                        source_artifacts=source_artifacts,
                         runtime_provenance=_provenance({"reconstructor": reconstruct_surface, "validator": validator.validate_surface,
                                                        "evaluator": evaluate, "baseline_builder": build_geometry}, settings, True),
                         relative_constraints=historical["settings"]["relative_constraints"])
@@ -448,6 +471,7 @@ def run_study(config):
             candidate = output / "candidates" / f"t{index:02d}"
             candidate.mkdir(parents=True)
             record = {"id": candidate.name, "threshold": threshold, "status": "reconstructing", "diagnostics": []}
+            candidate_started = time.perf_counter()
             event_count = 0
             def progress(event):
                 nonlocal event_count
@@ -470,15 +494,18 @@ def run_study(config):
                                          reference, baseline_solid, baseline_mass, baseline, settings,
                                          historical["settings"]["relative_constraints"], config["geometry_only"], progress)
             except Exception as error:
+                record["failure_stage"] = record["status"]
                 record["status"] = "failed"
                 record["diagnostics"].append(type(error).__name__ + ": " + str(error))
                 if hasattr(error, "report"):
                     record["reconstruction"] = error.report
                     record["failure_evidence"] = save_geometry_evidence(candidate / "failure", "reconstruction", error.report,
                                                                           getattr(error, "shape", None), getattr(error, "mesh", None))
+            record["runtime_s"] = time.perf_counter() - candidate_started
             record["artifacts"] = artifacts(candidate)
             write(candidate / "record.json", record)
             records.append(record)
+            log_run(config["run_log"], candidate_entry("cad", output, record, manifest.get("source_manifest_sha256")))
             manifest["candidates"].append({"id": record["id"], "directory": candidate.relative_to(output).as_posix(),
                                            "record_sha256": _file_digest(candidate / "record.json"), "threshold": threshold, "status": record["status"]})
             manifest.update(acceptance(records, complete=False), stage="candidate_finished")
@@ -613,14 +640,13 @@ def render_main(overrides):
         figure.suptitle(label, fontsize=13, color="#9b392b" if label.startswith("DIAGNOSE") else "#275e3c")
         figure.text(0.5, 0.01, footer, ha="center", fontsize=8)
         save(figure, name)
-    journal("exact CAD strap sections")
-    strap_voids = [region for region in domain["regions"] if region["role"] == "forbidden" and region["name"].startswith("strap_access_")]
-    strap_preserves = [region for region in domain["regions"] if region["role"] == "preserve" and region["name"].startswith("strap_contact_")]
-    centers = np.asarray([(np.asarray(region["min_mm"]) + region["max_mm"]) / 2 for region in strap_voids])
-    zmid = float(np.mean([(region["min_mm"][2] + region["max_mm"][2]) / 2 for region in strap_preserves]))
-    specs = [(f"Quer: y = {y:g} mm", Plane(origin=(0, y, 0), x_dir=(1, 0, 0), z_dir=(0, -1, 0)), [0, 2], [-24, 24], [20, 32]) for y in np.unique(centers[:, 1])]
-    specs += [(f"Längs: x = {x:g} mm", Plane(origin=(x, 0, 0), x_dir=(0, 1, 0), z_dir=(1, 0, 0)), [1, 2], [-25, 25], [20, 32]) for x in np.unique(centers[:, 0])]
-    specs += [(f"Horizontal: z = {zmid:g} mm", Plane(origin=(0, 0, zmid)), [0, 1], [-23, 23], [-25, 25])]
+    journal("exact CAD battery rail sections")
+    rails = [region for region in domain["regions"] if region["role"] == "preserve" and region["name"].startswith("battery_rail_")]
+    centers = np.asarray([(np.asarray(region["min_mm"]) + region["max_mm"]) / 2 for region in rails])
+    zmid = float(np.mean(centers[:, 2]))
+    specs = [("Quer: y = 0 mm", Plane(origin=(0, 0, 0), x_dir=(1, 0, 0), z_dir=(0, -1, 0)), [0, 2], [-24, 24], [20, 32])]
+    specs += [(f"Längs: x = {x:g} mm", Plane(origin=(x, 0, 0), x_dir=(0, 1, 0), z_dir=(1, 0, 0)), [1, 2], [-30, 30], [20, 32]) for x in np.unique(centers[:, 0])]
+    specs += [(f"Horizontal: z = {zmid:g} mm", Plane(origin=(0, 0, zmid)), [0, 1], [-23, 23], [-30, 30])]
     figure, axes = plt.subplots(2, 3, figsize=(17, 10), layout="constrained")
     for axis, (title, plane, coordinates, xlim, ylim) in zip(axes.flat, specs):
         journal("section " + title)
@@ -630,24 +656,20 @@ def render_main(overrides):
             array = np.asarray([tuple(point) for point in vertices])
             axis.add_collection(PolyCollection(array[np.asarray(triangles)][:, :, coordinates], facecolors="#4b9bae", edgecolors="none", antialiased=False))
         axis.add_collection(LineCollection(paths, colors="#194653", linewidths=0.65))
-        for region in strap_preserves:
-            prescribed = region_shape(region).cut(*[region_shape(cut) for cut in strap_voids])
-            _, outlines = section_paths(prescribed, plane, coordinates)
-            axis.add_collection(LineCollection(outlines, colors="#46904b", linewidths=1.25, linestyles="--"))
-        for region in strap_voids:
+        for region in rails:
             _, outlines = section_paths(region_shape(region), plane, coordinates)
-            axis.add_collection(LineCollection(outlines, colors="#c6553c", linewidths=1.2, linestyles=":"))
+            axis.add_collection(LineCollection(outlines, colors="#46904b", linewidths=1.25, linestyles="--"))
         axis.set(xlim=xlim, ylim=ylim, title=title, xlabel="xyz"[coordinates[0]] + " / mm", ylabel="xyz"[coordinates[1]] + " / mm")
         axis.set_aspect("equal")
         axis.grid(alpha=0.2)
         record["sections"].append({"title": title, "plane_origin_mm": list(plane.origin), "plane_normal": list(plane.z_dir), "cad_area_mm2": float(sliced.area), "cad_edge_count": len(paths), "view_limits_mm": [xlim, ylim]})
-    axes.flat[-1].axis("off")
-    axes.flat[-1].legend(handles=[Line2D([0], [0], color="#4b9bae", linewidth=8, label="Tatsächliches STEP-Material"),
-                                 Line2D([0], [0], color="#46904b", linestyle="--", label="Pflicht-Preserve abzüglich Gurtzugang"),
-                                 Line2D([0], [0], color="#c6553c", linestyle=":", label="Freizuhaltender Gurtzugang")], loc="center", fontsize=11)
-    figure.suptitle(label + "\nExakte CAD-Schnitte an allen vier Gurtdurchlässen", fontsize=14)
+    for axis in axes.flat[len(specs):]:
+        axis.axis("off")
+    axes.flat[len(specs)].legend(handles=[Line2D([0], [0], color="#4b9bae", linewidth=8, label="Tatsächliches STEP-Material"),
+                                          Line2D([0], [0], color="#46904b", linestyle="--", label="Pflicht-Preserve Akkuschiene")], loc="center", fontsize=11)
+    figure.suptitle(label + "\nExakte CAD-Schnitte durch beide Akkuschienen", fontsize=14)
     figure.text(0.5, 0.006, footer, ha="center", fontsize=8)
-    save(figure, "strap_sections")
+    save(figure, "rail_sections")
     record["status"] = "complete"
     journal("complete")
 

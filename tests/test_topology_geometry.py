@@ -7,10 +7,10 @@ import trimesh
 from build123d import export_step, export_stl, import_step
 from scipy.ndimage import label
 
-from deep_frame.config import FEA_CONFIG
+from deep_frame.config import FEA_CONFIG, IMPLICIT_CONFIG, TOPOLOGY_CONFIG
 from deep_frame.fea import evaluate
 from deep_frame.frame import reference_parameters
-from deep_frame.topology_geometry import build_design_domain, grid_centers, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
+from deep_frame.topology_geometry import build_design_domain, grid_centers, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
 
 @pytest.fixture(scope="module")
 def domain():
@@ -25,7 +25,7 @@ def test_domain_is_free_connected_3d_space_with_small_preserve_fraction(domain):
     assert np.array_equal(domain["forbidden"], ~domain["allowed"])
     assert label(domain["allowed"])[1] == 1
     assert domain["metadata"]["free_fraction_of_allowed"] > 0.95
-    assert domain["metadata"]["allowed_cells"] > 5000
+    assert domain["metadata"]["allowed_cells"] > domain["allowed"].size / 2
     assert np.count_nonzero(domain["allowed"].any(axis=(0, 1))) == 8
     assert len([region for region in domain["regions"] if region["role"] == "allowed"]) == 1
     assert domain["metadata"]["preserve_volume_mm3"] == domain["preserve"].sum() * 64.0
@@ -48,7 +48,7 @@ def test_exact_keepouts_include_hardware_props_holes_and_assembly_access(domain)
     assert sum(name.endswith("_swept_clearance") for name in names) == 4
     assert sum("motor_screw_" in name for name in names) == 16
     assert sum(name.startswith("aio_screw_") for name in names) == 4
-    assert sum(name.startswith("strap_access_") for name in names) == 4
+    assert "elrs_antenna_clearance" in names and not any(name.startswith(("strap_access_", "strap_contact_")) for name in names)
     assert all(not region.get("rasterize", True) for region in domain["regions"] if "motor_screw_" in region["name"] or region["name"].startswith("aio_screw_"))
     assert domain["manufacturing"]["supports_allowed"]
 
@@ -84,13 +84,14 @@ def test_every_required_attachment_has_preserved_optimization_cells(domain):
 
 def test_loads_mass_and_fair_local_fixture_contract(domain):
     cases = {case["name"]: case for case in domain["load_cases"]}
-    assert set(case["name"] for case in domain["comparison_load_cases"]) == {"arm_tip", "battery_impact", "camera_side", "modes"}
+    assert set(case["name"] for case in domain["comparison_load_cases"]) == {"arm_tip", "battery_impact", "camera_side", "thrust_all", "crash_front", "crash_arm", "modes"}
     assert len(cases["arm_tip"]["fixed_regions"]) == 4
-    assert cases["arm_tip"]["loads"][0]["force_n"] == [0.0, 0.0, -1.0]
+    assert cases["arm_tip"]["loads"][0]["force_n"] == pytest.approx([0.0, 0.0, -3.6])
+    assert all(load["force_n"] == pytest.approx([0.0, 0.0, 3.6]) for load in cases["thrust_all"]["loads"])
     assert cases["battery_impact"]["loads"][0]["force_n"] == pytest.approx([0, 0, -3.6284605])
     assert domain["point_masses"][0]["mass_g"] == 37
-    assert domain["point_masses"][0]["position_mm"] == pytest.approx([0, 0, 34.5])
-    assert len([name for name in cases if name.startswith("connection_")]) == 17
+    assert domain["point_masses"][0]["position_mm"] == pytest.approx([0, 0, 33.5])
+    assert len([name for name in cases if name.startswith("connection_")]) == 11
     for case in cases.values():
         for fixture in case["fixed_regions"]:
             assert fixture["max_mm"][2] < 0.1
@@ -140,6 +141,43 @@ def test_tool_access_prevents_blind_antenna_caps_and_camera_voxel_slivers(domain
         access_inner = sign * access["center_mm"][0] - access["height_mm"] / 2
         assert lug_outer == access_inner == pytest.approx(16)
         assert access.get("rasterize", True)
+
+def test_field_offsets_stay_inside_the_component_clearance():
+    assert IMPLICIT_CONFIG["preserve_inflation_mm"] + IMPLICIT_CONFIG["constraint_offset_mm"] < TOPOLOGY_CONFIG["component_clearance_mm"]
+
+@pytest.mark.parametrize("spacing", [2.0, 4 / 3, 1.0])
+def test_battery_rails_and_deck_loads_resolve_on_every_study_grid(spacing):
+    from deep_frame.topology_optimization import HexElasticity
+    parameters = reference_parameters()
+    parameters["topology"] = {"grid": {**TOPOLOGY_CONFIG["grid"], "spacing_mm": [spacing] * 3, "shape": [round(136 / spacing), round(128 / spacing), round(32 / spacing)]}}
+    built = build_design_domain(parameters)
+    centers = grid_centers(built["grid"])
+    for region in (region for region in built["regions"] if region["name"].startswith("battery_rail_")):
+        assert np.any(region_contains(centers, region) & built["preserve"])
+    model = HexElasticity(built, "preserve_adjacent")
+    deck = next(case for case in built["load_cases"] if case["name"] == "battery_impact")["loads"][0]["region"]
+    assert deck["min_mm"][2] < parameters["frame"]["deck_top_mm"] < deck["max_mm"][2] and len(model._select(deck, "battery_impact", "load")) > 0
+    assert model.selector_expansions == []
+
+def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain):
+    clearance = domain["metadata"]["prescribed_clearance"]
+    assert clearance["passed"] and clearance["required_width_mm"] == pytest.approx(2.1)
+    regions = {region["name"]: region for region in domain["regions"]}
+    assert regions["battery_rail_1"]["max_mm"][2] == pytest.approx(28.5)
+    assert regions["front_left_motor_contact"]["radius_mm"] - regions["front_left_motor_screw_0"]["radius_mm"] - 4.5 == pytest.approx(2.1)
+    extended = {pair["preserve"] for pair in domain["metadata"]["flush_contact_extensions"]}
+    assert {"battery_rail_1", "xt30_contact", "front_left_motor_contact"} | {f"aio_contact_{index}" for index in range(4)} <= extended and "antenna_contact" not in extended
+    assert regions["aio_contact_0"]["height_mm"] == pytest.approx(6.0) and regions["aio_contact_0"]["radius_mm"] == pytest.approx(3.1) and "flush_kept_near_wall" not in clearance
+    keepout = {"name": "k", "role": "forbidden", "kind": "box", "min_mm": [0, 0, 4], "max_mm": [10, 10, 8], "purpose": ""}
+    pad = {"name": "p", "role": "preserve", "kind": "box", "min_mm": [2, 2, 0], "max_mm": [8, 8, 4], "purpose": ""}
+    rim = {"name": "r", "role": "preserve", "kind": "box", "min_mm": [8, 0, 4], "max_mm": [11.9, 10, 6], "purpose": ""}
+    near = {"name": "n", "role": "preserve", "kind": "cylinder", "center_mm": [20, 5, 2], "radius_mm": 3, "height_mm": 4, "axis": "z", "purpose": ""}
+    other = {"name": "o", "role": "preserve", "kind": "box", "min_mm": [23.5, 0, 0], "max_mm": [30, 10, 4], "purpose": ""}
+    violations = prescribed_clearance([keepout, pad, rim, near, other], 2.0, 0.1, 0.3)["violations"]
+    assert [violation["rule"] for violation in violations] == ["flush_contact", "rim_width", "preserve_gap"]
+    assert violations[1]["width_mm"] == pytest.approx(1.9) and violations[2]["gap_mm"] == pytest.approx(0.5)
+    fixed = [keepout, dict(pad, max_mm=[8, 8, 4.5]), dict(rim, max_mm=[12.1, 10, 6]), near, dict(other, min_mm=[26, 0, 0])]
+    assert prescribed_clearance(fixed, 2.0, 0.1, 0.3)["passed"]
 
 @pytest.mark.parametrize("override", [{"grid": {"spacing_mm": [4, 0, 4]}}, {"grid": {"shape": [3.5, 32, 8]}}, {"grid": {"axis_order": "zyx"}}, {"manufacturing": {"minimum_feature_mm": 1.5}}])
 def test_invalid_grid_or_manufacturing_inputs_are_rejected(override):

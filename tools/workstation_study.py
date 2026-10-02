@@ -4,6 +4,7 @@ from importlib.metadata import version
 import json
 from pathlib import Path
 import sys
+from time import perf_counter
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -18,7 +19,7 @@ from deep_frame.frame import build_geometry
 from deep_frame.topology_geometry import _merge, reconstruct_topology, validate_topology
 from deep_frame.topology_pipeline import (
     _artifact, _digest, _fea_artifacts, _file_digest, _metrics, _pareto,
-    _plot_modules, _provenance, _read, _save, _valid_artifacts, _verify_cases, compare_to_baseline,
+    _plot_modules, _provenance, _read, _save, _valid_artifacts, _verify_cases, candidate_entry, compare_to_baseline, log_run,
 )
 
 EVIDENCE = ROOT / "docs/validation/topology_phase1"
@@ -33,9 +34,9 @@ SCREEN = {
 
 MESH_CONFIG = {"output": DEFAULT_OUTPUT, "mesh_sizes": [3.0, 2.5, 2.0], "threads": 2, "linear_solver": None, "prepare_only": False}
 MESH_KINDS = {"output": "path", "mesh_sizes": ["float"], "threads": "int", "linear_solver": ("SPOOLES", "PASTIX"), "prepare_only": "flag"}
-CANDIDATES_CONFIG = {"source": None, "output": None, "baseline_study": None, "geometry_only": False, "linear_solver": None, "threads": 2}
+CANDIDATES_CONFIG = {"source": None, "output": None, "baseline_study": None, "geometry_only": False, "linear_solver": None, "threads": 2, "run_log": None}
 CANDIDATES_KINDS = {"source": "path", "output": "path", "baseline_study": "path", "geometry_only": "flag",
-                    "linear_solver": ("SPOOLES", "PASTIX"), "threads": "int"}
+                    "linear_solver": ("SPOOLES", "PASTIX"), "threads": "int", "run_log": "path"}
 RENDER_CONFIG = {"output": ROOT / "docs/validation/workstation_geometry_comparison.png"}
 RENDER_KINDS = {"output": "path"}
 
@@ -436,8 +437,9 @@ def load_saved_baseline(output, manifest, inputs):
         raise ValueError("Stored baseline evidence changed")
     return saved
 
-def run(source, output, geometry_only=False, baseline_study=None, linear_solver=None, threads=2):
+def run(source, output, geometry_only=False, baseline_study=None, linear_solver=None, threads=2, run_log=None):
     output.mkdir(parents=True, exist_ok=True)
+    clocks = {}
     inputs, domain, density = prepare(source, output, linear_solver, threads)
     path = output / "manifest.json"
     manifest = _read(path) if path.exists() else {
@@ -465,6 +467,7 @@ def run(source, output, geometry_only=False, baseline_study=None, linear_solver=
         record = {"id": candidate_id, "density_threshold": threshold, "reconstruction_settings": settings,
                   "stage": "geometry", "status": "invalid", "artifacts": {}, "diagnostics": []}
         print(json.dumps({"event": "reconstruct", "candidate": candidate_id, "threshold": threshold}), flush=True)
+        clock = perf_counter()
         try:
             solid = reconstruct_topology(deepcopy(domain), density.copy(), deepcopy(settings))
             record["reconstruction"] = deepcopy(solid.topology_report)
@@ -485,6 +488,7 @@ def run(source, output, geometry_only=False, baseline_study=None, linear_solver=
         except Exception as error:
             record.update(status="failed")
             record["diagnostics"].append(type(error).__name__ + ": " + str(error))
+        clocks[candidate_id] = perf_counter() - clock
         persist(output, manifest, record)
         print(json.dumps({"event": "geometry_result", "id": candidate_id, "status": record["status"],
                           "diagnostics": record["diagnostics"]}), flush=True)
@@ -502,6 +506,7 @@ def run(source, output, geometry_only=False, baseline_study=None, linear_solver=
             settings = deepcopy(inputs["fea_settings"])
             settings["work_dir"] = str(directory / "fea")
             print(json.dumps({"event": "fea_start", "candidate": record["id"]}), flush=True)
+            clock = perf_counter()
             result = evaluate(solid, deepcopy(domain["material"]), deepcopy(domain["point_masses"]),
                               deepcopy(domain["comparison_load_cases"]), settings)
             record.update(stage="independent_fea", status=result["status"], fea=result, fea_settings=settings)
@@ -515,6 +520,7 @@ def run(source, output, geometry_only=False, baseline_study=None, linear_solver=
             except ValueError as error:
                 record["status"] = "failed" if result["status"] == "failed" else "invalid"
                 record["diagnostics"].append(str(error))
+            clocks[record["id"]] = clocks.get(record["id"], 0.0) + perf_counter() - clock
             persist(output, manifest, record)
             print(json.dumps({"event": "fea_result", "id": record["id"], "status": record["status"],
                               "diagnostics": record["diagnostics"]}), flush=True)
@@ -525,6 +531,11 @@ def run(source, output, geometry_only=False, baseline_study=None, linear_solver=
     manifest["status"] = "geometry_only" if geometry_only else "ok" if valid else "invalid"
     manifest["summary"] = [{key: record[key] for key in ("id", "density_threshold", "status", "stage", "diagnostics")} for record in records]
     _save(path, manifest)
+    for record in records:
+        if record["id"] in clocks:
+            accepted = record["status"] == "ok"
+            log_run(run_log, {**candidate_entry("raster", output, {"id": record["id"], "parameters": {"threshold": record["density_threshold"]}, "status": "accepted" if accepted else record["status"],
+                                                                   "failure_stage": None if accepted else record["stage"], "runtime_s": clocks[record["id"]]}, inputs["input_sha256"]), "raster_status": record["status"]})
     print(json.dumps({"event": "finished", "manifest": str(path), "status": manifest["status"], "selected_id": manifest["selected_id"]}), flush=True)
     return manifest
 
@@ -532,7 +543,7 @@ def candidates_main(overrides):
     config = configure(CANDIDATES_CONFIG, CANDIDATES_KINDS, overrides, ("source", "output"))
     run(config["source"].resolve(), config["output"].resolve(), config["geometry_only"],
         config["baseline_study"].resolve() if config["baseline_study"] else None,
-        config["linear_solver"], config["threads"])
+        config["linear_solver"], config["threads"], config["run_log"])
 
 def render_main(overrides):
     config = configure(RENDER_CONFIG, RENDER_KINDS, overrides)

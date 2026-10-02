@@ -187,10 +187,12 @@ def structural_margins(config: dict) -> dict:
         "strap_end_web": f["deck_length_mm"] / 2 - f["strap_slot_y_mm"] - f["strap_slot_length_mm"] / 2,
     }
 
+NONNEGATIVE_FRAME_KEYS = ("prop_motor_gap_mm",)
+
 def build_frame(config: dict) -> Solid:
     f = config["frame"]
     c = config["components"]
-    if any(not isfinite(value) or value <= 0 for value in f.values()):
+    if any(not isfinite(value) or value < 0 or (value == 0 and key not in NONNEGATIVE_FRAME_KEYS) for key, value in f.items()):
         raise ValueError("Frame dimensions must be finite and positive.")
     wall = f["minimum_wall_mm"]
     base = f["base_thickness_mm"]
@@ -337,7 +339,7 @@ def collision_and_clearance(config: dict, frame, components: dict) -> dict:
         if distance <= settings["distance_tolerance_mm"]:
             overlap = intersection_shape(shapes[first], shapes[second])
             volume = 0.0 if overlap is None else float(overlap.volume)
-        contact = first == "frame" and second in contacts
+        contact = first == "frame" and second in contacts or first.startswith("motor_") and second == "prop_" + first[len("motor_"):]
         required = 0.0 if contact else settings["prop_clearance_mm"] if first.startswith("prop_") or second.startswith("prop_") else settings["minimum_clearance_mm"]
         collided = volume > settings["intersection_tolerance_mm3"]
         passed = not collided and distance + settings["distance_tolerance_mm"] >= required

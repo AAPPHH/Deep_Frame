@@ -15,6 +15,7 @@ from scipy.ndimage import distance_transform_edt, gaussian_filter, grey_opening,
 from scipy.interpolate import PchipInterpolator
 from skimage.measure import marching_cubes
 
+from .config import SURFACE_FIDELITY
 from .topology_geometry import region_bounds, region_contains, region_shape
 
 class SurfaceReconstructionError(ValueError):
@@ -52,8 +53,7 @@ def _settings(settings):
         "free_forbidden_buffer_mm": 0.0,
         "surface_constraint_mode": "embedded",
         "decimation_bounds_mode": "none",
-        "maximum_surface_deviation_mm": 0.20,
-        "maximum_relative_volume_change": 0.01,
+        **SURFACE_FIDELITY,
         "decimation_face_budgets": [6000, 12000, 24000, 48000],
         "fidelity_batch_size": 1000,
         "boolean_tolerance_mm3": 1e-5,
@@ -361,13 +361,10 @@ def _project_reference_bounds(mesh, reference):
               "acceptance_scope": "This operation grants no acceptance; closed orientation, topology, self-intersections and complete fidelity/volume gates must be checked on the projected mesh."}
     return output, report
 
-def extract_density_surface(domain, density, settings, *, progress=None):
-    started = perf_counter()
-    config = _settings(settings)
-    field, origin, spacing = _domain_field(domain, density)
-    padded = np.pad(field, 1)
-    subdivisions = config["interpolation_subdivisions"]
-    if config["interpolation_method"] == "cubic":
+def _upsample(domain, density, subdivisions, method):
+    origin, spacing = np.asarray(domain["grid"]["origin_mm"], dtype=float), np.asarray(domain["grid"]["spacing_mm"], dtype=float)
+    padded = np.pad(np.asarray(density, dtype=float), 1)
+    if method == "cubic":
         coordinates = np.meshgrid(*[np.arange((n-1)*subdivisions+1)/subdivisions for n in padded.shape], indexing="ij")
         sampled = np.clip(map_coordinates(padded, np.asarray(coordinates), order=3, mode="constant", cval=0), 0, 1)
     else:
@@ -375,6 +372,14 @@ def extract_density_surface(domain, density, settings, *, progress=None):
         for axis in range(3):
             count = padded.shape[axis]
             sampled = PchipInterpolator(np.arange(count), sampled, axis=axis)(np.arange((count-1)*subdivisions+1)/subdivisions)
+    return sampled, origin-spacing/2, spacing/subdivisions
+
+def extract_density_surface(domain, density, settings, *, progress=None):
+    started = perf_counter()
+    config = _settings(settings)
+    field, origin, spacing = _domain_field(domain, density)
+    subdivisions = config["interpolation_subdivisions"]
+    sampled, _, _ = _upsample(domain, field, subdivisions, config["interpolation_method"])
     smoothing_report = None
     if config["density_smoothing_sigma_mm"]:
         smoothed = gaussian_filter(sampled, config["density_smoothing_sigma_mm"]/(spacing/subdivisions), mode="constant", cval=0)

@@ -78,7 +78,7 @@ Die zentrale `deep_frame.config.CONFIG` referenziert jetzt Geometrie, Komponente
 
 ### Berechnungsmodell
 
-Der Akku kommt aus dem platzierten Komponentenmodell mit **37 g** und tatsaechlichem Schwerpunkt **(0, 0, 34,5) mm** bei v0. Sein MASS-Element wird an ein **4 mm breites Querband bei y = 0** auf den beiden Deckrails gekoppelt. Die Box reicht seitlich von -20,1 bis 20,1 mm und vertikal von 28,99 bis 29,01 mm; nur dort vorhandene Netzknoten werden gekoppelt. Das Deckenfenster liefert keine Knoten. Diese begrenzte Region wird starr, der restliche Frame bleibt verformbar. Es gibt keine eigene Rotationstraegheit des ausgedehnten Akkus und keine zusaetzlichen Motor-/Elektronikmassen. Die FEA-Masse ist daher Frame plus Akku; die vollstaendige Baugruppenmasse bleibt im Geometriecheck ausgewiesen.
+Der Akku kommt aus dem platzierten Komponentenmodell mit **37 g** und tatsaechlichem Schwerpunkt **(0, 0, 33,5) mm** bei v0. Sein MASS-Element wird an ein **4 mm breites Querband bei y = 0** auf den beiden Deckrails gekoppelt. Die Box reicht seitlich von -20,1 bis 20,1 mm und vertikal von 27,99 bis 28,01 mm; nur dort vorhandene Netzknoten werden gekoppelt. Das Deckenfenster liefert keine Knoten. Diese begrenzte Region wird starr, der restliche Frame bleibt verformbar. Es gibt keine eigene Rotationstraegheit des ausgedehnten Akkus und keine zusaetzlichen Motor-/Elektronikmassen. Die FEA-Masse ist daher Frame plus Akku; die vollstaendige Baugruppenmasse bleibt im Geometriecheck ausgewiesen.
 
 | Lastfall | Last und Auswertung | Einspannung |
 | --- | --- | --- |

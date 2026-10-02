@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import shutil
 import sys
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 from build123d import Box, export_step
 import numpy as np
@@ -12,12 +12,17 @@ import pytest
 import trimesh
 
 import deep_frame
-from deep_frame import topology_surface
+from deep_frame import topology_pipeline, topology_surface
 from deep_frame.config import command_line, configure
 from deep_frame.topology_optimization import _settings
 from deep_frame.topology_pipeline import _artifact, _file_digest, _read, _save
 from deep_frame.topology_surface import SurfaceReconstructionError
+from tests.test_topology_implicit_validation import mounted_domain
+from tools import compute
+from tools import implicit_study as implicit
 from tools import mature_pipeline as pipeline
+from tools import topology_study
+from tools import neural_study
 from tools import workstation_study as workstation
 from tools.topology_study import field_comparison, plot_gpu, verify_artifacts, verify_comparable_settings, verify_frozen_reference
 
@@ -29,6 +34,14 @@ def test_comparison_rejects_changed_physical_filter_but_allows_iteration_budget(
     studied["filter_radius_mm"] = 5.0
     with pytest.raises(ValueError, match="physics/settings"):
         verify_comparable_settings(reference, studied)
+
+def test_comparison_fills_projection_defaults_of_older_references():
+    legacy = {key: value for key, value in _settings({}).items() if key not in
+              ("projection", "robust_delta", "beta_schedule", "beta_interval", "beta_minimum_iterations",
+               "beta_change_tolerance", "move_limit_late", "move_limit_late_beta", "volume_target_relaxation", "objective_window", "gpu_solver_residency")}
+    verify_comparable_settings(legacy, _settings({"max_iterations": 300}))
+    with pytest.raises(ValueError, match="physics/settings"):
+        verify_comparable_settings(legacy, _settings({"projection": "robust", "beta_schedule": [1, 2, 4]}))
 
 def test_frozen_reference_verification_rejects_corrupted_fields(tmp_path):
     artifacts = {}
@@ -168,9 +181,23 @@ def test_cached_ok_result_still_requires_all_verification_cases(tmp_path):
     with pytest.raises(ValueError, match="modes"):
         workstation.verify_record(record, tmp_path, preparation)
 
+@pytest.fixture(autouse=True)
+def isolated_run_log(tmp_path, monkeypatch):
+    monkeypatch.setattr(topology_pipeline, "RUN_LOG", tmp_path / "default_run_log.jsonl")
+
+CURRENT = {}
+
+def current_inputs():
+    if not CURRENT:
+        from deep_frame.frame import reference_parameters
+        parameters = reference_parameters()
+        built = pipeline.build_design_domain(deepcopy(parameters))
+        CURRENT.update(parameters=json.loads(json.dumps(parameters, default=str)), domain=json.loads(json.dumps({key: value for key, value in built.items() if not isinstance(value, np.ndarray)})))
+    return deepcopy(CURRENT)
+
 @pytest.fixture
 def study(tmp_path, monkeypatch):
-    historical = _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
+    historical = current_inputs()
     source = tmp_path / "source"
     source.mkdir()
     shape = (2, 2, 2)
@@ -188,7 +215,7 @@ def study(tmp_path, monkeypatch):
     reference = tmp_path / "reference.step"
     export_step(Box(9, 9, 9), reference)
     args = pipeline.geometry_config({"source": str(source), "output": str(tmp_path / "output"),
-                                     "reference_step": str(reference), "thresholds": [0.3]})
+                                     "reference_step": str(reference), "thresholds": [0.3], "run_log": str(tmp_path / "run_log.jsonl")})
     calls = {"reconstruction": 0, "validation": 0, "fea": 0, "mesh": 0}
     validator = ModuleType("deep_frame.topology_surface_validation")
     validator._settings = lambda settings: {"tessellation_mm": 0.03, **settings}
@@ -363,6 +390,38 @@ def test_orchestrator_fresh_density_selects_backend_and_verified_geometry(study,
     assert report["accepted_count"] == 1 and report["selected_id"] == "t00" and len(commands) == 2
     assert report["schema_version"] == "deep-frame-mature-end-to-end-v3"
     assert all(report["configs"][name]["sha256"] == _file_digest(output / (name + "_config.json")) for name in ("density", "geometry"))
+
+def test_orchestrator_routes_ledger_to_both_stages(study, monkeypatch, tmp_path):
+    args, source, _, _ = study
+    output, ledger_path = tmp_path / "orchestrator", tmp_path / "routed" / "run_log.jsonl"
+    def execute(command, cwd, logfile, timeout):
+        if "tools.topology_study" in command:
+            shutil.copytree(source, output / "density")
+            assert _read(command[-1])["run_log"] == str(ledger_path.resolve())
+            topology_pipeline.log_run(_read(command[-1])["run_log"], {"kind": "density", "run_dir": str(output / "density"), "success": True, "status": "ok"})
+        else:
+            assert _read(command[-1])["run_log"] == str(ledger_path.resolve()) and pipeline.main(command[2:]) == 0
+        return {"returncode": 0}
+    monkeypatch.setattr(pipeline, "execute", execute)
+    assert pipeline.run_main({"output": str(output), "reference_step": str(args["reference_step"]), "thresholds": [0.3], "run_log": str(ledger_path)}) == 0
+    assert [(line["kind"], line.get("candidate")) for line in ledger(ledger_path)] == [("density", None), ("cad", "t00")]
+    assert _read(output / "run.json")["run_log"] == str(ledger_path.resolve()) and not (tmp_path / "default_run_log.jsonl").exists()
+
+@pytest.mark.parametrize("child_logged", [False, True])
+def test_orchestrator_logs_killed_density_stage_once(study, monkeypatch, tmp_path, child_logged):
+    args, _, _, _ = study
+    output, ledger_path = tmp_path / "orchestrator", tmp_path / "run_log.jsonl"
+    def execute(command, cwd, logfile, timeout):
+        assert "tools.topology_study" in command
+        if child_logged:
+            topology_pipeline.log_run(ledger_path, {"kind": "density", "run_dir": str(output / "density"), "success": False, "status": "failed"})
+        return {"returncode": None, "timed_out": True, "runtime_s": 5.0}
+    monkeypatch.setattr(pipeline, "execute", execute)
+    assert pipeline.run_main({"output": str(output), "reference_step": str(args["reference_step"]), "run_log": str(ledger_path)}) == 1
+    line, = ledger(ledger_path)
+    assert line["kind"] == "density" and not line["success"] and line["run_dir"] == str(output / "density")
+    assert line["status"] == ("failed" if child_logged else "timed_out")
+    assert child_logged or (line["failure_stage"] == "optimization" and line["runtime_s"] >= 5.0 and line["gpu_pool_mb"] is None)
 
 def test_orchestrator_does_not_trust_false_manifest_acceptance(study, monkeypatch, tmp_path):
     args, source, _, _ = study
@@ -757,6 +816,208 @@ def test_atomic_writer_exhausted_retry_budget_preserves_original_error_and_targe
     assert _read(target) == {"state": "old"}
     assert _read(target.with_name(target.name + ".tmp")) == {"state": "new"}
 
+def ledger(path):
+    return [json.loads(line) for line in Path(path).read_text(encoding="utf-8").splitlines()]
+
+def test_cad_study_logs_one_ledger_line_per_candidate(study):
+    args, _, _, _ = study
+    args["thresholds"] = [0.3, 0.4]
+    result = pipeline.run_study(args)
+    lines = ledger(args["run_log"])
+    assert [line["candidate"] for line in lines] == ["t00", "t01"] and all(line["kind"] == "cad" and line["success"] and line["failure_stage"] is None for line in lines)
+    assert all(line["source_sha256"] == result["source_manifest_sha256"] and line["runtime_s"] > 0 and "git_commit" in line for line in lines)
+
+def test_cad_study_ledger_names_the_failing_stage(study, monkeypatch):
+    args, _, _, _ = study
+    def fail(*a, **k):
+        raise RuntimeError("reconstruction crashed")
+    monkeypatch.setattr(topology_surface, "reconstruct_surface", fail)
+    pipeline.run_study(args)
+    line, = ledger(args["run_log"])
+    assert not line["success"] and line["status"] == "failed" and line["failure_stage"] == "reconstructing"
+
+def test_density_study_logs_its_run(tmp_path, monkeypatch):
+    def optimize(domain, settings, progress_callback):
+        return {"status": "ok", "density": np.full(domain["allowed"].shape, 0.5), "summary": {"iterations": 3}, "diagnostics": []}
+    monkeypatch.setattr(topology_study, "optimize_topology", optimize)
+    assert topology_study.run_main({"directory": str(tmp_path / "density"), "max_iterations": 3, "run_log": str(tmp_path / "run_log.jsonl")}) == 0
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert line["kind"] == "density" and line["success"] and line["iterations"] == 3 and line["run_dir"] == str((tmp_path / "density").resolve())
+
+def test_raster_study_logs_one_ledger_line_per_candidate(tmp_path, monkeypatch):
+    inputs = {"input_sha256": "raster-input", "baseline_reference_frame_mass_g": 1.0, "thresholds": [0.1, 0.2], "reconstruction_settings": {}, "parameters": {}, "relative_constraints": {"frame_mass_ratio_max": 2.0}}
+    monkeypatch.setattr(workstation, "prepare", lambda *a: (inputs, {"material": {"density_g_cm3": 1.0}}, np.zeros(1)))
+    monkeypatch.setattr(workstation, "build_geometry", lambda parameters: SimpleNamespace(volume=1000.0))
+    def reconstruct(*a):
+        raise ValueError("no solid")
+    monkeypatch.setattr(workstation, "reconstruct_topology", reconstruct)
+    config = {"source": str(tmp_path / "source"), "output": str(tmp_path / "raster"), "geometry_only": True, "run_log": str(tmp_path / "run_log.jsonl")}
+    workstation.candidates_main(config)
+    lines = ledger(tmp_path / "run_log.jsonl")
+    assert [line["candidate"] for line in lines] == ["density_t00", "density_t01"] and [line["parameters"]["threshold"] for line in lines] == [0.1, 0.2]
+    assert all(line["kind"] == "raster" and not line["success"] and line["failure_stage"] == "geometry" and line["source_sha256"] == "raster-input" and line["runtime_s"] >= 0 for line in lines)
+    workstation.candidates_main(config)
+    assert len(ledger(tmp_path / "run_log.jsonl")) == 2
+
+def fake_fea(calls):
+    def evaluate(solid, material, masses, cases, settings):
+        calls.append(settings["work_dir"])
+        return {"status": "ok", "frame_mass_g": solid.volume * material["density_g_cm3"] / 1000, "stiffness_n_per_mm": 10.0, "max_displacement_mm": 0.1, "max_von_mises_mpa": 1.0,
+                "eigenfrequencies_hz": [100.0], "mesh": {"attempts": [{"name": "remesh_hxt", "status": "ok", "runtime_s": 0.5}]},
+                "load_cases": {case["name"]: {"analysis": case["analysis"], **({"eigenfrequencies_hz": [100.0]} if case["analysis"] == "modal" else {"max_displacement_mm": 0.1, "max_von_mises_mpa": 1.0})} for case in cases}}
+    return evaluate
+
+def implicit_source(tmp_path, connected=True):
+    historical = current_inputs()
+    domain, density = mounted_domain()
+    if not connected:
+        density[28:40] = 0.0
+    masks = {name: domain.pop(name) for name in ("allowed", "preserve", "forbidden")}
+    domain.update({name: historical["domain"][name] for name in ("material", "point_masses", "comparison_load_cases", "fea_settings")})
+    source = tmp_path / "source"
+    source.mkdir()
+    pipeline.write(source / "inputs.json", {"parameters": historical["parameters"], "domain": domain, "settings": {"linear_solver": "cpu_superlu"},
+                                            "mask_sha256": {name: hashlib.sha256(mask.tobytes()).hexdigest() for name, mask in masks.items()}})
+    pipeline.write(source / "result.json", {"status": "ok"})
+    np.savez_compressed(source / "fields.npz", density=density, **masks)
+    np.savez_compressed(source / "domain_masks.npz", **masks)
+    pipeline.write(source / "manifest.json", {"status": "ok", "artifacts": pipeline.artifacts(source)})
+    return source
+
+def implicit_config(tmp_path, source, **changes):
+    return {"source": str(source), "output": str(tmp_path / "study"), "reference_step": str(tmp_path / "reference.step"), "run_log": str(tmp_path / "run_log.jsonl"),
+            "subdivisions": 4, "thresholds": [0.35], "extensions": ["preserve"], "curvature_samples": 500, **changes}
+
+def test_implicit_study_accepts_connected_mounts_and_logs_success(tmp_path, monkeypatch):
+    source, calls = implicit_source(tmp_path), []
+    reference = {"source": "reference.step", "sha256": "0" * 64, "volume_mm3": 729.0, "curvature": None,
+                 "metrics": {"free_sharp_edge_length_per_area_per_mm": 1e3, "free_axis_normal_area_fraction": 1e3}}
+    monkeypatch.setattr(implicit, "reference_geometry", lambda path, domain, config: (trimesh.creation.box(extents=(9, 9, 9)), reference))
+    monkeypatch.setattr(implicit, "build_geometry", lambda parameters: Box(20, 20, 20))
+    monkeypatch.setattr(implicit, "evaluate", fake_fea(calls))
+    monkeypatch.setattr(implicit, "_provenance", lambda *args: {})
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps(implicit_config(tmp_path, source, section_heights_mm=[7.0, 27.0])), encoding="utf-8")
+    assert implicit.main(["run", str(path)]) == 0
+    output = tmp_path / "study"
+    manifest = _read(output / "manifest.json")
+    assert manifest["status"] == "complete" and manifest["overall_acceptance"] and manifest["selected_id"] == "c00"
+    assert manifest["success_rate"] == 1.0 and manifest["geometry_success_rate"] == 1.0 and manifest["runtime_per_candidate_s"]["max"] > 0
+    assert manifest["candidates"][0]["record_sha256"] == _file_digest(output / "candidates/c00/record.json")
+    assert manifest["domain_currency"]["regions_current"] is False
+    record = _read(output / "candidates/c00/record.json")
+    assert record["status"] == "accepted" and record["success"] and record["validation"]["passed"] and record["comparison"]["passed"]
+    assert {"extension", "extraction", "remesh", "booleans", "export", "validation", "metrics", "renders", "fea", "fea_mesh", "fea_solve"} <= set(record["timings_s"])
+    assert record["parameters"]["h_mm"] == pytest.approx(0.25) and record["curvature"]["sample_count"] > 0 and record["surface_metrics"]["triangle_count"] > 0
+    assert record["final_mesh"]["files"]["geometry.stl"]["sha256"] == _file_digest(output / "candidates/c00/geometry.stl")
+    assert sorted(record["renders"]["images"]) == ["section_z27", "section_z7", "view_front", "view_isometric", "view_side", "view_top"]
+    assert all(_file_digest(output / "candidates/c00/renders" / image["path"]) == image["sha256"] for image in record["renders"]["images"].values())
+    assert record["renders"]["sections"][0]["loops"] > 0 and record["renders"]["sections"][1]["loops"] == 0
+    assert len(calls) == 2 and _read(output / "baseline/record.json")["status"] == "ok"
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert line["kind"] == "implicit" and line["candidate"] == "c00" and line["success"] and line["failure_stage"] is None
+    assert line["source_sha256"] == manifest["source_manifest_sha256"] and line["timings_s"]["renders"] > 0 and line["parameters"]["extension"] == "preserve"
+
+def test_implicit_study_rejects_disconnected_mount_and_summarizes_ledger(tmp_path, monkeypatch):
+    source = implicit_source(tmp_path, connected=False)
+    export_step(Box(9, 9, 9), tmp_path / "reference.step")
+    monkeypatch.setattr(implicit, "build_geometry", lambda parameters: Box(20, 20, 20))
+    monkeypatch.setattr(implicit, "evaluate", lambda *a: pytest.fail("No FEA for a rejected candidate"))
+    monkeypatch.setattr(implicit, "_provenance", lambda *args: {})
+    assert implicit.run_main(implicit_config(tmp_path, source, geometry_only=True)) == 0
+    output = tmp_path / "study"
+    manifest = _read(output / "manifest.json")
+    assert manifest["status"] == "complete" and not manifest["overall_acceptance"] and manifest["success_rate"] == 0.0 and manifest["geometry_success_rate"] == 0.0
+    cached = _read(output / "reference_metrics.json")
+    assert cached["sha256"] == _file_digest(tmp_path / "reference.step") and cached["metrics"]["free_axis_normal_area_fraction"] == pytest.approx(1.0)
+    assert manifest["comparison_reference"]["sha256"] == cached["sha256"]
+    record = _read(output / "candidates/c00/record.json")
+    assert record["status"] == "mount_disconnected" and record["failure_stage"] == "field" and not (output / "candidates/c00/geometry.stl").exists()
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert not line["success"] and line["status"] == "mount_disconnected" and line["failure_stage"] == "field"
+    assert implicit.summarize_main({"run_log": str(tmp_path / "run_log.jsonl"), "output": str(tmp_path / "summary.json")}) == 0
+    run, = _read(tmp_path / "summary.json")["runs"]
+    assert run["kind"] == "implicit" and run["candidates"] == 1 and run["success_rate"] == 0.0 and run["statuses"] == {"mount_disconnected": 1}
+
+def test_comparison_inputs_check_saved_physics_against_the_saved_parameters():
+    historical, saved = current_inputs(), _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
+    variant = deepcopy(historical)
+    variant["parameters"]["frame"]["wheelbase_mm"] = 131.0
+    variant["domain"] = pipeline.build_design_domain(deepcopy(variant["parameters"]))
+    assert variant["domain"]["comparison_load_cases"] != historical["domain"]["comparison_load_cases"]
+    reference, settings = pipeline.comparison_inputs(variant, variant["domain"], 60.0, 70.0)
+    assert reference["settings"]["relative_constraints"] == saved["settings"]["relative_constraints"] and settings["mesh_timeout_s"] == 60.0
+    with pytest.raises(ValueError, match="not consistent with the saved parameters: comparison_load_cases"):
+        pipeline.comparison_inputs(variant, historical["domain"], 60.0, 70.0)
+    tampered = deepcopy(variant["domain"])
+    tampered["point_masses"][0]["mass_g"] += 1.0
+    with pytest.raises(ValueError, match="point_masses"):
+        pipeline.comparison_inputs(variant, tampered, 60.0, 70.0)
+
+def implicit_fakes(monkeypatch, calls):
+    reference = {"source": "reference.step", "sha256": "0" * 64, "volume_mm3": 729.0, "curvature": None,
+                 "metrics": {"free_sharp_edge_length_per_area_per_mm": 1e3, "free_axis_normal_area_fraction": 1e3}}
+    monkeypatch.setattr(implicit, "reference_geometry", lambda path, domain, config: (trimesh.creation.box(extents=(9, 9, 9)), reference))
+    monkeypatch.setattr(implicit, "build_geometry", lambda parameters: Box(20, 20, 20))
+    monkeypatch.setattr(implicit, "evaluate", fake_fea(calls))
+    monkeypatch.setattr(implicit, "_provenance", lambda *args: {})
+
+def test_implicit_study_logs_a_ledger_line_when_preparation_fails(tmp_path, monkeypatch):
+    source = implicit_source(tmp_path)
+    inputs = _read(source / "inputs.json")
+    inputs["domain"]["point_masses"][0]["mass_g"] += 1.0
+    pipeline.write(source / "inputs.json", inputs)
+    pipeline.write(source / "manifest.json", {"status": "ok", "artifacts": pipeline.artifacts(source)})
+    implicit_fakes(monkeypatch, [])
+    assert implicit.run_main(implicit_config(tmp_path, source, geometry_only=True)) == 1
+    manifest = _read(tmp_path / "study/manifest.json")
+    assert manifest["status"] == "failed" and "point_masses" in manifest["error"]
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert line["candidate"] is None and line["status"] == "failed" and line["failure_stage"] == "prepare" and not line["success"] and "point_masses" in line["error"]
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_diagnostic_fea_runs_only_when_features_is_the_only_failing_check(tmp_path, monkeypatch, enabled):
+    source, calls = implicit_source(tmp_path), []
+    implicit_fakes(monkeypatch, calls)
+    validate = implicit.validate_implicit
+    def features_only(*args):
+        result = validate(*args)
+        result.update(passed=False, violations=["features"])
+        return result
+    monkeypatch.setattr(implicit, "validate_implicit", features_only)
+    assert implicit.run_main(implicit_config(tmp_path, source, diagnostic_fea=enabled)) == 0
+    record = _read(tmp_path / "study/candidates/c00/record.json")
+    assert record["status"] == "geometry_invalid" and not record["success"] and record["failure_stage"] == "validation" and not record["geometry_valid"]
+    assert len(calls) == (2 if enabled else 0) and record.get("fea_diagnostic_only", False) == enabled and ("comparison" in record) == enabled
+    manifest = _read(tmp_path / "study/manifest.json")
+    assert not manifest["overall_acceptance"] and manifest["success_rate"] == 0.0
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert line["status"] == "geometry_invalid" and not line["success"]
+
+def test_implicit_study_flags_sources_built_on_older_prescribed_geometry():
+    from deep_frame.topology_geometry import build_design_domain
+    parameters = topology_study.study_parameters([34, 32, 8])
+    built = build_design_domain(parameters)
+    domain = {**json.loads(json.dumps({key: built[key] for key in ("grid", "regions")})), **{name: built[name].copy() for name in ("allowed", "preserve", "forbidden")}}
+    assert implicit.domain_currency(parameters, domain) == {"regions_current": True, "grid_current": True, "mask_cells_changed": {"allowed": 0, "preserve": 0, "forbidden": 0}, "prescribed_clearance_passed": True}
+    contact = next(region for region in domain["regions"] if region["name"] == "battery_rail_1")
+    contact["max_mm"][2] = 28.0
+    domain["preserve"].flat[np.flatnonzero(domain["preserve"])[0]] = False
+    stale = implicit.domain_currency(parameters, domain)
+    assert not stale["regions_current"] and stale["mask_cells_changed"]["preserve"] == 1
+
+def test_implicit_study_rejects_unknown_keys_and_used_output(tmp_path):
+    path = tmp_path / "config.json"
+    path.write_text(json.dumps({"source": "s", "output": "o", "opening_radius": 1.0}), encoding="utf-8")
+    with pytest.raises(ValueError, match="Unknown configuration keys: opening_radius"):
+        implicit.main(["run", str(path)])
+    with pytest.raises(SystemExit):
+        implicit.main(["build", str(path)])
+    (tmp_path / "used").mkdir()
+    (tmp_path / "used/old.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="new empty output"):
+        implicit.run_main({"source": str(tmp_path), "output": str(tmp_path / "used")})
+
 DEFAULTS = {"name": None, "count": 3, "scale": 1.0, "flag": False, "path": None, "mode": "a", "shape": [1, 2, 3], "items": ["x"]}
 KINDS = {"name": "text", "count": "int", "scale": "float", "flag": "flag", "path": "path", "mode": ("a", "b"),
          "shape": ["int"] * 3, "items": ["text"]}
@@ -797,3 +1058,56 @@ def test_command_line_passes_parsed_json_or_empty_overrides(tmp_path):
     path.write_text('{"count": 4}', encoding="utf-8-sig")
     assert command_line({"run": lambda overrides: overrides}, ["run", str(path)]) == {"count": 4}
     assert command_line({"run": lambda overrides: overrides}, ["run"]) == {}
+
+def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
+    spec = compute.request("fea_modal", [sys.executable, "-c", "import os,sys; open('out.txt','w').write(os.environ['OMP_NUM_THREADS']+os.environ['CALCULIX_PATH']); sys.exit(3)"],
+                           tmp_path, {"CALCULIX_PATH": "ccx", "HOME": "x", "DEEP_FRAME_SEED": "1"})
+    need = compute.JOB_TYPES["fea_modal"]
+    assert (spec["entrypoint_num_cpus"], spec["entrypoint_memory"], spec["entrypoint_resources"]) == (need["num_cpus"], need["memory_gb"] * 2**30, None)
+    assert compute.request("density_neural", ["x"], tmp_path)["entrypoint_resources"] == {"gpu_gb": compute.JOB_TYPES["density_neural"]["gpu_gb"]}
+    token = spec["entrypoint"].split()[-1]
+    assert compute.main(["exec", token]) == 3
+    assert (tmp_path / "out.txt").read_text() == str(need["num_cpus"]) + "ccx"
+    with pytest.raises(SystemExit):
+        compute.main(["unknown", "--", "x"])
+
+def test_round2_domain_lifts_pads_and_adds_camera_hoops():
+    full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
+    z = neural_study.grid_centers(full["grid"])[..., 2]
+    pads = neural_study.anchors(full)
+    pad = neural_study.STUDY["pad"]
+    bottom = pad["top_mm"] - pad["thickness_mm"]
+    assert pads.any() and z[pads].min() >= bottom and z[pads].max() <= pad["top_mm"]
+    assert full["metadata"]["round2"]["hoop_cells"] > 0 and not np.any(full["preserve"] & ~full["allowed"])
+    cases = {case["name"]: case for case in full["load_cases"]}
+    assert "crash_hoop" in cases and half["optimizer_settings"]["case_weights"]["crash_hoop"] == 1.0
+    assert all(box["min_mm"][2] == pytest.approx(bottom - 0.01) for box in cases["battery_impact"]["fixed_regions"])
+
+def test_round3_domain_turns_flight_and_crash_cases_into_inertia_relief():
+    full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16], 0.05)
+    cases = {case["name"]: case for case in half["load_cases"]}
+    relief = [name for name, case in cases.items() if "inertia_relief" in case]
+    assert {"arm_tip", "thrust_all", "crash_hoop", "crash_below"} <= set(relief) and all(not cases[name]["fixed_regions"] for name in relief)
+    assert "inertia_relief" not in cases["battery_impact"] and cases["battery_impact"]["fixed_regions"]
+    masses = cases["thrust_all"]["inertia_relief"]
+    assert sum(item["mass_g"] for item in masses["point_masses"]) == pytest.approx(37.0 + 7.2 + 2.3 + 4 * (4.5 + 1.2))
+    assert masses["preserve_mass_g"] == pytest.approx(0.05 * full["metadata"]["allowed_volume_mm3"] * 1.09 / 1000)
+
+def test_lower_chord_detects_a_continuous_low_member():
+    grid = {"origin_mm": [-30.0, -30.0, 0.0], "spacing_mm": [1.0, 1.0, 1.0], "shape": [60, 60, 20]}
+    density = np.zeros(grid["shape"])
+    density[27:33, 2:58, 2:6] = 1
+    cfg = {"half_width_mm": 20.0, "z_max_mm": 10.0, "y_span_mm": [-25.0, 25.0]}
+    assert neural_study.lower_chord(density, grid, cfg)["lower_chord"]
+    density[:, 28:32] = 0
+    report = neural_study.lower_chord(density, grid, cfg)
+    assert not report["lower_chord"] and report["y_slice_coverage"] < 1
+
+def test_keep_connected_drops_floating_parts():
+    field = np.zeros((20, 10, 10))
+    field[1:8, 2:6, 2:6], field[12:18, 2:6, 2:6] = 1, 1
+    anchor = np.zeros(field.shape, dtype=bool)
+    anchor[2, 3, 3] = True
+    kept, report = neural_study.keep_connected(field, {"spacing_mm": [1, 1, 1]}, 0.5, anchor)
+    assert report["components_raw"] == 2 and report["dropped_count"] == 1 and report["dropped_volume_mm3"] == 96
+    assert kept[3, 3, 3] == 1 and not kept[12:18].any()

@@ -1,0 +1,40 @@
+{
+ "name": "ManaFly 3 BETA V4",
+ "stl": "C:/clones/Deep_Frame-neural/exports/manafly_ref/manafly3_repaired.stl",
+ "output": "C:/clones/Deep_Frame-eval/exports/evaluation/manafly3",
+ "print_axis": [0, 0, 1],
+ "prop_diameter_mm": 76.2,
+ "motors": {"front_left": [-56.6, 56.6, 10.0], "front_right": [56.6, 56.6, 10.0], "rear_left": [-56.6, -56.6, 10.0], "rear_right": [56.6, -56.6, 10.0]},
+ "components": [{"type": "battery", "center_mm": [0, 0, 33.3]}, {"type": "aio15", "center_mm": [0, 11, 8.0]}, {"type": "camera", "center_mm": [0, 50, 16.0]}],
+ "mount_patterns": [
+  {"name": "motor_front_left", "center_mm": [-56.6, 56.6], "z_mm": 8.5, "radius_mm": 4.5, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]},
+  {"name": "motor_front_right", "center_mm": [56.6, 56.6], "z_mm": 8.5, "radius_mm": 4.5, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]},
+  {"name": "motor_rear_left", "center_mm": [-56.6, -56.6], "z_mm": 8.5, "radius_mm": 4.5, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]},
+  {"name": "motor_rear_right", "center_mm": [56.6, -56.6], "z_mm": 8.5, "radius_mm": 4.5, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]},
+  {"name": "stack_20", "center_mm": [0, 11], "z_mm": 1.0, "radius_mm": 14.142, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]},
+  {"name": "stack_25.5", "center_mm": [0, 11], "z_mm": 1.0, "radius_mm": 18.031, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]}
+ ],
+ "keep_outs": [
+  {"name": "battery_envelope", "kind": "box", "min_mm": [-15.0, -31.5, 27.9], "max_mm": [15.0, 31.5, 38.9]},
+  {"name": "aio15_envelope", "kind": "box", "min_mm": [-15.65, -4.65, 5.0], "max_mm": [15.65, 26.65, 11.0]},
+  {"name": "camera_envelope", "kind": "box", "min_mm": [-8.0, 43.0, 9.0], "max_mm": [8.0, 57.0, 23.0]}
+ ],
+ "connectors": [],
+ "selectors": {
+  "center_fixtures": [
+   {"kind": "box", "min_mm": [-3.2, -9.9, -0.35], "max_mm": [3.2, -3.5, 0.35]},
+   {"kind": "box", "min_mm": [-3.2, 25.5, -0.35], "max_mm": [3.2, 31.9, 0.35]},
+   {"kind": "box", "min_mm": [-20.85, 7.8, -0.35], "max_mm": [-14.45, 14.2, 0.35]},
+   {"kind": "box", "min_mm": [14.45, 7.8, -0.35], "max_mm": [20.85, 14.2, 0.35]}],
+  "motor_fixtures": [
+   {"kind": "box", "min_mm": [-66.2, 47.0, 6.65], "max_mm": [-47.0, 66.2, 7.35]},
+   {"kind": "box", "min_mm": [47.0, 47.0, 6.65], "max_mm": [66.2, 66.2, 7.35]},
+   {"kind": "box", "min_mm": [-66.2, -66.2, 6.65], "max_mm": [-47.0, -47.0, 7.35]},
+   {"kind": "box", "min_mm": [47.0, -66.2, 6.65], "max_mm": [66.2, -47.0, 7.35]}],
+  "arm_tip": {"kind": "box", "min_mm": [-66.2, 47.0, 9.65], "max_mm": [-47.0, 66.2, 10.35]},
+  "arm_motor": "front_left",
+  "camera": {"kind": "box", "min_mm": [-17.5, 38.0, 28.0], "max_mm": [17.5, 56.0, 32.6]},
+  "deck": {"kind": "box", "min_mm": [-20.1, -2.0, 26.65], "max_mm": [20.1, 2.0, 27.35]},
+  "battery_center_mm": [0.0, 0.0, 32.5]
+ }
+}
