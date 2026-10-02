@@ -25,8 +25,8 @@ PROPAGATION_PASSES = 2
 ZERO_EDGE = 1e-9
 RESTORE_INSET_CELLS = 0.1
 INPUT_SNAP_MM = 1e-6
-GATE_MAXIMA = ("detached_volume_max_fraction", "surface_deviation_mm", "relative_volume_change", "segment_tolerance_mm", "penetration_tolerance_mm", "penetration_sample_spacing_mm", "free_zone_preserve_mm", "free_zone_constraint_mm", "free_zone_modified_mm", "mesh_boundary_deviation_mm")
-GATE_MINIMA = ("free_zone_minimum_samples", "free_zone_opening_cells", "mesh_minimum_sicn")
+GATE_MAXIMA = ("detached_volume_max_fraction", "surface_deviation_mm", "relative_volume_change", "segment_tolerance_mm", "penetration_tolerance_mm", "penetration_sample_spacing_mm", "free_zone_preserve_mm", "free_zone_constraint_mm", "free_zone_modified_mm", "mesh_boundary_deviation_mm", "wall_voxel_mm", "wall_deep_mm", "wall_deep_max_fraction", "wall_deep_component_max_mm3")
+GATE_MINIMA = ("free_zone_minimum_samples", "free_zone_opening_cells", "mesh_minimum_sicn", "wall_opening_radius_mm", "wall_motor_zone_margin_mm")
 
 class ImplicitError(ValueError):
     def __init__(self, status, message, report, mesh=None):

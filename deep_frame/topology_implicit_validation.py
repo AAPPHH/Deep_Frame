@@ -5,6 +5,10 @@ from time import perf_counter
 import numpy as np
 import trimesh
 from scipy.ndimage import distance_transform_edt, maximum_filter
+from scipy.sparse import coo_matrix
+from scipy.sparse.csgraph import connected_components
+
+from deep_frame.config import IMPLICIT_CONFIG, TOPOLOGY_CONFIG
 
 from deep_frame.topology_geometry import _primitive_wall_checks, _trapped_voids, region_bounds
 from deep_frame.topology_implicit import AXES, ImplicitField, _bounds, _envelope, _manifold, _point_distances, _surface_samples, float32_margin, frozen_gates, mesh_checks, primitive_distance, region_manifold
@@ -62,7 +66,7 @@ def bore_allowance(points, bores, margin):
         allowance[on] = np.fmax(allowance[on], polygon["oversize_mm"])
     return allowance
 
-def wall_screen(mesh, minimum, settings, crease_deg, bores=(), margin=0.0):
+def wall_screen(mesh, minimum, settings, crease_deg, bores=(), margin=0.0, levels=()):
     started = perf_counter()
     spacing, tolerance, guard = settings["wall_sample_spacing_mm"], settings["wall_tolerance_mm"], 1e-7
     triangles = mesh.triangles
@@ -89,6 +93,7 @@ def wall_screen(mesh, minimum, settings, crease_deg, bores=(), margin=0.0):
     thickness = np.full(len(points), np.inf)
     np.minimum.at(thickness, rays[beyond], distances[beyond])
     thin = thickness < minimum-tolerance
+    raw = {"below_minimum": float(thin.mean()), **{str(level): float((thickness < level).mean()) for level in levels}}
     candidates = np.flatnonzero(thin)
     allowance = bore_allowance(points[candidates], bores, margin)+bore_allowance(points[candidates]-thickness[candidates, None]*directions[candidates], bores, margin)
     web = np.isfinite(allowance)
@@ -103,7 +108,7 @@ def wall_screen(mesh, minimum, settings, crease_deg, bores=(), margin=0.0):
     return {"passed": bool(len(points) and not thin.any() and not unresolved.any()), "complete": True, "minimum_required_mm": minimum, "query_upper_bound_mm": minimum+tolerance,
             "minimum_measured_mm": float(thickness[lowest]) if lowest is not None else None,
             "minimum_sample": {"face": int(sources[lowest]), "position_mm": points[lowest].tolist(), "thickness_mm": float(thickness[lowest])} if lowest is not None else None,
-            "ray_count": len(points), "rays_clear_through_upper_bound": int(np.count_nonzero(~measured)), "thin_sample_count": int(thin.sum()), "unresolved_sample_count": int(unresolved.sum()),
+            "ray_count": len(points), "rays_clear_through_upper_bound": int(np.count_nonzero(~measured)), "thin_sample_count": int(thin.sum()), "raw_thin_fraction": raw, "unresolved_sample_count": int(unresolved.sum()),
             "prescribed_bore_web": {"sample_count": int(bore_web.sum()), "minimum_measured_mm": float(thickness[bore_web].min()) if bore_web.any() else None, "maximum_allowance_mm": float(allowance[web].max()) if web.any() else None,
                                     "method": "Chords whose origin and hit both lie on the realised circumscribed polygon of a prescribed bore (rasterize=False keep-out cylinder, radial band [r, cut radius] within the binary32 margin) may fall short of the minimum by the sum of the two polygons' oversize from segment count and radius; all other chords keep the strict minimum"},
             "thin_samples": [{"face": int(sources[i]), "position_mm": points[i].tolist(), "thickness_mm": float(thickness[i])} for i in np.flatnonzero(thin)[:30]],
@@ -111,6 +116,123 @@ def wall_screen(mesh, minimum, settings, crease_deg, bores=(), margin=0.0):
             "ray_origin_exclusion_mm": guard, "maximum_sample_triangle_edge_mm": spacing, "normal_crease_deg": crease_deg, "elapsed_s": perf_counter()-started,
             "method": "Final mesh triangles subdivided until every sample triangle edge meets the spacing limit; float64 Moller-Trumbore along the inward surface normal (barycentric interpolation of angle-weighted corner normals over incident faces within the remeshing feature angle, so sharp creases keep the facet normal) over (1e-7, minimum + tolerance] against rtree-culled triangles; another triangle hit within +/-1e-7 of an otherwise passing origin is unresolved",
             "limitations": "Finite normal-chord screen, not a global minimum-thickness proof; sharp convex wedges can be conservatively rejected"}
+
+def minimum_wall(manufacturing=TOPOLOGY_CONFIG["manufacturing"]):
+    return max(manufacturing["nozzle_width_mm"]*manufacturing["minimum_wall_nozzles"], manufacturing["minimum_feature_mm"])
+
+def occupancy(mesh, h, pad):
+    lower = mesh.bounds[0]-pad-np.append(COLUMN_JITTER*h, 0.0)
+    shape = np.ceil((mesh.bounds[1]+pad-lower)/h).astype(int)
+    triangles = mesh.triangles
+    plan = triangles[:, :, :2]
+    first, second = plan[:, 1]-plan[:, 0], plan[:, 2]-plan[:, 0]
+    determinant = first[:, 0]*second[:, 1]-first[:, 1]*second[:, 0]
+    keep = np.abs(determinant) > 1e-14
+    triangles, plan, determinant = triangles[keep], plan[keep], determinant[keep]
+    low = np.maximum(np.ceil((plan.min(axis=1)-lower[:2])/h-0.5).astype(int), 0)
+    high = np.minimum(np.floor((plan.max(axis=1)-lower[:2])/h-0.5).astype(int), shape[:2]-1)
+    spans = high-low+1
+    count = np.where((spans > 0).all(axis=1), spans.prod(axis=1), 0)
+    delta = np.zeros((shape[0], shape[1], shape[2]+1), np.int8)
+    for start in range(0, len(triangles), 200000):
+        block = count[start:start+200000]
+        index = np.repeat(np.arange(start, start+len(block)), block)
+        offset = np.arange(block.sum())-np.repeat(np.cumsum(block)-block, block)
+        column = low[index]+np.column_stack((offset//spans[index, 1], offset % spans[index, 1]))
+        query = lower[:2]+(column+0.5)*h
+        a, b, c, d = plan[index, 0], plan[index, 1], plan[index, 2], determinant[index]
+        u = ((query[:, 0]-a[:, 0])*(c[:, 1]-a[:, 1])-(query[:, 1]-a[:, 1])*(c[:, 0]-a[:, 0]))/d
+        v = ((b[:, 0]-a[:, 0])*(query[:, 1]-a[:, 1])-(b[:, 1]-a[:, 1])*(query[:, 0]-a[:, 0]))/d
+        inside = (u >= 0) & (v >= 0) & (u+v <= 1)
+        index, column, u, v = index[inside], column[inside], u[inside], v[inside]
+        z = triangles[index, :, 2]
+        level = np.clip(np.ceil((z[:, 0]+u*(z[:, 1]-z[:, 0])+v*(z[:, 2]-z[:, 0])-lower[2])/h-0.5).astype(int), 0, shape[2])
+        np.add.at(delta, (column[:, 0], column[:, 1], level), -np.sign(d[inside]).astype(np.int8))
+    winding = np.cumsum(delta, axis=2, dtype=np.int8)
+    open_columns = winding[:, :, -1] != 0
+    solid = winding[:, :, :-1] != 0
+    solid[open_columns] = False
+    return solid, lower, int(open_columns.sum())
+
+def morphological_opening(solid, h, radius, tile):
+    halo, opened, depths = 2*(int(np.ceil(radius/h))+1), np.zeros_like(solid), []
+    for start in range(0, solid.shape[0], tile):
+        stop = min(start+tile, solid.shape[0])
+        low, high = max(start-halo, 0), min(stop+halo, solid.shape[0])
+        part = solid[low:high]
+        central = part[start-low:stop-low]
+        if not central.any():
+            continue
+        depth = distance_transform_edt(part, sampling=h)
+        eroded = depth >= radius-1e-9
+        if eroded.any():
+            opened[start:stop] = (distance_transform_edt(~eroded, sampling=h) <= radius+1e-9)[start-low:stop-low] & central
+        depths.append(depth[start-low:stop-low][central & ~opened[start:stop]])
+    return opened, np.concatenate(depths) if depths else np.zeros(0)
+
+def voxel_components(coords, shape):
+    linear = np.ravel_multi_index(coords.T, shape)
+    rows, columns = [], []
+    for offset in product((-1, 0, 1), repeat=3):
+        if offset > (0, 0, 0):
+            target = np.ravel_multi_index((coords+offset).T, shape)
+            position = np.minimum(np.searchsorted(linear, target), len(linear)-1)
+            hit = linear[position] == target
+            rows.append(np.flatnonzero(hit))
+            columns.append(position[hit])
+    rows, columns = np.concatenate(rows), np.concatenate(columns)
+    return connected_components(coo_matrix((np.ones(len(rows)), (rows, columns)), shape=(len(linear),)*2), directed=False)
+
+def motor_zones(regions):
+    return [region for region in regions if region["role"] == "preserve" and "motor" in region["name"]]
+
+def wall_opening(mesh, config=IMPLICIT_CONFIG, zones=()):
+    started = perf_counter()
+    h, radius, margin = config["wall_voxel_mm"], config["wall_opening_radius_mm"], config["wall_motor_zone_margin_mm"]
+    solid, lower, unbalanced = occupancy(mesh, h, radius+2*h)
+    opened, depth = morphological_opening(solid, h, radius, config["wall_tile_voxels"])
+    total, shape = float(solid.sum()*h**3), solid.shape
+    coords = np.argwhere(solid & ~opened)
+    del opened, solid
+    count, ids = voxel_components(coords, shape) if len(coords) else (0, np.zeros(0, dtype=int))
+    sizes = np.bincount(ids, minlength=count)*h**3
+    deepest = np.zeros(count)
+    np.maximum.at(deepest, ids, depth)
+    deep = deepest >= config["wall_deep_mm"]
+    points = lower+(coords+0.5)*h
+    hits = {}
+    for region in zones:
+        low, high = _bounds(region)
+        inside = np.all((points >= low-margin) & (points <= high+margin), axis=1)
+        found = np.unique(ids[inside & deep[ids]])
+        if len(found):
+            hits[region["name"]] = {"components": len(found), "volume_mm3": float(sizes[found].sum())}
+    volume, largest = float(sizes[deep].sum()), float(sizes[deep].max()) if deep.any() else 0.0
+    top = []
+    for component in np.flatnonzero(deep)[np.argsort(sizes[deep])[::-1][:10]]:
+        member = points[ids == component]
+        top.append({"volume_mm3": float(sizes[component]), "max_depth_mm": float(deepest[component]), "centroid_mm": member.mean(axis=0).round(3).tolist(), "extent_mm": (member.max(axis=0)-member.min(axis=0)+h).round(3).tolist()})
+    result = {"voxel_mm": h, "opening_radius_mm": radius, "deep_depth_mm": config["wall_deep_mm"], "grid_shape": list(shape), "unbalanced_columns": unbalanced, "part_volume_mm3": total, "removed_volume_mm3": float(sizes.sum()), "components": int(count),
+              "deep_components": int(deep.sum()), "deep_volume_mm3": volume, "deep_fraction": volume/total if total else 1.0, "largest_deep_mm3": largest, "shallow_volume_mm3": float(sizes[~deep].sum()),
+              "motor_zone_hits": hits, "motor_zones": [region["name"] for region in zones], "largest_deep_components": top,
+              "limits": {"deep_max_fraction": config["wall_deep_max_fraction"], "deep_component_max_mm3": config["wall_deep_component_max_mm3"], "motor_zone_margin_mm": margin}, "elapsed_s": perf_counter()-started,
+              "method": "Winding-number voxelisation at h; exact EDT opening with a ball of the radius (erosion EDT >= r, dilation EDT <= r) tiled along x with halo; removed voxels grouped with 26-connectivity; deep components reach the depth below the original surface (true walls under 2 r), shallow ones are edge rounding",
+              "status": "Provisional: calibrated on the ManaFly 3 BETA V4 manufacturer geometry (no own test); final after own drop tests in M2"}
+    result["passed"] = bool(total > 0 and not unbalanced and result["deep_fraction"] <= config["wall_deep_max_fraction"] and largest <= config["wall_deep_component_max_mm3"] and not hits)
+    return result
+
+def wall_rule(mesh, regions=(), config=IMPLICIT_CONFIG, settings=None, minimum=None, bores=(), margin=0.0):
+    minimum = minimum_wall() if minimum is None else minimum
+    settings = settings or _validation_settings({"maximum_wall_samples": config["maximum_wall_samples"]})
+    opening = wall_opening(mesh, config, motor_zones(regions))
+    rays = wall_screen(mesh, minimum, settings, config["remesh_feature_deg"], bores, margin, (config["wall_very_thin_mm"],))
+    raw = rays.get("raw_thin_fraction", {})
+    thin, very = raw.get("below_minimum"), raw.get(str(config["wall_very_thin_mm"]))
+    warning = {"blocking": config["wall_screen_blocking"], "screen_passed": rays["passed"], "thin_sample_count": rays.get("thin_sample_count"), "minimum_measured_mm": rays.get("minimum_measured_mm"),
+               "thin_fraction": thin, "very_thin_mm": config["wall_very_thin_mm"], "very_thin_fraction": very, "thin_max_fraction": config["wall_thin_max_fraction"], "very_thin_max_fraction": config["wall_very_thin_max_fraction"],
+               "passed": thin is not None and thin <= config["wall_thin_max_fraction"] and very <= config["wall_very_thin_max_fraction"],
+               "method": "Ray screen shares before any bore allowance; recorded as a warning, the opening rule blocks"}
+    return {"wall_opening": opening, "mesh_wall_screen": rays, "wall_warning": warning, "passed": opening["passed"] and (rays["passed"] or not config["wall_screen_blocking"])}
 
 def _lattice(triangles, spacing):
     counts = np.maximum(np.ceil(np.linalg.norm(triangles-np.roll(triangles, -1, axis=1), axis=2).max(axis=1)/spacing).astype(int), 1)
@@ -171,7 +293,7 @@ class MeshAcceptance:
         self.mesh, self.domain, self.config, self.settings = mesh, domain, config, settings
         self.tolerance = settings["volume_tolerance_mm3"]
         manufacturing = domain["manufacturing"]
-        self.minimum = max(manufacturing["nozzle_width_mm"]*manufacturing["minimum_wall_nozzles"], manufacturing["minimum_feature_mm"])
+        self.minimum = minimum_wall(manufacturing)
         self.regions = {role: [region for region in domain["regions"] if region["role"] == role] for role in ("allowed", "preserve", "forbidden")}
         self.margin = float32_margin(domain)
         self.stl, self.stl_report = stl_roundtrip(mesh)
@@ -252,10 +374,8 @@ class MeshAcceptance:
         opening = {"opening_radius_mm": config["opening_radius_mm"], "required_radius_mm": required, "applied": report.get("opening") is not None,
                    "method": "Opening radius covers half the minimum wall plus the EDT error h*sqrt(3)/2, the ripple-smoothing shrink sigma^2/minimum and the remeshing surface distance"}
         opening["passed"] = bool(opening["applied"] and config["opening_radius_mm"] >= required)
-        rays = wall_screen(self.mesh, self.minimum, self.settings, config["remesh_feature_deg"], prescribed_bores(self.regions["forbidden"], config["segment_tolerance_mm"], self.margin), self.margin)
-        blocking = config["wall_screen_blocking"]
-        warning = {"blocking": blocking, "passed": rays["passed"], "thin_sample_count": rays.get("thin_sample_count"), "minimum_measured_mm": rays.get("minimum_measured_mm")}
-        return {"minimum_wall_mm": self.minimum, "field_opening": opening, "mesh_wall_screen": rays, "wall_warning": warning, "passed": opening["passed"] and (rays["passed"] or not blocking)}
+        walls = wall_rule(self.mesh, self.domain["regions"], config, self.settings, self.minimum, prescribed_bores(self.regions["forbidden"], config["segment_tolerance_mm"], self.margin), self.margin)
+        return {"minimum_wall_mm": self.minimum, "field_opening": opening, **walls, "passed": opening["passed"] and walls["passed"]}
 
     def supports(self):
         started = perf_counter()

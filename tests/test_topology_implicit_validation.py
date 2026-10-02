@@ -4,7 +4,7 @@ import trimesh
 
 from deep_frame.config import TOPOLOGY_CONFIG
 from deep_frame.topology_implicit import ImplicitError, ImplicitField, _trimesh, build_implicit, exact_booleans, primitive_distance, region_manifold, remesh
-from deep_frame.topology_implicit_validation import VALIDATION_CHECKS, MeshAcceptance, ball_curvature, prescribed_bores, validate_implicit, wall_screen
+from deep_frame.topology_implicit_validation import VALIDATION_CHECKS, MeshAcceptance, ball_curvature, motor_zones, prescribed_bores, validate_implicit, wall_opening, wall_rule, wall_screen
 import deep_frame.topology_implicit_validation as validation
 from deep_frame.topology_surface_validation import _settings as _validation_settings, surface_metrics
 from tests.test_topology_implicit import CONFIG, SMALL, box, cylinder, make_domain
@@ -42,6 +42,32 @@ def test_wall_screen_follows_the_surface_on_remeshed_roundings_but_keeps_creases
     wedge = trimesh.convex.convex_hull([(x, y, z) for x, y in ((0, 0), (12, -half), (12, half)) for z in (0, 10)])
     knife = wall_screen(wedge, 2.0, SETTINGS, CONFIG["remesh_feature_deg"])
     assert not knife["passed"] and knife["thin_sample_count"] > 0 and knife["minimum_measured_mm"] < 1.0
+
+@pytest.mark.parametrize("thickness, passed", [(1.7, False), (2.0, True), (2.1, True)])
+def test_wall_opening_removes_only_edge_rounding_from_two_millimetre_plates(thickness, passed):
+    report = wall_opening(trimesh.creation.box(extents=(12, 10, thickness)))
+    assert report["passed"] is passed and report["unbalanced_columns"] == 0 and report["part_volume_mm3"] == pytest.approx(12*10*thickness, rel=0.02)
+    if passed:
+        assert report["deep_components"] == 0 and report["shallow_volume_mm3"] > 0
+    else:
+        assert report["deep_components"] == 1 and report["deep_fraction"] > 0.99
+
+BASE = trimesh.creation.box(bounds=[[0, 0, 0], [30, 30, 6]])
+MOTOR = box("front_left_motor_contact", "preserve", [13, 13, 5], [17, 17, 9])
+
+def test_wall_opening_limits_single_thin_fins_and_motor_zones():
+    fin = wall_opening(trimesh.boolean.union([BASE, trimesh.creation.box(bounds=[[12, 15, 6], [18, 16.5, 8]])], engine="manifold"))
+    assert not fin["passed"] and fin["deep_components"] == 1 and fin["largest_deep_mm3"] > CONFIG["wall_deep_component_max_mm3"] and fin["deep_fraction"] < CONFIG["wall_deep_max_fraction"]
+    pillar = trimesh.boolean.union([BASE, trimesh.creation.box(bounds=[[14, 14, 6], [15.5, 15.5, 8]])], engine="manifold")
+    free, mounted = wall_opening(pillar), wall_opening(pillar, zones=motor_zones([MOTOR, box("aio_contact", "preserve", [0, 0, 0], [30, 30, 1])]))
+    assert free["passed"] and free["deep_components"] == 1 and free["largest_deep_mm3"] < CONFIG["wall_deep_component_max_mm3"]
+    assert not mounted["passed"] and list(mounted["motor_zone_hits"]) == ["front_left_motor_contact"]
+
+def test_wall_rule_keeps_the_ray_screen_as_warning():
+    loose = {**CONFIG, "wall_deep_max_fraction": 1.0, "wall_deep_component_max_mm3": 1e6}
+    rule = wall_rule(trimesh.creation.box(extents=(12, 10, 1.4)), config=loose)
+    assert rule["passed"] and not rule["mesh_wall_screen"]["passed"] and not rule["wall_warning"]["passed"] and rule["wall_warning"]["very_thin_fraction"] > 0.5
+    assert not wall_rule(trimesh.creation.box(extents=(12, 10, 1.4)), config={**loose, "wall_screen_blocking": True})["passed"]
 
 def bore_block(distance, slab=None):
     regions = [cylinder("shaft", "forbidden", [0, 0, 2], 1.4, 6.0, rasterize=False), cylinder("screw", "forbidden", [distance, 0, 2], 1.1, 6.0, rasterize=False)]
@@ -268,4 +294,6 @@ def test_thin_walls_are_a_warning_unless_the_wall_screen_blocks(mounted, monkeyp
     thin = {"passed": False, "complete": True, "thin_sample_count": 7, "minimum_measured_mm": 1.2}
     monkeypatch.setattr(validation, "wall_screen", lambda *args: thin)
     result = MeshAcceptance(mesh, domain, {**CONFIG, "wall_screen_blocking": blocking}, SETTINGS).features(field, report)
-    assert result["passed"] != blocking and result["wall_warning"] == {"blocking": blocking, "passed": False, "thin_sample_count": 7, "minimum_measured_mm": 1.2}
+    warning = result["wall_warning"]
+    assert result["passed"] != blocking and result["wall_opening"]["passed"] and not warning["passed"] and not warning["screen_passed"]
+    assert (warning["blocking"], warning["thin_sample_count"], warning["minimum_measured_mm"]) == (blocking, 7, 1.2)
