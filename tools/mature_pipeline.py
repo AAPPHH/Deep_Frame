@@ -663,11 +663,11 @@ def render_main(overrides):
         axis.set_aspect("equal")
         axis.grid(alpha=0.2)
         record["sections"].append({"title": title, "plane_origin_mm": list(plane.origin), "plane_normal": list(plane.z_dir), "cad_area_mm2": float(sliced.area), "cad_edge_count": len(paths), "view_limits_mm": [xlim, ylim]})
-    axes.flat[-1].axis("off")
-    axes.flat[-1].legend(handles=[Line2D([0], [0], color="#4b9bae", linewidth=8, label="Tatsächliches STEP-Material"),
-                                 Line2D([0], [0], color="#46904b", linestyle="--", label="Pflicht-Preserve abzüglich Gurtzugang"),
-                                 Line2D([0], [0], color="#c6553c", linestyle=":", label="Freizuhaltender Gurtzugang")], loc="center", fontsize=11)
-    figure.suptitle(label + "\nExakte CAD-Schnitte an allen vier Gurtdurchlässen", fontsize=14)
+    for axis in axes.flat[len(specs):]:
+        axis.axis("off")
+    axes.flat[len(specs)].legend(handles=[Line2D([0], [0], color="#4b9bae", linewidth=8, label="Tatsächliches STEP-Material"),
+                                          Line2D([0], [0], color="#46904b", linestyle="--", label="Pflicht-Preserve Akkuschiene")], loc="center", fontsize=11)
+    figure.suptitle(label + "\nExakte CAD-Schnitte durch beide Akkuschienen", fontsize=14)
     figure.text(0.5, 0.006, footer, ha="center", fontsize=8)
     save(figure, "rail_sections")
     record["status"] = "complete"

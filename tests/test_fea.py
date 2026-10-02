@@ -10,7 +10,7 @@ import trimesh
 from build123d import Align, Box, Pos, Solid
 
 from deep_frame.config import CONFIG, CRASH_DIRECTIONS, FEA_CONFIG, IMPLICIT_CONFIG, PRINT_MATERIAL
-from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, _prepare_surface, _read_mesh, _run, _select, _topology, _volume_mesh, evaluate, prepare_frame_case
+from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, clean_slivers, _prepare_surface, _read_mesh, _run, _select, _topology, _volume_mesh, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
 from tests.test_frame import frame
 
@@ -529,6 +529,14 @@ def test_prepared_surface_does_not_weld_a_thin_slab():
     surface, report = _prepare_surface(slab, _mesh_settings({}), False, 2.0)
     assert report["passed"] and not report["cleanup_applied"] and not report["topology_changed"] and report["folded_edges"] == 0
     assert surface.is_watertight and surface.volume == pytest.approx(slab.volume, rel=0.01)
+
+def test_sliver_cleanup_keeps_body_within_the_surface_deviation_limit():
+    source = trimesh.creation.cylinder(radius=5.0, height=10.0, sections=720)
+    settings = _mesh_settings({})
+    surface, report = clean_slivers(source, settings)
+    assert report["input_minimum_angle_deg"] < 1 and report["minimum_angle_deg"] > 5 * report["input_minimum_angle_deg"]
+    assert report["passed"] and surface is not source and _topology(surface) == _topology(source)
+    assert report["maximum_sampled_deviation_mm"] <= settings["surface_deviation_mm"] and abs(report["relative_volume_change"]) <= settings["relative_volume_change"]
 
 def test_fallback_attempts_get_the_short_timeout(tmp_path, monkeypatch):
     import deep_frame.fea as fea

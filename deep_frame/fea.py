@@ -478,6 +478,43 @@ def _prepare_surface(source, settings, refine, target, record=None):
         raise ValueError(f"Prepared FEA surface changed topology or is not one closed, oriented, fold- and self-intersection-free body: {report}")
     return surface, report
 
+def _collapse_short_edges(mesh, threshold):
+    import trimesh
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    edges = mesh.edges_unique[mesh.edges_unique_length < threshold]
+    count = len(mesh.vertices)
+    _, labels = connected_components(coo_matrix((np.ones(len(edges)), (edges[:, 0], edges[:, 1])), shape=(count, count)), directed=False)
+    vertices = np.zeros((labels.max() + 1, 3))
+    np.add.at(vertices, labels, mesh.vertices)
+    vertices /= np.bincount(labels)[:, None]
+    faces = labels[mesh.faces]
+    faces = faces[(faces[:, 0] != faces[:, 1]) & (faces[:, 1] != faces[:, 2]) & (faces[:, 0] != faces[:, 2])]
+    result = trimesh.Trimesh(vertices, faces, process=False)
+    result.update_faces(result.unique_faces())
+    result.remove_unreferenced_vertices()
+    return result
+
+def clean_slivers(mesh, settings):
+    import pymeshlab
+    import trimesh
+    from deep_frame.topology_implicit import mesh_checks, surface_fidelity
+    meshes = pymeshlab.MeshSet()
+    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
+    meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_sliver_iterations"], targetlen=pymeshlab.PureValue(settings["fea_sliver_target_mm"]), featuredeg=settings["fea_remesh_feature_deg"],
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_remesh_max_surface_distance_mm"]))
+    current = meshes.current_mesh()
+    surface = trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
+    collapsed = _collapse_short_edges(surface, settings["fea_sliver_collapse_mm"])
+    if _topology(collapsed) == _topology(surface) and mesh_checks(collapsed)["passed"]:
+        surface = collapsed
+    fidelity = surface_fidelity(mesh, surface)
+    report = {"target_mm": settings["fea_sliver_target_mm"], "iterations": settings["fea_sliver_iterations"], "collapse_mm": settings["fea_sliver_collapse_mm"], "collapsed": surface is collapsed, "input_minimum_angle_deg": float(np.degrees(mesh.face_angles.min())), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())),
+              "face_count": len(surface.faces), "topology_unchanged": _topology(surface) == _topology(mesh), "checks_passed": mesh_checks(surface)["passed"],
+              "maximum_sampled_deviation_mm": fidelity["maximum_sampled_deviation_mm"], "relative_volume_change": fidelity["relative_volume_change"]}
+    report["passed"] = report["topology_unchanged"] and report["checks_passed"] and report["maximum_sampled_deviation_mm"] <= settings["surface_deviation_mm"] and abs(report["relative_volume_change"]) <= settings["relative_volume_change"]
+    return (surface if report["passed"] else mesh), report
+
 def _surface_model(gmsh, request, settings):
     import trimesh
     data = np.load(request["surface_path"])
