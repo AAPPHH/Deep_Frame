@@ -21,10 +21,10 @@ Masse des gedruckten Frames minimieren (`geometry.mass.frame_mass_g`, Volumen de
 
 | Referenz | evaluation.json | Anmerkung |
 |---|---|---|
-| ManaFly 3 BETA V4 | C:/clones/Deep_Frame-eval/exports/evaluation/ref_manafly3/evaluation.json | alle Bedingungen erfüllt; Steckbrief C:/clones/Deep_Frame/Examples/Frames/ManaFly3/datasheet.md |
-| BM Aether 4 | C:/clones/Deep_Frame-eval/exports/evaluation/ref_aether4/evaluation.json | verfehlt nur `tools_reachable` (innere hintere Motorschrauben nicht geradlinig von unten erreichbar); walls/fea/slicer aus dem identischen Lauf exports/evaluation/aether4 übernommen (Ray-Ausfall); Steckbrief C:/clones/Deep_Frame/Examples/Frames/BM+Aether4/datasheet.md |
+| ManaFly 3 BETA V4 | C:/clones/Deep_Frame-eval/exports/evaluation/ref_manafly3/evaluation.json | verfehlt nur die vorläufige Wandregel (bewusst, Werte nur Information); Steckbrief C:/clones/Deep_Frame/Examples/Frames/ManaFly3/datasheet.md |
+| BM Aether 4 | C:/clones/Deep_Frame-eval/exports/evaluation/ref_aether4/evaluation.json | verfehlt `tools_reachable` und die vorläufige Wandregel (innere hintere Motorschrauben nicht geradlinig von unten erreichbar); walls/fea/slicer aus dem identischen Lauf exports/evaluation/aether4 übernommen (Ray-Ausfall); Steckbrief C:/clones/Deep_Frame/Examples/Frames/BM+Aether4/datasheet.md |
 
-Evidenz der Einzelläufe: docs/validation/frame_evaluation_manafly3.md, docs/validation/frame_evaluation_aether4.md. Gesamttabelle aller Kandidaten: C:/clones/Deep_Frame-neural/exports/datasheets/EVALUATION.md.
+Evidenz der Einzelläufe (Einzelbelege vor der Wandregel): docs/validation/frame_evaluation_manafly3.md, docs/validation/frame_evaluation_aether4.md. Gesamttabelle aller Kandidaten: C:/clones/Deep_Frame-neural/exports/datasheets/EVALUATION.md.
 
 ## Skalierung
 
@@ -39,7 +39,7 @@ Die Referenzen haben andere Größen (Achsabstand 160 und 191 mm) als unsere Dom
 
 ## Nebenbedingungen und Zielbereiche
 
-Die Bereiche umschließen beide Referenzen mit gerundetem Abstand; sie sind einseitig, wo die Physik eine Richtung vorgibt. Spalte „Für uns“ rechnet auf D = 135 mm, L = 67,5 mm um.
+Die Bereiche umschließen beide Referenzen mit gerundetem Abstand (außer der Wandregel, siehe Widersprüche); sie sind einseitig, wo die Physik eine Richtung vorgibt. Spalte „Für uns“ rechnet auf D = 135 mm, L = 67,5 mm um.
 
 | Nr. | Kriterium | Größe (Pfad in evaluation.json) | Zielbereich | ManaFly | Aether4 | Für uns | Art | Zuordnung | Grund |
 |---|---|---|---|---|---|---|---|---|---|
@@ -51,7 +51,9 @@ Die Bereiche umschließen beide Referenzen mit gerundetem Abstand; sie sind eins
 | 4 | Werkzeug und Stecker | geometry.assembly.tools_passed | alle erreichbar | ok | nein | ok | hart, absolut | Optimierer (Domäne) | Werkzeugkorridore als verbotene Regionen in die Domäne, dann frei von Material |
 | 6 | Ein Körper | geometry.form.mesh_bodies | = 1 | 1 | 1 | 1 | hart, absolut | Rekonstruktion | Konnektivität nach Extraktion; Inseln entfernen oder verwerfen |
 | 5 | Überhang | geometry.printability.overhang_share | ≤ 0,25 | 0,161 | 0,238 | ≤ 25 % | hart | äußere Schleife | Heute nur geprüft; ein AM-Überhangfilter im Optimierer ist Folgearbeit |
-| 5 | Mindestwandstärke (Öffnung r = 1 mm) | walls.deep_fraction | ≤ 0,06 | 0,0506 | 0,0426 | ≤ 6 % | hart | Rekonstruktion | Öffnung/Offset im Feld vor der Extraktion |
+| 5 | Wandregel (Öffnung r = 1 mm), tiefer Anteil | walls.deep_fraction | ≤ 0,005 | 0,0506 (verfehlt) | 0,0426 (verfehlt) | ≤ 0,5 % | hart, absolut, vorläufig | Rekonstruktion | Kalibrierte Regel (Nutzerentscheidung), Grenze `IMPLICIT_CONFIG["wall_deep_max_fraction"]`; Bedingung `wall_deep_fraction`, zusätzlich part_volume > 0 und keine unausgeglichenen Spalten |
+| 5 | Wandregel, größte tiefe Komponente | walls.largest_deep_mm3 | ≤ 5 mm³ | 345,9 (verfehlt) | 1333,0 (verfehlt) | ≤ 5 mm³ | hart, absolut, vorläufig | Rekonstruktion | `IMPLICIT_CONFIG["wall_deep_component_max_mm3"]`; Bedingung `wall_deep_component` |
+| 5 | Wandregel, Motorzonen | walls.motor_zone_hits | keine | 4/4 getroffen (verfehlt) | 4/4 getroffen (verfehlt) | keine | hart, absolut, vorläufig | Rekonstruktion | Keine tiefe Komponente in einer Motorzone (Rand `wall_motor_zone_margin_mm` 2 mm); Bedingung `wall_motor_zones` |
 | 5 | Stützbedarf | scaled.support_per_volume | ≤ 1,5 | 1,12 | 1,45 | ≤ 1,5 × Vol. | hart | äußere Schleife | Nur der Slicer misst ihn |
 | 5 | Druckzeit | scaled.print_min_per_g | ≤ 16 min/g | 15,7 | 12,6 | – | Warnung | äußere Schleife | Generische Slicer-Geschwindigkeiten, nur relativ vergleichbar |
 | 6 | Strebe p10 | geometry.form.strut_width_mm.p10 | ≥ 1,2 mm (Grenze 1,19 wegen Voxelstufe 0,4 mm) | 1,2 | 1,4 | ≥ 1,2 mm | hart | Optimierer + Rekonstruktion | Filterradius bzw. Mindestlängenmaß im Optimierer, Öffnung in der Rekonstruktion |
@@ -67,12 +69,12 @@ Die Bereiche umschließen beide Referenzen mit gerundetem Abstand; sie sind eins
 | 9 | Crash front/Arm/hinten (A) | assessment.crash.*.utilisation_xy, utilisation_z | ≤ 1 bei SF 2,0 | max. 0,24 / 0,19 | max. 0,19 / 0,11 | ≤ 1 | hart, absolut | äußere Schleife | Spannungsnebenbedingungen sind im Optimierer nicht umgesetzt; heute weit unter der Grenze |
 | – | FEA gelöst, Slicer ok | fea.status, slicer.passed | ok | ok | ok | ok | hart, absolut | äußere Schleife | Voraussetzung für 7–9 und den Stützbedarf |
 
-Hart = Teil der Gut-Regel (`target:<name>` bzw. absolute Bedingung in `assessment.missed`). Warnung = `assessment.warnings`, steht in der Bewertungszeile hinter „Warnung:“.
+Hart = Teil der Gut-Regel (`target:<name>` bzw. absolute Bedingung in `assessment.missed`). Die Grenzen der Wandregel stehen nur in `IMPLICIT_CONFIG` und werden in `assessment.wall_rule` mitgeschrieben. Warnung = `assessment.warnings`, steht in der Bewertungszeile hinter „Warnung:“.
 
 ## Widersprüche und Ausnahmen
 
 - Aether4 verfehlt `tools_reachable`. Die Bedingung bleibt für unsere Kandidaten absolut. Bei Aether4 ist das eine dokumentierte Ausnahme: Die inneren hinteren Motorschrauben erreicht man in der Praxis schräg oder mit kurzem Bit.
-- Die vorläufige Wandregel in `topology_implicit_validation.py` (Tiefenanteil ≤ 0,5 %) ist mit ihrer eigenen Kalibriergeometrie unvereinbar: ManaFly misst 5,06 % und Aether4 4,26 % (`walls.calibrated_rule_passed = false` bei beiden). Als Zielbereich gilt deshalb ≤ 6 %. Die 0,5-%-Regel ist hier keine Bedingung.
+- Wandregel (Nutzerentscheidung, bindend): Blockierend ist die kalibrierte Regel aus docs/validation/wall_calibration_manafly.md (`wall_opening`/`wall_rule` in `topology_implicit_validation.py`), Öffnung r = 1 mm, alle drei Teile hart: tief entferntes Volumen ≤ 0,5 % des Teils, keine einzelne tiefe Komponente > 5 mm³, keine tiefe Komponente in einer Motorzone. Sie ersetzt den früheren referenzabgeleiteten Zielbereich `walls.deep_fraction ≤ 0,06`. Beide Referenzen verfehlen sie bewusst (ManaFly 5,06 %, 345,9 mm³, 4/4 Motorzonen; Aether4 4,26 %, 1333,0 mm³, 4/4); ihre Werte sind nur Information, die Regel wird nicht gelockert. Sie ist vorläufig bis zu eigenen Falltests in M2.
 - Masse, Steifigkeit, f1 und Crash von Aether4 gelten für den massiven Körper; der echte Druck ist hohl. Deshalb kein Massenband und nur einseitige Mechanikgrenzen.
 - Symmetrie: Alle klassischen Kandidaten liegen bei 1,7–2,4 mm rms (≈ 1,3–1,8 % von D), die Neural-Kandidaten auf derselben alten Domäne bei 0,2–0,5 mm. Die Grenze von 0,34 mm wurde nicht aufgeweitet; die klassische GPU-SIMP-Route braucht eine erzwungene Spiegelsymmetrie.
 - Strebe p90 ≤ 6,5 mm und Schlaufen ≥ 20 verfehlen fast alle eigenen Kandidaten. Das sind Warnungen: Unsere Frames sind gröber und weniger verzweigt als die Referenzen.
@@ -96,17 +98,17 @@ Minimale `frame.json`:
 ```
 
 - `domain` ist ein Dateipfad. Die Datei enthält entweder einen Schlüssel `domain` (wie `inputs.json`) oder auf oberster Ebene direkt die Domäne. Ein Dict direkt in der frame.json wird nicht angenommen. Geprüft: combo_heavy mit `domain` ergibt dieselben Motoren, Bohrbilder, Komponenten, Keep-outs, Stecker und Selektoren wie die explizite frame.json. Daraus kommen Motoren, Bohrbilder, Komponenten, Keep-outs, Stecker und FEA-Selektoren, genau wie bei `"ours": true`, aber aus der tatsächlich verwendeten Domäne statt aus `build_design_domain` des Eval-Worktrees. Ohne `domain` gilt `"ours": true` mit `domain_grid` oder eine explizite Beschreibung (Referenzen).
-- `run` reicht vier Ray-Jobs über `compute.py` ein (geometry = cpu, walls = wall_check, fea = fea_modal, slicer = cpu), wartet auf alle und ruft `report` auf. `report` schreibt `evaluation.json` und `bewertung.md` und hängt bei gesetztem `datasheet` den Abschnitt „## Bewertungszeile (neun Kriterien)“ an den Steckbrief an. Gibt es den Steckbrief noch nicht, wird er angelegt. Steht dieselbe Zeile schon darin, wird nichts angehängt.
+- `run` reicht vier Ray-Jobs über `compute.py` ein (geometry = cpu, walls = wall_check, fea = fea_modal, slicer = cpu), wartet auf alle und ruft `report` auf. `report` schreibt `evaluation.json` und `bewertung.md` und hängt bei gesetztem `datasheet` den Abschnitt „## Bewertungszeile (neun Kriterien)“ an den Steckbrief an. Gibt es den Steckbrief noch nicht, wird er angelegt. Steht schon eine Zeile mit demselben Frame-Namen darin, wird sie ersetzt (kein Duplikat), ebenso „Gut (alle Bedingungen erfüllt): ja/nein“.
 - `run` blockiert bis zum Ende der Ray-Jobs (Warteschlange oft 10–30 min) und läuft deshalb am besten im Hintergrund. Fehlt danach ein Teil, zählen `report <frame.json>` (leicht, direkt) die fehlenden Kriterien als verfehlt.
 - Bekannte Falle: Liegt die STL-Unterseite über z = 0 (fast_simp: z ≈ 0,03–0,09 mm), wählen die Fixture-Boxen keine Knoten aus. Dann die Fixture-Boxen in der frame.json bis z = 0,5 erweitern.
-- Neue Zeilen enthalten die Ziel- und Warnbereiche. Ältere Steckbriefzeilen vom 2026-10-02 vor 15:40 enthalten nur die absoluten Bedingungen; maßgeblich ist EVALUATION.md.
+- Neue Zeilen enthalten die Ziel- und Warnbereiche und die Wandregel. Die Zelle „Öffn. r=1“ zeigt tiefen Anteil / größte tiefe Komponente / getroffene Motorzonen. Alle Steckbriefzeilen der 25 Frames wurden mit der Wandregel neu berechnet (ohne neue FEA- oder Slicer-Läufe).
 
 ## Stand der Kandidaten (2026-10-02)
 
 Die vollständige Tabelle steht in C:/clones/Deep_Frame-neural/exports/datasheets/EVALUATION.md. Kurzfassung:
 
-- ManaFly erfüllt alle Bedingungen. Aether4 verfehlt nur `tools_reachable`.
-- neuralproto_fmax00625_f12 (51,6 g) ist der einzige eigene Kandidat, der alle Bedingungen erfüllt. Er hat nur Warnungen (Strebe p90, Schlaufen, Schwerpunkt) und ist 1,8 × so schwer wie ManaFly.
+- ManaFly und Aether4 verfehlen die vorläufige Wandregel (bewusst, siehe oben); sonst erfüllt ManaFly alle Bedingungen, Aether4 verfehlt zusätzlich `tools_reachable`.
+- neuralproto_fmax00625_f12 (51,6 g) ist der einzige Frame, der alle Bedingungen einschließlich der Wandregel erfüllt. Er hat nur Warnungen (Strebe p90, Schlaufen, Schwerpunkt) und ist 1,8 × so schwer wie ManaFly.
 - Klassische Route, alte Domäne (45–57 g): Alle verfehlen Symmetrie, die meisten auch den Luftstrom (≈ 15–16 %). Bei wb142, impact2 (Standardnetz), f18 und f25 scheitert zusätzlich die Tet-Vernetzung (SICN).
-- fast-Routen, neue Domäne (17–42 g): Alle verfehlen Bohrbilder und Keep-outs, weil das Gitter keine M2-Bohrungen auflöst und die exakte Rekonstruktion fehlt. SIMP-Kandidaten verfehlen zusätzlich die Symmetrie, fast_simp_v07 die Öffnung r = 1 mm (6,6 %), fast_simp_v05 die FEA (Vernetzung) und fast_neural_v05/v07 f1 (167/317 Hz). fast_neural_v07_mw zerfällt in 8 Körper.
-- Leichteste Richtung mit erfüllter Mechanik: fast_neural_v10 (42,3 g) und fast_simp_v10 (42,1 g), die nur an Montage (und SIMP an Symmetrie) scheitern. Das ist der Hebel für die Rekonstruktion.
+- fast-Routen, neue Domäne (17–42 g): Alle verfehlen Bohrbilder und Keep-outs, weil das Gitter keine M2-Bohrungen auflöst und die exakte Rekonstruktion fehlt. Alle acht verfehlen außerdem die Wandregel (tiefer Anteil 0,68–6,63 %, größte tiefe Komponente 37–388 mm³; fast_neural_v05, fast_simp_v07_r45 und fast_simp_v10 ohne Motorzonentreffer). Klassische und Neural-Prototyp-Kandidaten bestehen sie alle (classic_fine_c01: 0,010 %, 3,1 mm³). SIMP-Kandidaten verfehlen zusätzlich die Symmetrie, fast_simp_v05 die FEA (Vernetzung) und fast_neural_v05/v07 f1 (167/317 Hz). fast_neural_v07_mw zerfällt in 8 Körper.
+- Leichteste Richtung mit erfüllter Mechanik: fast_neural_v10 (42,3 g) und fast_simp_v10 (42,1 g), die an Montage, Wandregel (und SIMP an Symmetrie) scheitern. Das ist der Hebel für die Rekonstruktion.

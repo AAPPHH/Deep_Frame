@@ -44,3 +44,17 @@ def test_scaled_values_use_the_motor_layout_and_datasheet_append_is_idempotent(t
     append_datasheet(sheet, result, "evaluation.json")
     append_datasheet(sheet, result, "evaluation.json")
     assert sheet.read_text(encoding="utf-8").count("| probe |") == 1
+
+@pytest.mark.parametrize("change, missed", [({}, set()), ({"deep_fraction": 0.006}, {"wall_deep_fraction"}), ({"largest_deep_mm3": 5.5}, {"wall_deep_component"}), ({"motor_zone_hits": {"motor_front_left": {"components": 1, "volume_mm3": 0.1}}}, {"wall_motor_zones"}), ({"unbalanced_columns": 3}, {"wall_deep_fraction"})])
+def test_calibrated_wall_rule_blocks_on_each_part(change, missed):
+    walls = {"part_volume_mm3": 1000.0, "unbalanced_columns": 0, "deep_fraction": 0.004, "largest_deep_mm3": 4.0, "motor_zones": ["motor_front_left"], "motor_zone_hits": {}, **change}
+    result = assess({"walls": walls}, EVALUATION_CONFIG)
+    assert {name for name in result["missed"] if name.startswith("wall_")} == missed and "wall_opening" not in EVALUATION_CONFIG["targets"]
+    assert {name for name in assess({"walls": None}, EVALUATION_CONFIG)["missed"] if name.startswith("wall_")} == {"wall_deep_fraction", "wall_deep_component", "wall_motor_zones"}
+
+def test_datasheet_line_is_replaced_not_duplicated(tmp_path):
+    sheet = tmp_path / "frame.md"
+    sheet.write_text("# probe\n\n| probe | old |\n\nGut (alle Bedingungen erfüllt): ja.\n", encoding="utf-8")
+    append_datasheet(sheet, {"name": "probe", "line": "| probe | new |", "assessment": {"good": False}}, "evaluation.json")
+    text = sheet.read_text(encoding="utf-8")
+    assert "| probe | new |" in text and "old" not in text and text.count("| probe |") == 1 and "erfüllt): nein" in text

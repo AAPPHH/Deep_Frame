@@ -350,6 +350,10 @@ def assess(result, config):
     condition("tools_reachable", lambda: geometry["assembly"]["tools_passed"])
     condition("fea_solved", lambda: fea["status"] == "ok")
     condition("slicer", lambda: slicer["passed"])
+    opening, limits = result.get("walls") or {}, {"deep_max_fraction": IMPLICIT_CONFIG["wall_deep_max_fraction"], "deep_component_max_mm3": IMPLICIT_CONFIG["wall_deep_component_max_mm3"], "motor_zone_margin_mm": IMPLICIT_CONFIG["wall_motor_zone_margin_mm"]}
+    condition("wall_deep_fraction", lambda: opening["part_volume_mm3"] > 0 and opening["unbalanced_columns"] == 0 and opening["deep_fraction"] <= limits["deep_max_fraction"])
+    condition("wall_deep_component", lambda: opening["largest_deep_mm3"] <= limits["deep_component_max_mm3"])
+    condition("wall_motor_zones", lambda: len(opening["motor_zones"]) > 0 and not opening["motor_zone_hits"])
     crash = {}
     for name in CRASH:
         try:
@@ -370,7 +374,8 @@ def assess(result, config):
         if not passed:
             warnings.append(name)
     return {"conditions": conditions, "missed": [name for name, passed in conditions.items() if not passed], "good": all(conditions.values()), "warnings": warnings, "crash": crash, "safety_factor": loads["safety_factor"],
-            "targets": config["targets"], "warning_ranges": config["warnings"], "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"}
+            "targets": config["targets"], "warning_ranges": config["warnings"],
+            "wall_rule": {**limits, "opening_radius_mm": IMPLICIT_CONFIG["wall_opening_radius_mm"], "deep_depth_mm": IMPLICIT_CONFIG["wall_deep_mm"], "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"}, "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"}
 
 def number(value, digits=1):
     return "–" if value is None else f"{value:.{digits}f}".replace(".", ",")
@@ -387,7 +392,7 @@ def report_line(result):
         asm = g["assembly"]
         cells.append(f"Bohrb. {sum(p['found'] for p in asm['bolt_patterns'])}/{sum(p['expected'] for p in asm['bolt_patterns'])}, Passung {'ok' if asm['fit_passed'] else 'nein'}, Werkzeug {'ok' if asm['tools_passed'] else 'nein'}{'' if asm['connectors_checked'] else ', Stecker n/a'}")
         p = g["printability"]
-        cells.append(f"Überh. {number(100 * p['overhang_share'])} %, Öffn. r=1 {number(100 * w['deep_fraction'], 2) if w else '–'} %, Stütze {number((s.get('support_mm3') or 0) / 1000, 2) if s else '–'} cm³, {number((s.get('supports') or {}).get('print_time_min'), 0)} min")
+        cells.append(f"Überh. {number(100 * p['overhang_share'])} %, Öffn. r=1 {number(100 * w['deep_fraction'], 2) if w else '–'} %/{number(w.get('largest_deep_mm3'))} mm³/Motorzonen {len(w.get('motor_zone_hits') or {}) if w else '–'},Stütze {number((s.get('support_mm3') or 0) / 1000, 2) if s else '–'} cm³, {number((s.get('supports') or {}).get('print_time_min'), 0)} min")
         form = g["form"]
         cells.append(f"Strebe {'/'.join(number(form['strut_width_mm'][k]) for k in ('p10', 'p50', 'p90'))} mm, H/B {number(form['section_ratio']['p50'], 2)}, offen {number(100 - 100 * g['airflow']['bbox_share'], 0)} %, "
                      f"Höhe {number(form['flight_height_mm'])} mm, Körper {form['mesh_bodies']}, Schlaufen {form['loops']['loops']}, Sym. {number(form['symmetry']['rms_mm'], 2)} mm, Rauh. {number(form['roughness']['curvature_neighbour_rms_per_mm'], 3)}/mm")
@@ -419,9 +424,15 @@ def datasheet_section(result, evaluation):
     return (f"\n## Bewertungszeile (neun Kriterien)\n\nAutomatisch von tools/evaluate_frame.py; Zielbereiche und Warnbereiche: docs/optimization_problem.md; Ergebnis: {evaluation}. "
             f"Gut (alle Bedingungen erfüllt): {'ja' if result['assessment']['good'] else 'nein'}.\n\n{HEADER}\n{result['line']}\n\n{LEGEND}\n")
 
+def replace_line(text, result, occurrence=None):
+    lines, prefix = text.split("\n"), f"| {result['name']} |"
+    found = [i for i, line in enumerate(lines) if line.startswith(prefix)]
+    for i in found if occurrence is None else found[occurrence:occurrence + 1]:
+        lines[i] = result["line"] + "\r" * lines[i].endswith("\r")
+    return re.sub(r"Gut \(alle Bedingungen erfüllt\): (ja|nein)", f"Gut (alle Bedingungen erfüllt): {'ja' if result['assessment']['good'] else 'nein'}", "\n".join(lines)) if found else None
+
 def append_datasheet(path, result, evaluation):
     path = Path(path)
-    text = path.read_text(encoding="utf-8") if path.exists() else f"# {result['name']}\n"
-    if result["line"] not in text:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text.rstrip("\n") + "\n" + datasheet_section(result, evaluation), encoding="utf-8")
+    text = path.open(encoding="utf-8", newline="").read() if path.exists() else f"# {result['name']}\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(replace_line(text, result) or text.rstrip("\r\n") + "\n" + datasheet_section(result, evaluation), encoding="utf-8", newline="")
