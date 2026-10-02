@@ -1090,7 +1090,7 @@ def test_round3_domain_turns_flight_and_crash_cases_into_inertia_relief():
     assert {"arm_tip", "thrust_all", "crash_hoop", "crash_below"} <= set(relief) and all(not cases[name]["fixed_regions"] for name in relief)
     assert "inertia_relief" not in cases["battery_impact"] and cases["battery_impact"]["fixed_regions"]
     masses = cases["thrust_all"]["inertia_relief"]
-    assert sum(item["mass_g"] for item in masses["point_masses"]) == pytest.approx(37.0 + 7.2 + 2.3 + 4 * 5.2)
+    assert sum(item["mass_g"] for item in masses["point_masses"]) == pytest.approx(37.0 + 7.2 + 2.3 + 4 * (4.5 + 1.2))
     assert masses["preserve_mass_g"] == pytest.approx(0.05 * full["metadata"]["allowed_volume_mm3"] * 1.09 / 1000)
 
 def test_lower_chord_detects_a_continuous_low_member():
