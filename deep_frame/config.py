@@ -620,11 +620,13 @@ INTEGRATION_CONFIG = {
     "all_up_mass_g": 125.0,
     "crash_front_g_factor": 25.0,
     "crash_arm_g_factor": 12.5,
+    "crash_directions": [],
     "load_sources": {
         "arm_tip_force_n": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V, 100 %) x safety factor 2",
         "thrust_all": "all four motors at full thrust x 2 upward against the AIO mounts",
         "crash_front": "all-up mass ~125 g x 25 g equivalent static deceleration = 30.7 N rearward on the camera hoops",
         "crash_arm": "half the all-up mass x 25 g = 15.3 N on one motor ring, oblique (inward, tangential, downward)",
+        "crash_directions": "opt-in optimizer set replacing crash_front and crash_arm: every listed direction carries the crash_front magnitude (30.7 N); front -Y on the camera hoops, side +-X on the two motor rings of one side, arm oblique on each motor ring, below +Z on the camera hoops, back -Z on the battery band",
     },
     "battery_impact_g_factor": 10.0,
     "standard_gravity_m_s2": 9.80665,
@@ -638,6 +640,8 @@ INTEGRATION_CONFIG = {
     "camera_upper_height_fraction": 0.25,
     "camera_length_fraction": 0.5,
 }
+
+CRASH_DIRECTIONS = ["front", "side_left", "side_right", "arm_front_left", "arm_front_right", "arm_rear_left", "arm_rear_right", "below", "back"]
 
 OPTIMIZATION_CONFIG = {
     "n_trials": 6,

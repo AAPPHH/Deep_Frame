@@ -235,7 +235,7 @@ def build_design_domain(parameters):
         for x, y in mount_positions(parameters)["aio15"]
     ]
     for case in model["load_cases"]:
-        if case["name"] in ("arm_tip", "thrust_all", "crash_front", "crash_arm"):
+        if case["name"] in ("arm_tip", "thrust_all") or case["name"].startswith("crash_"):
             case["fixed_regions"] = deepcopy(aio_fixtures)
     model["fixture_model"] = "Arm-tip, thrust and crash cases: undersides of the four mandatory AIO mounting contacts fixed; other cases: four motor contact undersides fixed. Identical selectors must be used for v0 comparison."
     auxiliary_cases = _connection_cases(regions, model, settings["connection_proof_force_n"])

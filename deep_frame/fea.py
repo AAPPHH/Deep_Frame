@@ -651,13 +651,25 @@ def prepare_frame_case(parameters, fea_config=None, integration_config=None):
     weight = integration["all_up_mass_g"] / 1000 * integration["standard_gravity_m_s2"]
     thrust = parameters["components"]["motor"]["thrust_n"] * integration["thrust_safety_factor"]
     pads = [_box((mx - pad_half, my - pad_half, frame["arm_height_mm"] - tolerance), (mx + pad_half, my + pad_half, frame["arm_height_mm"] + tolerance)) for mx, my in motors.values()]
-    radial, tangential = np.array([x, y]) / math.hypot(x, y), np.array([-y, x]) / math.hypot(x, y)
-    oblique = np.append(-radial + tangential, -0.5)
+    def oblique(mx, my):
+        radial, tangential = np.array([mx, my]) / math.hypot(mx, my), np.array([-my, mx]) / math.hypot(mx, my)
+        vector = np.append(-radial + tangential, -0.5)
+        return vector / np.linalg.norm(vector)
     load_cases[3:3] = [
         {"name": "thrust_all", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": pad, "force_n": [0.0, 0.0, thrust]} for pad in pads]},
         {"name": "crash_front", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": camera_region, "force_n": [0.0, -weight * integration["crash_front_g_factor"], 0.0]}]},
-        {"name": "crash_arm", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": arm_region, "force_n": (weight * integration["crash_arm_g_factor"] * oblique / np.linalg.norm(oblique)).tolist()}]},
+        {"name": "crash_arm", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": arm_region, "force_n": (weight * integration["crash_arm_g_factor"] * oblique(x, y)).tolist()}]},
     ]
+    if integration["crash_directions"]:
+        sides = {name: [pad for pad, (mx, _) in zip(pads, motors.values()) if np.sign(mx) == sign] for name, sign in (("side_left", -1), ("side_right", 1))}
+        patches = {"front": [(camera_region, (0.0, -1.0, 0.0))], "side_left": [(pad, (1.0, 0.0, 0.0)) for pad in sides["side_left"]], "side_right": [(pad, (-1.0, 0.0, 0.0)) for pad in sides["side_right"]],
+                   **{"arm_" + name: [(pad, oblique(mx, my))] for pad, (name, (mx, my)) in zip(pads, motors.items())}, "below": [(camera_region, (0.0, 0.0, 1.0))], "back": [(deck_region, (0.0, 0.0, -1.0))]}
+        unknown = sorted(set(integration["crash_directions"]) - set(patches))
+        if unknown:
+            raise ValueError("Unknown crash directions: " + ", ".join(unknown))
+        crash = weight * integration["crash_front_g_factor"]
+        load_cases[3:] = [case for case in load_cases[3:] if not case["name"].startswith("crash_")]
+        load_cases[4:4] = [{"name": "crash_" + name, "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": deepcopy(region), "force_n": (crash / len(patches[name]) * np.asarray(direction)).tolist()} for region, direction in patches[name]]} for name in integration["crash_directions"]]
     fea["settings"]["stiffness_load_case"] = "arm_tip"
     result = {
         "material": fea["material"],
