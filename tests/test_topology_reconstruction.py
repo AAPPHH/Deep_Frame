@@ -26,7 +26,8 @@ def truss():
     hub = {"name": "hub", "role": "preserve", "kind": "box", "min_mm": (HUB-2.5).tolist(), "max_mm": (HUB+2.5).tolist()}
     preserve = np.all((centers >= HUB-2.5) & (centers <= HUB+2.5), axis=-1)
     density[preserve] = 1.0
-    domain = {"grid": {"origin_mm": [0.0, 0.0, 0.0], "spacing_mm": [H]*3, "shape": list(shape)}, "regions": [hub], "preserve": preserve}
+    lid = {"name": "lid", "role": "forbidden", "kind": "box", "min_mm": [HUB[0]-4, HUB[1]-4, HUB[2]+2.5], "max_mm": [HUB[0]+4, HUB[1]+4, HUB[2]+5.0]}
+    domain = {"grid": {"origin_mm": [0.0, 0.0, 0.0], "spacing_mm": [H]*3, "shape": list(shape)}, "regions": [hub, lid], "preserve": preserve}
     config = {**DESIGN_RECONSTRUCTION_CONFIG, "density_sigma_cells": 0.0, "voxel_mm": 0.25, "calibration_steps": 0, "closing_radius_mm": 0.0}
     return domain, density, config
 
@@ -61,3 +62,11 @@ def test_reconstruction_is_one_watertight_body(truss):
     assert mesh.is_watertight and report["bodies"] == 1 and report["exact_booleans"]["passed"]
     assert label(density > 0.5, TWENTY_SIX)[1] == 1
     assert mesh.volume == pytest.approx(float(density.sum())*H**3, rel=0.25)
+
+def test_preserve_is_rounded_but_keeps_exact_mating_plane(truss):
+    domain, density, config = truss
+    mesh, graph, report = reconstruct(domain, density, config)
+    top = HUB[2]+2.5
+    assert np.any(np.abs(mesh.vertices[:, 2]-top) < 1e-6)
+    assert not mesh.contains([HUB+2.5-0.1])[0] and mesh.contains([[HUB[0], HUB[1], top-0.05]])[0]
+    assert report["mass_budget"]["node_spheres_mm3"] <= report["mass_budget"]["assigned_nodes_mm3"]+1e-6

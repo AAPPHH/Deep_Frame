@@ -14,11 +14,11 @@ from scipy.ndimage import gaussian_filter
 
 from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, command_line, configure
 from deep_frame.topology_geometry import build_design_domain, symmetric_domains
-from deep_frame.topology_reconstruction import reconstruct
+from deep_frame.topology_reconstruction import reconstruct, reference_body
 from tools.topology_study import study_parameters
 
-RUN_CONFIG = {**DESIGN_RECONSTRUCTION_CONFIG, "geometry": None, "panels": None, "labels": None}
-RUN_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, "geometry": "path", "panels": ["path"], "labels": ["text"]}
+RUN_CONFIG = {**DESIGN_RECONSTRUCTION_CONFIG, "geometry": None, "panels": None, "labels": None, "fea_surface_targets_mm": [0.5, 0.4, 0.6], "fea_volume_targets_mm": [1.5, 1.2, 1.0]}
+RUN_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, "geometry": "path", "panels": ["path"], "labels": ["text"], "fea_surface_targets_mm": ["float"], "fea_volume_targets_mm": ["float"]}
 FEA_RELAXED = {"surface_deviation_mm": 0.7, "fea_remesh_targets_mm": [1.5], "tet_attempts": ["remesh_hxt", "remesh_delaunay"]}
 def _camera(direction, up):
     d = np.asarray(direction, float)
@@ -161,27 +161,48 @@ def _count(mesh, region):
     vertices = mesh.vertices
     return int(np.all((vertices >= np.asarray(region["min_mm"])) & (vertices <= np.asarray(region["max_mm"])), axis=1).sum())
 
+def fea_surface(mesh, target, taubin):
+    import pymeshlab
+    meshes = pymeshlab.MeshSet()
+    meshes.add_mesh(pymeshlab.Mesh(mesh.vertices, mesh.faces))
+    meshes.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(target), iterations=6, featuredeg=40)
+    if taubin:
+        meshes.apply_coord_taubin_smoothing(stepsmoothnum=taubin)
+    return trimesh.Trimesh(meshes.current_mesh().vertex_matrix(), meshes.current_mesh().face_matrix())
+
+def robust_surface(mesh, config, settings):
+    from deep_frame.fea import _prepare_surface
+    trials = []
+    for volume_target in config["fea_volume_targets_mm"]:
+        for taubin in (config["fea_surface_taubin"], 0):
+            for target in config["fea_surface_targets_mm"]:
+                surface = fea_surface(mesh, target, taubin)
+                try:
+                    _prepare_surface(surface, settings, False, volume_target)
+                    trials.append({"surface_mm": target, "taubin": taubin, "volume_mm": volume_target, "passed": True})
+                    return surface, trials, volume_target
+                except ValueError as error:
+                    trials.append({"surface_mm": target, "taubin": taubin, "volume_mm": volume_target, "passed": False, "diagnostic": str(error)[-300:]})
+    return fea_surface(mesh, config["fea_surface_targets_mm"][0], config["fea_surface_taubin"]), trials, config["fea_volume_targets_mm"][0]
+
 def fea_main(overrides):
     from deep_frame.fea import MESH_KEYS, evaluate
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("geometry", "output"))
     config["output"].mkdir(parents=True, exist_ok=True)
     mesh = trimesh.load_mesh(config["geometry"], process=True)
-    if config["fea_surface_mm"] > 0:
-        import pymeshlab
-        meshes = pymeshlab.MeshSet()
-        meshes.add_mesh(pymeshlab.Mesh(mesh.vertices, mesh.faces))
-        meshes.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(config["fea_surface_mm"]), iterations=6, featuredeg=40)
-        meshes.apply_coord_taubin_smoothing(stepsmoothnum=config["fea_surface_taubin"])
-        mesh = trimesh.Trimesh(meshes.current_mesh().vertex_matrix(), meshes.current_mesh().face_matrix())
     domain = full_domain(config["fine_shape"])
+    settings = {**domain["fea_settings"], **{key: IMPLICIT_CONFIG[key] for key in MESH_KEYS}, "work_dir": str(config["output"]/"fea"), "mesh_timeout_s": 900.0, "solver_timeout_s": 1800.0, "threads": 8, "mesh_threads": 4, "fea_memory_budget_mb": 6000.0, "mesh_minimum_sicn": 0.005, **FEA_RELAXED}
+    surface_trials = []
+    if config["fea_surface_mm"] > 0:
+        mesh, surface_trials, volume_target = robust_surface(mesh, config, {**IMPLICIT_CONFIG, **settings})
+        settings["fea_remesh_targets_mm"] = [volume_target]
     cases, masses = fea_cases(domain, config["selector_half_band_mm"])
     preflight = {case["name"]: {"fixed": [_count(mesh, r) for r in case["fixed_regions"]], "loads": [_count(mesh, l["region"]) for l in case.get("loads", [])]} for case in cases}
     preflight["battery_attachment"] = [_count(mesh, m["attachment_region"]) for m in masses]
     print(json.dumps(preflight), flush=True)
-    settings = {**domain["fea_settings"], **{key: IMPLICIT_CONFIG[key] for key in MESH_KEYS}, "work_dir": str(config["output"]/"fea"), "mesh_timeout_s": 900.0, "solver_timeout_s": 1800.0, "threads": 8, "mesh_threads": 4, "fea_memory_budget_mb": 6000.0, "mesh_minimum_sicn": 0.005, **FEA_RELAXED}
     started = perf_counter()
     result = evaluate(mesh, domain["material"], masses, cases, settings)
-    result.update(runtime_s=perf_counter()-started, relaxed_settings=FEA_RELAXED, fea_surface_mm=config["fea_surface_mm"], fea_surface_taubin=config["fea_surface_taubin"], fea_surface_volume_mm3=float(mesh.volume), selector_half_band_mm=config["selector_half_band_mm"], preflight_vertex_counts=preflight, geometry=str(config["geometry"]))
+    result.update(runtime_s=perf_counter()-started, relaxed_settings=FEA_RELAXED, fea_surface_trials=surface_trials, fea_surface_taubin=config["fea_surface_taubin"], fea_surface_volume_mm3=float(mesh.volume), selector_half_band_mm=config["selector_half_band_mm"], preflight_vertex_counts=preflight, geometry=str(config["geometry"]))
     (config["output"]/"fea_result.json").write_text(json.dumps(result, indent=1, default=str))
     print(json.dumps(summary(result), indent=1), flush=True)
 
@@ -195,14 +216,17 @@ def build_main(overrides):
     config["output"].mkdir(parents=True, exist_ok=True)
     domain = full_domain(config["fine_shape"])
     density = np.load(config["source"])["density"]
+    reference, report_reference = reference_body(domain, density, config)
+    reference.export(config["output"]/"reference.stl")
     if config["geometry"]:
-        config["target_volume_mm3"] = float(trimesh.load_mesh(config["geometry"]).volume)
-    mesh, graph, report = reconstruct(domain, density, config)
+        report_reference["render_stl_mm3"] = float(trimesh.load_mesh(config["geometry"]).volume)
+    mesh, graph, report = reconstruct(domain, density, config, config["target_volume_mm3"] or report_reference["volume_mm3"])
+    report["reference"] = report_reference
     mesh.export(config["output"]/"geometry.stl")
     report["mass_g"] = report["volume_mm3"]*domain["material"]["density_g_cm3"]/1000
     (config["output"]/"reconstruction.json").write_text(json.dumps({**report, "config": {k: str(v) if isinstance(v, Path) else v for k, v in config.items()}}, indent=1, default=float))
     render_views(mesh, config["output"])
-    print(json.dumps({k: report[k] for k in ("members", "shells", "nodes", "volume_mm3", "solid_volume_mm3", "bodies", "watertight", "runtime_s")}, default=float), flush=True)
+    print(json.dumps({k: report[k] for k in ("members", "shells", "nodes", "volume_mm3", "target_volume_mm3", "global_scale", "mass_budget", "reference", "bodies", "watertight", "runtime_s")}, default=float), flush=True)
 
 def render_main(overrides):
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("geometry", "output"))

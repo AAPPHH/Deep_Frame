@@ -6,7 +6,9 @@ from scipy.ndimage import binary_dilation, convolve, distance_transform_edt, gau
 from skimage.morphology import skeletonize
 
 from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, IMPLICIT_CONFIG
+from deep_frame.topology_geometry import region_bounds
 from deep_frame.topology_implicit import TWENTY_SIX, ImplicitField, _envelope, exact_booleans, primitive_distance
+from deep_frame.topology_surface import _upsample
 
 CUBE = np.ones((3, 3, 3), dtype=np.uint8)
 OFFSETS = np.array([(i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1) for k in (-1, 0, 1) if i or j or k])
@@ -212,19 +214,71 @@ def shell_values(axes, shell):
     sample = lambda field: map_coordinates(field, grid, order=1, mode="nearest")
     return np.minimum(sample(shell["thickness"])/2-np.abs(local[..., 2]-sample(shell["surface"])), sample(shell["outline"])).astype(np.float32)
 
+def smoothed_density(density, config):
+    field = np.asarray(density, dtype=np.float32)
+    return gaussian_filter(field, config["density_sigma_cells"]) if config["density_sigma_cells"] > 0 else field
+
+def reference_body(domain, density, config=DESIGN_RECONSTRUCTION_CONFIG):
+    started = perf_counter()
+    sampled, origin, spacing = _upsample(domain, smoothed_density(density, config), config["reference_subdivisions"], "pchip")
+    mesh = ImplicitField(origin, spacing, sampled-config["threshold"]).extract()[0]
+    parts = mesh.split(only_watertight=False)
+    largest = max(parts, key=lambda part: abs(part.volume))
+    mesh, booleans = exact_booleans(largest, domain, IMPLICIT_CONFIG)
+    cell = float(np.prod(domain["grid"]["spacing_mm"]))
+    return mesh, {"density_integral_mm3": float(np.sum(density)*cell), "threshold_voxels_mm3": float(np.count_nonzero(np.asarray(density) > config["threshold"])*cell), "extracted_mm3": float(largest.volume), "volume_mm3": float(mesh.volume),
+                  "debris_mm3": float(sum(abs(p.volume) for p in parts if p is not largest)), "booleans_passed": bool(booleans["passed"]), "bodies": len(mesh.split(only_watertight=False)), "watertight": bool(mesh.is_watertight), "runtime_s": perf_counter()-started,
+                  "method": "density smoothed by density_sigma_cells, PCHIP-upsampled, marching cubes at the threshold, largest body, exact forbidden/envelope booleans"}
+
 class Reconstruction:
-    def __init__(self, domain, config=DESIGN_RECONSTRUCTION_CONFIG):
+    def __init__(self, domain, config=DESIGN_RECONSTRUCTION_CONFIG, density=None):
         self.domain, self.config = domain, config
+        self.density = None if density is None else smoothed_density(density, config)
         envelope = _envelope(domain)
         h, pad = config["voxel_mm"], 1.0
         low = np.asarray(envelope["min_mm"], dtype=float)-pad+h/2
         shape = tuple(np.ceil((np.asarray(envelope["max_mm"], dtype=float)+pad-low)/h).astype(int)+1)
         self.field = ImplicitField(low, h, np.full(shape, -pad, dtype=np.float32))
 
-    def _blend(self, window, values):
+    def _blend(self, window, values, radius=0.0):
         part = ImplicitField(self.field.origin, self.field.spacing, self.field.values[window])
-        part.smooth_union(values, self.config["transition_radius_mm"])
+        part.smooth_union(values, radius)
         self.field.values[window] = part.values
+
+    def raw_values(self, axes):
+        grid = self.domain["grid"]
+        spacing, origin = np.asarray(grid["spacing_mm"], dtype=float), np.asarray(grid["origin_mm"], dtype=float)
+        x = np.stack(np.broadcast_arrays(*axes), axis=0)
+        index = (x-origin.reshape(3, 1, 1, 1))/spacing.reshape(3, 1, 1, 1)-0.5
+        value = map_coordinates(self.density, index, order=1, mode="constant", cval=0.0)
+        slope = np.sqrt(sum(map_coordinates(g, index, order=1, mode="nearest")**2 for g in np.gradient(self.density, *spacing)))
+        return ((value-self.config["threshold"])/np.maximum(slope, self.config["threshold"]/self.config["root_slope_floor_mm"])).astype(np.float32)
+
+    def add_roots(self):
+        cfg = self.config
+        reach = cfg["root_distance_mm"]+cfg["root_taper_mm"]
+        for region in (r for r in self.domain["regions"] if r["role"] == "preserve" and r["name"].endswith(cfg["root_preserves"])):
+            window = self.field.window(region, reach)
+            if window is None:
+                continue
+            axes = self.field.axes(window)
+            outside = np.maximum(-primitive_distance(axes, region), 0)
+            raw = self.raw_values(axes)-np.maximum(outside-cfg["root_distance_mm"], 0)*cfg["root_taper_slope"]
+            self._blend(window, np.where(outside <= reach, raw, -np.inf).astype(np.float32))
+
+    def preserve_values(self, regions, pad):
+        values = np.full(self.field.values.shape, -np.inf, dtype=np.float32)
+        flush, r = self.config["preserve_flush_mm"], self.config["preserve_round_mm"]
+        for region in regions:
+            window = self.field.window(region, pad)
+            if window is None:
+                continue
+            axes = self.field.axes(window)
+            value = primitive_distance(axes, shrunk_region(region, r))+r
+            if region["kind"] == "box" or region.get("axis", "z") == "z":
+                value = np.minimum(value, region_bounds(region)[1][2]-flush-axes[2])
+            np.maximum(values[window], value.astype(np.float32), out=values[window])
+        return values
 
     def add_member(self, member, h):
         k = self.config["transition_radius_mm"]
@@ -255,12 +309,12 @@ class Reconstruction:
 
     def add_node(self, node):
         region = {"kind": "sphere", "center_mm": node["center"], "radius_mm": node["radius"]}
-        window = self.field.window(region, self.config["transition_radius_mm"])
+        window = self.field.window(region, 2*self.config["transition_radius_mm"])
         if window is not None:
-            self._blend(window, primitive_distance(self.field.axes(window), region).astype(np.float32))
+            self._blend(window, primitive_distance(self.field.axes(window), region).astype(np.float32), self.config["transition_radius_mm"])
 
     def finish(self):
-        k, h = self.config["transition_radius_mm"], self.field.spacing[0]
+        h = self.field.spacing[0]
         preserves = [r for r in self.domain["regions"] if r["role"] == "preserve"]
         forbidden = [r for r in self.domain["regions"] if r["role"] == "forbidden"]
         offset = np.float32(self.config["boolean_offset_mm"])
@@ -268,43 +322,83 @@ class Reconstruction:
             gaps = ImplicitField(self.field.origin, self.field.spacing, -self.field.values)
             gaps.open(self.config["closing_radius_mm"])
             self.field.values = -gaps.values
-        self.field.smooth_union(self.field.primitives(preserves, k+3*h)-offset, k)
-        self.field.intersect(-self.field.primitives(forbidden, offset+3*h)-offset)
+        self.field.smooth(self.config["member_smooth_mm"])
+        if self.density is not None and self.config["root_distance_mm"] > 0:
+            self.add_roots()
+        clip = lambda margin: self.field.intersect(-self.field.primitives(forbidden, margin+3*h)-margin)
+        clip(offset)
+        self.field.smooth_union(self.preserve_values(preserves, self.config["preserve_blend_mm"]+3*h), self.config["preserve_blend_mm"])
+        clip(np.float32(self.config["preserve_flush_mm"]))
         self.field.intersect(self.field.primitives([_envelope(self.domain)])+offset)
         return self.field.extract()
 
-def build_field(graph, domain, config, scale=1.0):
-    builder = Reconstruction(domain, config)
-    for member in graph.members:
-        builder.add_member(dict(member, a=member["a"]*scale, b=member["b"]*scale, **({"shell": dict(member["shell"], thickness=member["shell"]["thickness"]*scale)} if "shell" in member else {})), graph.h)
-    for node in graph.nodes:
-        builder.add_node(dict(node, radius=node["radius"]*scale))
-    return builder.finish()
+def shrunk_region(region, r):
+    if region["kind"] == "box":
+        return dict(region, min_mm=(np.asarray(region["min_mm"], dtype=float)+r).tolist(), max_mm=(np.asarray(region["max_mm"], dtype=float)-r).tolist())
+    return dict(region, radius_mm=region["radius_mm"]-r, height_mm=region["height_mm"]-2*r)
 
-def reconstruct(domain, density, config=DESIGN_RECONSTRUCTION_CONFIG):
+def core_region(region, r):
+    if region["kind"] == "box":
+        lateral = np.array([r, r, 0.0])
+        return dict(region, min_mm=(np.asarray(region["min_mm"], dtype=float)+lateral).tolist(), max_mm=(np.asarray(region["max_mm"], dtype=float)-lateral).tolist())
+    return dict(region, radius_mm=region["radius_mm"]-r)
+
+def core_domain(domain, config):
+    return dict(domain, regions=[core_region(r, config["preserve_round_mm"]) if r["role"] == "preserve" else r for r in domain["regions"]])
+
+def node_radius(node):
+    return float(min((3*node["volume"]/(4*np.pi))**(1/3), node["radius"]))
+
+def extended(member, nodes, scale):
+    ends = [nodes[n-1]["center"] if isinstance(n, int) else None for n in member["nodes"]]
+    pad = lambda values: np.concatenate([values[:1]]*(ends[0] is not None)+[values]+[values[-1:]]*(ends[1] is not None))
+    points = np.concatenate([[ends[0]]]*(ends[0] is not None)+[member["points"]]+[[ends[1]]]*(ends[1] is not None))
+    return dict(member, points=points, a=pad(member["a"])*scale, b=pad(member["b"])*scale, axis=pad(member["axis"]), nodes=["joined", "joined"])
+
+def build_field(graph, domain, config, scale=1.0, density=None):
+    builder = Reconstruction(domain, config, density)
+    for member in graph.members:
+        builder.add_member(extended(member, graph.nodes, scale) if member["kind"] == "rod" else dict(member, a=member["a"]*scale, b=member["b"]*scale, shell=dict(member["shell"], thickness=member["shell"]["thickness"]*scale)), graph.h)
+    radii = [node_radius(dict(node, volume=node["volume"]*scale**2)) for node in graph.nodes]
+    for node, radius in zip(graph.nodes, radii):
+        builder.add_node(dict(node, radius=radius))
+    mesh, extraction = builder.finish()
+    return mesh, {**extraction, "node_spheres_mm3": float(sum(4/3*np.pi*r**3 for r in radii))}
+
+def _volume(graph, domain, config, scale, density):
+    return float(exact_booleans(build_field(graph, domain, {**config, "voxel_mm": config["calibration_voxel_mm"]}, scale, density)[0], core_domain(domain, config), IMPLICIT_CONFIG)[0].volume)
+
+def reconstruct(domain, density, config=DESIGN_RECONSTRUCTION_CONFIG, target=None):
     started, times = perf_counter(), {}
     grid = domain["grid"]
     spacing = np.asarray(grid["spacing_mm"], dtype=float)
     solid, fragments = solid_body(density, config, float(np.prod(spacing)))
     graph = DesignGraph(solid, grid["origin_mm"], spacing[0], domain["preserve"], config)
     times["skeleton_s"] = perf_counter()-started
-    target = config["target_volume_mm3"] or float(solid.sum()*np.prod(spacing))
-    low, high, trials = 0.5, 1.5, []
-    for _ in range(config["calibration_steps"]):
-        scale = (low+high)/2
-        volume = float(exact_booleans(build_field(graph, domain, {**config, "voxel_mm": config["calibration_voxel_mm"]}, scale)[0], domain, IMPLICIT_CONFIG)[0].volume)
-        trials.append([scale, volume])
-        low, high = (scale, high) if volume < target else (low, scale)
-    scale = (low+high)/2 if trials else 1.0
+    target = target or config["target_volume_mm3"] or float(solid.sum()*np.prod(spacing))
+    low, high = config["minimum_scale"], config["maximum_scale"]
+    trials = [[1.0, _volume(graph, domain, config, 1.0, density)]] if config["calibration_steps"] else []
+    if trials and abs(trials[0][1]/target-1) > config["calibration_tolerance"]:
+        low, high = (low, 1.0) if trials[0][1] > target else (1.0, high)
+        for _ in range(config["calibration_steps"]):
+            scale = (low+high)/2
+            trials.append([scale, _volume(graph, domain, config, scale, density)])
+            low, high = (scale, high) if trials[-1][1] < target else (low, scale)
+        scale = min(trials, key=lambda trial: abs(trial[1]/target-1))[0]
+    else:
+        scale = 1.0
     times["calibration_s"] = perf_counter()-started-times["skeleton_s"]
-    mesh, extraction = build_field(graph, domain, config, scale)
+    mesh, extraction = build_field(graph, domain, config, scale, density)
     times["field_extract_s"] = perf_counter()-started-times["skeleton_s"]-times["calibration_s"]
     parts = mesh.split(only_watertight=False)
     largest = max(parts, key=lambda part: abs(part.volume))
     debris = {"count": len(parts)-1, "volume_mm3": float(sum(abs(p.volume) for p in parts if p is not largest))}
-    mesh, booleans = exact_booleans(largest, domain, IMPLICIT_CONFIG)
+    mesh, booleans = exact_booleans(largest, core_domain(domain, config), IMPLICIT_CONFIG)
     times["booleans_s"] = perf_counter()-started-sum(times.values())
-    report = {**graph.report(), "fragments_dropped": fragments, "target_volume_mm3": target, "global_scale": scale, "calibration": trials,"extraction_debris": debris, "solid_volume_mm3": float(solid.sum()*np.prod(spacing)), "volume_mm3": float(mesh.volume),
+    rods = [m for m in graph.members if m["kind"] == "rod"]
+    budget = {"target_mm3": target, "assigned_members_mm3": float(sum(m["target_volume"] for m in graph.members)), "built_members_mm3": float(sum(np.sum(np.pi*m["a"]*m["b"]*scale**2*m["length"]/max(len(m["a"]), 1)) for m in rods)),
+              "assigned_nodes_mm3": float(sum(n["volume"] for n in graph.nodes)), "node_spheres_mm3": extraction["node_spheres_mm3"], "preserves_mm3": float(np.count_nonzero(domain["preserve"])*np.prod(spacing)), "result_mm3": float(mesh.volume), "relative_to_target": float(mesh.volume/target-1)}
+    report = {**graph.report(), "fragments_dropped": fragments, "target_volume_mm3": target, "global_scale": scale, "calibration": trials, "mass_budget": budget, "extraction_debris": debris, "solid_volume_mm3": float(solid.sum()*np.prod(spacing)), "volume_mm3": float(mesh.volume),
               "watertight": bool(mesh.is_watertight), "bodies": len(mesh.split(only_watertight=False)), "exact_booleans": {key: booleans[key] for key in ("status", "components", "passed", "preserve_added_mm3", "forbidden_removed_mm3", "envelope_removed_mm3", "maximum_cylinder_oversize_mm")},
-              "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "voxel_mm": config["voxel_mm"], "transition_radius_mm": config["transition_radius_mm"], "runtime_s": {**times, "total_s": perf_counter()-started}}
+              "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "voxel_mm": config["voxel_mm"], "transition_radius_mm": config["transition_radius_mm"], "preserve_blend_mm": config["preserve_blend_mm"], "runtime_s": {**times, "total_s": perf_counter()-started}}
     return mesh, graph, report

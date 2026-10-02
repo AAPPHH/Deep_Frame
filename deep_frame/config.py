@@ -833,13 +833,26 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "transition_radius_mm": 1.5,
     "voxel_mm": 0.25,
     "target_volume_mm3": 0.0,
-    "calibration_steps": 7,
+    "calibration_steps": 4,
     "calibration_voxel_mm": 0.5,
     "selector_half_band_mm": 1.0,
     "fea_surface_mm": 0.5,
     "fea_surface_taubin": 10,
     "boolean_offset_mm": 0.3,
-    "closing_radius_mm": 0.75,
+    "closing_radius_mm": 0.0,
+    "reference_subdivisions": 2,
+    "preserve_blend_mm": 2.5,
+    "preserve_round_mm": 0.8,
+    "preserve_flush_mm": 0.02,
+    "member_smooth_mm": 0.5,
+    "root_preserves": "motor_contact",
+    "root_distance_mm": 3.0,
+    "root_taper_mm": 6.0,
+    "root_taper_slope": 0.5,
+    "root_slope_floor_mm": 1.0,
+    "minimum_scale": 0.9,
+    "maximum_scale": 1.15,
+    "calibration_tolerance": 0.03,
 }
 
 DESIGN_RECONSTRUCTION_KINDS = {
@@ -848,6 +861,7 @@ DESIGN_RECONSTRUCTION_KINDS = {
     "output": "path",
     "fine_shape": ["int", "int", "int"],
     "volume_match": "flag",
+    "root_preserves": "text",
 }
 
 CONFIG = {
