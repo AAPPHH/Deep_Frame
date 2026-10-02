@@ -728,7 +728,7 @@ EVALUATION_CONFIG = {
     "overhang_deg": 45.0,
     "bed_tolerance_mm": 0.2,
     "fit_tolerance_mm3": 1.0,
-    "hub_radius_mm": 7.1,
+    "hub_radius_mm": COMPONENT_DEFAULTS["motor"]["diameter_mm"] / 2,
     "section_voxel_mm": 0.05,
     "hole_tolerance_mm": 0.6,
     "screw_head_radius_mm": 1.9,

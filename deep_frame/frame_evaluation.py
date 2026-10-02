@@ -9,7 +9,7 @@ import numpy as np
 import trimesh
 from scipy import ndimage
 
-from deep_frame.config import COMPONENT_DEFAULTS, EVALUATION_CONFIG, EVALUATION_KINDS, FEA_CONFIG, FRAME_DEFAULTS, IMPLICIT_CONFIG, PRINT_MATERIAL, configure
+from deep_frame.config import COMPONENT_DEFAULTS, EVALUATION_CONFIG, EVALUATION_KINDS, FEA_CONFIG, FRAME_DEFAULTS, IMPLICIT_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG, configure
 from deep_frame.fea import MESH_KEYS, evaluate, print_axes
 from deep_frame.topology_geometry import region_contains
 
@@ -247,7 +247,7 @@ def geometry(spec, config=None):
 def walls(spec):
     from deep_frame.topology_implicit_validation import wall_opening
     mesh = load_frame(spec)
-    zones = spec.get("wall_zones") or [{"name": f"motor_{name}", "role": "preserve", "kind": "cylinder", "center_mm": [x, y, z - spec["motor_up"][name] * 2.0], "radius_mm": 8.0, "height_mm": 6.0, "axis": "z"} for name, (x, y, z) in spec["motors"].items()]
+    zones = spec.get("wall_zones") or [{"name": f"motor_{name}", "role": "preserve", "kind": "cylinder", "center_mm": [x, y, z - spec["motor_up"][name] * 2.0], "radius_mm": TOPOLOGY_CONFIG["motor_contact_radius_mm"], "height_mm": 6.0, "axis": "z"} for name, (x, y, z) in spec["motors"].items()]
     result = wall_opening(mesh, IMPLICIT_CONFIG, zones)
     result["calibrated_rule_passed"] = result.pop("passed")
     return result
