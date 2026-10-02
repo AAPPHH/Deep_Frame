@@ -9,7 +9,7 @@ import pytest
 import trimesh
 from build123d import Align, Box, Pos, Solid
 
-from deep_frame.config import CONFIG, FEA_CONFIG, IMPLICIT_CONFIG
+from deep_frame.config import CONFIG, CRASH_DIRECTIONS, FEA_CONFIG, IMPLICIT_CONFIG
 from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, _prepare_surface, _read_mesh, _run, _select, _topology, _volume_mesh, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
 from tests.test_frame import frame
@@ -231,6 +231,19 @@ def test_reference_case_uses_actual_battery_center_and_physical_force():
     assert model["material"]["density_g_cm3"] == parameters["material"]["density_g_cm3"]
     assert parameters == original
     json.dumps(model, allow_nan=False)
+
+def test_crash_directions_replace_both_crash_cases_with_equal_magnitude():
+    parameters = reference_parameters()
+    parameters["integration"]["crash_directions"] = list(CRASH_DIRECTIONS)
+    cases = {case["name"]: case for case in prepare_frame_case(parameters)["load_cases"]}
+    crash = [case for name, case in cases.items() if name.startswith("crash_")]
+    assert sorted(cases).count("crash_arm") == 0 and len(crash) == len(CRASH_DIRECTIONS)
+    for case in crash:
+        assert math.hypot(*map(sum, zip(*(load["force_n"] for load in case["loads"])))) == pytest.approx(0.125 * 9.80665 * 25)
+    assert {"arm_tip", "battery_impact", "camera_side", "thrust_all", "modes"} <= set(cases)
+    parameters["integration"]["crash_directions"] = ["sideways"]
+    with pytest.raises(ValueError, match="Unknown crash directions"):
+        prepare_frame_case(parameters)
 
 def test_every_fixture_load_and_mass_selector_meets_real_frame(frame):
     model = prepare_frame_case(reference_parameters())
