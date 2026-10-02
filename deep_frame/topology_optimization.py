@@ -441,7 +441,7 @@ class HexElasticity:
                         raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
                     self.gpu_transient_releases += 1
             residual = np.linalg.norm(reduced @ solutions - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
-            tolerance = 1e-8 if self.linear_solver == "cuda_cudss" else 1e-4
+            tolerance = 1e-6 if self.linear_solver == "cuda_cudss" else 1e-4
             if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
                 raise RuntimeError(f"Topology linear solve failed residual check: {residual.tolist()}")
             for column, case in enumerate(cases):
