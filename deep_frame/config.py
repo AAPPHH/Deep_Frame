@@ -814,6 +814,41 @@ IMPLICIT_KINDS = {
     "fea_remesh_targets_mm": ["float"],
 }
 
+DESIGN_RECONSTRUCTION_CONFIG = {
+    "source": None,
+    "output": None,
+    "fine_shape": [204, 192, 48],
+    "density_sigma_cells": 1.0,
+    "threshold": 0.5,
+    "spur_factor": 2.0,
+    "spur_minimum_mm": 3.0,
+    "prune_passes": 3,
+    "path_sigma_samples": 4.0,
+    "section_sigma_samples": 6.0,
+    "minimum_radius_mm": 0.5,
+    "maximum_aspect": 2.0,
+    "volume_match": True,
+    "shell_aspect": 3.0,
+    "shell_sigma_mm": 1.0,
+    "transition_radius_mm": 1.5,
+    "voxel_mm": 0.25,
+    "target_volume_mm3": 0.0,
+    "calibration_steps": 7,
+    "calibration_voxel_mm": 0.5,
+    "selector_half_band_mm": 1.0,
+    "fea_surface_mm": 0.5,
+    "boolean_offset_mm": 0.3,
+    "closing_radius_mm": 0.75,
+}
+
+DESIGN_RECONSTRUCTION_KINDS = {
+    **{key: "float" if isinstance(value, float) else "int" for key, value in DESIGN_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},
+    "source": "path",
+    "output": "path",
+    "fine_shape": ["int", "int", "int"],
+    "volume_match": "flag",
+}
+
 CONFIG = {
     "length_mm": 30.0,
     "width_mm": 20.0,
