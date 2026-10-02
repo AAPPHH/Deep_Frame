@@ -271,21 +271,21 @@ class FrameRun:
         if self.layout.style["torsion"] and not any("torsion" in case["name"] for case in domain["load_cases"]):
             self.manifest["notes"].append("torsion load case pending: no stage load-case builder provides it yet")
         result = out / variant
-        command = self.command("optimization", {"patch": self.layout.patch(crash), "argv": ["run"], "overrides": overrides}, "cli")
+        command = self.command("optimization", {"patch": self.layout.patch(crash), "argv": self.stages["optimization"]["argv"], "overrides": overrides}, "cli")
         self.execute("optimization", command, self.stages["optimization"]["worktree"], [result / "geometry.stl", result / "density_fine.npz"])
         return result
 
     def reconstruction(self, density):
         out = self.dir / "reconstruction"
         overrides = {"source": str(density), "output": str(out), "fine_shape": self.grid["fine_shape"], **self.grid["reconstruction"]}
-        command = self.command("reconstruction", {"patch": self.layout.patch(), "argv": ["build"], "overrides": overrides}, "cli")
+        command = self.command("reconstruction", {"patch": self.layout.patch(), "argv": self.stages["reconstruction"]["argv"], "overrides": overrides}, "cli")
         self.execute("reconstruction", command, self.stages["reconstruction"]["worktree"], [out / "geometry.stl"])
         return out / "geometry.stl"
 
     def geometry(self, mesh, domain):
         out = self.dir / "geometry" / "walls.json"
         regions = [region for region in domain["regions"] if region.get("role") == "preserve" and "motor" in region["name"]]
-        command = self.command("geometry", {"patch": {}, "function": "wall_rule", "kwargs": {"mesh": str(mesh), "regions": regions}, "result": str(out)}, "call")
+        command = self.command("geometry", {"patch": {}, "function": self.stages["geometry"]["argv"][0], "kwargs": {"mesh": str(mesh), "regions": regions}, "result": str(out)}, "call")
         self.execute("geometry", command, self.stages["geometry"]["worktree"], [out])
         return _load(out)
 
@@ -316,17 +316,17 @@ class FrameRun:
         request = self.dir / "requests" / "evaluation_frame.json"
         _save(request, self.evaluation_spec(domain, mesh))
         out = self.dir / "evaluation" / "evaluation.json"
-        self.execute("evaluation", [spec["python"], str(Path(spec["worktree"]) / spec["tool"]), "run", str(request)], spec["worktree"], [out])
+        self.execute("evaluation", [spec["python"], str(Path(spec["worktree"]) / spec["tool"]), *spec["argv"], str(request)], spec["worktree"], [out])
         return _load(out)
 
     def renders(self, mesh):
         out = self.dir / "renders"
-        command = self.command("renders", {"patch": {}, "function": "render_views", "kwargs": {"mesh": str(mesh), "out": str(out), "views": self.settings["views"]}}, "call")
+        command = self.command("renders", {"patch": {}, "function": self.stages["renders"]["argv"][0], "kwargs": {"mesh": str(mesh), "out": str(out), "views": self.settings["views"]}}, "call")
         self.execute("renders", command, self.stages["renders"]["worktree"], [out / f"{view}.png" for view in self.settings["views"]])
 
     def datasheet(self):
         spec = self.stages["datasheet"]
-        command = [sys.executable, self.settings["compute"], spec["compute"], "--cwd", str(ROOT), "--", spec["python"], str(ROOT / "run.py"), "datasheet", str(self.dir / "manifest.json")]
+        command = [sys.executable, self.settings["compute"], spec["compute"], "--cwd", str(ROOT), "--", spec["python"], str(ROOT / spec["tool"]), *spec["argv"], str(self.dir / "manifest.json")]
         self.execute("datasheet", command, ROOT, [self.dir / "datasheet.md"])
 
     def run(self):
@@ -362,6 +362,8 @@ class FrameRun:
                 evaluation = self.evaluation(domain, self.dir / "frame.stl")
             else:
                 self.mark("evaluation", "pending", "evaluation tool not found; wired to run as soon as tools/evaluate_frame.py exists")
+            if evaluation:
+                self.manifest["evaluation_gates"] = {"fea_solved": "fea_solved" not in evaluation.get("assessment", {}).get("missed", []), "missed": evaluation.get("assessment", {}).get("missed")}
             _save(self.dir / "evaluation.json", evaluation or {"status": self.manifest["stages"]["evaluation"]["status"], "reason": self.manifest["stages"]["evaluation"].get("reason", "see logs/evaluation.log")})
             if self.available("renders"):
                 self.renders(self.dir / "frame.stl")
@@ -370,6 +372,7 @@ class FrameRun:
         self.datasheet()
         statuses = [entry["status"] for entry in self.manifest["stages"].values()]
         self.manifest["status"] = "complete" if all(status == "ran" for status in statuses) else "partial"
+        self.manifest["print_ready"] = bool(self.manifest.get("wall_rule_passed")) and not (self.manifest.get("evaluation_gates") or {}).get("missed")
         self.manifest["outputs"] = {path.name: _digest(path) for path in sorted(self.dir.iterdir()) if path.is_file()}
         self.save()
         return self.manifest

@@ -937,12 +937,12 @@ RUN_GRIDS = {
 }
 
 STAGES = {
-    "optimization": {"worktree": "C:/clones/Deep_Frame-nr2", "tool": "tools/neural_study.py", "argv": ["run", "{overrides}"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu/.venv/Scripts/python.exe"},
-    "reconstruction": {"worktree": "C:/clones/Deep_Frame-recon", "tool": "tools/reconstruction_study.py", "argv": ["build", "{overrides}"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "geometry": {"worktree": "C:/clones/Deep_Frame-int", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["walls", "{overrides}"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "evaluation": {"worktree": "C:/clones/Deep_Frame-eval", "tool": "tools/evaluate_frame.py", "argv": ["run", "{overrides}"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "datasheet": {"worktree": "C:/clones/Deep_Frame-run", "tool": "run.py", "argv": ["datasheet", "{overrides}"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "renders": {"worktree": "C:/clones/Deep_Frame-neural", "tool": "exports/fast/_neural_scripts/render.py", "argv": ["views", "{overrides}"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "optimization": {"worktree": "C:/clones/Deep_Frame-nr2", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu/.venv/Scripts/python.exe"},
+    "reconstruction": {"worktree": "C:/clones/Deep_Frame-recon", "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "geometry": {"worktree": "C:/clones/Deep_Frame-int", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "evaluation": {"worktree": "C:/clones/Deep_Frame-eval", "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "datasheet": {"worktree": "C:/clones/Deep_Frame-run", "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "renders": {"worktree": "C:/clones/Deep_Frame-neural", "tool": "exports/fast/_neural_scripts/render.py", "argv": ["render_views"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
 }
 RUN_SETTINGS = {"root": "exports/runs", "compute": "C:/clones/Deep_Frame-int/tools/compute.py", "domain_stage": "optimization", "domain_compute": "cpu",
                 "views": {"iso": [[0.55, -0.85, -0.62], [0, 0, 1]], "top": [[0, 0, -1], [0, 1, 0]], "side": [[-1, 0, 0], [0, 0, 1]], "front": [[0, -1, 0], [0, 0, 1]]},
