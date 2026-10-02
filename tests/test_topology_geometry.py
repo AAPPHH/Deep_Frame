@@ -148,10 +148,10 @@ def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain)
     clearance = domain["metadata"]["prescribed_clearance"]
     assert clearance["passed"] and clearance["required_width_mm"] == pytest.approx(2.1)
     regions = {region["name"]: region for region in domain["regions"]}
-    assert regions["battery_contact_1_1"]["max_mm"][2] == pytest.approx(29.5)
-    assert regions["front_left_motor_contact"]["radius_mm"] - regions["motor_front_left_envelope"]["radius_mm"] == pytest.approx(2.1)
+    assert regions["battery_rail_1"]["max_mm"][2] == pytest.approx(29.5)
+    assert regions["front_left_motor_contact"]["radius_mm"] - regions["front_left_motor_screw_0"]["radius_mm"] - 4.5 == pytest.approx(2.1)
     extended = {pair["preserve"] for pair in domain["metadata"]["flush_contact_extensions"]}
-    assert {"battery_contact_1_1", "xt30_contact", "front_left_motor_contact"} | {f"aio_contact_{index}" for index in range(4)} <= extended and "antenna_contact" not in extended
+    assert {"battery_rail_1", "xt30_contact", "front_left_motor_contact"} | {f"aio_contact_{index}" for index in range(4)} <= extended and "antenna_contact" not in extended
     assert regions["aio_contact_0"]["height_mm"] == pytest.approx(6.0) and regions["aio_contact_0"]["radius_mm"] == pytest.approx(3.1) and "flush_kept_near_wall" not in clearance
     keepout = {"name": "k", "role": "forbidden", "kind": "box", "min_mm": [0, 0, 4], "max_mm": [10, 10, 8], "purpose": ""}
     pad = {"name": "p", "role": "preserve", "kind": "box", "min_mm": [2, 2, 0], "max_mm": [8, 8, 4], "purpose": ""}

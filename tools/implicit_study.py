@@ -28,8 +28,8 @@ PACKAGES = ("numpy", "scipy", "scikit-image", "trimesh", "rtree", "pymeshlab", "
 PARAMETERS = {"transition_radius_mm": "k_mm", "density_sigma_mm": "sigma_d_mm", "preserve_inflation_mm": "delta_mm", "constraint_offset_mm": "c_mm", "opening_radius_mm": "r_open_mm", "ripple_sigma_mm": "sigma_r_mm", "subdivisions": "subdivisions"}
 VIEWS = (("isometric", 28, -48, "Isometrie"), ("top", 90, -90, "Draufsicht (+z)"), ("front", 0, -90, "Vorderansicht (-y)"), ("side", 0, 0, "Seitenansicht (+x)"))
 LABELS = {True: "Geometrie-Gates bestanden - mechanische Freigabe separat pruefen", False: "DIAGNOSE - Geometrie-Gates nicht bestanden"}
-RUN_CONFIG = {"source": None, "output": None, "reference_step": REFERENCE_STEP, "geometry_only": False, "study_timeout_s": 14400.0, "run_log": None, "section_heights_mm": [2.0, 27.0], **IMPLICIT_CONFIG}
-RUN_KINDS = {"source": "path", "output": "path", "reference_step": "path", "geometry_only": "flag", "study_timeout_s": "float", "run_log": "path", "section_heights_mm": ["float"], **IMPLICIT_KINDS}
+RUN_CONFIG = {"source": None, "output": None, "reference_step": REFERENCE_STEP, "geometry_only": False, "study_timeout_s": 14400.0, "run_log": None, "section_heights_mm": [2.0, 27.0], "diagnostic_fea_always": False, **IMPLICIT_CONFIG}
+RUN_KINDS = {"source": "path", "output": "path", "reference_step": "path", "geometry_only": "flag", "study_timeout_s": "float", "run_log": "path", "section_heights_mm": ["float"], "diagnostic_fea_always": "flag", **IMPLICIT_KINDS}
 RENDER_CONFIG = {"geometry": None, "output": None, "inputs": None, "label": "", "section_heights_mm": [2.0, 27.0], **{key: IMPLICIT_CONFIG[key] for key in ("render_faces", "curvature_radius_mm", "curvature_samples")}}
 RENDER_KINDS = {"geometry": "path", "output": "path", "inputs": "path", "label": "text", "section_heights_mm": ["float"], **{key: IMPLICIT_KINDS[key] for key in ("render_faces", "curvature_radius_mm", "curvature_samples")}}
 SUMMARIZE_CONFIG = {"run_log": None, "output": None, "runs": None}
@@ -227,7 +227,7 @@ class ImplicitStudy:
         footer = f"{record['id']} | t = {settings['threshold']:g}, {settings['extension']} | geometry.stl SHA256 {record['final_mesh']['files']['geometry.stl']['sha256'][:16]} | {len(mesh.faces)} Dreiecke"
         record["renders"] = render_views(mesh, self.domain, directory/"renders", LABELS[passed], footer, config["render_faces"], config["section_heights_mm"])
         timings["renders"] = perf_counter()-clock
-        diagnostic = not passed and config["diagnostic_fea"] and validation["violations"] == ["features"] and record["mass_screen"]["passed"]
+        diagnostic = not passed and (config["diagnostic_fea_always"] or config["diagnostic_fea"] and validation["violations"] == ["features"] and record["mass_screen"]["passed"])
         if not (passed or diagnostic) or config["geometry_only"]:
             return
         if not diagnostic:

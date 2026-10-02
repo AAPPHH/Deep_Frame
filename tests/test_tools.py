@@ -22,6 +22,7 @@ from tools import compute
 from tools import implicit_study as implicit
 from tools import mature_pipeline as pipeline
 from tools import topology_study
+from tools import neural_study
 from tools import workstation_study as workstation
 from tools.topology_study import field_comparison, plot_gpu, verify_artifacts, verify_comparable_settings, verify_frozen_reference
 
@@ -989,7 +990,7 @@ def test_implicit_study_flags_sources_built_on_older_prescribed_geometry():
     built = build_design_domain(parameters)
     domain = {**json.loads(json.dumps({key: built[key] for key in ("grid", "regions")})), **{name: built[name].copy() for name in ("allowed", "preserve", "forbidden")}}
     assert implicit.domain_currency(parameters, domain) == {"regions_current": True, "grid_current": True, "mask_cells_changed": {"allowed": 0, "preserve": 0, "forbidden": 0}, "prescribed_clearance_passed": True}
-    contact = next(region for region in domain["regions"] if region["name"] == "battery_contact_1_1")
+    contact = next(region for region in domain["regions"] if region["name"] == "battery_rail_1")
     contact["max_mm"][2] = 29.0
     domain["preserve"].flat[np.flatnonzero(domain["preserve"])[0]] = False
     stale = implicit.domain_currency(parameters, domain)
@@ -1059,3 +1060,44 @@ def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
     assert (tmp_path / "out.txt").read_text() == str(need["num_cpus"]) + "ccx"
     with pytest.raises(SystemExit):
         compute.main(["unknown", "--", "x"])
+
+def test_round2_domain_lifts_pads_and_adds_camera_hoops():
+    full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
+    z = neural_study.grid_centers(full["grid"])[..., 2]
+    pads = neural_study.anchors(full)
+    pad = neural_study.STUDY["pad"]
+    bottom = pad["top_mm"] - pad["thickness_mm"]
+    assert pads.any() and z[pads].min() >= bottom and z[pads].max() <= pad["top_mm"]
+    assert full["metadata"]["round2"]["hoop_cells"] > 0 and not np.any(full["preserve"] & ~full["allowed"])
+    cases = {case["name"]: case for case in full["load_cases"]}
+    assert "crash_hoop" in cases and half["optimizer_settings"]["case_weights"]["crash_hoop"] == 1.0
+    assert all(box["min_mm"][2] == pytest.approx(bottom - 0.01) for box in cases["battery_impact"]["fixed_regions"])
+
+def test_round3_domain_turns_flight_and_crash_cases_into_inertia_relief():
+    full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16], 0.05)
+    cases = {case["name"]: case for case in half["load_cases"]}
+    relief = [name for name, case in cases.items() if "inertia_relief" in case]
+    assert {"arm_tip", "thrust_all", "crash_hoop", "crash_below"} <= set(relief) and all(not cases[name]["fixed_regions"] for name in relief)
+    assert "inertia_relief" not in cases["battery_impact"] and cases["battery_impact"]["fixed_regions"]
+    masses = cases["thrust_all"]["inertia_relief"]
+    assert sum(item["mass_g"] for item in masses["point_masses"]) == pytest.approx(37.0 + 7.2 + 2.3 + 4 * 5.2)
+    assert masses["preserve_mass_g"] == pytest.approx(0.05 * full["metadata"]["allowed_volume_mm3"] * 1.09 / 1000)
+
+def test_lower_chord_detects_a_continuous_low_member():
+    grid = {"origin_mm": [-30.0, -30.0, 0.0], "spacing_mm": [1.0, 1.0, 1.0], "shape": [60, 60, 20]}
+    density = np.zeros(grid["shape"])
+    density[27:33, 2:58, 2:6] = 1
+    cfg = {"half_width_mm": 20.0, "z_max_mm": 10.0, "y_span_mm": [-25.0, 25.0]}
+    assert neural_study.lower_chord(density, grid, cfg)["lower_chord"]
+    density[:, 28:32] = 0
+    report = neural_study.lower_chord(density, grid, cfg)
+    assert not report["lower_chord"] and report["y_slice_coverage"] < 1
+
+def test_keep_connected_drops_floating_parts():
+    field = np.zeros((20, 10, 10))
+    field[1:8, 2:6, 2:6], field[12:18, 2:6, 2:6] = 1, 1
+    anchor = np.zeros(field.shape, dtype=bool)
+    anchor[2, 3, 3] = True
+    kept, report = neural_study.keep_connected(field, {"spacing_mm": [1, 1, 1]}, 0.5, anchor)
+    assert report["components_raw"] == 2 and report["dropped_count"] == 1 and report["dropped_volume_mm3"] == 96
+    assert kept[3, 3, 3] == 1 and not kept[12:18].any()

@@ -241,21 +241,13 @@ def _component_regions(parameters, settings, grid):
         regions.append(_cylinder(f"aio_contact_{index}", "preserve", [x, y, height / 2], settings["aio_boss_radius_mm"], height, "AIO mounting boss; no prescribed central plate", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
         regions.append(_cylinder(f"aio_screw_{index}", "forbidden", [x, y, height / 2], (c["aio15"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2, height + 2, "AIO through screw and underside assembly access", rasterize=False))
     battery_z = placements["battery"]["position"][2]
-    contact_width, contact_length = settings["battery_contact_width_mm"], settings["battery_contact_length_mm"]
-    for sx, sy in product((-1, 1), repeat=2):
-        x = sx * (c["battery"]["width_mm"] / 2 - contact_width / 2)
-        y = sy * settings["battery_contact_y_mm"]
-        regions.append(_box(f"battery_contact_{sx}_{sy}", "preserve", [x - contact_width / 2, y - contact_length / 2, battery_z - depth], [x + contact_width / 2, y + contact_length / 2, battery_z], "Independent battery support pad; optimizer chooses supporting paths", attachment_area_min_mm2=12.0, minimum_wall_mm=2.0))
-    band_half = parameters["integration"]["battery_attachment_band_width_mm"] / 2
-    band_y = parameters["integration"]["battery_attachment_y_mm"]
+    rail_width, rail_length = settings["battery_contact_width_mm"], settings["battery_contact_length_mm"]
     for sign in (-1, 1):
-        x = sign * (c["battery"]["width_mm"] / 2 + 1)
-        regions.append(_box(f"battery_coupling_{sign}", "preserve", [x - contact_width / 2, band_y - max(band_half, 4), battery_z - depth], [x + contact_width / 2, band_y + max(band_half, 4), battery_z], "Local transverse band for the same battery mass and impact coupling as v0", attachment_area_min_mm2=12.0, minimum_wall_mm=2.0))
-    for sx, sy in product((-1, 1), repeat=2):
-        x, y = sx * (c["battery"]["width_mm"] / 2 + 1.5), sy * 12.0
-        rim = settings["strap_rim_mm"]
-        regions.append(_box(f"strap_contact_{sx}_{sy}", "preserve", [x - 1.0 - rim, y - 6.0 - rim, battery_z - depth], [x + 1.0 + rim, y + 6.0 + rim, battery_z], "Local strap eyelet with two-millimeter rim; no prescribed deck or deck support", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
-        regions.append(_box(f"strap_access_{sx}_{sy}", "forbidden", [x - 1.0, y - 6.0, battery_z - depth - 1], [x + 1.0, y + 6.0, upper[2] + 1], "Battery strap insertion slot beside wide battery face", rasterize=False))
+        x, y = sign * settings["battery_rail_x_mm"], settings["battery_contact_y_mm"]
+        regions.append(_box(f"battery_rail_{sign}", "preserve", [x - rail_width / 2, y - rail_length / 2, battery_z - 3.0], [x + rail_width / 2, y + rail_length / 2, battery_z], "Longitudinal battery strap rail under the battery edge, ManaFly style; strap wraps battery and rail", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
+    aio = placements["aio15"]["position"]
+    aio_top = aio[2] + c["aio15"]["stack_height_mm"] + clearance
+    regions.append(_box("elrs_antenna_clearance", "forbidden", [-c["aio15"]["width_mm"] / 2 - clearance, -c["aio15"]["length_mm"] / 2 - clearance, aio_top], [c["aio15"]["width_mm"] / 2 + clearance, c["aio15"]["length_mm"] / 2 + clearance, aio_top + c["aio15"]["elrs_antenna_clearance_mm"]], "ELRS wire antenna lifted at least 3 mm above the AIO board"))
     battery_half = c["battery"]["width_mm"] / 2 + clearance
     regions.append(_box("battery_insertion", "forbidden", [-battery_half, -c["battery"]["length_mm"] / 2 - clearance, battery_z], [battery_half, c["battery"]["length_mm"] / 2 + clearance, max(battery_z + c["battery"]["height_mm"] + clearance, upper[2] + 1)], "Battery removal vertically above its contact pads"))
     camera_width = c["camera"]["width_mm"] + 2 * f["camera_side_clearance_mm"]
@@ -292,7 +284,7 @@ def _connection_cases(regions, model, force):
     cases = []
     for region in regions:
         name = region["name"]
-        if region["role"] != "preserve" or not name.startswith(("aio_contact_", "battery_contact_", "strap_contact_", "camera_mount_", "xt30_contact", "balancer_contact", "antenna_contact")):
+        if region["role"] != "preserve" or not name.startswith(("aio_contact_", "battery_rail_", "camera_mount_", "xt30_contact", "balancer_contact", "antenna_contact")):
             continue
         if region["kind"] == "box":
             minimum, maximum = region["min_mm"], region["max_mm"]
@@ -332,8 +324,10 @@ def build_design_domain(parameters):
         {"kind": "box", "min_mm": [x - fixture_radius, y - fixture_radius, -tolerance], "max_mm": [x + fixture_radius, y + fixture_radius, tolerance]}
         for x, y in mount_positions(parameters)["aio15"]
     ]
-    next(case for case in model["load_cases"] if case["name"] == "arm_tip")["fixed_regions"] = aio_fixtures
-    model["fixture_model"] = "Arm-tip case: undersides of the four mandatory AIO mounting contacts fixed; other cases: four motor contact undersides fixed. Identical selectors must be used for v0 comparison."
+    for case in model["load_cases"]:
+        if case["name"] in ("arm_tip", "thrust_all") or case["name"].startswith("crash_"):
+            case["fixed_regions"] = deepcopy(aio_fixtures)
+    model["fixture_model"] = "Arm-tip, thrust and crash cases: undersides of the four mandatory AIO mounting contacts fixed; other cases: four motor contact undersides fixed. Identical selectors must be used for v0 comparison."
     auxiliary_cases = _connection_cases(regions, model, settings["connection_proof_force_n"])
     weights = {case["name"]: 1.0 for case in model["load_cases"] if case["analysis"] == "static"}
     weights.update({case["name"]: 1.0 / (3 * len(auxiliary_cases)) for case in auxiliary_cases})
@@ -394,6 +388,28 @@ def build_design_domain(parameters):
             ],
         },
     }
+
+def symmetric_domains(domain, axis=0):
+    grid = domain["grid"]
+    shape, origin, spacing = list(grid["shape"]), np.asarray(grid["origin_mm"], dtype=float), np.asarray(grid["spacing_mm"], dtype=float)
+    if shape[axis] % 2 or abs(origin[axis] + shape[axis] * spacing[axis] / 2) > 1e-9:
+        raise ValueError("Symmetric half domains need an even cell count centered on the mirror plane")
+    allowed = domain["allowed"] & np.flip(domain["allowed"], axis)
+    preserve = (domain["preserve"] | np.flip(domain["preserve"], axis)) & allowed
+    if label(allowed)[1] != 1 or not (allowed & ~preserve).any():
+        raise ValueError("The symmetrized design domain must be face-connected with free cells")
+    full = {**domain, "allowed": allowed, "preserve": preserve, "forbidden": ~allowed}
+    full["metadata"] = {**domain.get("metadata", {}), "symmetrization": {"axis": axis, "removed_allowed_cells": int(np.count_nonzero(domain["allowed"] & ~allowed)), "added_preserve_cells": int(np.count_nonzero(preserve & ~domain["preserve"]))}}
+    cut = [slice(None)] * 3
+    cut[axis] = slice(shape[axis] // 2, None)
+    half_grid = deepcopy(grid)
+    half_grid["shape"][axis] = shape[axis] // 2
+    half_grid["origin_mm"][axis] = 0.0
+    half = {**full, "grid": half_grid, "symmetry": {"axis": axis, "plane_mm": 0.0}, **{name: full[name][tuple(cut)].copy() for name in ("allowed", "preserve", "forbidden")}}
+    return full, half
+
+def mirror_field(half, axis=0):
+    return np.concatenate([np.flip(half, axis), half], axis=axis)
 
 def region_shape(region):
     if region["kind"] == "box":
