@@ -196,31 +196,32 @@ def holes(mesh, pattern, h, tolerance):
             found.append({"position_mm": position.tolist(), "centroid_mm": centroid.tolist(), "diameter_mm": diameter})
     return {"name": pattern["name"], "expected": pattern["count"], "found": len(found), "holes": found, "material_in_section": bool(image.any()), "passed": len(found) >= pattern["count"]}
 
-def blocked(mesh, starts, direction):
+def blocked(mesh, starts, direction, skip):
     direction = np.asarray(direction, dtype=float) / np.linalg.norm(direction)
     inside = mesh.contains(starts)
-    _, rays, _ = mesh.ray.intersects_location(starts, np.repeat([direction], len(starts), axis=0), multiple_hits=True)
-    hits = np.bincount(rays, minlength=len(starts))
-    return hits > inside.astype(int)
+    locations, rays, _ = mesh.ray.intersects_location(starts, np.repeat([direction], len(starts), axis=0), multiple_hits=True)
+    distance = np.round(np.einsum("ij,j->i", locations - starts[rays], direction), 4)
+    entries = [np.unique(distance[rays == index])[int(inside[index])::2] for index in range(len(starts))]
+    return np.array([bool(np.any(values > skip)) for values in entries])
 
-def reachable(mesh, start, direction, radius):
+def reachable(mesh, start, direction, radius, skip):
     direction = np.asarray(direction, dtype=float)
     first, second, _ = print_axes(direction)
     starts = np.asarray([start] + [np.asarray(start) + radius * (math.cos(angle) * first + math.sin(angle) * second) for angle in np.linspace(0, 2 * math.pi, 8, endpoint=False)])
-    return not bool(blocked(mesh, starts, direction).any())
+    return not bool(blocked(mesh, starts, direction, skip).any())
 
 def assembly(mesh, solid, lower, spec, config):
     h = config["voxel_mm"]
     patterns = [holes(mesh, pattern, config["section_voxel_mm"], config["hole_tolerance_mm"]) for pattern in spec["mount_patterns"]]
     for pattern, result in zip(spec["mount_patterns"], patterns):
-        result["tool_reachable"] = [reachable(mesh, [*hole["position_mm"], pattern["z_mm"]], pattern["tool_direction"], config["screw_head_radius_mm"]) for hole in result["holes"]]
+        result["tool_reachable"] = [reachable(mesh, [*hole["centroid_mm"], pattern["z_mm"]], pattern["tool_direction"], config["screw_head_radius_mm"], config["tool_skip_mm"]) for hole in result["holes"]]
     points = lower + (np.argwhere(solid) + 0.5) * h
     fit = {region["name"]: float(region_contains(points, shrink(region, h)).sum() * h ** 3) for region in spec["keep_outs"]}
-    connectors = {item["name"]: reachable(mesh, item["position_mm"], item["direction"], config["connector_radius_mm"]) for item in spec["connectors"]}
+    connectors = {item["name"]: reachable(mesh, item["position_mm"], item["direction"], config["connector_radius_mm"], config["tool_skip_mm"]) for item in spec["connectors"]}
     return {"bolt_patterns": patterns, "keep_out_material_mm3": fit, "connector_reachable": connectors, "fit_tolerance_mm3": config["fit_tolerance_mm3"],
             "bolt_patterns_passed": all(item["passed"] for item in patterns), "tools_passed": all(all(item["tool_reachable"]) for item in patterns) and all(connectors.values()),
             "fit_passed": all(volume <= config["fit_tolerance_mm3"] for volume in fit.values()), "connectors_checked": bool(spec["connectors"]),
-            "method": "holes from an exact plane section rasterised at the section voxel; reachability = 9 parallel rays (axis plus screw-head or connector radius) from the hole or connector along the tool axis must leave the part without a hit; fit = material voxels inside each keep-out shrunk by one voxel"}
+            "method": "holes from an exact plane section rasterised at the section voxel; reachability = 9 parallel rays (axis plus screw-head or connector radius) from the hole or connector along the tool axis must not re-enter material beyond the tool skip distance (the pad itself); fit = material voxels inside each keep-out shrunk by one voxel"}
 
 def geometry(spec, config=None):
     config = config or spec
@@ -290,10 +291,10 @@ def slice_frame(spec, config=None):
         completed = subprocess.run([slicer["executable"], "--export-gcode", *slicer["options"], *extra, "--output", str(output), str(directory / "printed.stl")], capture_output=True, text=True, timeout=slicer["timeout_s"])
         text = output.read_text(encoding="utf-8", errors="replace")[-20000:] if output.exists() else ""
         time_match = re.search(r"estimated printing time \(normal mode\) = (.+)", text)
-        volume = re.search(r"filament used \[mm3\] = ([\d.]+)", text)
+        volume = re.search(r"filament used \[cm3\] = ([\d.]+)", text)
         grams = re.search(r"filament used \[g\] = ([\d.]+)", text)
         result[label] = {"returncode": completed.returncode, "runtime_s": perf_counter() - started, "log_tail": (completed.stdout + completed.stderr)[-1500:], "print_time": time_match.group(1).strip() if time_match else None,
-                         "print_time_min": duration_minutes(time_match.group(1)) if time_match else None, "filament_mm3": float(volume.group(1)) if volume else None, "filament_g": float(grams.group(1)) if grams else None}
+                         "print_time_min": duration_minutes(time_match.group(1)) if time_match else None, "filament_mm3": 1000 * float(volume.group(1)) if volume else None, "filament_g": float(grams.group(1)) if grams else None}
     good = all(result[label]["filament_mm3"] is not None for label in ("supports", "no_supports"))
     result["support_mm3"] = result["supports"]["filament_mm3"] - result["no_supports"]["filament_mm3"] if good else None
     result["passed"] = bool(good and result["supports"]["returncode"] == 0)

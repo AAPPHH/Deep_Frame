@@ -644,6 +644,7 @@ EVALUATION_CONFIG = {
     "section_voxel_mm": 0.05,
     "hole_tolerance_mm": 0.6,
     "screw_head_radius_mm": 1.9,
+    "tool_skip_mm": 3.0,
     "connector_radius_mm": 2.0,
     "surface_samples": 5000,
     "curvature_radius_mm": 1.0,
@@ -665,7 +666,7 @@ EVALUATION_CONFIG = {
 
 EVALUATION_KINDS = {"name": "text", "stl": "path", "output": "path", "print_axis": ["float", "float", "float"], "prop_diameter_mm": "float", "motors": "object", "motor_up": "object", "ours": "flag", "components": "list",
                     "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "slicer")], "python": "text", "compute": "text", "targets": "object",
-                    **{key: "float" for key in ("voxel_mm", "loop_closing_mm", "overhang_deg", "bed_tolerance_mm", "fit_tolerance_mm3", "hub_radius_mm", "section_voxel_mm", "hole_tolerance_mm", "screw_head_radius_mm", "connector_radius_mm", "curvature_radius_mm")},
+                    **{key: "float" for key in ("voxel_mm", "loop_closing_mm", "overhang_deg", "bed_tolerance_mm", "fit_tolerance_mm3", "hub_radius_mm", "section_voxel_mm", "hole_tolerance_mm", "screw_head_radius_mm", "tool_skip_mm", "connector_radius_mm", "curvature_radius_mm")},
                     "surface_samples": "int", "seed": "int", "loads": "object", "fea_settings": "object", "slicer": "object"}
 
 INTEGRATION_CONFIG = {
