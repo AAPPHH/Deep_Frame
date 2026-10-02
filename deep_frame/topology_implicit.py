@@ -7,7 +7,7 @@ import numpy as np
 import trimesh
 from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
-from scipy.ndimage import binary_dilation, distance_transform_edt, gaussian_filter, generate_binary_structure, label
+from scipy.ndimage import binary_dilation, distance_transform_edt, find_objects, gaussian_filter, generate_binary_structure, label
 from skimage.measure import euler_number, marching_cubes
 
 from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS, configure
@@ -19,12 +19,12 @@ from deep_frame.topology_surface_validation import _self_intersection_screen, _s
 AXES = {"x": 0, "y": 1, "z": 2}
 SIX = generate_binary_structure(3, 1)
 EXTENSIONS = ("none", "preserve", "preserve_forbidden")
-NONNEGATIVE = ("density_sigma_mm", "transition_radius_mm", "preserve_inflation_mm", "constraint_offset_mm", "opening_radius_mm", "ripple_sigma_mm")
+NONNEGATIVE = ("detached_volume_max_fraction", "density_sigma_mm", "transition_radius_mm", "preserve_inflation_mm", "constraint_offset_mm", "opening_radius_mm", "ripple_sigma_mm")
 PROPAGATION_PASSES = 2
 ZERO_EDGE = 1e-9
 RESTORE_INSET_CELLS = 0.1
 INPUT_SNAP_MM = 1e-6
-GATE_MAXIMA = ("surface_deviation_mm", "relative_volume_change", "segment_tolerance_mm", "penetration_tolerance_mm", "penetration_sample_spacing_mm", "free_zone_preserve_mm", "free_zone_constraint_mm", "free_zone_modified_mm", "mesh_boundary_deviation_mm")
+GATE_MAXIMA = ("detached_volume_max_fraction", "surface_deviation_mm", "relative_volume_change", "segment_tolerance_mm", "penetration_tolerance_mm", "penetration_sample_spacing_mm", "free_zone_preserve_mm", "free_zone_constraint_mm", "free_zone_modified_mm", "mesh_boundary_deviation_mm")
 GATE_MINIMA = ("free_zone_minimum_samples", "free_zone_opening_cells", "mesh_minimum_sicn")
 
 class ImplicitError(ValueError):
@@ -313,14 +313,67 @@ def mount_witness(field, occupied, preserves, forbidden):
     return {"passed": passed, "occupied_components_6": count, "mount_components": used, "preserves": rows,
             "method": "6-connected labels of occupied samples; every sample strictly inside an exact preserve and outside all keep-outs must be occupied and all must share one label; nothing is bridged"}
 
-def _connected(field, report, name, occupied, preserves, forbidden):
+def _bodies(field, labels, names):
+    boxes = find_objects(labels)
+    sizes = np.bincount(labels.ravel(), minlength=len(boxes)+1)
+    return [{"samples": int(sizes[name]), "volume_mm3": float(sizes[name])*field.cell_volume, "bbox_low_mm": (field.origin+np.array([part.start for part in boxes[name-1]])*field.spacing).tolist(),
+             "bbox_high_mm": (field.origin+np.array([part.stop-1 for part in boxes[name-1]])*field.spacing).tolist()} for name in names]
+
+def extension_guard(field, original, extended, preserves, forbidden):
+    base = original & extended
+    labels = label(extended, SIX)[0]
+    parts = label(base, SIX)[0]
+    pairs = np.unique(np.column_stack((labels[base], parts[base])), axis=0)
+    merged = np.unique(pairs[:, 0], return_counts=True)[1]
+    guard = {"original": _topology(original), "base": _topology(base), "extended": _topology(extended), "merged_components": int(np.count_nonzero(merged > 1)),
+             "witness": mount_witness(field, extended, preserves, forbidden)["passed"],
+             "method": "base = original AND extended composition; the extension only adds extended minus base, which bridges if an extended component holds more than one base component or if Euler number minus components changes (a closed loop or a filled cavity); removing material cannot bridge, so it may open handles, and it may only disconnect if the required mounts no longer share one component of the extended composition; detached mountless remnants fall to the detached-body policy of the witnesses"}
+    guard["handle_change"] = guard["extended"]["euler_number_6"]-guard["extended"]["components_6"]-guard["base"]["euler_number_6"]+guard["base"]["components_6"]
+    guard["passed"] = guard["merged_components"] == 0 and guard["handle_change"] == 0 and guard["witness"]
+    return guard
+
+def _connected(field, report, name, preserve, preserves, forbidden, fraction):
+    occupied = (field.values > 0) | (preserve > 0)
     witness = mount_witness(field, occupied, preserves, forbidden)
     witness["single_component"] = witness["occupied_components_6"] == 1
     report[name] = witness
     if not witness["passed"]:
         raise ImplicitError("mount_disconnected", "Field separates required mounts at " + name, report)
+    if witness["single_component"]:
+        return
+    labels, count = label(occupied, SIX)
+    keep = witness["mount_components"] or [int(np.argmax(np.bincount(labels.ravel())[1:]))+1]
+    names = [index for index in range(1, count+1) if index not in keep]
+    detached = (labels > 0) & ~np.isin(labels, keep)
+    bodies = _bodies(field, labels, names)
+    del labels
+    volume, part = sum(body["volume_mm3"] for body in bodies), field.volume(occupied)
+    touches = bool(np.any(preserve[detached] > 0))
+    witness["detached"] = {"bodies": bodies, "volume_mm3": volume, "part_volume_mm3": part, "maximum_fraction": fraction, "touches_preserve_shell": touches, "removed": not touches and volume <= fraction*part,
+                           "method": "the witness put every exact preserve sample in one component, so every other component touches no mount; such bodies are removed if they hold no preserve-shell sample and their total volume is at most the fraction of the part; nothing is bridged"}
+    if not witness["detached"]["removed"]:
+        raise ImplicitError("field_disconnected", "Field has detached bodies at " + name + " above the removal limit; they are never bridged", report)
+    field.values[detached] = np.minimum(field.values[detached], -np.float32(field.spacing.max()))
+    witness["components_before_removal"] = witness["occupied_components_6"]
+    witness["occupied_components_6"] = int(label((field.values > 0) | (preserve > 0), SIX)[1])
+    witness["single_component"] = witness["occupied_components_6"] == 1
     if not witness["single_component"]:
-        raise ImplicitError("field_disconnected", "Field has detached bodies at " + name + "; they are neither bridged nor removed", report)
+        raise ImplicitError("field_disconnected", "Field still has detached bodies at " + name + " after removal", report)
+
+def fill_enclosed_voids(field, fraction):
+    labels, count = label(field.values <= 0, SIX)
+    outside = set()
+    for axis in range(3):
+        for end in (0, -1):
+            outside |= set(np.unique(np.take(labels, end, axis=axis)).tolist())
+    names = [index for index in range(1, count+1) if index not in outside]
+    bodies = _bodies(field, labels, names)
+    volume, part = sum(body["volume_mm3"] for body in bodies), field.volume()
+    report = {"voids": bodies, "volume_mm3": volume, "part_volume_mm3": part, "maximum_fraction": fraction, "filled": bool(bodies) and volume <= fraction*part,
+              "method": "6-connected non-positive samples not connected to the grid border are enclosed cavities; they are filled if their total volume is at most the small-defect fraction of the part, otherwise kept so the cavity checks reject them"}
+    if report["filled"]:
+        field.values[np.isin(labels, names)] = np.float32(field.spacing.max())
+    return report
 
 def build_field(domain, density, settings, progress=None):
     config = implicit_settings(settings)
@@ -352,9 +405,7 @@ def build_field(domain, density, settings, progress=None):
     report["volumes_mm3"]["density_composition"] = field.volume(occupied)
     report["witness"] = mount_witness(field, occupied, preserves, forbidden)
     if report["witness"]["passed"] and config["extension"] != "none":
-        guard = {"original": _topology(occupied), "extended": _topology(_composition(field.values, preserve, forbidden, envelope))}
-        guard["passed"] = guard["original"] == guard["extended"]
-        report["extension_guard"] = guard
+        report["extension_guard"] = extension_guard(field, occupied, _composition(field.values, preserve, forbidden, envelope), preserves, forbidden)
     del occupied
     lap("witness")
     if not report["witness"]["passed"]:
@@ -388,7 +439,7 @@ def build_field(domain, density, settings, progress=None):
     field.layers["opening_modified"] = np.abs(field.values-before) > config["free_zone_opening_cells"]*float(field.spacing.max())
     del before
     lap("opening")
-    _connected(field, report, "opening_witness", (field.values > 0) | (preserve > 0), preserves, forbidden)
+    _connected(field, report, "opening_witness", preserve, preserves, forbidden, config["detached_volume_max_fraction"])
     lap("witness")
     field.smooth(config["ripple_sigma_mm"])
     report["volumes_mm3"]["ripple_smoothed"] = field.volume()
@@ -413,7 +464,7 @@ def build_field(domain, density, settings, progress=None):
     report["volumes_mm3"]["final"] = field.volume()
     lap("restore")
     field.layers["reference"] = reference.values
-    _connected(field, report, "final_witness", (field.values > 0) | (preserve > 0), preserves, forbidden)
+    _connected(field, report, "final_witness", preserve, preserves, forbidden, config["detached_volume_max_fraction"])
     lap("witness")
     report["status"] = "field_built"
     _progress(progress, "field_built", report)
@@ -528,10 +579,15 @@ def _snap_planes(mesh, regions, tolerance=1e-9):
 def _round_float32(mesh, margin):
     rounded = np.asarray(mesh.vertices, dtype=np.float32).astype(float)
     shift = float(np.abs(rounded-mesh.vertices).max(initial=0))
-    merged = len(rounded)-len(np.unique(rounded, axis=0))
-    mesh.vertices = rounded
-    return {"method": "all vertices rounded to binary32 so the validated mesh equals the delivered STL; constraint planes are binary32 values rounded to the safe side and cut cylinders lie one margin outside the checked polygon, so rounding cannot enter a keep-out",
-            "margin_mm": margin, "maximum_rounding_mm": shift, "merged_vertices": merged, "passed": merged == 0 and shift*np.sqrt(3) < margin}
+    unique, inverse = np.unique(rounded, axis=0, return_inverse=True)
+    faces = inverse.ravel()[np.asarray(mesh.faces)]
+    collapsed = (faces[:, 0] == faces[:, 1]) | (faces[:, 1] == faces[:, 2]) | (faces[:, 0] == faces[:, 2])
+    index, counts = np.unique(np.sort(faces, axis=1), axis=0, return_inverse=True, return_counts=True)[1:]
+    coincident = ~collapsed & (counts[index.ravel()] > 1)
+    result = trimesh.Trimesh(unique, faces[~collapsed & ~coincident], process=False)
+    result.remove_unreferenced_vertices()
+    return result, {"method": "all vertices rounded to binary32 so the validated mesh equals the delivered STL; constraint planes are binary32 values rounded to the safe side and cut cylinders lie one margin outside the checked polygon, so rounding cannot enter a keep-out; Boolean edges shorter than the binary32 spacing collapse, their degenerate faces and coincident face pairs are dropped and the final mesh checks re-verify closure and manifoldness",
+                    "margin_mm": margin, "maximum_rounding_mm": shift, "merged_vertices": len(rounded)-len(unique), "collapsed_faces": int(collapsed.sum()), "coincident_faces": int(coincident.sum()), "passed": shift*np.sqrt(3) < margin}
 
 def _trimesh(body):
     mesh = body.to_mesh64()
@@ -569,7 +625,7 @@ def exact_booleans(mesh, domain, config):
     mesh = _trimesh(body)
     report["input_plane_snap"] = snap
     report["plane_snap"] = _snap_planes(mesh, planes)
-    report["float32"] = _round_float32(mesh, margin)
+    mesh, report["float32"] = _round_float32(mesh, margin)
     report["passed"] = body.status() == Error.NoError and report["components"] == 1 and report["maximum_cylinder_oversize_mm"] <= config["segment_tolerance_mm"] and report["float32"]["passed"]
     return mesh, report
 
@@ -692,6 +748,7 @@ def build_implicit(domain, density, settings, progress=None):
         raise ImplicitError("geometry_invalid", message, report, mesh)
     report["status"] = "extracting"
     started = perf_counter()
+    report["enclosed_voids"] = fill_enclosed_voids(field, config["detached_volume_max_fraction"])
     try:
         raw, report["extraction"] = field.extract()
     except RuntimeError as error:
