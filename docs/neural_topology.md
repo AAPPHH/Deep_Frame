@@ -73,7 +73,8 @@ Renders (iso/top/side): `exports/neural/renders/<run>_{isometric,top,side}.png`.
   - Grey fraction 0.3–0.9 %, without a density filter or projection.
   - Exact volume and exact symmetry.
   - Masks are never violated.
-  - Mounts are face-connected in every run; at ρ ≥ 0.5 all preserves lie in one component.
+  - At ρ ≥ 0.5 all preserves lie in one face-connected component in every run.
+  - Loose islands: 1–9 components for f_max ≤ 0.125, but 91 at f_max 0.25.
 - **Resolution-free output:** the field is trained on 2 mm and resampled directly on the 4/3 mm route grid. The route takes it unchanged through `load_source`.
 - **Best variant, fmax 0.0625 / 12 %:** compact, symmetric and recognisably ManaFly-like (X arms, battery cradle, closed centre ring).
   - f1 is 1064 Hz, above c01's 748 Hz, at +13 % mass.
@@ -81,10 +82,11 @@ Renders (iso/top/side): `exports/neural/renders/<run>_{isometric,top,side}.png`.
 
 ## What did not work
 
-- **Arm-tip stiffness falls short of c01** at comparable mass: 107–167 N/mm against 279 N/mm. Likely causes:
-  - the coarser 2 mm FE grid;
-  - the non-robust (intermediate) objective;
-  - load paths spread over many thin struts at fmax 0.125.
+- **Arm-tip stiffness falls short of c01** at comparable mass: 107–167 N/mm against 279 N/mm.
+  - The Hex8 surrogates of the optimized fields are nearly equal: c01 170 N/mm on its eroded field, neural fmax 0.0625 167 N/mm.
+  - The neural FEA reproduces its surrogate (167). c01 gains in the FEA because it optimizes the eroded design but builds the intermediate one.
+  - So the gap comes from the robust formulation, which gives c01 a stiffness reserve, not from the route.
+  - fmax 0.125 also spreads load paths over thin struts (surrogate 123 N/mm).
 - **Low first modes at fmax 0.125:** 142/153 Hz at 12 % and 182 Hz at 18 %. The battery-impact stiffness of 1154 N/mm (c01: 2863) points to a soft battery-deck support. Not diagnosed further (coarse first).
 - **`preserve_forbidden` fails** (`extension_changed_topology`) on 3 of 4 neural fields (only 18 % built). Neural fields carry material right up to the keep-outs, so the extension changes the topology. The `preserve` and `none` extensions build.
 - **The 2 mm wall gate (`features`) fails everywhere**, as with c01 (known open issue).
