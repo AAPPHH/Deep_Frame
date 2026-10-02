@@ -418,7 +418,7 @@ def test_extension_guard_rejects_loop_closure_and_merge_but_allows_removal():
     ring = original.copy()
     ring[1:11, 5:7] = True
     guard = extension_guard(field, original, ring, [], np.full(original.shape, -np.inf))
-    assert not guard["passed"] and guard["handle_change"] == -1 and guard["merged_components"] == 0
+    assert not guard["passed"] and guard["handle_change"] == 1 and guard["cavity_change"] == 0 and guard["merged_components"] == 0
     field, original = guard_case()
     original[1:4, 1:3] = original[6:9, 1:3] = True
     merged = original.copy()
@@ -431,10 +431,33 @@ def test_extension_guard_rejects_loop_closure_and_merge_but_allows_removal():
     removed = original.copy()
     removed[5:7] = False
     guard = extension_guard(field, original, removed, [], np.full(original.shape, -np.inf))
-    assert guard["passed"] and guard["extended"]["components_6"] == 2
+    assert guard["passed"] and guard["extended"]["components_6"] == 2 and guard["added_blobs"]["count"] == 0
     mounts = [box("left", "preserve", [1, 1, 0], [3, 3, 3]), box("right", "preserve", [9, 1, 0], [11, 3, 3])]
     guard = extension_guard(field, original, removed, mounts, np.full(original.shape, -np.inf))
     assert not guard["passed"] and not guard["witness"]
+
+def u_shape(shape=(24, 10, 5)):
+    original = np.zeros(shape, dtype=bool)
+    original[1:11, 1:3, 1:4] = original[1:3, 1:8, 1:4] = original[9:11, 1:8, 1:4] = True
+    extended = original.copy()
+    extended[1:11, 6:8, 1:4] = True
+    return ImplicitField([0.0, 0.0, 0.0], 1.0, np.zeros(shape)), original, extended
+
+def test_extension_guard_rejects_loop_closure_cancelled_by_filled_hole_or_new_cavity():
+    field, original, extended = u_shape()
+    original[13:22, 1:9, 2] = True
+    original[16:18, 4:6, 2] = False
+    extended[13:22, 1:9, 2] = True
+    guard = extension_guard(field, original, extended, [], np.full(original.shape, -np.inf))
+    assert guard["extended"]["euler_number_6"]-guard["extended"]["components_6"] == guard["base"]["euler_number_6"]-guard["base"]["components_6"]
+    assert not guard["passed"] and guard["merged_components"] == 0 and guard["handle_change"] == 0 and guard["added_blobs"] == {"count": 2, "topology_changing": 2}
+    field, original, extended = u_shape()
+    original[13:22, 1:9, 1:4] = True
+    original[17, 4, 0:3] = False
+    extended[13:22, 1:9, 1:4] = True
+    extended[17, 4, 2] = False
+    guard = extension_guard(field, original, extended, [], np.full(original.shape, -np.inf))
+    assert not guard["passed"] and guard["handle_change"] == 1 and guard["cavity_change"] == 1 and guard["merged_components"] == 0
 
 def detached_field(blob):
     field = ImplicitField.from_function([0.0, 0.0, 0.0], 0.5, (40, 20, 12), lambda x, y, z: np.maximum(np.minimum(np.minimum(2-np.abs(y-5), 2-np.abs(z-3)), np.minimum(x-1, 12-x)), blob-np.sqrt((x-17)**2+(y-5)**2+(z-3)**2)))
@@ -466,6 +489,13 @@ def test_enclosed_single_sample_void_is_filled_before_extraction():
     assert report["filled"] and len(report["voids"]) == 1 and report["voids"][0]["samples"] == 1
     mesh = field.extract()[0]
     assert mesh.body_count == 1 and mesh.is_watertight
+
+def test_void_reaching_outside_through_an_edge_or_corner_is_not_filled():
+    values = np.full((15, 15, 15), -1.0, dtype=np.float32)
+    values[8:12, 7, 7] = values[3:7, 7, 7] = values[7, 8:12, 7] = values[7, 3:7, 7] = values[7, 7, 8:12] = values[7, 7, 3:7] = 1.0
+    field = ImplicitField([0.0, 0.0, 0.0], 0.5, values.copy())
+    report = fill_enclosed_voids(field, 0.5)
+    assert not report["filled"] and not report["voids"] and np.array_equal(field.values, values)
 
 def test_float32_rounding_collapses_sub_spacing_boolean_edges():
     mesh = trimesh.creation.box(extents=(4, 4, 4))

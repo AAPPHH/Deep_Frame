@@ -18,6 +18,7 @@ from deep_frame.topology_surface_validation import _self_intersection_screen, _s
 
 AXES = {"x": 0, "y": 1, "z": 2}
 SIX = generate_binary_structure(3, 1)
+TWENTY_SIX = generate_binary_structure(3, 3)
 EXTENSIONS = ("none", "preserve", "preserve_forbidden")
 NONNEGATIVE = ("detached_volume_max_fraction", "density_sigma_mm", "transition_radius_mm", "preserve_inflation_mm", "constraint_offset_mm", "opening_radius_mm", "ripple_sigma_mm")
 PROPAGATION_PASSES = 2
@@ -299,7 +300,9 @@ def _composition(values, preserve, forbidden, envelope):
     return ((values >= 0) | (preserve > 0)) & (forbidden < 0) & (envelope > 0)
 
 def _topology(occupied):
-    return {"components_6": int(label(occupied, SIX)[1]), "euler_number_6": int(euler_number(occupied, connectivity=1))}
+    components, euler = int(label(occupied, SIX)[1]), int(euler_number(occupied, connectivity=1))
+    cavities = int(label(np.pad(~occupied, 1, constant_values=True), TWENTY_SIX)[1])-1
+    return {"components_6": components, "euler_number_6": euler, "cavities_26": cavities, "handles": components+cavities-euler}
 
 def mount_witness(field, occupied, preserves, forbidden):
     labels, count = label(occupied, SIX)
@@ -325,11 +328,20 @@ def extension_guard(field, original, extended, preserves, forbidden):
     parts = label(base, SIX)[0]
     pairs = np.unique(np.column_stack((labels[base], parts[base])), axis=0)
     merged = np.unique(pairs[:, 0], return_counts=True)[1]
+    blobs, count = label(extended & ~base, SIX)
+    changing = []
+    for name, box in enumerate(find_objects(blobs), 1):
+        box = tuple(slice(max(part.start-1, 0), part.stop+1) for part in box)
+        blob, crop = blobs[box] == name, base[box]
+        touched = len(set(np.unique(parts[box][binary_dilation(blob, SIX) & crop]).tolist())-{0})
+        if int(euler_number(crop | blob, connectivity=1))-int(euler_number(crop, connectivity=1)) != (touched == 0):
+            changing.append(name)
     guard = {"original": _topology(original), "base": _topology(base), "extended": _topology(extended), "merged_components": int(np.count_nonzero(merged > 1)),
-             "witness": mount_witness(field, extended, preserves, forbidden)["passed"],
-             "method": "base = original AND extended composition; the extension only adds extended minus base, which bridges if an extended component holds more than one base component or if Euler number minus components changes (a closed loop or a filled cavity); removing material cannot bridge, so it may open handles, and it may only disconnect if the required mounts no longer share one component of the extended composition; detached mountless remnants fall to the detached-body policy of the witnesses"}
-    guard["handle_change"] = guard["extended"]["euler_number_6"]-guard["extended"]["components_6"]-guard["base"]["euler_number_6"]+guard["base"]["components_6"]
-    guard["passed"] = guard["merged_components"] == 0 and guard["handle_change"] == 0 and guard["witness"]
+             "added_blobs": {"count": count, "topology_changing": len(changing)}, "witness": mount_witness(field, extended, preserves, forbidden)["passed"],
+             "method": "base = original AND extended composition; the extension only adds extended minus base, which bridges if an extended component holds more than one base component or if any 6-connected added blob alone changes the Euler number of base (exact on its 1-padded box; an isolated blob must add one ball, an attached blob nothing), so a loop closed at one mount cannot cancel against a hole filled at another, or if the global handle count b1 or cavity count b2 changes, each compared on its own; only a single blob that closes a loop and fills a hole or pocket at once stays undetected; b2 counts 26-connected background components that do not reach the padded border, b1 = components + b2 - Euler number; removing material cannot bridge, so it may open handles, and it may only disconnect if the required mounts no longer share one component of the extended composition; detached mountless remnants fall to the detached-body policy of the witnesses"}
+    guard["handle_change"] = guard["extended"]["handles"]-guard["base"]["handles"]
+    guard["cavity_change"] = guard["extended"]["cavities_26"]-guard["base"]["cavities_26"]
+    guard["passed"] = guard["merged_components"] == 0 and not changing and guard["handle_change"] == 0 and guard["cavity_change"] == 0 and guard["witness"]
     return guard
 
 def _connected(field, report, name, preserve, preserves, forbidden, fraction):
@@ -361,7 +373,7 @@ def _connected(field, report, name, preserve, preserves, forbidden, fraction):
         raise ImplicitError("field_disconnected", "Field still has detached bodies at " + name + " after removal", report)
 
 def fill_enclosed_voids(field, fraction):
-    labels, count = label(field.values <= 0, SIX)
+    labels, count = label(field.values <= 0, TWENTY_SIX)
     outside = set()
     for axis in range(3):
         for end in (0, -1):
@@ -370,7 +382,7 @@ def fill_enclosed_voids(field, fraction):
     bodies = _bodies(field, labels, names)
     volume, part = sum(body["volume_mm3"] for body in bodies), field.volume()
     report = {"voids": bodies, "volume_mm3": volume, "part_volume_mm3": part, "maximum_fraction": fraction, "filled": bool(bodies) and volume <= fraction*part,
-              "method": "6-connected non-positive samples not connected to the grid border are enclosed cavities; they are filled if their total volume is at most the small-defect fraction of the part, otherwise kept so the cavity checks reject them"}
+              "method": "26-connected non-positive samples, the complement connectivity of the 6-connected solid, not connected to the grid border are enclosed cavities; they are filled if their total volume is at most the small-defect fraction of the part, otherwise kept so the cavity checks reject them"}
     if report["filled"]:
         field.values[np.isin(labels, names)] = np.float32(field.spacing.max())
     return report
