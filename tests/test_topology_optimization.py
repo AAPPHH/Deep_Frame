@@ -255,6 +255,12 @@ def test_beta_continuation_switching_rules(rule):
     assert all(entry["maximum_design_change"] <= 0.03 + 1e-15 for entry in updates[-3:])
     assert result["summary"]["continuation"] == {"beta_schedule": [1.0, 2.0, 4.0], "beta_final": 4.0, "final_level_reached": True, "level_iterations_final": 3}
 
+def test_final_beta_level_keeps_the_per_level_minimum():
+    settings = {**ROBUST_RUN, "beta_change_tolerance": 0.5, "change_tolerance": 0.5, "minimum_iterations": 1, "beta_minimum_iterations": 4}
+    result = optimize_topology(beam_domain((8, 4, 4), (1.0, 1.0, 1.0)), settings)
+    betas = [entry["projection_beta"] for entry in result["history"] if not entry["final_evaluation"]]
+    assert betas == [1.0] * 4 + [2.0] * 4 + [4.0] * 4 and result["summary"]["stop_reason"] == "change_tolerance"
+
 def test_dilated_target_starts_each_level_at_the_dilated_volume_and_relaxes():
     domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
     settings = {**ROBUST_RUN, "volume_target_relaxation": 0.2, "max_iterations": 16, "change_tolerance": 1e-12, "beta_change_tolerance": 1e-12}
@@ -268,18 +274,22 @@ def test_dilated_target_starts_each_level_at_the_dilated_volume_and_relaxes():
         assert entry["dilated_volume_target"] == pytest.approx(expected, rel=1e-12)
         previous = entry
 
-def test_objective_stall_ends_the_run_while_the_design_change_stays_at_the_move_limit():
-    settings = {**ROBUST_RUN, "volume_target_relaxation": 0.2, "objective_window": 3, "change_tolerance": 0.02, "beta_change_tolerance": 0.02, "max_iterations": 60}
+@pytest.mark.parametrize("iterations", [45, 60])
+def test_objective_stall_is_recorded_but_neither_advances_beta_nor_converges(iterations):
+    settings = {**ROBUST_RUN, "volume_target_relaxation": 0.2, "objective_window": 3, "change_tolerance": 0.02, "beta_change_tolerance": 0.02, "max_iterations": iterations}
     result = optimize_topology(beam_domain((8, 4, 4), (1.0, 1.0, 1.0)), settings)
     assert result["status"] == "ok", result["diagnostics"]
-    assert result["summary"]["converged"] and result["summary"]["stop_reason"] == "objective_stall"
     updates = [entry for entry in result["history"] if not entry["final_evaluation"]]
     for index, entry in enumerate(updates):
         level = [other for other in updates[:index + 1] if other["projection_beta"] == entry["projection_beta"]][-3:]
         objectives = [other["objective"] for other in level]
         assert entry["objective_stall"] == (None if len(level) < 3 else pytest.approx((max(objectives) - min(objectives)) / min(objectives), rel=1e-12))
-    assert updates[-1]["objective_stall"] < 0.02 <= updates[-1]["maximum_design_change"]
-    assert updates[-1]["projection_beta"] == 4.0
+    assert [entry["projection_beta"] for entry in updates[:13]] == [1.0] * 6 + [2.0] * 6 + [4.0]
+    assert sum(entry["objective_stall"] is not None and entry["objective_stall"] < 0.02 <= entry["maximum_design_change"] for entry in updates) >= 5
+    if iterations == 45:
+        assert not result["summary"]["converged"] and result["summary"]["stop_reason"] == "max_iterations" and len(updates) == 45
+    else:
+        assert result["summary"]["converged"] and result["summary"]["stop_reason"] == "change_tolerance" and updates[-1]["maximum_design_change"] < 0.02 <= updates[-2]["maximum_design_change"]
 
 def test_robust_optimization_is_deterministic_and_reports_three_fields():
     domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))

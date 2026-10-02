@@ -885,9 +885,9 @@ def optimize_topology(domain, settings, *, progress_callback=None):
         schedule = settings["beta_schedule"] or [mapping.beta]
         staged = mapping.robust or settings["beta_schedule"] is not None
         stiffness_name, volume_name = ("eroded", "dilated") if mapping.robust else ("intermediate", "intermediate")
+        minimum_iterations = max(settings["minimum_iterations"], settings["beta_minimum_iterations"]) if staged else settings["minimum_iterations"]
         level = level_iterations = 0
         volume_target = target
-        stall = None
         for iteration in range(1, settings["max_iterations"] + 1):
             fields, _ = mapping.fields(design)
             physical = fields["intermediate"][0]
@@ -911,17 +911,16 @@ def optimize_topology(domain, settings, *, progress_callback=None):
                 recent = [entry["objective"] for entry in history[-min(level_iterations + 1, settings["objective_window"]):]]
                 stall = (max(recent) - min(recent)) / min(recent) if len(recent) == settings["objective_window"] else None
                 history[-1].update(_stage_entry(mapping, fields, volume_target, move_limit), objective_stall=stall)
-            measure = change if stall is None else min(change, stall)
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
             design = candidate
             level_iterations += 1
             if level == len(schedule) - 1:
-                if level_iterations >= settings["minimum_iterations"] and measure < settings["change_tolerance"]:
+                if level_iterations >= minimum_iterations and change < settings["change_tolerance"]:
                     converged = True
-                    stop_reason = "change_tolerance" if change < settings["change_tolerance"] else "objective_stall"
+                    stop_reason = "change_tolerance"
                     break
-            elif level_iterations >= settings["beta_interval"] or (level_iterations >= settings["beta_minimum_iterations"] and measure < settings["beta_change_tolerance"]):
+            elif level_iterations >= settings["beta_interval"] or (level_iterations >= settings["beta_minimum_iterations"] and change < settings["beta_change_tolerance"]):
                 level += 1
                 level_iterations = 0
                 mapping.beta = schedule[level]
