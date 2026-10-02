@@ -165,7 +165,7 @@ def member_widths(density, spacing, masks=None, threshold=0.5):
         skeleton &= ~binary_dilation(masks, iterations=2)
     widths = 2 * distance_transform_edt(solid, sampling=spacing)[skeleton] - min(spacing)
     return {"threshold": threshold, "method": "2 x Euclidean distance on the 3D skeleton minus one cell, skeleton cells within two cells of preserve/forbidden excluded",
-            **{f"p{q:02d}_mm": float(np.percentile(widths, q)) for q in (5, 10, 25, 50)}, "fraction_below_2mm": float(np.mean(widths < 2)), "skeleton_cells": int(widths.size)}
+            **{f"p{q:02d}_mm": float(np.percentile(widths, q)) for q in (5, 10, 25, 50, 75, 90)}, "fraction_below_2mm": float(np.mean(widths < 2)), "skeleton_cells": int(widths.size)}
 
 def optimize_neural(domain, settings, *, progress_callback=None, output_domain=None):
     started = perf_counter()
