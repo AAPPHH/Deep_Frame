@@ -6,7 +6,7 @@ import trimesh
 from scipy.ndimage import distance_transform_edt, gaussian_filter
 
 from deep_frame.topology_geometry import rasterize_regions, region_contains
-from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, build_field, capped_faces, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
+from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, _round_float32, build_field, capped_faces, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
 
 def box(name, role, low, high, **extra):
     return {"name": name, "role": role, "kind": "box", "min_mm": list(low), "max_mm": list(high), **extra}
@@ -343,6 +343,25 @@ def test_field_mesh_on_a_preserve_grid_plane_is_snapped_before_the_union():
     mesh.vertices = mesh.vertices+np.outer(np.sin(7*mesh.vertices[:, 2]), [0, 1e-3, 0])
     final, report = exact_booleans(mesh.subdivide().subdivide(), domain, CONFIG)
     assert report["passed"] and report["float32"]["merged_vertices"] == 0 and report["input_plane_snap"]["moved_coordinates"] > 0 and report["input_plane_snap"]["maximum_displacement_mm"] <= 1e-6
+
+def test_float32_rounding_collapses_sub_spacing_boolean_edges_only():
+    mesh = trimesh.creation.box(bounds=[[50, 40, 0], [56, 49, 3]])
+    a, b = next(edge for edge in mesh.edges_unique if mesh.vertices[edge[0], 2] == mesh.vertices[edge[1], 2] == 3)
+    vertices = np.vstack((mesh.vertices, mesh.vertices[a]+1e-7*(mesh.vertices[b]-mesh.vertices[a])))
+    c, faces = len(vertices)-1, []
+    for face in mesh.faces.tolist():
+        if a in face and b in face:
+            i = face.index(a)
+            faces.extend([[c if k == i else v for k, v in enumerate(face)], [c if face[k] == b else v for k, v in enumerate(face)]])
+        else:
+            faces.append(face)
+    split = trimesh.Trimesh(vertices, faces, process=False)
+    assert split.is_watertight and split.is_winding_consistent
+    rounded, report = _round_float32(split, 1.52587890625e-05)
+    assert report["passed"] and report["merged_vertices"] == 1 and report["collapsed_edges"] == 1 and report["removed_faces"] == 2
+    assert len(rounded.faces) == 12 and rounded.is_watertight and rounded.is_winding_consistent and np.isclose(rounded.volume, 162)
+    touching = trimesh.util.concatenate([trimesh.creation.box(bounds=[[50, 40, 0], [52, 42, 2]]), trimesh.creation.box(bounds=[[52+1e-7, 42, 0], [54, 44, 2]])])
+    assert not _round_float32(touching, 1.52587890625e-05)[1]["passed"]
 
 @pytest.mark.parametrize("radius", [1.1, 1.4, 1.5, 9.5, 34.5])
 def test_segment_rule_bounds_circumscribed_oversize(radius):
