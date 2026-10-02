@@ -297,6 +297,28 @@ def build_design_domain(parameters):
         },
     }
 
+def symmetric_domains(domain, axis=0):
+    grid = domain["grid"]
+    shape, origin, spacing = list(grid["shape"]), np.asarray(grid["origin_mm"], dtype=float), np.asarray(grid["spacing_mm"], dtype=float)
+    if shape[axis] % 2 or abs(origin[axis] + shape[axis] * spacing[axis] / 2) > 1e-9:
+        raise ValueError("Symmetric half domains need an even cell count centered on the mirror plane")
+    allowed = domain["allowed"] & np.flip(domain["allowed"], axis)
+    preserve = (domain["preserve"] | np.flip(domain["preserve"], axis)) & allowed
+    if label(allowed)[1] != 1 or not (allowed & ~preserve).any():
+        raise ValueError("The symmetrized design domain must be face-connected with free cells")
+    full = {**domain, "allowed": allowed, "preserve": preserve, "forbidden": ~allowed}
+    full["metadata"] = {**domain.get("metadata", {}), "symmetrization": {"axis": axis, "removed_allowed_cells": int(np.count_nonzero(domain["allowed"] & ~allowed)), "added_preserve_cells": int(np.count_nonzero(preserve & ~domain["preserve"]))}}
+    cut = [slice(None)] * 3
+    cut[axis] = slice(shape[axis] // 2, None)
+    half_grid = deepcopy(grid)
+    half_grid["shape"][axis] = shape[axis] // 2
+    half_grid["origin_mm"][axis] = 0.0
+    half = {**full, "grid": half_grid, "symmetry": {"axis": axis, "plane_mm": 0.0}, **{name: full[name][tuple(cut)].copy() for name in ("allowed", "preserve", "forbidden")}}
+    return full, half
+
+def mirror_field(half, axis=0):
+    return np.concatenate([np.flip(half, axis), half], axis=axis)
+
 def region_shape(region):
     if region["kind"] == "box":
         lower = np.asarray(region["min_mm"], dtype=float)

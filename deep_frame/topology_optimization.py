@@ -329,6 +329,13 @@ class HexElasticity:
         self.cases = []
         self.selector_expansions = []
         self.selector_filtering = []
+        self.symmetry = domain.get("symmetry")
+        if self.symmetry is not None:
+            self.axis = int(self.symmetry["axis"])
+            plane = float(self.symmetry.get("plane_mm", 0.0))
+            if abs(float(domain["grid"]["origin_mm"][self.axis]) - plane) > 1e-9:
+                raise ValueError("Symmetric half domains must start at the symmetry plane")
+            self.plane_nodes = np.intersect1d(np.flatnonzero(np.abs(self.points[:, self.axis] - plane) < 1e-7), self.active_nodes)
         names = set()
         for case in domain["load_cases"]:
             if case["name"] in names:
@@ -336,31 +343,70 @@ class HexElasticity:
             names.add(case["name"])
             if case["analysis"] not in ("static", "modal"):
                 raise ValueError("Unknown topology load-case analysis")
-            fixed_nodes = np.unique(np.concatenate([self._select(region, case["name"], "fixture") for region in case["fixed_regions"]]))
+            fixed_nodes = np.unique(np.concatenate([np.concatenate(self._select_both(region, case["name"], "fixture")) for region in case["fixed_regions"]]))
             if len(fixed_nodes) < 3 or np.linalg.matrix_rank(self.points[fixed_nodes] - self.points[fixed_nodes[0]]) < 2:
                 raise ValueError("Topology fixture requires three non-collinear nodes")
             fixed = (3 * fixed_nodes[:, None] + np.arange(3)).ravel()
             free = np.setdiff1d(self.active_dofs, fixed, assume_unique=True)
-            compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "load_regions": []}
+            compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "load_regions": [], "parts": []}
             if case["analysis"] == "static":
-                force = np.zeros(self.ndof)
+                force, mirrored = np.zeros(self.ndof), np.zeros(self.ndof)
                 if not case.get("loads"):
                     raise ValueError("Static topology cases require loads")
                 for load in case["loads"]:
-                    nodes = self._select(load["region"], case["name"], "load")
-                    if np.intersect1d(nodes, fixed_nodes).size:
+                    direct, mirror = self._select_both(load["region"], case["name"], "load")
+                    if np.intersect1d(np.concatenate([direct, mirror]), fixed_nodes).size:
                         raise ValueError("Topology force patch overlaps the fixture")
                     vector = np.asarray(load["force_n"], dtype=float)
                     if vector.shape != (3,) or not np.all(np.isfinite(vector)) or np.linalg.norm(vector) == 0:
                         raise ValueError("Topology force must be a finite nonzero 3-vector")
-                    dofs = 3 * nodes[:, None] + np.arange(3)
-                    np.add.at(force, dofs.ravel(), np.tile(vector / len(nodes), len(nodes)))
-                    compiled["load_regions"].append((nodes, vector))
+                    share = vector / (len(direct) + len(mirror))
+                    np.add.at(force, (3 * direct[:, None] + np.arange(3)).ravel(), np.tile(share, len(direct)))
+                    if len(mirror):
+                        np.add.at(mirrored, (3 * mirror[:, None] + np.arange(3)).ravel(), np.tile(share * self._flip(), len(mirror)))
+                    compiled["load_regions"].append((direct, mirror, vector))
                 compiled["force"] = force
-                self.groups[fixed.tobytes()].append(compiled)
+                for fixed_part, part_force, sign in self._parts(fixed, force, mirrored):
+                    part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
+                    if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
+                        part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign}
+                        compiled["parts"].append(part)
+                        self.groups[fixed_part.tobytes()].append((compiled, part))
+                if not compiled["parts"]:
+                    raise ValueError("Topology load case has no resolvable force")
             self.cases.append(compiled)
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
+    def _flip(self):
+        flip = np.ones(3)
+        flip[self.axis] = -1
+        return flip
+    def _parts(self, fixed, force, mirrored):
+        if self.symmetry is None:
+            return [(fixed, force, 1.0)]
+        normal = 3 * self.plane_nodes + self.axis
+        tangential = (3 * self.plane_nodes[:, None] + np.asarray([index for index in range(3) if index != self.axis])).ravel()
+        symmetric, antisymmetric = (force + mirrored) / 2, (force - mirrored) / 2
+        symmetric[normal], symmetric[tangential] = 0, force[tangential] / 2
+        antisymmetric[tangential], antisymmetric[normal] = 0, force[normal] / 2
+        return [(np.union1d(fixed, normal), symmetric, 1.0), (np.union1d(fixed, tangential), antisymmetric, -1.0)]
+    def _select_both(self, region, case_name, role):
+        if self.symmetry is None:
+            return self._select(region, case_name, role), np.zeros(0, dtype=int)
+        mirrored = deepcopy(region)
+        mirrored["min_mm"][self.axis], mirrored["max_mm"][self.axis] = -region["max_mm"][self.axis], -region["min_mm"][self.axis]
+        selected = []
+        for candidate in (region, mirrored):
+            try:
+                selected.append(self._select(candidate, case_name, role))
+            except ValueError as error:
+                if not str(error).startswith("Empty topology node selector"):
+                    raise
+                selected.append(np.zeros(0, dtype=int))
+        selected[1] = np.setdiff1d(selected[1], self.plane_nodes, assume_unique=True)
+        if not len(selected[0]) + len(selected[1]):
+            raise ValueError(f"Empty topology node selector on the symmetric half domain: {region}")
+        return selected
     def _select(self, region, case_name, role):
         try:
             selected = select_nodes(self.points, region)
@@ -413,65 +459,79 @@ class HexElasticity:
         stiffness = self.matrix(moduli)
         moduli[~self.active_elements] = 0
         derivative[~self.active_elements] = 0
-        results = {}
-        for cases in self.groups.values():
-            free = cases[0]["free"]
-            forces = np.column_stack([case["force"][free] for case in cases])
+        factor = 1.0 if self.symmetry is None else 2.0
+        accumulated = {}
+        for members in self.groups.values():
+            free = members[0][1]["free"]
+            forces = np.column_stack([part["force"][free] for _, part in members])
             reduced = stiffness[free, :][:, free].tocsc()
-            if self.linear_solver == "cpu_superlu":
-                factor = splu(reduced, permc_spec="MMD_AT_PLUS_A", options={"SymmetricMode": True})
-                solutions = factor.solve(forces)
-            else:
-                key = cases[0]["fixed"].tobytes()
-                if key in self.gpu_solvers and not self.gpu_solvers[key].same_structure(reduced):
-                    previous = self.gpu_solvers.pop(key)
-                    self.gpu_solver_history.append(previous.diagnostics())
-                    cleanup = previous.close()
-                    if cleanup:
-                        raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
-                    self.gpu_reanalyses += 1
-                if key not in self.gpu_solvers:
-                    self.gpu_solvers[key] = CudaDirectSolver(reduced, forces)
-                solutions = self.gpu_solvers[key].solve(reduced, forces)
-                if self.gpu_solver_residency == "transient":
-                    released = self.gpu_solvers.pop(key)
-                    self.gpu_solver_history.append(released.diagnostics())
-                    cleanup = released.close()
-                    if cleanup:
-                        raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
-                    self.gpu_transient_releases += 1
+            solutions = self._linear_solve(members[0][1]["fixed"].tobytes(), reduced, forces)
             residual = np.linalg.norm(reduced @ solutions - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
             tolerance = 1e-6 if self.linear_solver == "cuda_cudss" else 1e-4
             if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
                 raise RuntimeError(f"Topology linear solve failed residual check: {residual.tolist()}")
-            for column, case in enumerate(cases):
+            for column, (case, part) in enumerate(members):
                 displacement = np.zeros(self.ndof)
                 displacement[free] = solutions[:, column]
                 element_displacement = displacement[self.dofs]
-                energy = np.einsum("ei,ij,ej->e", element_displacement, self.ke, element_displacement, optimize=True)
-                compliance = float(np.dot(case["force"], displacement))
-                if not np.isfinite(compliance) or compliance <= 0:
-                    raise RuntimeError("Topology compliance must be finite and positive")
-                result = {"compliance_n_mm": compliance, "derivative": -derivative * energy, "relative_residual": float(residual[column])}
-                if metrics:
-                    result.update(self._metrics(displacement, element_displacement, moduli, case))
-                results[case["name"]] = result
+                entry = accumulated.setdefault(case["name"], {"case": case, "compliance": 0.0, "energy": np.zeros(self.nelem), "residual": 0.0, "fields": []})
+                entry["compliance"] += factor * float(np.dot(part["force"], displacement))
+                entry["energy"] += factor * np.einsum("ei,ij,ej->e", element_displacement, self.ke, element_displacement, optimize=True)
+                entry["residual"] = max(entry["residual"], float(residual[column]))
+                entry["fields"].append((part["sign"], displacement))
+        results = {}
+        for name, entry in accumulated.items():
+            if not np.isfinite(entry["compliance"]) or entry["compliance"] <= 0:
+                raise RuntimeError("Topology compliance must be finite and positive")
+            result = {"compliance_n_mm": entry["compliance"], "derivative": -derivative * entry["energy"], "relative_residual": entry["residual"]}
+            if metrics:
+                direct = sum(displacement for _, displacement in entry["fields"])
+                mirror = sum(sign * displacement for sign, displacement in entry["fields"])
+                result.update(self._metrics([direct] if self.symmetry is None else [direct, mirror], moduli, entry["case"]))
+            results[name] = result
         return results
-    def _metrics(self, displacement, element_displacement, moduli, case):
-        nodal = displacement.reshape(-1, 3)
+    def _linear_solve(self, key, reduced, forces):
+        if self.linear_solver == "cpu_superlu":
+            return splu(reduced, permc_spec="MMD_AT_PLUS_A", options={"SymmetricMode": True}).solve(forces)
+        if key in self.gpu_solvers and not self.gpu_solvers[key].same_structure(reduced):
+            previous = self.gpu_solvers.pop(key)
+            self.gpu_solver_history.append(previous.diagnostics())
+            cleanup = previous.close()
+            if cleanup:
+                raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
+            self.gpu_reanalyses += 1
+        if key not in self.gpu_solvers:
+            self.gpu_solvers[key] = CudaDirectSolver(reduced, forces)
+        solutions = self.gpu_solvers[key].solve(reduced, forces)
+        if self.gpu_solver_residency == "transient":
+            released = self.gpu_solvers.pop(key)
+            self.gpu_solver_history.append(released.diagnostics())
+            cleanup = released.close()
+            if cleanup:
+                raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
+            self.gpu_transient_releases += 1
+        return solutions
+    def _metrics(self, fields, moduli, case):
+        nodal = [field.reshape(-1, 3) for field in fields]
+        flip = np.ones(3) if self.symmetry is None else self._flip()
         loads = []
-        for nodes, force in case["load_regions"]:
-            mean = np.mean(nodal[nodes], axis=0)
+        for direct, mirror, force in case["load_regions"]:
+            values = np.concatenate([nodal[0][direct], nodal[-1][mirror] * flip])
+            mean = np.mean(values, axis=0)
             directional = float(mean @ force / np.linalg.norm(force))
-            loads.append({"node_count": len(nodes), "force_n": force.tolist(), "mean_displacement_mm": mean.tolist(), "directional_displacement_mm": directional, "stiffness_n_per_mm": float(np.linalg.norm(force) / directional) if directional > 0 else None})
+            loads.append({"node_count": len(values), "force_n": force.tolist(), "mean_displacement_mm": mean.tolist(), "directional_displacement_mm": directional, "stiffness_n_per_mm": float(np.linalg.norm(force) / directional) if directional > 0 else None})
         stress_maximum = 0.0
-        for strain in self.strain:
-            stress = ((element_displacement @ strain.T) @ self.constitutive.T) * moduli[:, None]
-            xx, yy, zz, xy, yz, xz = stress.T
-            von_mises = np.sqrt(0.5 * ((xx - yy) ** 2 + (yy - zz) ** 2 + (zz - xx) ** 2) + 3 * (xy ** 2 + yz ** 2 + xz ** 2))
-            stress_maximum = max(stress_maximum, float(np.max(von_mises)))
-        return {"max_displacement_mm": float(np.max(np.linalg.norm(nodal, axis=1))), "max_von_mises_mpa": stress_maximum, "loads": loads, "stiffness_n_per_mm": loads[0]["stiffness_n_per_mm"] if len(loads) == 1 else None}
+        for field in fields:
+            element_displacement = field[self.dofs]
+            for strain in self.strain:
+                stress = ((element_displacement @ strain.T) @ self.constitutive.T) * moduli[:, None]
+                xx, yy, zz, xy, yz, xz = stress.T
+                von_mises = np.sqrt(0.5 * ((xx - yy) ** 2 + (yy - zz) ** 2 + (zz - xx) ** 2) + 3 * (xy ** 2 + yz ** 2 + xz ** 2))
+                stress_maximum = max(stress_maximum, float(np.max(von_mises)))
+        return {"max_displacement_mm": float(max(np.max(np.linalg.norm(values, axis=1)) for values in nodal)), "max_von_mises_mpa": stress_maximum, "loads": loads, "stiffness_n_per_mm": loads[0]["stiffness_n_per_mm"] if len(loads) == 1 else None}
     def elastic_frequencies(self, physical_density, case_name, number=3, penalization=3.0, min_stiffness_ratio=1e-6):
+        if self.symmetry is not None:
+            raise ValueError("Voxel modal analysis is not available on symmetric half domains")
         if self.domain.get("point_masses"):
             raise ValueError("Point-mass modal coupling is verified by independent CalculiX, not the voxel surrogate")
         case = next((case for case in self.cases if case["name"] == case_name and case["analysis"] == "modal"), None)
@@ -496,7 +556,7 @@ class HexElasticity:
             errors.extend(solver.close())
         return errors
     def diagnostics(self):
-        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]})
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"])} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups)})
 
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,

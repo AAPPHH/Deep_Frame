@@ -528,3 +528,33 @@ def test_cuda_transient_residency_releases_factors_and_matches_resident(cuda_sol
     assert HexElasticity(domain, gpu_solver_residency="transient").solve(np.full(domain["allowed"].size, 0.5))["tip"]["compliance_n_mm"] > 0
     with pytest.raises(ValueError, match="gpu_solver_residency"):
         HexElasticity(domain, gpu_solver_residency="swap")
+
+def test_symmetric_half_domain_matches_full_compliance_and_sensitivities():
+    from deep_frame.topology_geometry import mirror_field, symmetric_domains
+    shape = (8, 4, 4)
+    box = lambda low, high: {"kind": "box", "min_mm": low, "max_mm": high}
+    allowed = np.ones(shape, dtype=bool)
+    allowed[1, 3, 3] = False
+    preserve = np.zeros(shape, dtype=bool)
+    preserve[[0, -1]] = True
+    fixtures = [box([-8.01, -0.01, -0.01], [-7.99, 8.01, 8.01]), box([7.99, -0.01, -0.01], [8.01, 8.01, 8.01])]
+    loads = {"straddle": [{"region": box([-2.01, 1.99, 7.99], [2.01, 6.01, 8.01]), "force_n": [0.7, 0.3, -1.0]}],
+             "one_side": [{"region": box([1.99, -0.01, 7.99], [6.01, 4.01, 8.01]), "force_n": [0.2, -0.4, -1.0]}],
+             "lateral": [{"region": box([-4.01, 3.99, 3.99], [4.01, 4.01, 4.01]), "force_n": [1.0, 0.0, 0.0]}]}
+    domain = {"grid": {"shape": list(shape), "spacing_mm": [2.0, 2.0, 2.0], "origin_mm": [-8.0, 0.0, 0.0], "order": "C", "axis_order": "xyz"},
+              "allowed": allowed, "preserve": preserve & allowed, "forbidden": ~allowed,
+              "material": {"young_modulus_mpa": 4430.0, "poisson_ratio": 0.3, "density_g_cm3": 1.09}, "point_masses": [],
+              "load_cases": [{"name": name, "analysis": "static", "fixed_regions": fixtures, "loads": load} for name, load in loads.items()]}
+    full, half = symmetric_domains(domain)
+    assert np.array_equal(mirror_field(half["allowed"]), full["allowed"]) and not full["allowed"][-2, 3, 3]
+    half_density = np.random.default_rng(3).uniform(0.2, 1.0, half["grid"]["shape"])
+    density = mirror_field(half_density)
+    reference = HexElasticity(full).solve(density.ravel(), metrics=True)
+    symmetric = HexElasticity(half).solve(half_density.ravel(), metrics=True)
+    for name in loads:
+        assert symmetric[name]["compliance_n_mm"] == pytest.approx(reference[name]["compliance_n_mm"], rel=1e-9)
+        derivative = reference[name]["derivative"].reshape(shape)
+        assert np.allclose((derivative + np.flip(derivative, 0))[4:].ravel(), symmetric[name]["derivative"], rtol=1e-8, atol=1e-14)
+        assert symmetric[name]["loads"][0]["mean_displacement_mm"] == pytest.approx(reference[name]["loads"][0]["mean_displacement_mm"], rel=1e-8, abs=1e-14)
+        assert symmetric[name]["max_von_mises_mpa"] == pytest.approx(reference[name]["max_von_mises_mpa"], rel=1e-8)
+    assert HexElasticity(half).diagnostics()["factorization_groups"] == 2
