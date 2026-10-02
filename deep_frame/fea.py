@@ -339,7 +339,7 @@ def _volume_mesh(solid, directory, settings, result):
             attempt["diagnostic"] = f"{type(error).__name__}: {str(error)[-800:]}"
             if (directory / "attempt_metadata.json").exists():
                 attempt.update(json.loads((directory / "attempt_metadata.json").read_text(encoding="utf-8")))
-            attempt["surface_failed"] = "Prepared FEA surface" in attempt["diagnostic"]
+            attempt["surface_failed"] = attempt.get("prepared_surface", {}).get("passed") is False or "Prepared FEA surface" in attempt["diagnostic"]
         finally:
             attempt["runtime_s"] = time.monotonic() - start
     raise RuntimeError("All tetrahedral meshing attempts failed: " + ", ".join(f"{attempt['name']} {attempt['status']}" for attempt in attempts))
@@ -410,34 +410,52 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         (directory / "result.json").write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     return result
 
-def _prepare_surface(source, settings, refine, target):
+def _topology(mesh):
+    return {"watertight": bool(mesh.is_watertight), "winding_consistent": bool(mesh.is_winding_consistent), "body_count": int(mesh.body_count), "euler_number": int(mesh.euler_number)}
+
+def _prepare_surface(source, settings, refine, target, record=None):
     import pymeshlab
     import trimesh
     from deep_frame.topology_implicit import mesh_checks
     start = time.monotonic()
     meshes = pymeshlab.MeshSet()
-    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(source.vertices, dtype=np.float64), face_matrix=np.asarray(source.faces, dtype=np.int32)))
+    def snapshot():
+        current = meshes.current_mesh()
+        return trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
+    def restore(mesh):
+        meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
+    restore(source)
     if refine:
         meshes.meshing_surface_subdivision_midpoint(iterations=64, threshold=pymeshlab.PureValue(settings["fea_refine_edge_mm"]))
     meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_remesh_iterations"], targetlen=pymeshlab.PureValue(target), featuredeg=settings["fea_remesh_feature_deg"],
                                                 checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_refine_max_surface_distance_mm" if refine else "fea_remesh_max_surface_distance_mm"]))
-    report = {"refined_input": refine, "target_mm": target, "passes": []}
-    for cleanup in (False, True):
-        if cleanup:
-            meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(settings["fea_merge_distance_mm"]))
-            meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)
+    tolerance = settings["fea_merge_relative_tolerance"]*float(source.scale)
+    steps = {"merge_close_vertices": lambda: meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(tolerance)),
+             "remove_t_vertices": lambda: meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)}
+    surface, topology, rejected = snapshot(), {"input": _topology(source)}, {}
+    topology["remeshed"] = _topology(surface)
+    cleanup = topology["remeshed"] != topology["input"] or not mesh_checks(surface)["passed"] or bool(np.any(surface.face_adjacency_angles > math.radians(179)))
+    for name, step in steps.items() if cleanup else ():
+        step()
         meshes.meshing_remove_null_faces()
         meshes.meshing_remove_unreferenced_vertices()
-        current = meshes.current_mesh()
-        surface = trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
-        checks = mesh_checks(surface)
-        row = {"merge_and_t_vertex_cleanup": cleanup, "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())), "topology_passed": checks["topology"]["passed"],
-               "self_intersections_passed": checks["self_intersections"]["passed"], "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179)))}
-        report["passes"].append(row)
-        report.update(row, runtime_s=time.monotonic() - start)
-        if checks["passed"] and not row["folded_edges"]:
-            return surface, report
-    raise ValueError(f"Prepared FEA surface is not one closed, oriented, fold- and self-intersection-free body: {report}")
+        candidate = snapshot()
+        if _topology(candidate) == _topology(surface):
+            surface = candidate
+        else:
+            rejected[name] = _topology(candidate)
+            restore(surface)
+    topology["prepared"] = _topology(surface)
+    checks = mesh_checks(surface)
+    report = {"refined_input": refine, "target_mm": target, "merge_tolerance_mm": tolerance, "cleanup_applied": cleanup, "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())),
+              "topology": topology, "topology_changed": topology["prepared"] != topology["input"], "rejected_steps": rejected, "topology_passed": checks["topology"]["passed"],
+              "self_intersections_passed": checks["self_intersections"]["passed"], "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179))), "runtime_s": time.monotonic() - start}
+    report["passed"] = not report["topology_changed"] and checks["passed"] and not report["folded_edges"]
+    if not report["passed"]:
+        if record:
+            Path(record).write_text(json.dumps({"prepared_surface": report}), encoding="utf-8")
+        raise ValueError(f"Prepared FEA surface changed topology or is not one closed, oriented, fold- and self-intersection-free body: {report}")
+    return surface, report
 
 def _surface_model(gmsh, request, settings):
     import trimesh
@@ -447,7 +465,7 @@ def _surface_model(gmsh, request, settings):
     report = {"attempt": attempt, "target_mm": request["target_mm"]}
     surface = source
     if attempt.startswith(("remesh", "refine")):
-        surface, report["prepared_surface"] = _prepare_surface(source, settings, attempt.startswith("refine"), request["target_mm"])
+        surface, report["prepared_surface"] = _prepare_surface(source, settings, attempt.startswith("refine"), request["target_mm"], Path(request["output_dir"]) / "attempt_metadata.json")
     tag = gmsh.model.addDiscreteEntity(2)
     gmsh.model.mesh.addNodes(2, tag, np.arange(1, len(surface.vertices) + 1), np.asarray(surface.vertices, dtype=np.float64).ravel())
     gmsh.model.mesh.addElementsByType(tag, 2, [], np.asarray(surface.faces, dtype=np.int64).ravel() + 1)
@@ -520,8 +538,8 @@ def generate_mesh(request_path):
         if source is not None:
             count = len(gmsh.model.mesh.getElements(3)[1][0])
             measured = {"linear_element_count": count, "element_budget": request["element_budget"], "over_budget": count > request["element_budget"]}
-            (destination / "attempt_metadata.json").write_text(json.dumps(measured), encoding="utf-8")
             surface.update(measured)
+            (destination / "attempt_metadata.json").write_text(json.dumps(surface), encoding="utf-8")
             if measured["over_budget"]:
                 raise ValueError(f"{count} tetrahedra exceed the element budget of {request['element_budget']} derived from available memory")
             surface.update(_boundary_report(gmsh, source, settings))
@@ -541,6 +559,7 @@ def generate_mesh(request_path):
         if source is not None:
             sicn = gmsh.model.mesh.getElementQualities(tags[0], "minSICN")
             surface.update(minimum_sicn=float(np.min(sicn)), elements_below_sicn=int(np.sum(sicn < settings["mesh_minimum_sicn"])))
+            (destination / "attempt_metadata.json").write_text(json.dumps(surface), encoding="utf-8")
             if not np.all(np.isfinite(sicn)) or np.min(sicn) < settings["mesh_minimum_sicn"]:
                 raise ValueError(f"Minimum SICN {np.min(sicn):.4g} below {settings['mesh_minimum_sicn']}")
         gmsh.write(str(destination / "mesh.inp"))
