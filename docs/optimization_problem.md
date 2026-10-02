@@ -81,6 +81,30 @@ Hart = Teil der Gut-Regel (`target:<name>` bzw. absolute Bedingung in `assessmen
 - Schwerpunktversatz: Alle eigenen Kandidaten liegen bei 1,2–3,0 % von D (Kamera vorn, Akku mittig). Das liegt an der Komponentenplatzierung der Domäne, nicht an der Topologie, deshalb nur eine Warnung.
 - f1 der Referenzen liegt bei 344–347 Hz je nach Neuvernetzung. Die Grenze von 330 Hz lässt etwa 4 % Abstand.
 
+## VORSCHLAG (nicht aktiv): f1-Ziel aus geschätzten Rotordrehzahlen
+
+Status: Vorschlag zur Entscheidung durch den Nutzer. Das aktive Ziel bleibt Zeile 8 (f1 ≥ 330 Hz, von ManaFly/Aether4 übernommen). Alle Zahlen dieses Abschnitts sind **Schätzungen**; die Tabelle des Motors nennt keine Drehzahlen.
+
+Schätzkette (GTS V3 1203 8000KV, HQProp T2.5X2X3V2S, 2S):
+
+| Schritt | Größe | Wert | Herkunft |
+|---|---|---|---|
+| 1 | Abfluggewicht AUW | 125 g | `INTEGRATION_CONFIG.all_up_mass_g` (Annahme) |
+| 2 | Schub je Motor im Schwebeflug | 125 g / 4 ≈ 31 g | Schritt 1 |
+| 3 | Vollgasschub je Motor | ≈ 206 g (2,02 N) | Motortabelle, Zeile HQ T65R, 7,4 V, 100 % (ähnlicher 65-mm-3-Blatt-Prop, SCHÄTZUNG für T2.5X2X3V2S) |
+| 4 | Drehzahlverhältnis Schweben/Vollgas | √(31 / 206) ≈ 0,39 | Schub ∝ n² (SCHÄTZUNG, konstanter Schubbeiwert) |
+| 5 | Vollgasdrehzahl | ≈ 40 000 U/min ≈ 670 Hz | Leerlauf 8000 KV × 7,4 V ≈ 59 000 U/min; unter Last (7,1 A × 0,167 Ω ≈ 1,2 V Innenwiderstand, Akkueinbruch, Lastschlupf) ≈ 40 000 U/min (SCHÄTZUNG) |
+| 6 | Schwebedrehzahl | 0,39 × 40 000 ≈ 14 000–16 000 U/min ≈ 240–260 Hz | Schritte 4 und 5 |
+| 7 | Blattfolgefrequenz (3 Blätter) | 3 × Drehfrequenz: Schweben ≈ 720–780 Hz, Vollgas ≈ 2000 Hz | Schritte 5 und 6 |
+
+Plausibilitätsprüfung: Halbgas liefert laut Tabelle 77 g; √(77 / 206) ≈ 0,61 ergibt ≈ 24 000 U/min ≈ 410 Hz bei Halbgas, konsistent mit der Kette.
+
+Folgerung: Die Drehfrequenz überstreicht im Flug etwa 240–670 Hz, die Blattfolge 720–2000 Hz. Ein gedruckter Frame dieser Größe kann nicht über dem gesamten Drehfrequenzband liegen (f1 ≥ 1,2 × 670 ≈ 800 Hz ist für PA6-CF bei 30–50 g unrealistisch). Sinnvoll ist, den Dauerzustand Schweben/Reiseflug zu entkoppeln:
+
+- **Vorschlag A (hart):** f1 ≥ 1,3 × obere Schwebedrehfrequenz ≈ 1,3 × 260 Hz ≈ **340 Hz**. Der Wert liegt zufällig nahe am übernommenen 330-Hz-Ziel, ist aber jetzt aus der eigenen Antriebskombination begründet. Gasstöße durchlaufen die Resonanz nur kurz.
+- **Vorschlag B (Warnung):** f1 nicht im Band 0,8–1,2 × Schwebe-Blattfolge, also nicht zwischen ≈ 580 und ≈ 940 Hz, damit die Blattfolge im Schwebeflug keine Grundmode trifft.
+- Die Schätzung ist zu ersetzen, sobald gemessene Drehzahlen vorliegen (Blackbox-RPM-Telemetrie mit bidirektionalem DShot im Schwebeflug und bei Vollgas). Dann skaliert Vorschlag A direkt mit der gemessenen Schwebedrehzahl.
+
 ## Feste Bewertungsstufe nach jedem neuen Kandidaten
 
 Jeder Treiber (implicit_study, Neural- und fast-Treiber) schreibt nach jedem neuen Kandidaten eine `frame.json` und ruft eine Zeile auf:
