@@ -926,6 +926,61 @@ def test_implicit_study_rejects_disconnected_mount_and_summarizes_ledger(tmp_pat
     run, = _read(tmp_path / "summary.json")["runs"]
     assert run["kind"] == "implicit" and run["candidates"] == 1 and run["success_rate"] == 0.0 and run["statuses"] == {"mount_disconnected": 1}
 
+def test_comparison_inputs_check_saved_physics_against_the_saved_parameters():
+    historical = _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
+    variant = deepcopy(historical)
+    variant["parameters"]["frame"]["wheelbase_mm"] = 131.0
+    variant["domain"] = pipeline.build_design_domain(deepcopy(variant["parameters"]))
+    assert variant["domain"]["comparison_load_cases"] != historical["domain"]["comparison_load_cases"]
+    reference, settings = pipeline.comparison_inputs(variant, variant["domain"], 60.0, 70.0)
+    assert reference["settings"]["relative_constraints"] == historical["settings"]["relative_constraints"] and settings["mesh_timeout_s"] == 60.0
+    with pytest.raises(ValueError, match="not consistent with the saved parameters: comparison_load_cases"):
+        pipeline.comparison_inputs(variant, historical["domain"], 60.0, 70.0)
+    tampered = deepcopy(variant["domain"])
+    tampered["point_masses"][0]["mass_g"] += 1.0
+    with pytest.raises(ValueError, match="point_masses"):
+        pipeline.comparison_inputs(variant, tampered, 60.0, 70.0)
+
+def implicit_fakes(monkeypatch, calls):
+    reference = {"source": "reference.step", "sha256": "0" * 64, "volume_mm3": 729.0, "curvature": None,
+                 "metrics": {"free_sharp_edge_length_per_area_per_mm": 1e3, "free_axis_normal_area_fraction": 1e3}}
+    monkeypatch.setattr(implicit, "reference_geometry", lambda path, domain, config: (trimesh.creation.box(extents=(9, 9, 9)), reference))
+    monkeypatch.setattr(implicit, "build_geometry", lambda parameters: Box(20, 20, 20))
+    monkeypatch.setattr(implicit, "evaluate", fake_fea(calls))
+    monkeypatch.setattr(implicit, "_provenance", lambda *args: {})
+
+def test_implicit_study_logs_a_ledger_line_when_preparation_fails(tmp_path, monkeypatch):
+    source = implicit_source(tmp_path)
+    inputs = _read(source / "inputs.json")
+    inputs["domain"]["point_masses"][0]["mass_g"] += 1.0
+    pipeline.write(source / "inputs.json", inputs)
+    pipeline.write(source / "manifest.json", {"status": "ok", "artifacts": pipeline.artifacts(source)})
+    implicit_fakes(monkeypatch, [])
+    assert implicit.run_main(implicit_config(tmp_path, source, geometry_only=True)) == 1
+    manifest = _read(tmp_path / "study/manifest.json")
+    assert manifest["status"] == "failed" and "point_masses" in manifest["error"]
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert line["candidate"] is None and line["status"] == "failed" and line["failure_stage"] == "prepare" and not line["success"] and "point_masses" in line["error"]
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_diagnostic_fea_runs_only_when_features_is_the_only_failing_check(tmp_path, monkeypatch, enabled):
+    source, calls = implicit_source(tmp_path), []
+    implicit_fakes(monkeypatch, calls)
+    validate = implicit.validate_implicit
+    def features_only(*args):
+        result = validate(*args)
+        result.update(passed=False, violations=["features"])
+        return result
+    monkeypatch.setattr(implicit, "validate_implicit", features_only)
+    assert implicit.run_main(implicit_config(tmp_path, source, diagnostic_fea=enabled)) == 0
+    record = _read(tmp_path / "study/candidates/c00/record.json")
+    assert record["status"] == "geometry_invalid" and not record["success"] and record["failure_stage"] == "validation" and not record["geometry_valid"]
+    assert len(calls) == (2 if enabled else 0) and record.get("fea_diagnostic_only", False) == enabled and ("comparison" in record) == enabled
+    manifest = _read(tmp_path / "study/manifest.json")
+    assert not manifest["overall_acceptance"] and manifest["success_rate"] == 0.0
+    line, = ledger(tmp_path / "run_log.jsonl")
+    assert line["status"] == "geometry_invalid" and not line["success"]
+
 def test_implicit_study_rejects_unknown_keys_and_used_output(tmp_path):
     path = tmp_path / "config.json"
     path.write_text(json.dumps({"source": "s", "output": "o", "opening_radius": 1.0}), encoding="utf-8")
