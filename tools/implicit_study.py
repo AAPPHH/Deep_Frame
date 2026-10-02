@@ -210,6 +210,7 @@ class ImplicitStudy:
         del field
         record["surface_metrics"], record["material_change"] = validation.pop("surface_metrics"), validation.pop("material_change")
         record["validation"], timings["validation"] = validation, validation["timings_s"]
+        record["wall_warning"] = validation["checks"].get("features", {}).get("wall_warning")
         clock = perf_counter()
         record["curvature"] = ball_curvature(mesh, config["curvature_radius_mm"], config["curvature_samples"])
         timings["metrics"] = perf_counter()-clock

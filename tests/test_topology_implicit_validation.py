@@ -5,6 +5,7 @@ import trimesh
 from deep_frame.config import TOPOLOGY_CONFIG
 from deep_frame.topology_implicit import ImplicitError, ImplicitField, _trimesh, build_implicit, exact_booleans, primitive_distance, region_manifold, remesh
 from deep_frame.topology_implicit_validation import VALIDATION_CHECKS, MeshAcceptance, ball_curvature, prescribed_bores, validate_implicit, wall_screen
+import deep_frame.topology_implicit_validation as validation
 from deep_frame.topology_surface_validation import _settings as _validation_settings, surface_metrics
 from tests.test_topology_implicit import CONFIG, SMALL, box, cylinder, make_domain
 
@@ -260,3 +261,11 @@ def test_surface_metrics_separate_smooth_and_axis_aligned_shapes():
     assert sphere["prescribed_triangle_count"] == 0 and sphere["free_sharp_edge_length_mm"] == 0.0 and sphere["free_axis_normal_area_fraction"] < 0.01
     assert block["free_axis_normal_area_fraction"] == pytest.approx(1.0)
     assert block["free_sharp_edge_length_per_area_per_mm"] == pytest.approx(4*(10+8+6)/(2*(10*8+10*6+8*6)))
+
+@pytest.mark.parametrize("blocking", [False, True])
+def test_thin_walls_are_a_warning_unless_the_wall_screen_blocks(mounted, monkeypatch, blocking):
+    domain, mesh, report, field = mounted
+    thin = {"passed": False, "complete": True, "thin_sample_count": 7, "minimum_measured_mm": 1.2}
+    monkeypatch.setattr(validation, "wall_screen", lambda *args: thin)
+    result = MeshAcceptance(mesh, domain, {**CONFIG, "wall_screen_blocking": blocking}, SETTINGS).features(field, report)
+    assert result["passed"] != blocking and result["wall_warning"] == {"blocking": blocking, "passed": False, "thin_sample_count": 7, "minimum_measured_mm": 1.2}

@@ -253,7 +253,9 @@ class MeshAcceptance:
                    "method": "Opening radius covers half the minimum wall plus the EDT error h*sqrt(3)/2, the ripple-smoothing shrink sigma^2/minimum and the remeshing surface distance"}
         opening["passed"] = bool(opening["applied"] and config["opening_radius_mm"] >= required)
         rays = wall_screen(self.mesh, self.minimum, self.settings, config["remesh_feature_deg"], prescribed_bores(self.regions["forbidden"], config["segment_tolerance_mm"], self.margin), self.margin)
-        return {"minimum_wall_mm": self.minimum, "field_opening": opening, "mesh_wall_screen": rays, "passed": opening["passed"] and rays["passed"]}
+        blocking = config["wall_screen_blocking"]
+        warning = {"blocking": blocking, "passed": rays["passed"], "thin_sample_count": rays.get("thin_sample_count"), "minimum_measured_mm": rays.get("minimum_measured_mm")}
+        return {"minimum_wall_mm": self.minimum, "field_opening": opening, "mesh_wall_screen": rays, "wall_warning": warning, "passed": opening["passed"] and (rays["passed"] or not blocking)}
 
     def supports(self):
         started = perf_counter()
