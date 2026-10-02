@@ -62,3 +62,18 @@ def test_cantilever_reduces_compliance_and_meets_volume():
     assert summary["objective_final"] < 0.3 * summary["objective_initial"] and summary["converged"]
     assert abs(summary["volume_fraction"] - 0.4) < 1e-6
     assert summary["gray_fraction_free"] < 0.1
+
+def test_local_volume_penalty_gradient_and_blob_vs_strut():
+    from deep_frame.topology_neural import LocalVolumePenalty
+    domain = beam_domain((14, 10, 10))
+    domain["preserve"][:] = False
+    penalty = LocalVolumePenalty(domain, neural_settings({"max_width_penalty": 1.0, "max_width_window_mm": 5.0, "max_local_fraction": 0.3, "volume_fraction": 0.2}))
+    blob, strut = np.zeros((14, 10, 10)), np.zeros((14, 10, 10))
+    blob[4:10, 3:7, 3:7], strut[:, 5, 5] = 1, 1
+    assert penalty(strut.ravel())[0] == 0 and penalty(blob.ravel())[0] > 0
+    density = np.random.default_rng(1).uniform(0.2, 0.9, blob.size)
+    value, gradient = penalty(density)
+    for index in (17, 700, 1111):
+        step = np.zeros_like(density)
+        step[index] = 1e-6
+        assert np.isclose((penalty(density + step)[0] - penalty(density - step)[0]) / 2e-6, gradient[index], rtol=1e-5, atol=1e-9)

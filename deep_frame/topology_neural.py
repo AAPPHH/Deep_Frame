@@ -26,6 +26,9 @@ NEURAL_SETTINGS = {
     "linear_solver": "cpu_superlu",
     "gpu_solver_residency": "resident",
     "max_runtime_s": None,
+    "max_width_penalty": 0.0,
+    "max_width_window_mm": 8.0,
+    "max_local_fraction": 0.3,
 }
 
 def neural_settings(settings):
@@ -136,6 +139,23 @@ class NeuralDensity:
         density[free] = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, fraction * np.count_nonzero(allowed) - np.count_nonzero(preserve))))
         return density.reshape(tuple(domain["grid"]["shape"]))
 
+class LocalVolumePenalty:
+    def __init__(self, domain, settings):
+        from scipy.ndimage import binary_dilation
+        self.shape = tuple(domain["grid"]["shape"])
+        self.size = [int(2 * round(settings["max_width_window_mm"] / spacing / 2) + 1) for spacing in domain["grid"]["spacing_mm"]]
+        allowed, preserve, _ = validate_masks(domain)
+        near = binary_dilation(preserve.reshape(self.shape), np.ones(self.size, dtype=bool))
+        self.mask = (allowed & ~preserve).reshape(self.shape) & ~near
+        self.weight, self.limit = settings["max_width_penalty"], settings["max_local_fraction"]
+        self.scale = self.weight / (settings["volume_fraction"] * np.count_nonzero(allowed) * self.limit ** 2)
+    def __call__(self, physical):
+        from scipy.ndimage import uniform_filter
+        if self.weight <= 0:
+            return 0.0, np.zeros(physical.size)
+        excess = np.where(self.mask, np.maximum(uniform_filter(physical.reshape(self.shape), self.size, mode="constant") - self.limit, 0.0), 0.0)
+        return float(self.scale * np.sum(excess ** 2)), uniform_filter(2 * self.scale * excess, self.size, mode="constant").ravel()
+
 def member_widths(density, spacing, masks=None, threshold=0.5):
     from scipy.ndimage import binary_dilation, distance_transform_edt
     from skimage.morphology import skeletonize
@@ -158,6 +178,7 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
         target = settings["volume_fraction"]
         system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
         optimizer = Adam(mapping.field.parameters, settings["learning_rate"])
+        penalty = LocalVolumePenalty(domain, settings)
         scales = None
         converged, stop_reason = False, "max_iterations"
         for iteration in range(1, settings["max_iterations"] + 1):
@@ -166,13 +187,15 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
             solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"])
             if scales is None:
                 scales, normalization, weights = _case_scaling(solutions, settings)
-            objective_gradient = sum(scales[name] * result["derivative"] for name, result in solutions.items())
+            width_penalty, width_gradient = penalty(physical)
+            objective_gradient = sum(scales[name] * result["derivative"] for name, result in solutions.items()) + width_gradient
             gradients = mapping.gradient(cache, objective_gradient)
             previous = [value.copy() for value in mapping.field.parameters]
             optimizer.step(mapping.field.parameters, gradients)
             change = float(max(np.max(np.abs(value - old)) for value, old in zip(mapping.field.parameters, previous)))
             history.append(_history_entry(iteration, physical, solutions, scales, change, perf_counter() - started))
-            history[-1].update(volume_fraction=float(np.sum(physical[mapping.allowed]) / allowed_count), sharpness=sharpness)
+            history[-1].update(volume_fraction=float(np.sum(physical[mapping.allowed]) / allowed_count), sharpness=sharpness, width_penalty=width_penalty)
+            history[-1]["objective"] += width_penalty
             density = physical.reshape(tuple(domain["grid"]["shape"]))
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
@@ -188,6 +211,7 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
         density = physical.reshape(tuple(domain["grid"]["shape"]))
         solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"], metrics=True)
         final_entry = _history_entry(iteration + 1, physical, solutions, scales, None, perf_counter() - started, final=True)
+        final_entry["width_penalty"] = penalty(physical)[0]
         history.append(final_entry)
         if progress_callback is not None:
             progress_callback(deepcopy(final_entry))

@@ -33,7 +33,7 @@ GPU_PLOT_CONFIG = {"evidence": "docs/validation/workstation_gpu", "output": "doc
 GPU_PLOT_KINDS = {"evidence": "text", "output": "text"}
 NEURAL_KINDS = {"max_iterations": "int", "minimum_iterations": "int", "change_tolerance": "float", "learning_rate": "float", "frequencies": "int",
                 "max_frequency_per_mm": "float", "hidden": ["int"], "seed": "int", "mirror_axis": "int", "sharpness_final": "float",
-                "sharpness_iterations": "int", "max_runtime_s": "float", "gpu_solver_residency": ("resident", "transient")}
+                "sharpness_iterations": "int", "max_runtime_s": "float", "max_width_penalty": "float", "max_width_window_mm": "float", "max_local_fraction": "float", "gpu_solver_residency": ("resident", "transient")}
 NEURAL_CONFIG = {"directory": None, "shape": [68, 64, 16], "output_shape": [102, 96, 24], "volume_fractions": [0.12, 0.18, 0.25],
                  "linear_solver": "cuda_cudss", "run_log": None, **{key: NEURAL_SETTINGS[key] for key in NEURAL_KINDS}}
 NEURAL_CONFIG_KINDS = {"directory": "text", "shape": ["int"] * 3, "output_shape": ["int"] * 3, "volume_fractions": ["float"],
