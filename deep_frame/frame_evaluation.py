@@ -32,6 +32,7 @@ def load_frame(spec):
 
 def frame_spec(overrides):
     spec = configure(EVALUATION_CONFIG, EVALUATION_KINDS, overrides, ("name", "stl", "output"))
+    spec.update({key: {**EVALUATION_CONFIG[key], **spec[key]} for key in ("loads", "fea_settings", "slicer")})
     if spec["ours"]:
         spec = {**spec, **ours(spec)}
     missing = [key for key in ("motors", "selectors") if not spec[key]]

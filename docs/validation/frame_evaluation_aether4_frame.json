@@ -1,39 +1,367 @@
 {
- "name": "BM Aether 4 (Ø9, body12)",
+ "name": "BM Aether 4 (\u00d89, body12)",
  "stl": "C:/clones/Deep_Frame-neural/exports/aether4_ref/aether4_body12.stl",
  "output": "C:/clones/Deep_Frame-eval/exports/evaluation/aether4",
- "print_axis": [0.0, -0.64048, 0.76797],
+ "print_axis": [
+  0.0,
+  -0.64048,
+  0.76797
+ ],
  "prop_diameter_mm": 101.6,
- "motors": {"front_left": [-69.6, 64.78, 37.63], "front_right": [69.6, 64.78, 37.78], "rear_left": [-70.3, -64.78, 25.74], "rear_right": [70.3, -64.78, 25.70]},
- "motor_up": {"front_left": -1, "front_right": -1, "rear_left": 1, "rear_right": 1},
- "components": [{"type": "battery", "center_mm": [0, 0, 48.0]}, {"type": "aio15", "center_mm": [0, -16.35, 10.0]}, {"type": "camera", "center_mm": [0, 50, 50.0]}],
+ "motors": {
+  "front_left": [
+   -69.6,
+   64.78,
+   37.63
+  ],
+  "front_right": [
+   69.6,
+   64.78,
+   37.78
+  ],
+  "rear_left": [
+   -70.3,
+   -64.78,
+   25.74
+  ],
+  "rear_right": [
+   70.3,
+   -64.78,
+   25.7
+  ]
+ },
+ "motor_up": {
+  "front_left": -1,
+  "front_right": -1,
+  "rear_left": 1,
+  "rear_right": 1
+ },
+ "components": [
+  {
+   "type": "battery",
+   "center_mm": [
+    0,
+    0,
+    48.0
+   ]
+  },
+  {
+   "type": "aio15",
+   "center_mm": [
+    0,
+    -16.35,
+    10.0
+   ]
+  },
+  {
+   "type": "camera",
+   "center_mm": [
+    0,
+    50,
+    50.0
+   ]
+  }
+ ],
  "mount_patterns": [
-  {"name": "motor_front_left", "center_mm": [-69.6, 64.78], "z_mm": 39.0, "radius_mm": 4.5, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, 1]},
-  {"name": "motor_front_right", "center_mm": [69.6, 64.78], "z_mm": 39.0, "radius_mm": 4.5, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, 1]},
-  {"name": "motor_rear_left", "center_mm": [-70.3, -64.78], "z_mm": 24.4, "radius_mm": 4.5, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]},
-  {"name": "motor_rear_right", "center_mm": [70.3, -64.78], "z_mm": 24.4, "radius_mm": 4.5, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]},
-  {"name": "stack_20", "center_mm": [0, -16.35], "z_mm": 4.0, "radius_mm": 14.142, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]},
-  {"name": "stack_25.5", "center_mm": [0, -16.35], "z_mm": 4.0, "radius_mm": 18.031, "count": 4, "hole_diameter_mm": [1.4, 4.0], "screw_diameter_mm": 1.6, "tool_direction": [0, 0, -1]}
+  {
+   "name": "motor_front_left",
+   "center_mm": [
+    -69.6,
+    64.78
+   ],
+   "z_mm": 39.0,
+   "radius_mm": 4.5,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "motor_front_right",
+   "center_mm": [
+    69.6,
+    64.78
+   ],
+   "z_mm": 39.0,
+   "radius_mm": 4.5,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "motor_rear_left",
+   "center_mm": [
+    -70.3,
+    -64.78
+   ],
+   "z_mm": 24.4,
+   "radius_mm": 4.5,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "name": "motor_rear_right",
+   "center_mm": [
+    70.3,
+    -64.78
+   ],
+   "z_mm": 24.4,
+   "radius_mm": 4.5,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "name": "stack_20",
+   "center_mm": [
+    0,
+    -16.35
+   ],
+   "z_mm": 4.0,
+   "radius_mm": 14.142,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "name": "stack_25.5",
+   "center_mm": [
+    0,
+    -16.35
+   ],
+   "z_mm": 4.0,
+   "radius_mm": 18.031,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.4,
+    4.0
+   ],
+   "screw_diameter_mm": 1.6,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  }
  ],
  "keep_outs": [
-  {"name": "aio15_envelope", "kind": "box", "min_mm": [-15.65, -32.0, 7.0], "max_mm": [15.65, -0.7, 13.0]}
+  {
+   "name": "aio15_envelope",
+   "kind": "box",
+   "min_mm": [
+    -15.65,
+    -32.0,
+    7.0
+   ],
+   "max_mm": [
+    15.65,
+    -0.7,
+    13.0
+   ]
+  }
  ],
  "connectors": [],
  "selectors": {
   "center_fixtures": [
-   {"kind": "box", "min_mm": [-13.2, -9.55, 2.65], "max_mm": [-6.8, -3.15, 3.35]},
-   {"kind": "box", "min_mm": [6.8, -9.55, 2.65], "max_mm": [13.2, -3.15, 3.35]},
-   {"kind": "box", "min_mm": [-13.2, -29.55, 1.6], "max_mm": [-6.8, -23.15, 2.3]},
-   {"kind": "box", "min_mm": [6.8, -29.55, 1.6], "max_mm": [13.2, -23.15, 2.3]}],
+   {
+    "kind": "box",
+    "min_mm": [
+     -13.2,
+     -9.55,
+     2.65
+    ],
+    "max_mm": [
+     -6.8,
+     -3.15,
+     3.35
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     6.8,
+     -9.55,
+     2.65
+    ],
+    "max_mm": [
+     13.2,
+     -3.15,
+     3.35
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     -13.2,
+     -29.55,
+     1.6
+    ],
+    "max_mm": [
+     -6.8,
+     -23.15,
+     2.3
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     6.8,
+     -29.55,
+     1.6
+    ],
+    "max_mm": [
+     13.2,
+     -23.15,
+     2.3
+    ]
+   }
+  ],
   "motor_fixtures": [
-   {"kind": "box", "min_mm": [-74.974, 59.406, 40.64], "max_mm": [-64.226, 70.154, 41.34]},
-   {"kind": "box", "min_mm": [64.226, 59.406, 40.64], "max_mm": [74.974, 70.154, 41.34]},
-   {"kind": "box", "min_mm": [-75.674, -70.154, 20.70], "max_mm": [-64.926, -59.406, 21.40]},
-   {"kind": "box", "min_mm": [64.926, -70.154, 20.70], "max_mm": [75.674, -59.406, 21.40]}],
-  "arm_tip": {"kind": "box", "min_mm": [-74.974, 59.406, 37.28], "max_mm": [-64.226, 70.154, 37.98]},
+   {
+    "kind": "box",
+    "min_mm": [
+     -74.974,
+     59.406,
+     40.64
+    ],
+    "max_mm": [
+     -64.226,
+     70.154,
+     41.34
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     64.226,
+     59.406,
+     40.64
+    ],
+    "max_mm": [
+     74.974,
+     70.154,
+     41.34
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     -75.674,
+     -70.154,
+     20.7
+    ],
+    "max_mm": [
+     -64.926,
+     -59.406,
+     21.4
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     64.926,
+     -70.154,
+     20.7
+    ],
+    "max_mm": [
+     75.674,
+     -59.406,
+     21.4
+    ]
+   }
+  ],
+  "arm_tip": {
+   "kind": "box",
+   "min_mm": [
+    -74.974,
+    59.406,
+    37.28
+   ],
+   "max_mm": [
+    -64.226,
+    70.154,
+    37.98
+   ]
+  },
   "arm_motor": "front_left",
-  "camera": {"kind": "box", "min_mm": [-17.5, 38.0, 60.0], "max_mm": [17.5, 62.0, 80.0]},
-  "deck": {"kind": "box", "min_mm": [-12.0, -2.0, 41.48], "max_mm": [12.0, 2.0, 42.83]},
-  "battery_center_mm": [0.0, 0.0, 47.98]
+  "camera": {
+   "kind": "box",
+   "min_mm": [
+    -17.5,
+    38.0,
+    60.0
+   ],
+   "max_mm": [
+    17.5,
+    62.0,
+    80.0
+   ]
+  },
+  "deck": {
+   "kind": "box",
+   "min_mm": [
+    -12.0,
+    -2.0,
+    41.48
+   ],
+   "max_mm": [
+    12.0,
+    2.0,
+    42.83
+   ]
+  },
+  "battery_center_mm": [
+   0.0,
+   0.0,
+   47.98
+  ]
+ },
+ "fea_settings": {
+  "surface_deviation_mm": 0.25,
+  "fea_remesh_targets_mm": [
+   1.5,
+   1.2
+  ],
+  "fea_memory_budget_mb": 7000.0
  }
 }
