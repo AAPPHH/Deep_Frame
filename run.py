@@ -12,6 +12,10 @@ RUN_CONFIG = {
     "show_viewer": True,
 }
 
+FRAME = {"style": "freestyle", "durability": "crash_resistant", "prop_size_in": 2.5, "layout": {"x_type": "compressed_x", "battery_mount": "top"},
+         "components": {"motor": "GTS V3 1203", "aio": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "antennas": "HDZero VTX + ELRS"},
+         "material": "PA6-CF", "print": {"nozzle_mm": 0.4, "layer_mm": 0.2}}
+
 def frame():
     from build123d import export_step
     from deep_frame.frame import build_geometry, export_body, reference_parameters, show_assembly, validate_geometry
@@ -60,18 +64,85 @@ def topology(settings=None):
     from deep_frame.topology_pipeline import PIPELINE_CONFIG, run_topology
     return run_topology(reference_parameters(), deepcopy(PIPELINE_CONFIG) if settings is None else settings)
 
-COMMANDS = {"frame": frame, "optimization": optimization, "smoke": smoke, "topology": topology}
+def build(path=None, frame=FRAME):
+    from deep_frame.frame_run import FrameRun
+    request = {**deepcopy(frame), **(json.loads(Path(path).read_text(encoding="utf-8-sig")) if path else {})}
+    manifest = FrameRun(request).run()
+    print(json.dumps({"run": manifest["name"], "status": manifest["status"], "stages": {name: entry["status"] for name, entry in manifest["stages"].items()}}))
+    return manifest
+
+def datasheet(path):
+    from deep_frame.frame_run import datasheet as write
+    return write(path)
+
+def _update(target, values):
+    for key, value in values.items():
+        if isinstance(value, dict) and isinstance(target.get(key), dict):
+            _update(target[key], value)
+        else:
+            target[key] = deepcopy(value)
+
+def _json(value):
+    return value.tolist() if hasattr(value, "tolist") else str(value)
+
+def stage(path):
+    import importlib
+    import importlib.util
+    request = json.loads(Path(path).read_text(encoding="utf-8"))
+    root, here = Path(request["root"]).resolve(), Path(__file__).resolve().parent
+    sys.path[:] = [str(root)] + [entry for entry in sys.path if Path(entry or ".").resolve() != here]
+    config = importlib.import_module("deep_frame.config")
+    for name, values in request["patch"].items():
+        _update(getattr(config, name), values)
+    tool = root / request["tool"]
+    if request["action"] == "cli":
+        import runpy
+        overrides = Path(path).with_suffix(".overrides.json")
+        overrides.write_text(json.dumps(request["overrides"], indent=1), encoding="utf-8")
+        sys.argv = [str(tool), *request["argv"], str(overrides)]
+        runpy.run_path(str(tool), run_name="__main__")
+        return 0
+    if request["action"] == "domain":
+        from deep_frame.topology_geometry import build_design_domain
+        from tools.topology_study import study_parameters
+        domain = build_design_domain(study_parameters(request["shape"]))
+        result = {key: domain[key] for key in ("grid", "regions", "load_cases", "comparison_load_cases", "point_masses", "material")}
+        result["components"] = domain["metadata"]["components"]
+    else:
+        import trimesh
+        spec = importlib.util.spec_from_file_location(tool.stem, tool)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        kwargs = dict(request["kwargs"])
+        kwargs["mesh"] = trimesh.load_mesh(kwargs["mesh"], process=True)
+        if "out" in kwargs:
+            kwargs["out"] = Path(kwargs["out"])
+            kwargs["out"].mkdir(parents=True, exist_ok=True)
+        if "views" in kwargs:
+            kwargs["views"] = {name: (tuple(direction), tuple(up)) for name, (direction, up) in kwargs["views"].items()}
+        result = getattr(module, request["function"])(**kwargs)
+    if request.get("output") or request.get("result"):
+        target = Path(request.get("output") or request["result"])
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(result, indent=1, default=_json), encoding="utf-8")
+    return 0
+
+COMMANDS = {"frame": frame, "optimization": optimization, "smoke": smoke, "topology": topology, "build": build, "datasheet": datasheet, "stage": stage}
+ARGUMENTS = {"build": (0, 1), "datasheet": (1, 1), "stage": (1, 1)}
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    if len(argv) != 1 or argv[0] not in COMMANDS:
-        raise SystemExit("usage: run.py {" + ",".join(COMMANDS) + "}")
+    low, high = ARGUMENTS.get(argv[0] if argv else None, (0, 0))
+    if not argv or argv[0] not in COMMANDS or not low <= len(argv) - 1 <= high:
+        raise SystemExit("usage: run.py {" + ",".join(COMMANDS) + "} [file.json]")
     command = argv[0]
-    result = COMMANDS[command]()
+    result = COMMANDS[command](*argv[1:])
     if command == "optimization":
         print(json.dumps({"status": result["status"], "trial_counts": result["trial_counts"], "has_improved_design": result["has_improved_design"], "artifacts": result["artifacts"]}))
     if command == "topology":
         print(json.dumps({"status": result["status"], "selected_id": result["selected_id"], "pareto_ids": result["pareto_ids"], "manifest": result["run_dir"] + "/manifest.json"}))
+    if command in ("datasheet", "stage"):
+        return result
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

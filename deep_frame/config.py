@@ -1,55 +1,19 @@
 from copy import deepcopy
 import hashlib
 import json
+from math import atan2, degrees
 from pathlib import Path
 import sys
 
-COMPONENT_DEFAULTS = {
-    "aio15": {
-        "width_mm": 31.3,
-        "length_mm": 31.3,
-        "stack_height_mm": 6.0,
-        "grommet_height_mm": 3.0,
-        "elrs_antenna_clearance_mm": 3.0,
-        "mount_pitch_mm": 25.5,
-        "screw_diameter_mm": 2.0,
-        "mass_g": 7.2,
-        "source": "user: HDZero AIO15 dimensions, M2 mounting pattern and mass",
-        "parameter_sources": {
-            "stack_height_mm": "PROVISIONAL: complete populated board envelope; measure actual stack",
-            "grommet_height_mm": "PROVISIONAL: HDZero manual, soft mount on the 4 included rubber grommets; height not given, typical whoop grommet",
-            "elrs_antenna_clearance_mm": "HDZero AIO15 manual: lift the ELRS antenna at least 3 mm off the board",
-            "vtx_antenna": "HDZero AIO15 manual: UFL VTX antenna mounted outward; rear antenna eyelet keeps it outboard",
-        },
-    },
-    "camera": {
-        "length_mm": 14.0,
-        "width_mm": 16.0,
-        "height_mm": 14.0,
-        "tilt_deg": 20.0,
-        "mass_g": 2.3,
-        "source": "user: HDZero Lux dimensions and mass",
-        "parameter_sources": {"tilt_deg": "design: adjustable initial camera tilt"},
-    },
-    "battery": {
-        "length_mm": 63.0,
-        "width_mm": 30.0,
-        "height_mm": 11.0,
-        "mass_g": 37.0,
-        "source": "user: GNB5502S120A dimensions and mass",
-        "mass_scope": "battery including leads and connectors; represented at battery center",
-    },
-    "motor": {
-        "diameter_mm": 15.76,
-        "height_mm": 9.9,
-        "shaft_diameter_mm": 1.5,
-        "mount_pitch_mm": 9.0,
-        "mount_layout": "bolt_circle",
-        "screw_diameter_mm": 2.0,
-        "screw_clearance_mm": 2.2,
+COMPONENT_LIBRARY = {
+    "GTS V3 1203": {
+        "type": "motor",
+        "dimensions_mm": {"diameter": 15.76, "height": 9.9, "shaft_diameter": 1.5},
         "mass_g": 4.5,
-        "kv": 8000,
-        "thrust_n": 1.80,
+        "hole_pattern": {"layout": "bolt_circle", "count": 4, "pitch_mm": 9.0, "screw_diameter_mm": 2.0, "clearance_diameter_mm": 2.2},
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "screws",
+        "data": {"kv": 8000, "thrust_n": 1.80},
         "source": "Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg (RCinPower GTS V3 1203 8000KV data sheet)",
         "model": "RCinPower GTS V3 1203 8000KV (user decision)",
         "parameter_sources": {
@@ -62,43 +26,130 @@ COMPONENT_DEFAULTS = {
             "screw_clearance_mm": "design: 0.2 mm diametral clearance for M2",
         },
     },
-    "prop": {
-        "diameter_mm": 65.0,
-        "thickness_mm": 0.8,
-        "mass_g": 0.7,
-        "source": "user: 65 mm swept disk; intentionally larger than exact 2.5 inch (63.5 mm)",
+    "GEPRC GR1105": {
+        "type": "motor",
+        "dimensions_mm": {"diameter": 14.2, "height": 14.6},
+        "mass_g": 5.9,
+        "hole_pattern": {"layout": "bolt_circle", "count": 4, "pitch_mm": 9.0, "screw_diameter_mm": 2.0, "clearance_diameter_mm": 2.2},
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "screws",
+        "source": "https://geprc.com/product/gep-gr1105-motor/",
+        "model": "PROVISIONAL: GEPRC GR1105 envelope, not a selected motor",
         "parameter_sources": {
-            "thickness_mm": "PROVISIONAL: swept disk thickness; excludes blade flex",
-            "mass_g": "PROVISIONAL: prop model not selected; equivalent uniform disk inertia",
+            "diameter_mm": "https://geprc.com/wp-content/uploads/2019/05/22-6199766706.jpg",
+            "height_mm": "https://geprc.com/wp-content/uploads/2019/05/22-6199766706.jpg; includes upper shaft",
+            "mount_layout": "PROVISIONAL: drawing shows four M2 on 9 mm bolt circle; not 9 x 9 square",
+            "mass_g": "https://geprc.com/wp-content/uploads/2019/05/22-8095453337.jpg; includes pictured leads",
+            "screw_diameter_mm": "https://geprc.com/wp-content/uploads/2019/05/22-6199766706.jpg",
+            "screw_clearance_mm": "design: 0.2 mm diametral clearance for M2",
         },
     },
-    "xt30": {
-        "width_mm": 10.2,
-        "length_mm": 12.4,
-        "height_mm": 5.2,
+    "HDZero AIO15": {
+        "type": "aio",
+        "dimensions_mm": {"width": 31.3, "length": 31.3, "stack_height": 6.0, "grommet_height": 3.0},
+        "mass_g": 7.2,
+        "hole_pattern": {"layout": "square", "count": 4, "pitch_mm": 25.5, "screw_diameter_mm": 2.0},
+        "keep_out": {"clearance_mm": 0.5, "elrs_antenna_mm": 3.0},
+        "mounting": "grommets",
+        "source": "user: HDZero AIO15 dimensions, M2 mounting pattern and mass",
+        "parameter_sources": {
+            "stack_height_mm": "PROVISIONAL: complete populated board envelope; measure actual stack",
+            "grommet_height_mm": "PROVISIONAL: HDZero manual, soft mount on the 4 included rubber grommets; height not given, typical whoop grommet",
+            "elrs_antenna_clearance_mm": "HDZero AIO15 manual: lift the ELRS antenna at least 3 mm off the board",
+            "vtx_antenna": "HDZero AIO15 manual: UFL VTX antenna mounted outward; rear antenna eyelet keeps it outboard",
+        },
+    },
+    "HDZero Lux": {
+        "type": "camera",
+        "dimensions_mm": {"length": 14.0, "width": 16.0, "height": 14.0},
+        "mass_g": 2.3,
+        "hole_pattern": {"layout": "side_pair", "count": 2, "screw_diameter_mm": 2.0, "clearance_diameter_mm": 2.2},
+        "keep_out": {"clearance_mm": 0.5, "side_mm": 2.0, "bottom_mm": 2.0},
+        "mounting": "screws",
+        "source": "user: HDZero Lux dimensions and mass",
+        "parameter_sources": {"clearance_diameter_mm": "frame v0: 2.2 mm side screw bore", "keep_out": "frame v0: 2 mm side and bottom camera clearance"},
+    },
+    "GNB5502S120A": {
+        "type": "battery",
+        "dimensions_mm": {"length": 63.0, "width": 30.0, "height": 11.0},
+        "mass_g": 37.0,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "strap",
+        "data": {"cells": 2, "capacity_mah": 550, "power_connector": "AMASS XT30U-F", "balance_connector": "JST XHP-3"},
+        "source": "user: GNB5502S120A dimensions and mass",
+        "mass_scope": "battery including leads and connectors; represented at battery center",
+    },
+    "HDZero VTX + ELRS": {
+        "type": "antennas",
+        "dimensions_mm": {"bore": 3.0, "holder_height": 10.0},
         "mass_g": 0.0,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "eyelet",
+        "data": {"vtx": "UFL VTX antenna mounted outward through the rear eyelet", "elrs": "wire antenna lifted at least 3 mm above the AIO board"},
+        "source": "frame v0 antenna eyelet; HDZero AIO15 manual for VTX and ELRS routing",
+        "mass_scope": "PROVISIONAL: antenna mass not measured, neglected",
+    },
+    "AMASS XT30U-F": {
+        "type": "connector",
+        "dimensions_mm": {"width": 10.2, "length": 12.4, "height": 5.2},
+        "mass_g": 0.0,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "strap",
         "source": "https://images.100y.com.tw/pdf_file/AMASS-XT30U.pdf#page=2",
         "model": "AMASS XT30U-F bounding envelope",
         "mass_scope": "already_in_battery",
-        "parameter_sources": {
-            "mass_g": "battery mass includes leads and connectors; avoid double counting",
-        },
+        "parameter_sources": {"mass_g": "battery mass includes leads and connectors; avoid double counting"},
     },
-    "balancer": {
-        "width_mm": 9.8,
-        "length_mm": 7.5,
-        "height_mm": 5.7,
-        "pins": 3,
+    "JST XHP-3": {
+        "type": "connector",
+        "dimensions_mm": {"width": 9.8, "length": 7.5, "height": 5.7},
         "mass_g": 0.0,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 0.5},
+        "mounting": "strap",
+        "data": {"pins": 3},
         "source": "https://www.jst-mfg.com/product/pdf/eng/eXH.pdf#page=4",
         "model": "PROVISIONAL: JST XHP-3 housing envelope; verify actual GNB connector",
         "mass_scope": "already_in_battery",
-        "parameter_sources": {
-            "pins": "user: 3-pin balance connector",
-            "mass_g": "battery mass includes leads and connectors; avoid double counting",
-        },
+        "parameter_sources": {"pins": "user: 3-pin balance connector", "mass_g": "battery mass includes leads and connectors; avoid double counting"},
     },
 }
+
+LIBRARY_FIELDS = {
+    "common": ["type", "dimensions_mm", "mass_g", "hole_pattern", "keep_out.clearance_mm", "mounting", "source"],
+    "motor": ["dimensions_mm.diameter", "dimensions_mm.height", "hole_pattern.layout", "hole_pattern.pitch_mm", "hole_pattern.screw_diameter_mm", "hole_pattern.clearance_diameter_mm", "data.thrust_n"],
+    "aio": ["dimensions_mm.width", "dimensions_mm.length", "dimensions_mm.stack_height", "dimensions_mm.grommet_height", "hole_pattern.layout", "hole_pattern.pitch_mm", "hole_pattern.screw_diameter_mm", "keep_out.elrs_antenna_mm"],
+    "camera": ["dimensions_mm.length", "dimensions_mm.width", "dimensions_mm.height", "hole_pattern.clearance_diameter_mm", "keep_out.side_mm", "keep_out.bottom_mm"],
+    "battery": ["dimensions_mm.length", "dimensions_mm.width", "dimensions_mm.height", "data.power_connector", "data.balance_connector"],
+    "antennas": ["dimensions_mm.bore", "dimensions_mm.holder_height"],
+    "connector": ["dimensions_mm.width", "dimensions_mm.length", "dimensions_mm.height"],
+}
+MOUNTING_TYPES = ("grommets", "screws", "strap", "eyelet")
+PROP_RULE = {"swept_margin_mm": 1.5, "thickness_mm": 0.8, "mass_g": 0.7, "source": "layout rule: swept disk = prop size x 25.4 mm + 1.5 mm margin (2.5 inch -> 65 mm)",
+             "parameter_sources": {"thickness_mm": "PROVISIONAL: swept disk thickness; excludes blade flex", "mass_g": "PROVISIONAL: prop model not selected; equivalent uniform disk inertia"}}
+LEGACY_HOLE_KEYS = {"layout": "mount_layout", "pitch_mm": "mount_pitch_mm", "screw_diameter_mm": "screw_diameter_mm", "clearance_diameter_mm": "screw_clearance_mm"}
+
+def component_spec(entry):
+    spec = {key + "_mm": value for key, value in entry["dimensions_mm"].items()}
+    spec.update({LEGACY_HOLE_KEYS[key]: value for key, value in (entry["hole_pattern"] or {}).items() if key in LEGACY_HOLE_KEYS})
+    if "elrs_antenna_mm" in entry["keep_out"]:
+        spec["elrs_antenna_clearance_mm"] = entry["keep_out"]["elrs_antenna_mm"]
+    spec.update(deepcopy(entry.get("data", {})))
+    spec["mass_g"] = entry["mass_g"]
+    spec.update({key: deepcopy(entry[key]) for key in ("source", "model", "mass_scope", "parameter_sources") if key in entry})
+    return spec
+
+def prop_spec(size_in, rule=PROP_RULE):
+    return {"diameter_mm": round(size_in * 25.4 + rule["swept_margin_mm"], 3), **{key: deepcopy(value) for key, value in rule.items() if key != "swept_margin_mm"}}
+
+DEFAULT_SELECTION = {"aio15": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "motor": "GTS V3 1203", "xt30": "AMASS XT30U-F", "balancer": "JST XHP-3"}
+COMPONENT_DEFAULTS = {name: component_spec(COMPONENT_LIBRARY[part]) for name, part in DEFAULT_SELECTION.items()}
+COMPONENT_DEFAULTS["camera"]["tilt_deg"] = 20.0
+COMPONENT_DEFAULTS["camera"]["parameter_sources"]["tilt_deg"] = "design: adjustable initial camera tilt"
+COMPONENT_DEFAULTS["prop"] = prop_spec(2.5)
 
 FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'lateral_longitudinal_ratio': 1.3658536585365855,
@@ -958,6 +1009,76 @@ DESIGN_RECONSTRUCTION_KINDS = {
     "root_preserves": "text",
 }
 
+MATERIALS = {
+    "PA6-CF": {
+        **{key: PRINT_MATERIAL[key] for key in ("name", "density_g_cm3", "young_modulus_mpa", "poisson_ratio", "strength_xy_mpa", "strength_z_mpa", "source")},
+        "e_z_mpa": PRINT_MATERIAL["orthotropic"]["e_z_mpa"],
+        "value_sources": {"density_g_cm3": "TDS ISO 1183", "young_modulus_mpa": "TDS ISO 527 XY 4430 +/- 310 MPa", "e_z_mpa": "TDS ISO 527 Z 2170 +/- 230 MPa",
+                          "strength_xy_mpa": "TDS XY 102 +/- 7 MPa", "strength_z_mpa": "TDS Z 48 +/- 6 MPa", "poisson_ratio": "ASSUMPTION: not in the TDS"},
+    },
+}
+
+LAYOUT_RULES = {
+    "x_types": {"compressed_x": {"arm_angle_deg": degrees(atan2(112, 82)), "source": "Gecko3 112 mm lateral x 82 mm longitudinal motor spacing"},
+                "true_x": {"arm_angle_deg": 45.0, "source": "square X"},
+                "stretched_x": {"arm_angle_deg": degrees(atan2(82, 112)), "source": "Gecko3 spacing rotated: 82 mm lateral x 112 mm longitudinal"}},
+    "prop_tip_gap_mm": 14.7,
+    "wheelbase_step_mm": 0.5,
+    "envelope": {"origin_mm": [-68.0, -64.0, 0.0], "size_mm": [136.0, 128.0, 32.0]},
+    "battery_mounts": {"top": {"deck_top_mm": 29.0, "headroom_mm": 3.0}, "bottom": {"gap_mm": 1.0}},
+    "battery_prop_clearance_mm": 2.0,
+    "camera": {"stack_gap_mm": 12.35, "top_clearance_mm": 3.0},
+    "antennas": {"angle_deg": 0.0, "connector_clearance_mm": 0.5, "eyelet_radius_mm": 4.3, "envelope_margin_mm": 3.7},
+    "connectors": {"stack_gap_mm": 13.75},
+    "cg_tolerance_mm": 3.0,
+    "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3},
+    "hoop": {"side_gap_mm": 4.0, "radius_mm": 1.6, "path_yz_mm": [[-11.0, 27.5], [-1.0, 26.0], [7.0, 23.5], [11.5, 18.0], [12.5, 11.0], [10.5, 5.0], [6.0, 2.0], [-2.0, 1.5]],
+             "load_y_min_mm": 9.0, "load_z_mm": [4.0, 22.0]},
+    "neural": {"max_frequency_per_mm": 0.2, "reference_width_mm": 2.0},
+}
+
+LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float"},
+                    "antennas": {"angle_deg": "float", "y_mm": "float"}, "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"}}
+
+STYLES = {
+    "freestyle": {"crash_directions": ["front", "side_left", "side_right", "arm_front_left", "arm_front_right", "arm_rear_left", "arm_rear_right", "below", "back"],
+                  "flight_cases": ["arm_tip", "thrust_all"], "torsion": True, "hoops": True},
+}
+
+DURABILITY = {
+    "crash_resistant": {"crash_weight": 2.0, "safety_factor": 2.5, "minimum_width_mm": 2.4, "volume_fraction": 0.06},
+    "standard": {"crash_weight": 1.0, "safety_factor": 2.0, "minimum_width_mm": 2.0, "volume_fraction": 0.05},
+    "light": {"crash_weight": 0.5, "safety_factor": 1.5, "minimum_width_mm": 2.0, "volume_fraction": 0.04},
+}
+
+FRAME_REQUEST = {"name": None, "style": "freestyle", "durability": "standard", "prop_size_in": 2.5, "layout": {"x_type": "compressed_x", "battery_mount": "top"},
+                 "components": {"motor": "GTS V3 1203", "aio": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "antennas": "HDZero VTX + ELRS"},
+                 "material": "PA6-CF", "print": {"nozzle_mm": 0.4, "layer_mm": 0.2}, "overrides": {}, "grid": "coarse"}
+FRAME_REQUEST_KINDS = {"name": "text", "style": tuple(STYLES), "durability": tuple(DURABILITY), "prop_size_in": "float", "layout": "object", "components": "object",
+                       "material": tuple(MATERIALS), "print": "object", "overrides": "object", "grid": ("coarse", "fine")}
+FRAME_LAYOUT_KINDS = {"x_type": tuple(LAYOUT_RULES["x_types"]), "battery_mount": tuple(LAYOUT_RULES["battery_mounts"])}
+FRAME_PRINT_KINDS = {"nozzle_mm": "float", "layer_mm": "float"}
+FRAME_COMPONENT_KINDS = {"motor": "text", "aio": "text", "camera": "text", "battery": "text", "antennas": "text"}
+
+RUN_GRIDS = {
+    "coarse": {"shape": [68, 64, 24], "fine_shape": [136, 128, 48], "neural": {"max_iterations": 60, "minimum_iterations": 30, "sharpness_iterations": 45, "max_runtime_s": 900.0},
+               "reconstruction": {"voxel_mm": 0.5, "calibration_voxel_mm": 1.0}, "evaluation": {"voxel_mm": 0.5},
+               "compute": {"reconstruction": "geometry"}},
+    "fine": {"shape": [102, 96, 24], "fine_shape": [204, 192, 48], "neural": {}, "reconstruction": {}, "evaluation": {}, "compute": {}},
+}
+
+STAGES = {
+    "optimization": {"worktree": "C:/clones/Deep_Frame-nr2", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu/.venv/Scripts/python.exe"},
+    "reconstruction": {"worktree": "C:/clones/Deep_Frame-recon", "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "geometry": {"worktree": "C:/clones/Deep_Frame-int", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "evaluation": {"worktree": "C:/clones/Deep_Frame-eval", "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "datasheet": {"worktree": "C:/clones/Deep_Frame-run", "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "renders": {"worktree": "C:/clones/Deep_Frame-neural", "tool": "exports/fast/_neural_scripts/render.py", "argv": ["render_views"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+}
+RUN_SETTINGS = {"root": "exports/runs", "compute": "C:/clones/Deep_Frame-int/tools/compute.py", "domain_stage": "optimization", "domain_compute": "cpu",
+                "views": {"iso": [[0.55, -0.85, -0.62], [0, 0, 1]], "top": [[0, 0, -1], [0, 1, 0]], "side": [[-1, 0, 0], [0, 0, 1]], "front": [[0, -1, 0], [0, 0, 1]]},
+                "datasheet_voxel_mm": 0.5}
+
 CONFIG = {
     "length_mm": 30.0,
     "width_mm": 20.0,
@@ -997,6 +1118,9 @@ def _convert(kind, value, key):
             return [_convert(kind[0], item, key) for item in value]
     elif kind == "flag":
         if isinstance(value, bool):
+            return value
+    elif kind == "object":
+        if isinstance(value, dict):
             return value
     elif kind == "text":
         if isinstance(value, str):
