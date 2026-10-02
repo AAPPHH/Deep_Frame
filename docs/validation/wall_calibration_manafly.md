@@ -154,20 +154,20 @@ Eingaben:
 |---|---|---|---|
 | **A** Strahlproben | 1 043 840 | 1 075 564 | 184 342 |
 | **A** dünne Proben < 2,0 mm | **201 716 = 19,3 %** | 184 376 = 17,1 % | 11,1 % |
-| **A** Anteil < 1,8 / < 1,5 / < 1,0 mm | 16,0 / **12,2** / 5,86 % | – | 5,27 / 3,74 / 1,67 % |
-| **A** Anteil < 0,1 mm | 499 Proben = 0,05 % (Splitter/Berührflächen des Exports) | – | – |
+| **A** Anteil < 1,8 / < 1,5 / < 1,0 mm | 16,0 / **12,2** / 5,86 % | 13,5 / 9,73 / 4,46 % | 5,27 / 3,74 / 1,67 % |
+| **A** Anteil < 0,1 mm | 499 Proben = 0,05 % (Splitter/Berührflächen des Exports) | 0,05 % | – |
 | **A** min gemessen | 0,0011 mm bei (30,4; 21,2; 51,0), Strebe/Arm | 0,0011 mm, gleiche Stelle | 0,004 mm |
-| **A** p1 / p5 aller Proben | 0,36 / 0,86 mm | – | 0,84 / 1,78 mm |
-| **A** p1 / p5 / p50 der dünnen Proben | 0,25 / 0,35 / 1,37 mm | – | 0,72 / 0,80 / 1,80 mm |
-| **A** Ort der dünnen Proben | Zentralteil 87 425, Oberrahmen 42 546, Strebe/Arm 41 677, Motoraufnahme 30 068, Grundebene 0 | – | siehe oben |
-| **B** entfernt gesamt | 3 487 mm³ = 4,41 % | – | 1 558 mm³ = 5,79 % |
-| **B** davon Kantenrundung (flach) | 120 mm³ (0,15 %) | – | 195 mm³ (0,72 %) |
-| **B** tief entfernt (echte Wand < 2 mm) | **3 367 mm³ = 4,26 %**, 28 Komp. | – | 1 363 mm³ = 5,06 %, 44 Komp. |
-| **B** größte tiefe Komponente | **1 333 mm³** (Zentralteil: Bodenplatte unter dem Stack, 40 × 54 × 7,5 mm, max. Tiefe 0,91 mm) | – | 346 mm³ |
-| **B** zweitgrößte | 1 140 mm³ (Mittelsteg vorn bei x = 0, y ≈ 33, z ≈ 31; 33 × 42 × 25 mm, Tiefe 0,99 mm) | – | – |
-| **B** Komponenten gesamt / > 1 mm³ | 19 602 / 52 | – | 26 472 / 76 |
-| **B** tief entfernt nach Ort | Zentralteil 1 362, Strebe/Arm 1 324, Motoraufnahme 361, Oberrahmen 320 mm³ | – | Zentralteil 574, Strebe/Arm 340, Motoraufnahme 261, Oberrahmen 188 mm³ |
-| **B** tiefe Komponenten in Motorzonen | alle vier Motoraufnahmen, je 46–69 mm³ (Tiefe 0,64–0,92 mm) | – | ja |
+| **A** p1 / p5 aller Proben | 0,36 / 0,86 mm | 0,46 / 1,11 mm | 0,84 / 1,78 mm |
+| **A** p1 / p5 / p50 der dünnen Proben | 0,25 / 0,35 / 1,37 mm | 0,29 / 0,43 / 1,44 mm | 0,72 / 0,80 / 1,80 mm |
+| **A** Ort der dünnen Proben | Zentralteil 87 425, Oberrahmen 42 546, Strebe/Arm 41 677, Motoraufnahme 30 068, Grundebene 0 | Zentralteil 87 427, Oberrahmen 42 708, Strebe/Arm 40 891, Motoraufnahme 13 350, Grundebene 0 | siehe oben |
+| **B** entfernt gesamt | 3 487 mm³ = 4,41 % | 3 398 mm³ = 4,20 % | 1 558 mm³ = 5,79 % |
+| **B** davon Kantenrundung (flach) | 120 mm³ (0,15 %) | 168 mm³ (0,21 %) | 195 mm³ (0,72 %) |
+| **B** tief entfernt (echte Wand < 2 mm) | **3 367 mm³ = 4,26 %**, 28 Komp. | **3 229 mm³ = 3,99 %**, 27 Komp. | 1 363 mm³ = 5,06 %, 44 Komp. |
+| **B** größte tiefe Komponente | **1 333 mm³** (Zentralteil: Bodenplatte unter dem Stack, 40 × 54 × 7,5 mm, max. Tiefe 0,91 mm) | **1 333 mm³** (dieselbe Bodenplatte) | 346 mm³ |
+| **B** zweitgrößte | 1 140 mm³ (Mittelsteg vorn bei x = 0, y ≈ 33, z ≈ 31; 33 × 42 × 25 mm, Tiefe 0,99 mm) | 1 009 mm³ (derselbe Mittelsteg vorn) | – |
+| **B** Komponenten gesamt / > 1 mm³ | 19 602 / 52 | 20 389 / 84 | 26 472 / 76 |
+| **B** tief entfernt nach Ort | Zentralteil 1 362, Strebe/Arm 1 324, Motoraufnahme 361, Oberrahmen 320 mm³ | Zentralteil 1 362, Strebe/Arm 1 188, Oberrahmen 444, Motoraufnahme 235 mm³ | Zentralteil 574, Strebe/Arm 340, Motoraufnahme 261, Oberrahmen 188 mm³ |
+| **B** tiefe Komponenten in Motorzonen | alle vier Motoraufnahmen, je 46–69 mm³ (Tiefe 0,64–0,92 mm) | ja: vorn je 63 mm³ (Tiefe 0,91) und 18 mm³ (Tiefe 0,8); Motorzonen gesamt 235 mm³ | ja |
 
 Eine einfachere Öffnung (Erosion EDT > r, Kachel 150 Voxel) ergab für body12 konsistent 3 720 mm³ = 4,71 % entfernt, größte Komponente 1 411 mm³. Laufzeit B: 8,7 min bei 455k Dreiecken (CPU-Slot).
 
@@ -177,7 +177,7 @@ Was Aether4 über die vorläufige Regel sagt:
   - größte tiefe Komponente 1 333 mm³ gegen 5 mm³;
   - tiefe Komponenten in allen vier Motorzonen.
   - Warnschwellen: A < 2,0 mm 19,3 % gegen 1 %, A < 1,5 mm 12,2 % gegen 0,05 %.
-- **ManaFly ist kein Ausreißer.** Zwei unabhängig konstruierte, fliegende Frames haben 4–5 % ihres Volumens in echten Wänden unter 2 mm (B tief: 4,26 % bzw. 5,06 %). Der Sicherheitsfaktor der Regel liegt gegenüber Aether4 bei ≈ 8,5, gegenüber ManaFly bei ≈ 10. Die Regel bleibt damit eine Regel mit Sicherheitsfaktor; sie bildet nicht die Grenze dessen ab, was fliegt.
+- **ManaFly ist kein Ausreißer.** Zwei unabhängig konstruierte, fliegende Frames haben 4–5 % ihres Volumens in echten Wänden unter 2 mm (B tief: Aether4 4,26 % bzw. 3,99 % für body12/body9, ManaFly 5,06 %). Der Sicherheitsfaktor der Regel liegt gegenüber Aether4 bei ≈ 8,5, gegenüber ManaFly bei ≈ 10. Die Regel bleibt damit eine Regel mit Sicherheitsfaktor; sie bildet nicht die Grenze dessen ab, was fliegt.
 - **Bei Aether4 stammt das tiefe Volumen überwiegend aus Platten knapp unter 2 mm.**
   - Die maximale Entfernungstiefe der großen Komponenten liegt bei 0,91–0,99 mm, die Plattendicke also bei ≈ 1,8–2,0 mm.
   - Die Motorsitze haben eine Tiefe von 0,64 mm, also Wände von ≈ 1,3 mm.
@@ -185,7 +185,7 @@ Was Aether4 über die vorläufige Regel sagt:
 - **A ist bei Aether4 noch weniger aussagekräftig als bei ManaFly.** 19,3 % dünne Proben gehen bis auf 0,001 mm herab; 0,05 % liegen unter 0,1 mm und stammen von Splitterdreiecken und Berührflächen des Exports. Das bestätigt, dass A Warnung bleibt und B entscheidet.
 - **Folgerung:** Die Schwellen bleiben unverändert. Unsere Frames (B tief 0 bzw. 0,010 %) liegen mehr als zwei Größenordnungen unter beiden realen Frames.
 
-Reproduktion Aether4: `Deep_Frame-neural/exports/aether4_ref/wall.py` (A: `rays`, einfache Öffnung: `opening`), `wall_cal.py` + `cal_b.py` (A-Verteilung und B mit tiefer Klassifikation). Rohwerte stehen in `wall_rays_body12.json`, `wall_rays_body9.json`, `wall_opening_body12.json` und `wall_cal_body12.json` im selben Ordner (nicht eingecheckt).
+Reproduktion Aether4: `Deep_Frame-neural/exports/aether4_ref/wall.py` (A: `rays`, einfache Öffnung: `opening`), `wall_cal.py` + `cal_b.py` (A-Verteilung und B mit tiefer Klassifikation). Rohwerte stehen in `wall_rays_body12.json`, `wall_rays_body9.json`, `wall_opening_body12.json` `wall_cal_body12.json` und `wall_cal_body9.json` im selben Ordner (nicht eingecheckt).
 
 ## Reproduktion
 
