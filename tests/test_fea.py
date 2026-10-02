@@ -10,7 +10,7 @@ import trimesh
 from build123d import Align, Box, Pos, Solid
 
 from deep_frame.config import CONFIG, FEA_CONFIG, IMPLICIT_CONFIG
-from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, _read_mesh, _run, _select, _volume_mesh, evaluate, prepare_frame_case
+from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, _prepare_surface, _read_mesh, _run, _select, _topology, _volume_mesh, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
 from tests.test_frame import frame
 
@@ -451,6 +451,27 @@ def test_folded_coarse_surface_falls_back_to_a_finer_remesh_target(tmp_path):
     assert attempts[0]["surface_failed"] and "Prepared FEA surface" in attempts[0]["diagnostic"] and "already failed" in attempts[1]["diagnostic"]
     assert result["mesh"]["target_mm"] == 1.0 and result["mesh"]["prepared_surface"]["folded_edges"] == 0 and not result["mesh"]["over_budget"]
     assert result["mesh"]["element_count"] == len(elements) == attempts[2]["linear_element_count"] <= result["mesh"]["memory_budget"]["elements"] and nodes
+
+def thin_web_mesh(thickness):
+    from manifold3d import Manifold
+    ring = Manifold.cube((20.0, 20.0, 4.0)) - Manifold.cube((14.0, 16.0, 6.0)).translate((2.0, 2.0, -1.0)) - Manifold.cube((4.0 - thickness, 16.0, 6.0)).translate((16.0, 2.0, -1.0))
+    mesh = ring.to_mesh()
+    return trimesh.Trimesh(mesh.vert_properties[:, :3].astype(float), mesh.tri_verts, process=False)
+
+def test_surface_preparation_never_welds_a_thin_web_silently(tmp_path):
+    web = thin_web_mesh(0.2)
+    surface, report = _prepare_surface(web, _mesh_settings({}), False, 2.0)
+    assert _topology(web) == {"watertight": True, "winding_consistent": True, "body_count": 1, "euler_number": 0}
+    assert report["topology"]["prepared"] == report["topology"]["input"] == _topology(surface) == _topology(web) and not report["topology_changed"]
+    assert report["passed"] and not report["rejected_steps"] and report["merge_tolerance_mm"] < 1e-6
+    welding = _mesh_settings({"fea_merge_relative_tolerance": 0.3 / web.scale})
+    surface, report = _prepare_surface(web, welding, False, 2.0)
+    assert not report["rejected_steps"]["merge_close_vertices"]["watertight"] and _topology(surface) == _topology(web) and not report["topology_changed"]
+    record = tmp_path / "attempt_metadata.json"
+    with pytest.raises(ValueError, match="Prepared FEA surface"):
+        _prepare_surface(thin_web_mesh(0.1), welding, False, 2.0, record)
+    failed = json.loads(record.read_text(encoding="utf-8"))["prepared_surface"]
+    assert not failed["passed"] and "merge_close_vertices" in failed["rejected_steps"] and failed["folded_edges"] and failed["topology"]["input"] == _topology(thin_web_mesh(0.1))
 
 def synthetic_frame_mesh(parameters):
     from manifold3d import Manifold, OpType
