@@ -109,7 +109,7 @@
     -70.3,
     -64.78
    ],
-   "z_mm": 24.4,
+   "z_mm": 24.8,
    "radius_mm": 4.5,
    "count": 4,
    "hole_diameter_mm": [
@@ -129,7 +129,7 @@
     70.3,
     -64.78
    ],
-   "z_mm": 24.4,
+   "z_mm": 24.8,
    "radius_mm": 4.5,
    "count": 4,
    "hole_diameter_mm": [
@@ -358,10 +358,14 @@
  },
  "fea_settings": {
   "surface_deviation_mm": 0.25,
+  "mesh_boundary_deviation_mm": 0.2,
   "fea_remesh_targets_mm": [
-   1.5,
-   1.2
+   1.5
   ],
-  "fea_memory_budget_mb": 7000.0
+  "tet_attempts": [
+   "remesh_hxt"
+  ],
+  "mesh_minimum_sicn": 0.0005,
+  "fea_memory_budget_mb": 11000.0
  }
 }

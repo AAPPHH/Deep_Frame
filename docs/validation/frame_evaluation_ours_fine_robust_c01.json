@@ -681,13 +681,13 @@
     "method": "surface samples mirrored at x = mean motor x, distance to the original surface"
    },
    "roughness": {
-    "curvature_neighbour_rms_per_mm": 0.157765395496306,
+    "curvature_neighbour_rms_per_mm": 0.1517317701343371,
     "mean_abs_curvature_per_mm": {
-     "max": 0.8267762863303735,
-     "p50": 0.11791229405807271,
-     "p95": 0.4673348637656463,
-     "p99": 0.5569222303446474,
-     "mean": 0.1578093785601636
+     "max": 0.8715323976164249,
+     "p50": 0.12084728685960969,
+     "p95": 0.4673427471912992,
+     "p99": 0.5512700572481334,
+     "mean": 0.15860361899126066
     },
     "radius_mm": 1.0,
     "method": "Cohen-Steiner/Morvan mean curvature measure of each ball around evenly sampled surface points divided by the disc area pi r^2 (sphere 1/R, cylinder 1/(2R), plane 0); RMS of the |H| differences of sample pairs closer than 1.5 r; independent of the triangulation, record only"
@@ -695,7 +695,7 @@
   },
   "voxel_mm": 0.4,
   "unbalanced_columns": 0,
-  "runtime_s": 6.2709919000044465
+  "runtime_s": 7.117221699998481
  },
  "walls": {
   "voxel_mm": 0.1,
@@ -1706,5 +1706,5 @@
   "safety_factor": 2.0,
   "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed"
  },
- "line": "| Deep Frame fine_robust c01 (implizite Route) | 45,7 g | SP z 19,3 mm; Ixx/Iyy/Izz 113/135/214 kg\u00b7mm\u00b2 (K) | 14,6 % (65 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok | \u00dcberh. 14,7 %, \u00d6ffn. r=1 0,00 %, St\u00fctze 16,94 cm\u00b3, 333 min | Strebe 2,0/3,6/6,0 mm, H/B 1,29, offen 61 %, H\u00f6he 31,6 mm, K\u00f6rper 1, Schlaufen 17, Sym. 1,99 mm, Rauh. 0,158/mm | 186,9 N/mm (A) | f1 583 Hz; 787/936/973 (A) | front 2,1/1,5 MPa; arm 1,7/0,7 MPa; back 0,7/0,4 MPa (SF 2,0, A) | keine |"
+ "line": "| Deep Frame fine_robust c01 (implizite Route) | 45,7 g | SP z 19,3 mm; Ixx/Iyy/Izz 113/135/214 kg\u00b7mm\u00b2 (K) | 14,6 % (65 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok | \u00dcberh. 14,7 %, \u00d6ffn. r=1 0,00 %, St\u00fctze 16,94 cm\u00b3, 333 min | Strebe 2,0/3,6/6,0 mm, H/B 1,29, offen 61 %, H\u00f6he 31,6 mm, K\u00f6rper 1, Schlaufen 17, Sym. 1,99 mm, Rauh. 0,152/mm | 186,9 N/mm (A) | f1 583 Hz; 787/936/973 (A) | front 2,1/1,5 MPa; arm 1,7/0,7 MPa; back 0,7/0,4 MPa (SF 2,0, A) | keine |"
 }

@@ -684,13 +684,13 @@
     "method": "surface samples mirrored at x = mean motor x, distance to the original surface"
    },
    "roughness": {
-    "curvature_neighbour_rms_per_mm": 0.17512182798097198,
+    "curvature_neighbour_rms_per_mm": 0.16759003106946843,
     "mean_abs_curvature_per_mm": {
-     "max": 0.9879013867579525,
-     "p50": 0.21288112513014146,
-     "p95": 0.5367395912684917,
-     "p99": 0.7082179706887001,
-     "mean": 0.22700487778505904
+     "max": 1.0886439203738911,
+     "p50": 0.2112969150600663,
+     "p95": 0.5266003712836639,
+     "p99": 0.7104873816212576,
+     "mean": 0.22582167689831548
     },
     "radius_mm": 1.0,
     "method": "Cohen-Steiner/Morvan mean curvature measure of each ball around evenly sampled surface points divided by the disc area pi r^2 (sphere 1/R, cylinder 1/(2R), plane 0); RMS of the |H| differences of sample pairs closer than 1.5 r; independent of the triangulation, record only"
@@ -698,7 +698,7 @@
   },
   "voxel_mm": 0.4,
   "unbalanced_columns": 0,
-  "runtime_s": 8.288085000007413
+  "runtime_s": 8.26836329998332
  },
  "walls": {
   "voxel_mm": 0.1,
@@ -1771,5 +1771,5 @@
   "safety_factor": 2.0,
   "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed"
  },
- "line": "| ManaFly 3 BETA V4 | 29,3 g | SP z 21,3 mm; Ixx/Iyy/Izz 172/127/273 kg\u00b7mm\u00b2 (K) | 11,0 % (76 mm) | Bohrb. 24/24, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 16,1 %, \u00d6ffn. r=1 5,06 %, St\u00fctze 30,23 cm\u00b3, 462 min | Strebe 1,2/2,5/3,6 mm, H/B 1,12, offen 71 %, H\u00f6he 32,4 mm, K\u00f6rper 1, Schlaufen 26, Sym. 0,04 mm, Rauh. 0,175/mm | 6,6 N/mm (A) | f1 344 Hz; 417/549/778 (A) | front 12,4/4,6 MPa; arm 10,1/2,0 MPa; back 2,7/0,7 MPa (SF 2,0, A) | keine |"
+ "line": "| ManaFly 3 BETA V4 | 29,3 g | SP z 21,3 mm; Ixx/Iyy/Izz 172/127/273 kg\u00b7mm\u00b2 (K) | 11,0 % (76 mm) | Bohrb. 24/24, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 16,1 %, \u00d6ffn. r=1 5,06 %, St\u00fctze 30,23 cm\u00b3, 462 min | Strebe 1,2/2,5/3,6 mm, H/B 1,12, offen 71 %, H\u00f6he 32,4 mm, K\u00f6rper 1, Schlaufen 26, Sym. 0,04 mm, Rauh. 0,168/mm | 6,6 N/mm (A) | f1 344 Hz; 417/549/778 (A) | front 12,4/4,6 MPa; arm 10,1/2,0 MPa; back 2,7/0,7 MPa (SF 2,0, A) | keine |"
 }

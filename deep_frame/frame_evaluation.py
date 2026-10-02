@@ -191,8 +191,8 @@ def holes(mesh, pattern, h, tolerance):
         centroid = np.array([axis_x[cells[:, 0]].mean(), axis_y[cells[:, 1]].mean()])
         offset = centroid - center
         position = center + radius * offset / max(np.linalg.norm(offset), 1e-9)
-        cell = np.clip(np.round((position - [axis_x[0], axis_y[0]]) / h).astype(int), 0, len(axis_x) - 1)
-        fits = labels[cell[0], cell[1]] == index and clearance[cell[0], cell[1]] >= pattern["screw_diameter_mm"] / 2 - h
+        cells_at = [np.clip(np.round((point - [axis_x[0], axis_y[0]]) / h).astype(int), 0, len(axis_x) - 1) for point in (position, centroid)]
+        fits = any(labels[i, j] == index and clearance[i, j] >= pattern["screw_diameter_mm"] / 2 - h for i, j in cells_at)
         if fits and abs(np.linalg.norm(offset) - radius) <= tolerance + diameter / 2 and pattern["hole_diameter_mm"][0] <= diameter <= pattern["hole_diameter_mm"][1]:
             found.append({"position_mm": position.tolist(), "centroid_mm": centroid.tolist(), "diameter_mm": diameter})
     return {"name": pattern["name"], "expected": pattern["count"], "found": len(found), "holes": found, "material_in_section": bool(image.any()), "passed": len(found) >= pattern["count"]}
@@ -233,7 +233,7 @@ def geometry(spec, config=None):
     print_mesh = printed(mesh, spec["print_axis"])
     plane = float(np.mean([xyz[0] for xyz in spec["motors"].values()]))
     from deep_frame.topology_implicit_validation import ball_curvature
-    curvature = ball_curvature(mesh, config["curvature_radius_mm"], config["surface_samples"], config["seed"])
+    curvature = ball_curvature(mesh, config["curvature_radius_mm"], max(config["surface_samples"], int(mesh.area / config["curvature_radius_mm"] ** 2 / 2)), config["seed"])
     result = {"mass": mass_properties(mesh, component_list(spec), PRINT_MATERIAL["density_g_cm3"]), "airflow": top_view(solid, lower, h, spec, config["hub_radius_mm"]), "assembly": assembly(mesh, solid, lower, spec, config),
               "printability": overhangs(print_mesh, config["overhang_deg"], config["bed_tolerance_mm"]),
               "form": {**strut_form(solid, h), "loops": loops(solid, h, config["loop_closing_mm"]), "mesh_bodies": int(mesh.body_count), "mesh_genus": int(round((2 * mesh.body_count - mesh.euler_number) / 2)),
