@@ -617,6 +617,57 @@ PRINT_MATERIAL = {
                     "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS", "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"},
 }
 
+EVALUATION_CONFIG = {
+    "name": None,
+    "stl": None,
+    "output": None,
+    "print_axis": [0.0, 0.0, 1.0],
+    "prop_diameter_mm": 65.0,
+    "motors": None,
+    "motor_up": {},
+    "ours": False,
+    "components": [],
+    "mount_patterns": [],
+    "keep_outs": [],
+    "connectors": [],
+    "selectors": None,
+    "domain_grid": [102, 96, 24],
+    "parts": ["geometry", "walls", "fea", "slicer"],
+    "python": sys.executable,
+    "compute": "C:/clones/Deep_Frame-int/tools/compute.py",
+    "voxel_mm": 0.4,
+    "loop_closing_mm": 3.0,
+    "overhang_deg": 45.0,
+    "bed_tolerance_mm": 0.2,
+    "fit_tolerance_mm3": 1.0,
+    "hub_radius_mm": 7.1,
+    "section_voxel_mm": 0.05,
+    "hole_tolerance_mm": 0.6,
+    "screw_head_radius_mm": 1.9,
+    "connector_radius_mm": 2.0,
+    "surface_samples": 5000,
+    "curvature_radius_mm": 1.0,
+    "seed": 0,
+    "loads": {"arm_tip_force_n": 3.6, "all_up_mass_g": 125.0, "standard_gravity_m_s2": 9.80665, "crash_front_g": 25.0, "crash_arm_g": 12.5, "crash_back_g": 12.5, "safety_factor": 2.0,
+              "sources": {"arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+                          "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+                          "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+                          "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+                          "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"}},
+    "fea_settings": {"threads": 4, "mesh_threads": 4, "mesh_timeout_s": 900.0, "solver_timeout_s": 900.0, "fea_memory_budget_mb": 9728.0, "mesh_minimum_sicn": 0.005, "fea_remesh_targets_mm": [2.0, 1.5], "num_modes": 6},
+    "slicer": {"executable": "C:/clones/prusaslicer/PrusaSlicer-2.9.6/prusa-slicer-console.exe", "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
+               "options": ["--nozzle-diameter", "0.4", "--layer-height", "0.2", "--first-layer-height", "0.2", "--perimeters", "2", "--fill-density", "15%", "--filament-diameter", "1.75", "--filament-density", "1.09",
+                           "--bed-shape", "0x0,256x0,256x256,0x256", "--max-print-height", "256", "--center", "128,128"],
+               "support": ["--support-material", "--support-material-auto"], "timeout_s": 1800.0,
+               "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed"},
+    "targets": {},
+}
+
+EVALUATION_KINDS = {"name": "text", "stl": "path", "output": "path", "print_axis": ["float", "float", "float"], "prop_diameter_mm": "float", "motors": "object", "motor_up": "object", "ours": "flag", "components": "list",
+                    "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "slicer")], "python": "text", "compute": "text", "targets": "object",
+                    **{key: "float" for key in ("voxel_mm", "loop_closing_mm", "overhang_deg", "bed_tolerance_mm", "fit_tolerance_mm3", "hub_radius_mm", "section_voxel_mm", "hole_tolerance_mm", "screw_head_radius_mm", "connector_radius_mm", "curvature_radius_mm")},
+                    "surface_samples": "int", "seed": "int", "loads": "object", "fea_settings": "object", "slicer": "object"}
+
 INTEGRATION_CONFIG = {
     "model_version": "frame-v0-linear-fixtures-v1",
     "arm_tip_force_n": 1.0,
@@ -869,8 +920,8 @@ def _convert(kind, value, key):
     elif kind == "text":
         if isinstance(value, str):
             return value
-    elif kind == "object":
-        if isinstance(value, dict):
+    elif kind in ("object", "list"):
+        if isinstance(value, dict if kind == "object" else list):
             return value
     elif kind == "path":
         if isinstance(value, (str, Path)):
