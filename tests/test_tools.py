@@ -21,6 +21,7 @@ from tests.test_topology_implicit_validation import mounted_domain
 from tools import implicit_study as implicit
 from tools import mature_pipeline as pipeline
 from tools import topology_study
+from tools import neural_study
 from tools import workstation_study as workstation
 from tools.topology_study import field_comparison, plot_gpu, verify_artifacts, verify_comparable_settings, verify_frozen_reference
 
@@ -1033,3 +1034,22 @@ def test_command_line_passes_parsed_json_or_empty_overrides(tmp_path):
     path.write_text('{"count": 4}', encoding="utf-8-sig")
     assert command_line({"run": lambda overrides: overrides}, ["run", str(path)]) == {"count": 4}
     assert command_line({"run": lambda overrides: overrides}, ["run"]) == {}
+
+def test_round2_domain_lifts_pads_and_adds_camera_hoops():
+    full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
+    z = neural_study.grid_centers(full["grid"])[..., 2]
+    pads = neural_study.anchors(full)
+    assert pads.any() and z[pads].min() >= 7 and z[pads].max() <= 10
+    assert full["metadata"]["round2"]["hoop_cells"] > 0 and not np.any(full["preserve"] & ~full["allowed"])
+    cases = {case["name"]: case for case in full["load_cases"]}
+    assert "crash_hoop" in cases and half["optimizer_settings"]["case_weights"]["crash_hoop"] == 1.0
+    assert all(box["min_mm"][2] == pytest.approx(7 - 0.01, abs=0.05) for box in cases["battery_impact"]["fixed_regions"])
+
+def test_keep_connected_drops_floating_parts():
+    field = np.zeros((20, 10, 10))
+    field[1:8, 2:6, 2:6], field[12:18, 2:6, 2:6] = 1, 1
+    anchor = np.zeros(field.shape, dtype=bool)
+    anchor[2, 3, 3] = True
+    kept, report = neural_study.keep_connected(field, {"spacing_mm": [1, 1, 1]}, 0.5, anchor)
+    assert report["components_raw"] == 2 and report["dropped_count"] == 1 and report["dropped_volume_mm3"] == 96
+    assert kept[3, 3, 3] == 1 and not kept[12:18].any()
