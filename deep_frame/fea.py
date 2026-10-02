@@ -648,6 +648,16 @@ def prepare_frame_case(parameters, fea_config=None, integration_config=None):
         {"name": "camera_side", "analysis": "static", "fixed_regions": motor_fixtures, "loads": [{"region": camera_region, "force_n": [integration["camera_side_force_n"], 0.0, 0.0]}]},
         {"name": "modes", "analysis": "modal", "fixed_regions": motor_fixtures},
     ]
+    weight = integration["all_up_mass_g"] / 1000 * integration["standard_gravity_m_s2"]
+    thrust = parameters["components"]["motor"]["thrust_n"] * integration["thrust_safety_factor"]
+    pads = [_box((mx - pad_half, my - pad_half, frame["arm_height_mm"] - tolerance), (mx + pad_half, my + pad_half, frame["arm_height_mm"] + tolerance)) for mx, my in motors.values()]
+    radial, tangential = np.array([x, y]) / math.hypot(x, y), np.array([-y, x]) / math.hypot(x, y)
+    oblique = np.append(-radial + tangential, -0.5)
+    load_cases[3:3] = [
+        {"name": "thrust_all", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": pad, "force_n": [0.0, 0.0, thrust]} for pad in pads]},
+        {"name": "crash_front", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": camera_region, "force_n": [0.0, -weight * integration["crash_front_g_factor"], 0.0]}]},
+        {"name": "crash_arm", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": arm_region, "force_n": (weight * integration["crash_arm_g_factor"] * oblique / np.linalg.norm(oblique)).tolist()}]},
+    ]
     fea["settings"]["stiffness_load_case"] = "arm_tip"
     result = {
         "material": fea["material"],
