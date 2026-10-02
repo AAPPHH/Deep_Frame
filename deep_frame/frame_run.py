@@ -218,12 +218,12 @@ class FrameRun:
         path = self.dir / "requests" / f"{label or stage}.json"
         _save(path, {"root": spec["worktree"], "tool": spec["tool"], "action": action, **request})
         inner = [spec["python"], str(ROOT / "run.py"), "stage", str(path)]
-        kind = compute if compute is not None else spec["compute"]
+        kind = compute if compute is not None else self.grid["compute"].get(stage, spec["compute"])
         return [sys.executable, self.settings["compute"], kind, "--cwd", spec["worktree"], "--", *inner] if kind else inner
 
     def execute(self, stage, command, cwd, outputs):
         spec = self.stages[stage]
-        entry = {"status": "running", "worktree": spec["worktree"], "tool": spec["tool"], "compute": spec["compute"], **_git(spec["worktree"]), "command": subprocess.list2cmdline(command)}
+        entry = {"status": "running", "worktree": spec["worktree"], "tool": spec["tool"], "compute": self.grid["compute"].get(stage, spec["compute"]), **_git(spec["worktree"]), "command": subprocess.list2cmdline(command)}
         if spec["tool"].startswith("exports/"):
             entry["tool_sha256"] = _digest(Path(spec["worktree"]) / spec["tool"])
         self.manifest["stages"][stage] = entry
