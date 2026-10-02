@@ -222,7 +222,9 @@ def test_reference_case_uses_actual_battery_center_and_physical_force():
     assert model["point_masses"][0]["position_mm"] == pytest.approx([0.0, 0.0, 34.5])
     cases = {case["name"]: case for case in model["load_cases"]}
     assert cases["battery_impact"]["loads"][0]["force_n"] == pytest.approx([0, 0, -3.6284605])
-    assert cases["arm_tip"]["loads"][0]["force_n"] == [0.0, 0.0, -1.0]
+    assert cases["arm_tip"]["loads"][0]["force_n"] == [0.0, 0.0, -3.6]
+    assert cases["crash_front"]["loads"][0]["force_n"][1] == pytest.approx(-0.125 * 9.80665 * 25)
+    assert cases["thrust_all"]["loads"][0]["force_n"] == [0.0, 0.0, 3.6] and len(cases["thrust_all"]["loads"]) == 4
     assert cases["camera_side"]["loads"][0]["force_n"] == [5.0, 0.0, 0.0]
     assert len(cases["modes"]["fixed_regions"]) == 4
     assert model["settings"]["stiffness_load_case"] == "arm_tip"
