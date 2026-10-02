@@ -330,7 +330,7 @@ def build_design_domain(parameters):
     model["fixture_model"] = "Arm-tip, thrust and crash cases: undersides of the four mandatory AIO mounting contacts fixed; other cases: four motor contact undersides fixed. Identical selectors must be used for v0 comparison."
     auxiliary_cases = _connection_cases(regions, model, settings["connection_proof_force_n"])
     weights = {case["name"]: 1.0 for case in model["load_cases"] if case["analysis"] == "static"}
-    weights.update({case["name"]: 1.0 / (3 * len(auxiliary_cases)) for case in auxiliary_cases})
+    weights.update({case["name"]: len(weights) / (9 * len(auxiliary_cases)) for case in auxiliary_cases})
     weights.update(settings["optimizer"].get("case_weights", {}))
     settings["optimizer"]["case_weights"] = weights
     cell_volume = float(np.prod(grid["spacing_mm"]))
