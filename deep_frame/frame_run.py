@@ -446,7 +446,7 @@ def datasheet(manifest_path):
         ("10 Druckbarkeit", measured(f"{'wasserdicht' if m['watertight'] else 'NICHT wasserdicht'}, {m['bodies']} Körper, Überhang > 45°: {m['overhang_mm2']:.0f} mm² = {100 * m['overhang_fraction']:.0f} % der Oberfläche; Wandregel: {({True: 'bestanden', False: 'nicht bestanden', None: 'nicht geprüft'})[manifest.get('wall_rule_passed')]}; Düse {request['print']['nozzle_mm']} mm, Schicht {request['print']['layer_mm']} mm") if m else missing, "gemessen (STL, Normalen) + Wandregel (int)"),
     ]
     renders = [path for path in ("iso", "top", "side", "front") if (run_dir / "renders" / f"{path}.png").is_file() or manifest["stages"].get("renders", {}).get("status") == "running"]
-    stages = ", ".join(f"{name}: {entry['status']}" for name, entry in manifest["stages"].items())
+    stages = ", ".join(f"{name}: {entry['status']}" for name, entry in manifest["stages"].items() if name != "datasheet")
     line = evaluation.get("line") or f"Neun-Kriterien-Bewertung: {evaluation.get('status', 'pending')} ({evaluation.get('reason', 'siehe evaluation.json')})"
     text = [f"# {manifest['name']} – Datenblatt", "", f"Automatisch erzeugt von run.py aus `config.json`. Geometrie: `frame.stl` (SHA256 {(manifest.get('frame_stl') or {}).get('sha256', '–')[:16]}). Stufen: {stages}.", "",
             "| Feld | Wert | Quelle |", "|---|---|---|", *[f"| {name} | {value} | {source} |" for name, value, source in rows], "", "## Neun Kriterien", "", line, ""]
