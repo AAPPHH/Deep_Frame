@@ -640,14 +640,13 @@ def render_main(overrides):
         figure.suptitle(label, fontsize=13, color="#9b392b" if label.startswith("DIAGNOSE") else "#275e3c")
         figure.text(0.5, 0.01, footer, ha="center", fontsize=8)
         save(figure, name)
-    journal("exact CAD strap sections")
-    strap_voids = [region for region in domain["regions"] if region["role"] == "forbidden" and region["name"].startswith("strap_access_")]
-    strap_preserves = [region for region in domain["regions"] if region["role"] == "preserve" and region["name"].startswith("strap_contact_")]
-    centers = np.asarray([(np.asarray(region["min_mm"]) + region["max_mm"]) / 2 for region in strap_voids])
-    zmid = float(np.mean([(region["min_mm"][2] + region["max_mm"][2]) / 2 for region in strap_preserves]))
-    specs = [(f"Quer: y = {y:g} mm", Plane(origin=(0, y, 0), x_dir=(1, 0, 0), z_dir=(0, -1, 0)), [0, 2], [-24, 24], [20, 32]) for y in np.unique(centers[:, 1])]
-    specs += [(f"Längs: x = {x:g} mm", Plane(origin=(x, 0, 0), x_dir=(0, 1, 0), z_dir=(1, 0, 0)), [1, 2], [-25, 25], [20, 32]) for x in np.unique(centers[:, 0])]
-    specs += [(f"Horizontal: z = {zmid:g} mm", Plane(origin=(0, 0, zmid)), [0, 1], [-23, 23], [-25, 25])]
+    journal("exact CAD battery rail sections")
+    rails = [region for region in domain["regions"] if region["role"] == "preserve" and region["name"].startswith("battery_rail_")]
+    centers = np.asarray([(np.asarray(region["min_mm"]) + region["max_mm"]) / 2 for region in rails])
+    zmid = float(np.mean(centers[:, 2]))
+    specs = [("Quer: y = 0 mm", Plane(origin=(0, 0, 0), x_dir=(1, 0, 0), z_dir=(0, -1, 0)), [0, 2], [-24, 24], [20, 32])]
+    specs += [(f"Längs: x = {x:g} mm", Plane(origin=(x, 0, 0), x_dir=(0, 1, 0), z_dir=(1, 0, 0)), [1, 2], [-30, 30], [20, 32]) for x in np.unique(centers[:, 0])]
+    specs += [(f"Horizontal: z = {zmid:g} mm", Plane(origin=(0, 0, zmid)), [0, 1], [-23, 23], [-30, 30])]
     figure, axes = plt.subplots(2, 3, figsize=(17, 10), layout="constrained")
     for axis, (title, plane, coordinates, xlim, ylim) in zip(axes.flat, specs):
         journal("section " + title)
@@ -657,13 +656,9 @@ def render_main(overrides):
             array = np.asarray([tuple(point) for point in vertices])
             axis.add_collection(PolyCollection(array[np.asarray(triangles)][:, :, coordinates], facecolors="#4b9bae", edgecolors="none", antialiased=False))
         axis.add_collection(LineCollection(paths, colors="#194653", linewidths=0.65))
-        for region in strap_preserves:
-            prescribed = region_shape(region).cut(*[region_shape(cut) for cut in strap_voids])
-            _, outlines = section_paths(prescribed, plane, coordinates)
-            axis.add_collection(LineCollection(outlines, colors="#46904b", linewidths=1.25, linestyles="--"))
-        for region in strap_voids:
+        for region in rails:
             _, outlines = section_paths(region_shape(region), plane, coordinates)
-            axis.add_collection(LineCollection(outlines, colors="#c6553c", linewidths=1.2, linestyles=":"))
+            axis.add_collection(LineCollection(outlines, colors="#46904b", linewidths=1.25, linestyles="--"))
         axis.set(xlim=xlim, ylim=ylim, title=title, xlabel="xyz"[coordinates[0]] + " / mm", ylabel="xyz"[coordinates[1]] + " / mm")
         axis.set_aspect("equal")
         axis.grid(alpha=0.2)
@@ -674,7 +669,7 @@ def render_main(overrides):
                                  Line2D([0], [0], color="#c6553c", linestyle=":", label="Freizuhaltender Gurtzugang")], loc="center", fontsize=11)
     figure.suptitle(label + "\nExakte CAD-Schnitte an allen vier Gurtdurchlässen", fontsize=14)
     figure.text(0.5, 0.006, footer, ha="center", fontsize=8)
-    save(figure, "strap_sections")
+    save(figure, "rail_sections")
     record["status"] = "complete"
     journal("complete")
 

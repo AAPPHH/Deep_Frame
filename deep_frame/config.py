@@ -167,7 +167,7 @@ FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'aio_standoff_mm': 3.0,
  'deck_width_mm': 40.0,
  'deck_length_mm': 70.0,
- 'deck_top_mm': 29.0,
+ 'deck_top_mm': 28.0,
  'deck_thickness_mm': 2.5,
  'battery_margin_mm': 5.0,
  'support_length_mm': 56.0,
@@ -344,15 +344,17 @@ FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                     'rationale': 'Aus AIO15- und Akkuhuelle, Stegbreiten '
                                  'und2-mm-Mindestwand abgeleitete eigene '
                                  'Druckabmessung.'},
- 'deck_top_mm': {'value': 29.0,
+ 'deck_top_mm': {'value': 28.0,
                  'kind': 'design_assumption',
                  'frame_ids': ['tadpole_hd_3', 'tadpole_2_5'],
                  'principle_ids': ['deck_load_path',
                                    'functional_voids',
                                    'component_driven'],
-                 'rationale': 'Eigene OberkanteZ29; Boardunterseite5.5 plus '
-                              'Stack6, Deckunterseite26.5. Gecko22mm hat '
-                              'unklaren Hoehenbezug und wird nicht kopiert.'},
+                 'rationale': 'Eigene OberkanteZ28 auf einer gemeinsamen '
+                              'Knotenebene der 4-, 2-, 4/3- und 1-mm-Gitter; '
+                              'Boardunterseite5.5 plus Stack6, '
+                              'Deckunterseite25.5. Gecko22mm hat unklaren '
+                              'Hoehenbezug und wird nicht kopiert.'},
  'deck_thickness_mm': {'value': 2.5,
                        'kind': 'design_assumption',
                        'frame_ids': ['tadpole_hd_3', 'tadpole_2_5'],
@@ -835,7 +837,7 @@ TOPOLOGY_CONFIG = {
     "battery_contact_width_mm": 3.5,
     "battery_contact_length_mm": 50.0,
     "battery_contact_y_mm": 0.0,
-    "battery_rail_x_mm": 12.0,
+    "battery_rail_edge_inset_mm": 0.0,
     "connection_proof_force_n": 0.05,
     "manufacturing": {
         "nozzle_width_mm": 0.4,
@@ -1025,7 +1027,7 @@ LAYOUT_RULES = {
     "prop_tip_gap_mm": 14.7,
     "wheelbase_step_mm": 0.5,
     "envelope": {"origin_mm": [-68.0, -64.0, 0.0], "size_mm": [136.0, 128.0, 32.0]},
-    "battery_mounts": {"top": {"deck_top_mm": 29.0, "headroom_mm": 3.0}, "bottom": {"gap_mm": 1.0}},
+    "battery_mounts": {"top": {"deck_top_mm": 28.0, "headroom_mm": 3.0}, "bottom": {"gap_mm": 1.0}},
     "battery_prop_clearance_mm": 2.0,
     "camera": {"stack_gap_mm": 12.35, "top_clearance_mm": 3.0},
     "antennas": {"angle_deg": 0.0, "connector_clearance_mm": 0.5, "eyelet_radius_mm": 4.3, "envelope_margin_mm": 3.7},

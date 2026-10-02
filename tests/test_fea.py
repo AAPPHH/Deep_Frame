@@ -219,7 +219,7 @@ def test_reference_case_uses_actual_battery_center_and_physical_force():
     battery = build_components(parameters, assembly_placements(parameters))["battery"]
     assert model["point_masses"][0]["mass_g"] == 37.0
     assert model["point_masses"][0]["position_mm"] == pytest.approx(battery["center_of_mass_mm"])
-    assert model["point_masses"][0]["position_mm"] == pytest.approx([0.0, 0.0, 34.5])
+    assert model["point_masses"][0]["position_mm"] == pytest.approx([0.0, 0.0, 33.5])
     cases = {case["name"]: case for case in model["load_cases"]}
     assert cases["battery_impact"]["loads"][0]["force_n"] == pytest.approx([0, 0, -3.6284605])
     assert cases["arm_tip"]["loads"][0]["force_n"] == [0.0, 0.0, -3.6]

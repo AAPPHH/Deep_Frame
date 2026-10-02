@@ -243,7 +243,7 @@ def _component_regions(parameters, settings, grid):
     battery_z = placements["battery"]["position"][2]
     rail_width, rail_length = settings["battery_contact_width_mm"], settings["battery_contact_length_mm"]
     for sign in (-1, 1):
-        x, y = sign * settings["battery_rail_x_mm"], settings["battery_contact_y_mm"]
+        x, y = sign * (c["battery"]["width_mm"] / 2 - settings["battery_rail_edge_inset_mm"] - rail_width / 2), settings["battery_contact_y_mm"]
         regions.append(_box(f"battery_rail_{sign}", "preserve", [x - rail_width / 2, y - rail_length / 2, battery_z - 3.0], [x + rail_width / 2, y + rail_length / 2, battery_z], "Longitudinal battery strap rail under the battery edge, ManaFly style; strap wraps battery and rail", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
     aio = placements["aio15"]["position"]
     aio_top = aio[2] + c["aio15"]["stack_height_mm"] + clearance

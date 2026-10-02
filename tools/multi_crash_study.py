@@ -182,12 +182,6 @@ def domains(shape, crash_directions=()):
     parameters = study_parameters(shape)
     parameters["integration"]["crash_directions"] = list(crash_directions)
     domain = build_design_domain(parameters)
-    dz = domain["grid"]["spacing_mm"][2]
-    for case in domain["load_cases"]:
-        for load in case.get("loads", []):
-            low, high = load["region"].get("min_mm"), load["region"].get("max_mm")
-            if low is not None and high[2] - low[2] < 0.1 and low[2] > 20:
-                low[2] = high[2] - dz - 0.02
     return symmetric_domains(domain)
 
 def base_settings(domain, overrides):

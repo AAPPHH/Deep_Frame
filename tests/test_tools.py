@@ -991,7 +991,7 @@ def test_implicit_study_flags_sources_built_on_older_prescribed_geometry():
     domain = {**json.loads(json.dumps({key: built[key] for key in ("grid", "regions")})), **{name: built[name].copy() for name in ("allowed", "preserve", "forbidden")}}
     assert implicit.domain_currency(parameters, domain) == {"regions_current": True, "grid_current": True, "mask_cells_changed": {"allowed": 0, "preserve": 0, "forbidden": 0}, "prescribed_clearance_passed": True}
     contact = next(region for region in domain["regions"] if region["name"] == "battery_rail_1")
-    contact["max_mm"][2] = 29.0
+    contact["max_mm"][2] = 28.0
     domain["preserve"].flat[np.flatnonzero(domain["preserve"])[0]] = False
     stale = implicit.domain_currency(parameters, domain)
     assert not stale["regions_current"] and stale["mask_cells_changed"]["preserve"] == 1

@@ -122,10 +122,6 @@ class R2Domain:
                     z = bottom if abs(center[2]) < 1 else center[2]
                     box["min_mm"] = [center[0] - self.pad["support_half_mm"], center[1] - self.pad["support_half_mm"], z - tolerance]
                     box["max_mm"] = [center[0] + self.pad["support_half_mm"], center[1] + self.pad["support_half_mm"], z + tolerance]
-            for load in case.get("loads", []):
-                low, high = load["region"]["min_mm"], load["region"]["max_mm"]
-                if high[2] - low[2] < 0.1 and low[2] > 20:
-                    low[2] = high[2] - spacing[2] - 0.02
         front = next(case for case in domain["load_cases"] if case["name"] == "crash_front")
         force = float(np.linalg.norm(front["loads"][0]["force_n"]))
         r, y_max = self.hoop["radius_mm"] + spacing[0], max(y for y, _ in self.hoop["path_yz_mm"]) + self.hoop["radius_mm"] + spacing[1]

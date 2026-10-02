@@ -141,8 +141,8 @@ class FrameLayout:
             raise ValueError("Antenna eyelet and connectors do not fit behind the stack inside the envelope")
         stack_top = f["base_thickness_mm"] + f["aio_standoff_mm"] + c["aio15"]["stack_height_mm"] + c["aio15"]["elrs_antenna_clearance_mm"]
         deck_bottom = f["deck_top_mm"] - f["deck_thickness_mm"]
-        if self.request["layout"]["battery_mount"] == "top" and min(deck_bottom - camera_top, deck_bottom - stack_top) < rules["camera"]["top_clearance_mm"] - 1e-9:
-            raise ValueError(f"Battery deck bottom z = {deck_bottom:.1f} mm leaves less than {rules['camera']['top_clearance_mm']} mm above camera top {camera_top:.1f} mm or stack top {stack_top:.1f} mm")
+        if self.request["layout"]["battery_mount"] == "top" and min(f["deck_top_mm"] - camera_top, deck_bottom - stack_top) < rules["camera"]["top_clearance_mm"] - 1e-9:
+            raise ValueError(f"Battery underside z = {f['deck_top_mm']:.1f} mm or deck bottom z = {deck_bottom:.1f} mm leaves less than {rules['camera']['top_clearance_mm']} mm above camera top {camera_top:.1f} mm or stack top {stack_top:.1f} mm")
         prop_plane = f["arm_height_mm"] + c["motor"]["height_mm"] + f["prop_motor_gap_mm"] + c["prop"]["thickness_mm"]
         corners = np.asarray([[sx * c["battery"]["width_mm"] / 2, sy * c["battery"]["length_mm"] / 2] for sx in (-1, 1) for sy in (-1, 1)])
         plan = min(float(np.min(np.hypot(*(np.clip(m, corners.min(0), corners.max(0)) - m)))) for m in motors) - c["prop"]["diameter_mm"] / 2

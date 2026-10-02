@@ -24,7 +24,7 @@ Marching Cubes (Lewiner) laeuft auf dem mit -h umrandeten Feld. Danach folgt iso
 
 Zwei bewusste Entscheidungen gehen ueber "nur Bohrungen exakt" hinaus:
 
-- **Exakte Booleans auch fuer Preserves und Keep-outs.** Ein abgetastetes Feld erreicht die unveraenderten Grenzen nicht: 1e-5 mm3 Fehlvolumen und Durchdringung sowie exakte Ebenen bei z = 0, 4 und 29 mm fuer die FEA-Selektoren. Die Feld-Offsets delta und c sorgen dafuer, dass diese Booleans nur quer schneiden oder nichts aendern. Sie schaben nie tangential.
+- **Exakte Booleans auch fuer Preserves und Keep-outs.** Ein abgetastetes Feld erreicht die unveraenderten Grenzen nicht: 1e-5 mm3 Fehlvolumen und Durchdringung sowie exakte Ebenen bei z = 0, 4 und 28 mm fuer die FEA-Selektoren. Die Feld-Offsets delta und c sorgen dafuer, dass diese Booleans nur quer schneiden oder nichts aendern. Sie schaben nie tangential.
 - **Zylinder als umschriebene Polygone.** Die Segmentzahl folgt aus einer Toleranz von 0,01 mm. Bohrungen sind dadurch nie zu klein und hoechstens 0,01 mm zu gross; das Uebermass wird je Bohrung gespeichert. Die Voreinstellung von manifold3d (8 Segmente, 0,107 mm zu klein bei r = 1,4) wird nie verwendet.
 
 ## Abnahme auf dem Endnetz

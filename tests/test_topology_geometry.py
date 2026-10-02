@@ -48,7 +48,7 @@ def test_exact_keepouts_include_hardware_props_holes_and_assembly_access(domain)
     assert sum(name.endswith("_swept_clearance") for name in names) == 4
     assert sum("motor_screw_" in name for name in names) == 16
     assert sum(name.startswith("aio_screw_") for name in names) == 4
-    assert sum(name.startswith("strap_access_") for name in names) == 4
+    assert "elrs_antenna_clearance" in names and not any(name.startswith(("strap_access_", "strap_contact_")) for name in names)
     assert all(not region.get("rasterize", True) for region in domain["regions"] if "motor_screw_" in region["name"] or region["name"].startswith("aio_screw_"))
     assert domain["manufacturing"]["supports_allowed"]
 
@@ -84,13 +84,14 @@ def test_every_required_attachment_has_preserved_optimization_cells(domain):
 
 def test_loads_mass_and_fair_local_fixture_contract(domain):
     cases = {case["name"]: case for case in domain["load_cases"]}
-    assert set(case["name"] for case in domain["comparison_load_cases"]) == {"arm_tip", "battery_impact", "camera_side", "modes"}
+    assert set(case["name"] for case in domain["comparison_load_cases"]) == {"arm_tip", "battery_impact", "camera_side", "thrust_all", "crash_front", "crash_arm", "modes"}
     assert len(cases["arm_tip"]["fixed_regions"]) == 4
-    assert cases["arm_tip"]["loads"][0]["force_n"] == [0.0, 0.0, -1.0]
+    assert cases["arm_tip"]["loads"][0]["force_n"] == pytest.approx([0.0, 0.0, -3.6])
+    assert all(load["force_n"] == pytest.approx([0.0, 0.0, 3.6]) for load in cases["thrust_all"]["loads"])
     assert cases["battery_impact"]["loads"][0]["force_n"] == pytest.approx([0, 0, -3.6284605])
     assert domain["point_masses"][0]["mass_g"] == 37
-    assert domain["point_masses"][0]["position_mm"] == pytest.approx([0, 0, 34.5])
-    assert len([name for name in cases if name.startswith("connection_")]) == 17
+    assert domain["point_masses"][0]["position_mm"] == pytest.approx([0, 0, 33.5])
+    assert len([name for name in cases if name.startswith("connection_")]) == 11
     for case in cases.values():
         for fixture in case["fixed_regions"]:
             assert fixture["max_mm"][2] < 0.1
@@ -144,11 +145,25 @@ def test_tool_access_prevents_blind_antenna_caps_and_camera_voxel_slivers(domain
 def test_field_offsets_stay_inside_the_component_clearance():
     assert IMPLICIT_CONFIG["preserve_inflation_mm"] + IMPLICIT_CONFIG["constraint_offset_mm"] < TOPOLOGY_CONFIG["component_clearance_mm"]
 
+@pytest.mark.parametrize("spacing", [2.0, 4 / 3, 1.0])
+def test_battery_rails_and_deck_loads_resolve_on_every_study_grid(spacing):
+    from deep_frame.topology_optimization import HexElasticity
+    parameters = reference_parameters()
+    parameters["topology"] = {"grid": {**TOPOLOGY_CONFIG["grid"], "spacing_mm": [spacing] * 3, "shape": [round(136 / spacing), round(128 / spacing), round(32 / spacing)]}}
+    built = build_design_domain(parameters)
+    centers = grid_centers(built["grid"])
+    for region in (region for region in built["regions"] if region["name"].startswith("battery_rail_")):
+        assert np.any(region_contains(centers, region) & built["preserve"])
+    model = HexElasticity(built, "preserve_adjacent")
+    deck = next(case for case in built["load_cases"] if case["name"] == "battery_impact")["loads"][0]["region"]
+    assert deck["min_mm"][2] < parameters["frame"]["deck_top_mm"] < deck["max_mm"][2] and len(model._select(deck, "battery_impact", "load")) > 0
+    assert model.selector_expansions == []
+
 def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain):
     clearance = domain["metadata"]["prescribed_clearance"]
     assert clearance["passed"] and clearance["required_width_mm"] == pytest.approx(2.1)
     regions = {region["name"]: region for region in domain["regions"]}
-    assert regions["battery_rail_1"]["max_mm"][2] == pytest.approx(29.5)
+    assert regions["battery_rail_1"]["max_mm"][2] == pytest.approx(28.5)
     assert regions["front_left_motor_contact"]["radius_mm"] - regions["front_left_motor_screw_0"]["radius_mm"] - 4.5 == pytest.approx(2.1)
     extended = {pair["preserve"] for pair in domain["metadata"]["flush_contact_extensions"]}
     assert {"battery_rail_1", "xt30_contact", "front_left_motor_contact"} | {f"aio_contact_{index}" for index in range(4)} <= extended and "antenna_contact" not in extended
