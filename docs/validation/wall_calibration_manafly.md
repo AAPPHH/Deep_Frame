@@ -97,6 +97,63 @@ Beide aktuellen Frames erfüllen diese Regel:
 
 ManaFly verfehlt sie bewusst, denn die Regel enthält den Sicherheitsfaktor. Wenn die Regel eingeführt wird, ist B als Gate günstig: 2–3 min CPU pro Kandidat bei h = 0,1 mm.
 
+## Zweiter Datenpunkt: BM Aether4
+
+Zweiter realer Frame, der fliegt (BM Aether4, Quelle `Examples/Frames/BM+Aether4`). Anders als ManaFly ist er ein direkter STL-Export ohne Voxel-Reparatur; der Quantisierungsvorbehalt entfällt.
+
+Eingaben:
+
+| Netz | Datei | sha256 (12) | Dreiecke | Volumen mm³ |
+|---|---|---|---|---|
+| Aether4 body12 (12-mm-Motorlochbild) | `Deep_Frame-neural/exports/aether4_ref/aether4_body12.stl` (orientiert, z ab 0, 164 × 165 × 76 mm) | d5ced8a6130f | 455 622 | 79 054 |
+| Aether4 body9 (9-mm-Motorlochbild) | `Deep_Frame-neural/exports/aether4_ref/aether4_body9.stl` | b4f8bf39e2d5 | 458 724 | 80 847 |
+
+- Beide Netze sind geschlossen, orientiert und ein Körper; die Netzprüfung der Pipeline (Topologie, Selbstschnitte) besteht.
+- Der Export enthält Splitterdreiecke (minimaler Dreieckswinkel 0,4°).
+- Methoden und Einstellungen wie oben (A ohne Bohrungszugabe; B mit h = 0,1 mm, r = 1,0 mm, tief ≥ 0,45 mm). B ist hier in x und y gekachelt (100 Voxel, Halo 24 Voxel), sonst identisch.
+- Ortsklassen:
+  - Motoraufnahme = innerhalb 13 mm um (±69,6; 64,78) und (±70,3; −64,78);
+  - Zentralteil = |x| < 22, |y + 16,35| < 26, z < 15;
+  - Oberrahmen/Kamerawiege = y > 30, z ≥ 45;
+  - Grundebene = z < 0,05 mm; sonst Strebe/Arm.
+
+| Kennzahl | Aether4 body12 | Aether4 body9 | ManaFly3 (oben) |
+|---|---|---|---|
+| **A** Strahlproben | 1 043 840 | 1 075 564 | 184 342 |
+| **A** dünne Proben < 2,0 mm | **201 716 = 19,3 %** | 184 376 = 17,1 % | 11,1 % |
+| **A** Anteil < 1,8 / < 1,5 / < 1,0 mm | 16,0 / **12,2** / 5,86 % | – | 5,27 / 3,74 / 1,67 % |
+| **A** Anteil < 0,1 mm | 499 Proben = 0,05 % (Splitter/Berührflächen des Exports) | – | – |
+| **A** min gemessen | 0,0011 mm bei (30,4; 21,2; 51,0), Strebe/Arm | 0,0011 mm, gleiche Stelle | 0,004 mm |
+| **A** p1 / p5 aller Proben | 0,36 / 0,86 mm | – | 0,84 / 1,78 mm |
+| **A** p1 / p5 / p50 der dünnen Proben | 0,25 / 0,35 / 1,37 mm | – | 0,72 / 0,80 / 1,80 mm |
+| **A** Ort der dünnen Proben | Zentralteil 87 425, Oberrahmen 42 546, Strebe/Arm 41 677, Motoraufnahme 30 068, Grundebene 0 | – | siehe oben |
+| **B** entfernt gesamt | 3 487 mm³ = 4,41 % | – | 1 558 mm³ = 5,79 % |
+| **B** davon Kantenrundung (flach) | 120 mm³ (0,15 %) | – | 195 mm³ (0,72 %) |
+| **B** tief entfernt (echte Wand < 2 mm) | **3 367 mm³ = 4,26 %**, 28 Komp. | – | 1 363 mm³ = 5,06 %, 44 Komp. |
+| **B** größte tiefe Komponente | **1 333 mm³** (Zentralteil: Bodenplatte unter dem Stack, 40 × 54 × 7,5 mm, max. Tiefe 0,91 mm) | – | 346 mm³ |
+| **B** zweitgrößte | 1 140 mm³ (Mittelsteg vorn bei x = 0, y ≈ 33, z ≈ 31; 33 × 42 × 25 mm, Tiefe 0,99 mm) | – | – |
+| **B** Komponenten gesamt / > 1 mm³ | 19 602 / 52 | – | 26 472 / 76 |
+| **B** tief entfernt nach Ort | Zentralteil 1 362, Strebe/Arm 1 324, Motoraufnahme 361, Oberrahmen 320 mm³ | – | Zentralteil 574, Strebe/Arm 340, Motoraufnahme 261, Oberrahmen 188 mm³ |
+| **B** tiefe Komponenten in Motorzonen | alle vier Motoraufnahmen, je 46–69 mm³ (Tiefe 0,64–0,92 mm) | – | ja |
+
+Eine einfachere Öffnung (Erosion EDT > r, Kachel 150 Voxel) ergab für body12 konsistent 3 720 mm³ = 4,71 % entfernt, größte Komponente 1 411 mm³. Laufzeit B: 8,7 min bei 455k Dreiecken (CPU-Slot).
+
+Was Aether4 über die vorläufige Regel sagt:
+- **Aether4 verfehlt alle drei blockierenden Kriterien deutlich, wie ManaFly:**
+  - tief entfernt 4,26 % gegen Grenze 0,5 % (Faktor 8,5);
+  - größte tiefe Komponente 1 333 mm³ gegen 5 mm³;
+  - tiefe Komponenten in allen vier Motorzonen.
+  - Warnschwellen: A < 2,0 mm 19,3 % gegen 1 %, A < 1,5 mm 12,2 % gegen 0,05 %.
+- **ManaFly ist kein Ausreißer.** Zwei unabhängig konstruierte, fliegende Frames haben 4–5 % ihres Volumens in echten Wänden unter 2 mm (B tief: 4,26 % bzw. 5,06 %). Der Sicherheitsfaktor der Regel liegt gegenüber Aether4 bei ≈ 8,5, gegenüber ManaFly bei ≈ 10. Die Regel bleibt damit eine Regel mit Sicherheitsfaktor; sie bildet nicht die Grenze dessen ab, was fliegt.
+- **Bei Aether4 stammt das tiefe Volumen überwiegend aus Platten knapp unter 2 mm.**
+  - Die maximale Entfernungstiefe der großen Komponenten liegt bei 0,91–0,99 mm, die Plattendicke also bei ≈ 1,8–2,0 mm.
+  - Die Motorsitze haben eine Tiefe von 0,64 mm, also Wände von ≈ 1,3 mm.
+  - Das tiefe Kriterium zählt eine solche Platte vollständig. Das Kriterium „größte tiefe Komponente ≤ 5 mm³“ greift deshalb schon bei einer flächigen 1,9-mm-Platte. Für unsere Frames ist das gewollt, denn die 2 mm bleiben Auslegungsvorgabe; als Maß für die Schwere einer Wandverletzung taugt der Wert aber nicht.
+- **A ist bei Aether4 noch weniger aussagekräftig als bei ManaFly.** 19,3 % dünne Proben gehen bis auf 0,001 mm herab; 0,05 % liegen unter 0,1 mm und stammen von Splitterdreiecken und Berührflächen des Exports. Das bestätigt, dass A Warnung bleibt und B entscheidet.
+- **Folgerung:** Die Schwellen bleiben unverändert. Unsere Frames (B tief 0 bzw. 0,010 %) liegen mehr als zwei Größenordnungen unter beiden realen Frames.
+
+Reproduktion Aether4: `Deep_Frame-neural/exports/aether4_ref/wall.py` (A: `rays`, einfache Öffnung: `opening`), `wall_cal.py` + `cal_b.py` (A-Verteilung und B mit tiefer Klassifikation). Rohwerte stehen in `wall_rays_body12.json`, `wall_rays_body9.json`, `wall_opening_body12.json` und `wall_cal_body12.json` im selben Ordner (nicht eingecheckt).
+
 ## Reproduktion
 
 Gerechnet wurde mit dem Skript `wall_calibration.py` im Scratchpad dieser Sitzung (nicht eingecheckt). Es verwendet `wall_screen`, `corner_normals`, `segment_hits` und `_triangle_samples` unverändert. Die Einstellungen stehen oben; die Rohwerte wurden als `wall_calibration.json` (alle drei Netze, ManaFly-Stand 19957a00c381) und `v2/wall_calibration.json` (ManaFly-Stand 3d39cdc16bc8) im selben Scratchpad abgelegt.
