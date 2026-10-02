@@ -23,3 +23,5 @@ env/
 /exports/implicit/
 /exports/run_log.jsonl
 /exports/mcrash/
+/exports/r2/
+/exports/r3/
