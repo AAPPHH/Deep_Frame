@@ -33,7 +33,7 @@ def load_frame(spec):
 def frame_spec(overrides):
     spec = configure(EVALUATION_CONFIG, EVALUATION_KINDS, overrides, ("name", "stl", "output"))
     spec.update({key: {**EVALUATION_CONFIG[key], **spec[key]} for key in ("loads", "fea_settings", "slicer")})
-    if spec["ours"]:
+    if spec["ours"] or spec["domain"]:
         spec = {**spec, **ours(spec)}
     missing = [key for key in ("motors", "selectors") if not spec[key]]
     if missing:
@@ -44,7 +44,8 @@ def frame_spec(overrides):
 def ours(spec):
     from deep_frame.topology_geometry import build_design_domain
     from tools.topology_study import study_parameters
-    domain = build_design_domain(study_parameters(spec["domain_grid"]))
+    stored = json.loads(Path(spec["domain"]).read_text(encoding="utf-8")) if spec["domain"] else None
+    domain = stored.get("domain", stored) if stored else build_design_domain(study_parameters(spec["domain_grid"]))
     regions = {region["name"]: region for region in domain["regions"]}
     placements = domain["metadata"]["components"]
     motors = {name: [*placements["motor_" + name]["position_mm"]] for name in MOTORS}
@@ -310,6 +311,30 @@ def lookup(data, path):
         data = data[int(key)] if isinstance(data, list) else data[key]
     return data
 
+def scaled(spec, result):
+    geometry, fea, slicer = result.get("geometry") or {}, result.get("fea") or {}, result.get("slicer") or {}
+    motors = np.array([spec["motors"][name][:2] for name in MOTORS], dtype=float)
+    hub = motors.mean(axis=0)
+    arm = float(np.linalg.norm(motors - hub, axis=1).mean())
+    values = {"arm_mm": arm, "wheelbase_mm": 2 * arm}
+    rules = {"arm_tip_slope": lambda: spec["loads"]["arm_tip_force_n"] / fea["stiffness_n_per_mm"] / arm,
+             "support_per_volume": lambda: slicer["support_mm3"] / geometry["mass"]["frame_volume_mm3"],
+             "print_min_per_g": lambda: slicer["supports"]["print_time_min"] / geometry["mass"]["frame_mass_g"],
+             "symmetry_per_wheelbase": lambda: geometry["form"]["symmetry"]["rms_mm"] / (2 * arm),
+             "cog_offset_per_wheelbase": lambda: math.hypot(*np.subtract(geometry["mass"]["center_of_mass_mm"][:2], hub)) / (2 * arm),
+             "height_per_wheelbase": lambda: geometry["form"]["flight_height_mm"] / (2 * arm),
+             "izz_per_mass_arm2": lambda: geometry["mass"]["inertia_g_mm2"][2][2] / geometry["mass"]["total_mass_g"] / arm ** 2}
+    for name, rule in rules.items():
+        try:
+            values[name] = float(rule())
+        except (KeyError, TypeError, IndexError, ValueError, ZeroDivisionError):
+            values[name] = None
+    return values
+
+def within(result, path, low, high):
+    value = lookup(result, path)
+    return (low is None or value >= low) and (high is None or value <= high)
+
 def assess(result, config):
     material, loads = PRINT_MATERIAL, config["loads"]
     geometry, fea, slicer = result.get("geometry") or {}, result.get("fea") or {}, result.get("slicer") or {}
@@ -334,10 +359,18 @@ def assess(result, config):
         except (KeyError, TypeError):
             crash[name] = None
         condition(f"{name}_strength", lambda: crash[name]["utilisation_xy"] <= 1 and crash[name]["utilisation_z"] <= 1)
-    for path, (low, high) in config["targets"].items():
-        condition("target:" + path, lambda: (low is None or lookup(result, path) >= low) and (high is None or lookup(result, path) <= high))
-    return {"conditions": conditions, "missed": [name for name, passed in conditions.items() if not passed], "good": all(conditions.values()), "crash": crash, "safety_factor": loads["safety_factor"],
-            "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed"}
+    for name, (path, low, high) in config["targets"].items():
+        condition("target:" + name, lambda: within(result, path, low, high))
+    warnings = []
+    for name, (path, low, high) in config["warnings"].items():
+        try:
+            passed = within(result, path, low, high)
+        except (KeyError, TypeError, IndexError, ValueError):
+            passed = False
+        if not passed:
+            warnings.append(name)
+    return {"conditions": conditions, "missed": [name for name, passed in conditions.items() if not passed], "good": all(conditions.values()), "warnings": warnings, "crash": crash, "safety_factor": loads["safety_factor"],
+            "targets": config["targets"], "warning_ranges": config["warnings"], "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"}
 
 def number(value, digits=1):
     return "–" if value is None else f"{value:.{digits}f}".replace(".", ",")
@@ -366,7 +399,7 @@ def report_line(result):
     cells.append(f"f1 {number(modes[0], 0)} Hz; {'/'.join(number(v, 0) for v in modes[1:4])} (A)" if modes else "–")
     crash = [f"{name.split('_')[1]} {number(c['von_mises_p999_mpa'])}/{number(c['print_normal_p999_mpa'])} MPa" for name, c in a["crash"].items() if c]
     cells.append("; ".join(crash) + f" (SF {number(a['safety_factor'])}, A)" if crash else "–")
-    cells.append(", ".join(a["missed"]) or "keine")
+    cells.append((", ".join(a["missed"]) or "keine") + (f"; Warnung: {', '.join(a['warnings'])}" if a.get("warnings") else ""))
     return "| " + " | ".join(cells) + " |"
 
 HEADER = ("| Frame | 1 Masse | 2 Schwerpunkt, Trägheit | 3 Luftstrom (Material im Propkreis) | 4 Montage | 5 Druckbarkeit | 6 Form | 7 Steifigkeit Armspitze | 8 Resonanz | 9 Crash p99,9 v. Mises/σ_Druckachse | Verfehlt |\n"
@@ -377,6 +410,18 @@ LEGEND = ("(A) beruht auf Materialannahmen: ν = 0,30 und G13/G23 = E_z/(2(1+ν)
 def summary(spec, parts, config=None):
     config = config or spec
     result = {"name": spec["name"], "stl": str(spec["stl"]), "print_axis": list(spec["print_axis"]), "material": PRINT_MATERIAL, **parts}
+    result["scaled"] = scaled(spec, result)
     result["assessment"] = assess(result, config)
     result["line"] = report_line(result)
     return json.loads(json.dumps(result, default=lambda value: value.tolist() if hasattr(value, "tolist") else str(value)))
+
+def datasheet_section(result, evaluation):
+    return (f"\n## Bewertungszeile (neun Kriterien)\n\nAutomatisch von tools/evaluate_frame.py; Zielbereiche und Warnbereiche: docs/optimization_problem.md; Ergebnis: {evaluation}. "
+            f"Gut (alle Bedingungen erfüllt): {'ja' if result['assessment']['good'] else 'nein'}.\n\n{HEADER}\n{result['line']}\n\n{LEGEND}\n")
+
+def append_datasheet(path, result, evaluation):
+    path = Path(path)
+    text = path.read_text(encoding="utf-8") if path.exists() else f"# {result['name']}\n"
+    if result["line"] not in text:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text.rstrip("\n") + "\n" + datasheet_section(result, evaluation), encoding="utf-8")

@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from deep_frame.config import command_line
-from deep_frame.frame_evaluation import HEADER, LEGEND, frame_spec, geometry, mechanics, slice_frame, summary, walls
+from deep_frame.frame_evaluation import HEADER, LEGEND, append_datasheet, frame_spec, geometry, mechanics, slice_frame, summary, walls
 
 PARTS = {"geometry": (geometry, "cpu"), "walls": (walls, "wall_check"), "fea": (mechanics, "fea_modal"), "slicer": (slice_frame, "cpu")}
 
@@ -30,6 +30,8 @@ def report(overrides):
     result = summary(spec, parts)
     (output / "evaluation.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     (output / "bewertung.md").write_text(f"{HEADER}\n{result['line']}\n\n{LEGEND}\n", encoding="utf-8")
+    if spec["datasheet"]:
+        append_datasheet(spec["datasheet"], result, (output / "evaluation.json").resolve().as_posix())
     print(result["line"])
     return 0
 

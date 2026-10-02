@@ -626,6 +626,8 @@ EVALUATION_CONFIG = {
     "motors": None,
     "motor_up": {},
     "ours": False,
+    "domain": None,
+    "datasheet": None,
     "components": [],
     "mount_patterns": [],
     "keep_outs": [],
@@ -661,11 +663,16 @@ EVALUATION_CONFIG = {
                            "--bed-shape", "0x0,256x0,256x256,0x256", "--max-print-height", "256", "--center", "128,128"],
                "support": ["--support-material", "--support-material-auto"], "timeout_s": 1800.0,
                "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed"},
-    "targets": {},
+    "targets": {"airflow": ["geometry.airflow.prop_ring_share", None, 0.15], "overhang": ["geometry.printability.overhang_share", None, 0.25], "wall_opening": ["walls.deep_fraction", None, 0.06],
+                "support": ["scaled.support_per_volume", None, 1.5], "strut_min": ["geometry.form.strut_width_mm.p10", 1.19, None], "symmetry": ["scaled.symmetry_per_wheelbase", None, 0.0025],
+                "arm_tip_slope": ["scaled.arm_tip_slope", None, 0.007], "f1": ["fea.eigenfrequencies_hz.0", 330.0, None]},
+    "warnings": {"strut_max": ["geometry.form.strut_width_mm.p90", None, 6.5], "section_ratio": ["geometry.form.section_ratio.p50", 1.0, 1.4], "top_view_material": ["geometry.airflow.bbox_share", None, 0.45],
+                 "loops": ["geometry.form.loops.loops", 20, None], "roughness": ["geometry.form.roughness.curvature_neighbour_rms_per_mm", None, 0.18], "height": ["scaled.height_per_wheelbase", None, 0.4],
+                 "cog_offset": ["scaled.cog_offset_per_wheelbase", None, 0.01], "inertia_z": ["scaled.izz_per_mass_arm2", None, 0.45], "print_time": ["scaled.print_min_per_g", None, 16.0]},
 }
 
-EVALUATION_KINDS = {"name": "text", "stl": "path", "output": "path", "print_axis": ["float", "float", "float"], "prop_diameter_mm": "float", "motors": "object", "motor_up": "object", "ours": "flag", "components": "list",
-                    "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "slicer")], "python": "text", "compute": "text", "targets": "object",
+EVALUATION_KINDS = {"name": "text", "stl": "path", "output": "path", "print_axis": ["float", "float", "float"], "prop_diameter_mm": "float", "motors": "object", "motor_up": "object", "ours": "flag", "domain": "path", "datasheet": "path", "components": "list",
+                    "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "slicer")], "python": "text", "compute": "text", "targets": "object", "warnings": "object",
                     **{key: "float" for key in ("voxel_mm", "loop_closing_mm", "overhang_deg", "bed_tolerance_mm", "fit_tolerance_mm3", "hub_radius_mm", "section_voxel_mm", "hole_tolerance_mm", "screw_head_radius_mm", "tool_skip_mm", "connector_radius_mm", "curvature_radius_mm")},
                     "surface_samples": "int", "seed": "int", "loads": "object", "fea_settings": "object", "slicer": "object"}
 

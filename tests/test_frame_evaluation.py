@@ -3,7 +3,7 @@ import pytest
 import trimesh
 
 from deep_frame.config import EVALUATION_CONFIG
-from deep_frame.frame_evaluation import assess, mass_properties, top_view, voxel_grid
+from deep_frame.frame_evaluation import append_datasheet, assess, mass_properties, scaled, top_view, voxel_grid
 
 def test_mass_and_inertia_of_box_with_point_component():
     mesh = trimesh.creation.box(extents=(10, 20, 30))
@@ -29,3 +29,18 @@ def test_prop_disc_share_of_half_covering_plate():
 def test_unevaluable_conditions_count_as_missed():
     result = assess({"geometry": None, "fea": None, "slicer": None}, EVALUATION_CONFIG)
     assert not result["good"] and {"one_body", "fea_solved", "slicer", "crash_front_strength"} <= set(result["missed"])
+
+def test_targets_decide_while_warnings_only_report():
+    result = {"geometry": {"form": {"mesh_bodies": 1, "strut_width_mm": {"p10": 1.0}}}, "fea": None, "slicer": None}
+    config = {**EVALUATION_CONFIG, "targets": {"strut_min": ["geometry.form.strut_width_mm.p10", 1.19, None]}, "warnings": {"loops": ["geometry.form.loops.loops", 20, None]}}
+    assessment = assess(result, config)
+    assert "target:strut_min" in assessment["missed"] and assessment["warnings"] == ["loops"]
+
+def test_scaled_values_use_the_motor_layout_and_datasheet_append_is_idempotent(tmp_path):
+    spec = {"motors": {name: [x, y, 4.0] for name, x, y in (("front_left", -30, 40), ("front_right", 30, 40), ("rear_left", -30, -40), ("rear_right", 30, -40))}, "loads": {"arm_tip_force_n": 3.6}}
+    values = scaled(spec, {"fea": {"stiffness_n_per_mm": 7.2}, "geometry": {"form": {"symmetry": {"rms_mm": 1.0}}}})
+    assert values["wheelbase_mm"] == pytest.approx(100.0) and values["arm_tip_slope"] == pytest.approx(0.01) and values["symmetry_per_wheelbase"] == pytest.approx(0.01) and values["support_per_volume"] is None
+    sheet, result = tmp_path / "frame.md", {"name": "probe", "line": "| probe |", "assessment": {"good": False}}
+    append_datasheet(sheet, result, "evaluation.json")
+    append_datasheet(sheet, result, "evaluation.json")
+    assert sheet.read_text(encoding="utf-8").count("| probe |") == 1
