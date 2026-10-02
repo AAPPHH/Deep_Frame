@@ -7,7 +7,7 @@ import trimesh
 from build123d import export_step, export_stl, import_step
 from scipy.ndimage import label
 
-from deep_frame.config import FEA_CONFIG
+from deep_frame.config import FEA_CONFIG, IMPLICIT_CONFIG, TOPOLOGY_CONFIG
 from deep_frame.fea import evaluate
 from deep_frame.frame import reference_parameters
 from deep_frame.topology_geometry import build_design_domain, grid_centers, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
@@ -141,6 +141,9 @@ def test_tool_access_prevents_blind_antenna_caps_and_camera_voxel_slivers(domain
         assert lug_outer == access_inner == pytest.approx(16)
         assert access.get("rasterize", True)
 
+def test_field_offsets_stay_inside_the_component_clearance():
+    assert IMPLICIT_CONFIG["preserve_inflation_mm"] + IMPLICIT_CONFIG["constraint_offset_mm"] < TOPOLOGY_CONFIG["component_clearance_mm"]
+
 def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain):
     clearance = domain["metadata"]["prescribed_clearance"]
     assert clearance["passed"] and clearance["required_width_mm"] == pytest.approx(2.1)
@@ -148,8 +151,8 @@ def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain)
     assert regions["battery_contact_1_1"]["max_mm"][2] == pytest.approx(29.5)
     assert regions["front_left_motor_contact"]["radius_mm"] - regions["motor_front_left_envelope"]["radius_mm"] == pytest.approx(2.1)
     extended = {pair["preserve"] for pair in domain["metadata"]["flush_contact_extensions"]}
-    assert {"battery_contact_1_1", "xt30_contact", "front_left_motor_contact"} <= extended and not extended & {"antenna_contact", "aio_contact_0"}
-    assert {pair["preserve"] for pair in clearance["flush_kept_near_wall"]} == {f"aio_contact_{index}" for index in range(4)}
+    assert {"battery_contact_1_1", "xt30_contact", "front_left_motor_contact"} | {f"aio_contact_{index}" for index in range(4)} <= extended and "antenna_contact" not in extended
+    assert regions["aio_contact_0"]["height_mm"] == pytest.approx(6.0) and regions["aio_contact_0"]["radius_mm"] == pytest.approx(3.1) and "flush_kept_near_wall" not in clearance
     keepout = {"name": "k", "role": "forbidden", "kind": "box", "min_mm": [0, 0, 4], "max_mm": [10, 10, 8], "purpose": ""}
     pad = {"name": "p", "role": "preserve", "kind": "box", "min_mm": [2, 2, 0], "max_mm": [8, 8, 4], "purpose": ""}
     rim = {"name": "r", "role": "preserve", "kind": "box", "min_mm": [8, 0, 4], "max_mm": [11.9, 10, 6], "purpose": ""}

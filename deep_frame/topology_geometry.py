@@ -87,7 +87,7 @@ def _near_wall(preserve, keepout, reserve):
     else:
         (plow, phigh), (klow, khigh) = region_bounds(preserve), region_bounds(keepout)
         insets = [value for i in (0, 1) for value in (khigh[i] - phigh[i], plow[i] - klow[i])]
-    return any(-1e-6 < value < reserve for value in insets)
+    return any(-1e-6 < value < reserve-1e-6 for value in insets)
 
 def _extend_flush_contacts(regions, overlap, reserve):
     extended, moved = [], set()
@@ -109,9 +109,8 @@ def _extend_flush_contacts(regions, overlap, reserve):
 def prescribed_clearance(regions, minimum, margin, inflation):
     required, violations = minimum + margin, []
     preserves = [region for region in regions if region["role"] == "preserve"]
-    kept = []
     for preserve, keepout, sign in _flush_pairs(regions):
-        (kept if _near_wall(preserve, keepout, inflation + margin) else violations).append({"rule": "flush_contact", "preserve": preserve["name"], "forbidden": keepout["name"], "direction": sign})
+        violations.append({"rule": "flush_contact", "preserve": preserve["name"], "forbidden": keepout["name"], "direction": sign, "near_wall": _near_wall(preserve, keepout, inflation + margin)})
     for preserve in preserves:
         plow, phigh = region_bounds(preserve)
         for keepout in (region for region in regions if region["role"] == "forbidden" and not _bore(region)):
@@ -128,8 +127,8 @@ def prescribed_clearance(regions, minimum, margin, inflation):
         gap = _separation(a, b)
         if 1e-6 < gap < required + 2 * inflation:
             violations.append({"rule": "preserve_gap", "preserve": a["name"], "other": b["name"], "gap_mm": gap})
-    return {"passed": not violations, "violations": violations, "flush_kept_near_wall": kept, "required_width_mm": required, "inflation_mm": inflation,
-            "method": "Horizontal preserve faces coplanar with a keep-out face over a shared footprint are flush contacts (the inflated shell would be cut at its cap); every keep-out wall crossing a preserve, or coaxial keep-out cylinder, must leave a preserve rim of at least the minimum wall plus margin; distinct preserves either overlap or stay apart by more than that width plus both inflations. A flush contact whose preserve sits within one inflation plus margin of a keep-out side wall is kept flush and listed, because extending it would push the inflated shell out of the keep-out as a sliver. Prescribed bores are excluded (their webs follow the C6 bore allowance)."}
+    return {"passed": not violations, "violations": violations, "required_width_mm": required, "inflation_mm": inflation,
+            "method": "Horizontal preserve faces coplanar with a keep-out face over a shared footprint are flush contacts (the inflated shell would be cut at its cap); every keep-out wall crossing a preserve, or coaxial keep-out cylinder, must leave a preserve rim of at least the minimum wall plus margin; distinct preserves either overlap or stay apart by more than that width plus both inflations. A flush contact whose preserve sits within one inflation plus margin of a keep-out side wall cannot be extended (the inflated shell would leave the keep-out as a sliver) and stays a violation; such a preserve has to be resized. Prescribed bores are excluded (their webs follow the C6 bore allowance)."}
 
 def _merge(defaults, changes):
     result = deepcopy(defaults)
@@ -239,7 +238,7 @@ def _component_regions(parameters, settings, grid):
         regions.append(_box(name + "_motor_leads", "forbidden", corridor_min, corridor_max, "Provisional accessible straight motor lead corridor"))
     for index, (x, y) in enumerate(mount_positions(parameters)["aio15"]):
         height = f["base_thickness_mm"] + f["aio_standoff_mm"]
-        regions.append(_cylinder(f"aio_contact_{index}", "preserve", [x, y, height / 2], settings["aio_contact_radius_mm"], height, "AIO mounting boss; no prescribed central plate", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
+        regions.append(_cylinder(f"aio_contact_{index}", "preserve", [x, y, height / 2], settings["aio_boss_radius_mm"], height, "AIO mounting boss; no prescribed central plate", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
         regions.append(_cylinder(f"aio_screw_{index}", "forbidden", [x, y, height / 2], (c["aio15"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2, height + 2, "AIO through screw and underside assembly access", rasterize=False))
     battery_z = placements["battery"]["position"][2]
     contact_width, contact_length = settings["battery_contact_width_mm"], settings["battery_contact_length_mm"]
