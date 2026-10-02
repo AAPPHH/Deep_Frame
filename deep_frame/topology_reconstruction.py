@@ -292,7 +292,7 @@ def reconstruct(domain, density, config=DESIGN_RECONSTRUCTION_CONFIG):
     low, high, trials = 0.5, 1.5, []
     for _ in range(config["calibration_steps"]):
         scale = (low+high)/2
-        volume = float(build_field(graph, domain, {**config, "voxel_mm": config["calibration_voxel_mm"]}, scale)[0].volume)
+        volume = float(exact_booleans(build_field(graph, domain, {**config, "voxel_mm": config["calibration_voxel_mm"]}, scale)[0], domain, IMPLICIT_CONFIG)[0].volume)
         trials.append([scale, volume])
         low, high = (scale, high) if volume < target else (low, scale)
     scale = (low+high)/2 if trials else 1.0

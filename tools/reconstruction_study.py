@@ -19,7 +19,7 @@ from tools.topology_study import study_parameters
 
 RUN_CONFIG = {**DESIGN_RECONSTRUCTION_CONFIG, "geometry": None, "panels": None, "labels": None}
 RUN_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, "geometry": "path", "panels": ["path"], "labels": ["text"]}
-FEA_RELAXED = {"surface_deviation_mm": 0.7, "fea_remesh_targets_mm": [1.5, 1.2, 1.0], "tet_attempts": ["remesh_hxt", "remesh_delaunay"]}
+FEA_RELAXED = {"surface_deviation_mm": 0.7, "fea_remesh_targets_mm": [1.5], "tet_attempts": ["remesh_hxt", "remesh_delaunay"]}
 def _camera(direction, up):
     d = np.asarray(direction, float)
     d /= np.linalg.norm(d)
@@ -171,6 +171,7 @@ def fea_main(overrides):
         meshes = pymeshlab.MeshSet()
         meshes.add_mesh(pymeshlab.Mesh(mesh.vertices, mesh.faces))
         meshes.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(config["fea_surface_mm"]), iterations=6, featuredeg=40)
+        meshes.apply_coord_taubin_smoothing(stepsmoothnum=config["fea_surface_taubin"])
         mesh = trimesh.Trimesh(meshes.current_mesh().vertex_matrix(), meshes.current_mesh().face_matrix())
     domain = full_domain(config["fine_shape"])
     cases, masses = fea_cases(domain, config["selector_half_band_mm"])
@@ -180,7 +181,7 @@ def fea_main(overrides):
     settings = {**domain["fea_settings"], **{key: IMPLICIT_CONFIG[key] for key in MESH_KEYS}, "work_dir": str(config["output"]/"fea"), "mesh_timeout_s": 900.0, "solver_timeout_s": 1800.0, "threads": 8, "mesh_threads": 4, "fea_memory_budget_mb": 6000.0, "mesh_minimum_sicn": 0.005, **FEA_RELAXED}
     started = perf_counter()
     result = evaluate(mesh, domain["material"], masses, cases, settings)
-    result.update(runtime_s=perf_counter()-started, relaxed_settings=FEA_RELAXED, fea_surface_mm=config["fea_surface_mm"], fea_surface_volume_mm3=float(mesh.volume), selector_half_band_mm=config["selector_half_band_mm"], preflight_vertex_counts=preflight, geometry=str(config["geometry"]))
+    result.update(runtime_s=perf_counter()-started, relaxed_settings=FEA_RELAXED, fea_surface_mm=config["fea_surface_mm"], fea_surface_taubin=config["fea_surface_taubin"], fea_surface_volume_mm3=float(mesh.volume), selector_half_band_mm=config["selector_half_band_mm"], preflight_vertex_counts=preflight, geometry=str(config["geometry"]))
     (config["output"]/"fea_result.json").write_text(json.dumps(result, indent=1, default=str))
     print(json.dumps(summary(result), indent=1), flush=True)
 
