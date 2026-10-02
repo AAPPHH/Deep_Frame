@@ -34,4 +34,84 @@ Status: prototype on branch `feature/neural-topo`, not integrated into the main 
 
 ## Results
 
-RESULTS_PLACEHOLDER
+Run date: 2026-10-02. FE grid 2 mm on cuDSS, 1 GPU slot. Route as for c01: subdivisions 5, threshold 0.5. FEA is the diagnostic CalculiX run with the same load cases and modal analysis.
+
+- **c01 reference** (re-read from `Deep_Frame-int/exports/implicit/fine_robust`): 10 % volume, robust SIMP on the 4/3 mm grid.
+- **Neural rows:** `fmaxXXXX` is `max_frequency_per_mm`; `fNN` is the volume fraction in % of the allowed cells.
+- The route was run with the extensions `preserve_forbidden`, `preserve` and `none`. The table shows the first candidate that has FEA results, falling back to the first candidate that has a mesh.
+
+| run | frame mass g | f1 Hz | arm-tip N/mm | optimization s | route s | gate violations | member width p10/p25/p50 mm (share < 2 mm) |
+|---|---|---|---|---|---|---|---|
+| c01 fine robust SIMP (10 %) | 45.7 | 748 | 279 | 2771 (116 it, 4/3 mm) | 452 | features | - |
+| neural fmax00625 f12 (preserve) | 51.6 | 1064 | 167 | 378 (150 it, 2 mm) | 391 | features | 3.3/4.0/4.9 (5 %) |
+| neural fmax0125 f12 (preserve) | 48.9 | 142 | 107 | 386 (150 it, 2 mm) | 532 | features | 1.3/2.4/4.0 (23 %) |
+| neural fmax0125 f18 (none) | 75.0 | 182 | 340 | 271 (108 it, 2 mm) | 1020 | features, mass screen | 1.3/2.4/4.6 (16 %) |
+| neural fmax0125 f25 (preserve) | 106.6 | no FEA (tet meshing) | no FEA | 248 (97 it, 2 mm) | 522 | features, mass screen | 2.4/4.0/6.7 (9 %) |
+| neural fmax025 f12 | no mesh | - | - | 327 (116 it, 2 mm) | 78 | marching cubes not one closed body | 1.3/1.3/2.4 (40 %) |
+
+Renders (iso/top/side): `exports/neural/renders/<run>_{isometric,top,side}.png`.
+
+### Minimum feature size vs. Fourier cutoff
+
+- **Measurement:** member width is 2 × EDT on the 3D skeleton of ρ ≥ 0.5, sampled on the 4/3 mm grid, minus one cell. Skeleton cells within two cells of the masks are excluded. 1.33 mm is the resolution floor.
+- **Results, all at 12 %:**
+
+  | f_max (1/mm) | p10 (mm) | median (mm) | share below 2 mm | route |
+  |---|---|---|---|---|
+  | 0.0625 | 3.3 | 4.9 | 5 % | fine |
+  | 0.125 | 1.3 | 4.0 | 23 % | fine |
+  | 0.25 | 1.3 | 2.4 | 40 % | breaks: the extracted surface is no longer one closed body |
+
+- **Rule of thumb:** halving f_max moves mostly the thin tail. p10 goes from 1.3 mm to 3.3 mm, while the median grows only weakly (2.4 → 4.0 → 4.9 mm).
+  - For the 2 mm printing wall: f_max ≤ 0.0625/mm, i.e. a wavelength ≥ 16 mm, keeps 95 % of the members above 2 mm.
+  - The rule fixes the typical size, not a hard minimum. A hard minimum still needs the route's opening step or a robust projection.
+
+## What worked
+
+- **Speed:** a full 3D frame run on the GPU took 4–6.5 min (97–150 iterations, about 2.5 s per iteration on the 2 mm grid), against 46 min for c01's robust SIMP on the 4/3 mm grid.
+- **Field quality:**
+  - Grey fraction 0.3–0.9 %, without a density filter or projection.
+  - Exact volume and exact symmetry.
+  - Masks are never violated.
+  - Mounts are face-connected in every run; at ρ ≥ 0.5 all preserves lie in one component.
+- **Resolution-free output:** the field is trained on 2 mm and resampled directly on the 4/3 mm route grid. The route takes it unchanged through `load_source`.
+- **Best variant, fmax 0.0625 / 12 %:** compact, symmetric and recognisably ManaFly-like (X arms, battery cradle, closed centre ring).
+  - f1 is 1064 Hz, above c01's 748 Hz, at +13 % mass.
+- **Volume handling:** the logit-shift volume constraint (OC-like bisection plus implicit gradient) converges monotonically. The augmented Lagrangian oscillated.
+
+## What did not work
+
+- **Arm-tip stiffness falls short of c01** at comparable mass: 107–167 N/mm against 279 N/mm. Likely causes:
+  - the coarser 2 mm FE grid;
+  - the non-robust (intermediate) objective;
+  - load paths spread over many thin struts at fmax 0.125.
+- **Low first modes at fmax 0.125:** 142/153 Hz at 12 % and 182 Hz at 18 %. The battery-impact stiffness of 1154 N/mm (c01: 2863) points to a soft battery-deck support. Not diagnosed further (coarse first).
+- **`preserve_forbidden` fails** (`extension_changed_topology`) on 3 of 4 neural fields (only 18 % built). Neural fields carry material right up to the keep-outs, so the extension changes the topology. The `preserve` and `none` extensions build.
+- **The 2 mm wall gate (`features`) fails everywhere**, as with c01 (known open issue).
+- **18 % and 25 % fail the v0 mass screen** (2 × 32.2 g), which is expected at that mass.
+- **No FEA at 25 %** because tet meshing failed:
+  - at 2.0 mm, 250k elements exceed the 9.7 GB element budget;
+  - coarser 3.0/2.5 mm targets fail SICN < 0.01;
+  - classify times out.
+- **At 18 %, tet meshing failed for the `preserve_forbidden` and `preserve` candidates.** The FEA row comes from the `none` extension.
+- **Visible terracing on the arm flanks** (top/iso renders). Its cause is unclear; it could come from the 4/3 mm cell sampling with PCHIP, or from the network itself.
+
+## Hardening needed before integration
+
+1. **Objective:**
+   - robust (eroded) evaluation;
+   - a frequency or battery-support term;
+   - optionally a 4/3 mm FE grid for a final fine-tuning phase. Warm-starting the network is cheap.
+2. **Hard minimum width:** f_max alone only shifts the distribution, so add a minimum-length-scale term or a robust projection on the network output.
+3. **Make `preserve_forbidden` compatible:** keep a small void margin at the keep-outs in the network output, or soften the extension guard for neural fields.
+4. **Tet meshing for heavy designs:** element budget and SICN handling.
+5. **Smoke test** for `topology_study neural`.
+
+## Reproduce
+
+```
+jobslot.py gpu -- <gpu venv>/python.exe tools/topology_study.py neural cfg.json
+# cfg.json: {"directory": "exports/neural/density/fmax0125", "volume_fractions": [0.12, 0.18, 0.25], "max_frequency_per_mm": 0.125, "max_iterations": 150}
+jobslot.py cpu -- <main venv>/python.exe tools/implicit_study.py run route.json
+# route.json: {"source": ".../f12", "output": "...", "subdivisions": 5, "thresholds": [0.5], "extensions": ["preserve_forbidden", "preserve", "none"], "diagnostic_fea": true, "diagnostic_fea_always": true}
+```
