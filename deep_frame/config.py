@@ -1097,7 +1097,7 @@ RUN_GRIDS = {
 }
 
 STAGES = {
-    "optimization": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu/.venv/Scripts/python.exe"},
+    "optimization": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu-venv/Scripts/python.exe"},
     "reconstruction": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
     "geometry": {"worktree": "C:/clones/Deep_Frame-int", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
     "evaluation": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
