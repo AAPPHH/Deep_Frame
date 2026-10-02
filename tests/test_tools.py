@@ -18,6 +18,7 @@ from deep_frame.topology_optimization import _settings
 from deep_frame.topology_pipeline import _artifact, _file_digest, _read, _save
 from deep_frame.topology_surface import SurfaceReconstructionError
 from tests.test_topology_implicit_validation import mounted_domain
+from tools import compute
 from tools import implicit_study as implicit
 from tools import mature_pipeline as pipeline
 from tools import topology_study
@@ -1046,3 +1047,15 @@ def test_command_line_passes_parsed_json_or_empty_overrides(tmp_path):
     path.write_text('{"count": 4}', encoding="utf-8-sig")
     assert command_line({"run": lambda overrides: overrides}, ["run", str(path)]) == {"count": 4}
     assert command_line({"run": lambda overrides: overrides}, ["run"]) == {}
+
+def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
+    spec = compute.request("fea_modal", [sys.executable, "-c", "import os,sys; open('out.txt','w').write(os.environ['OMP_NUM_THREADS']+os.environ['CALCULIX_PATH']); sys.exit(3)"],
+                           tmp_path, {"CALCULIX_PATH": "ccx", "HOME": "x", "DEEP_FRAME_SEED": "1"})
+    need = compute.JOB_TYPES["fea_modal"]
+    assert (spec["entrypoint_num_cpus"], spec["entrypoint_memory"], spec["entrypoint_resources"]) == (need["num_cpus"], need["memory_gb"] * 2**30, None)
+    assert compute.request("density_neural", ["x"], tmp_path)["entrypoint_resources"] == {"gpu_gb": compute.JOB_TYPES["density_neural"]["gpu_gb"]}
+    token = spec["entrypoint"].split()[-1]
+    assert compute.main(["exec", token]) == 3
+    assert (tmp_path / "out.txt").read_text() == str(need["num_cpus"]) + "ccx"
+    with pytest.raises(SystemExit):
+        compute.main(["unknown", "--", "x"])
