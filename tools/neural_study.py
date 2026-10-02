@@ -10,16 +10,23 @@ from scipy.ndimage import gaussian_filter, label
 from skimage.measure import marching_cubes
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import deep_frame.topology_neural as topology_neural
-from deep_frame.config import command_line
+from deep_frame.config import CRASH_DIRECTIONS, command_line
 from deep_frame.frame import motor_positions
 from deep_frame.topology_geometry import _merge, build_design_domain, grid_centers, region_contains, symmetric_domains
 from deep_frame.topology_neural import _sigmoid, cell_centers, member_widths, neural_settings, optimize_neural, volume_shift
 from deep_frame.topology_optimization import HexElasticity
+from tools.multi_crash_study import cross_sections, stitch
 from tools.topology_study import study_parameters
 
 STUDY = {
-    "root": "exports/r2",
+    "root": "exports/r3",
     "viewer_root": "C:/clones/Deep_Frame-neural/exports",
+    "viewer_prefix": "r3_",
+    "crash_directions": list(CRASH_DIRECTIONS),
+    "inertia_relief": {"cases": ["arm_tip", "thrust_all", "crash_"], "attachments": {"battery": "battery_rail_", "aio15": "aio_contact_", "camera": "camera_mount_", "motor_": "_motor_contact", "prop_": "_motor_contact"}, "frame_mass": "target"},
+    "verify_shape": [68, 64, 24],
+    "chord": {"half_width_mm": 20.0, "z_max_mm": 10.0, "y_span_mm": [-25.0, 25.0]},
+    "compare": {"labels": ["neural_v05", "mcrash_v05", "r2_v05", "r3_v05", "ManaFly"], "inputs": ["C:/clones/Deep_Frame-neural/exports/fast/neural_v05", "C:/clones/Deep_Frame-mcrash/exports/mcrash/neural_v05", "C:/clones/Deep_Frame-nr2/exports/r2/neural_r2_v05", "exports/r3/neural_r3_v05", "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer"], "output": "exports/r3/compare"},
     "shape": [102, 96, 24],
     "fine_shape": [204, 192, 48],
     "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3, "support_half_mm": 5.0, "bore_margin_mm": 0.5},
@@ -27,7 +34,7 @@ STUDY = {
              "load_y_min_mm": 44.0, "load_z_mm": [4.0, 22.0], "case_weight": 1.0},
     "neural": {"max_frequency_per_mm": 0.2, "max_iterations": 110, "minimum_iterations": 40, "sharpness_iterations": 80, "sharpness_final": 8.0, "max_width_penalty": 0.0, "max_runtime_s": 1500.0},
     "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads", "min_body_mm3": 1.0},
-    "variants": [{"name": "neural_r2_v05", "neural": {"volume_fraction": 0.05}}],
+    "variants": [{"name": "neural_r3_v05", "neural": {"volume_fraction": 0.05}}],
 }
 
 def configure(overrides):
@@ -44,14 +51,47 @@ def polyline_distance(points, path):
         best = np.minimum(best, np.linalg.norm(points - start - t[..., None] * segment, axis=-1))
     return best
 
+def bounds(region):
+    if region["kind"] == "box":
+        return {"kind": "box", "min_mm": list(region["min_mm"]), "max_mm": list(region["max_mm"])}
+    half = np.full(3, region["radius_mm"])
+    half[{"x": 0, "y": 1, "z": 2}[region.get("axis", "z")]] = region["height_mm"] / 2
+    return {"kind": "box", "min_mm": (np.asarray(region["center_mm"]) - half).tolist(), "max_mm": (np.asarray(region["center_mm"]) + half).tolist()}
+
+def lower_chord(density, grid, cfg, sigma=1.0, threshold=0.5):
+    solid = gaussian_filter(np.asarray(density, dtype=np.float32), sigma) > threshold
+    centers = grid_centers(grid)
+    low, high = cfg["y_span_mm"]
+    box = (np.abs(centers[..., 0]) <= cfg["half_width_mm"]) & (centers[..., 2] <= cfg["z_max_mm"]) & (centers[..., 1] >= low) & (centers[..., 1] <= high)
+    labels, _ = label(solid & box, np.ones((3, 3, 3), dtype=bool))
+    y = centers[..., 1]
+    spanning = (set(np.unique(labels[box & (y <= low + 2)])) & set(np.unique(labels[box & (y >= high - 2)]))) - {0}
+    slices = np.unique(np.round(y[box], 6))
+    covered = [bool((solid & box & (np.abs(y - value) < 1e-6)).any()) for value in slices]
+    return {"box": cfg, "spanning_components": len(spanning), "lower_chord": bool(spanning), "y_slice_coverage": float(np.mean(covered)),
+            "solid_volume_mm3": float(np.count_nonzero(solid & box) * np.prod(grid["spacing_mm"]))}
+
 class R2Domain:
     def __init__(self, cfg):
-        self.pad, self.hoop = cfg["pad"], cfg["hoop"]
+        self.pad, self.hoop, self.crash, self.relief = cfg["pad"], cfg["hoop"], cfg["crash_directions"], cfg["inertia_relief"]
     def hoop_paths(self):
         return [np.array([[sign * self.hoop["x_mm"], y, z] for y, z in self.hoop["path_yz_mm"]], dtype=float) for sign in (-1, 1)]
-    def build(self, shape):
+    def masses(self, domain, fraction):
+        components, regions = domain["metadata"]["components"], {region["name"]: region for region in domain["regions"]}
+        items = []
+        for name, component in components.items():
+            prefix = next((key for key in self.relief["attachments"] if name.startswith(key)), None)
+            if prefix is None or component["mass_g"] <= 0:
+                continue
+            suffix = self.relief["attachments"][prefix]
+            targets = [name.split("_", 1)[1] + suffix] if suffix.startswith("_") else [key for key in regions if key.startswith(suffix)]
+            items += [{"name": name, "region": bounds(regions[key]), "mass_g": component["mass_g"] / len(targets)} for key in targets]
+        frame = fraction * domain["metadata"]["allowed_volume_mm3"] * domain["material"]["density_g_cm3"] / 1000 if self.relief["frame_mass"] == "target" else 0.0
+        return {"point_masses": items, "preserve_mass_g": frame}
+    def build(self, shape, fraction=0.05):
         parameters = study_parameters(shape)
         parameters["frame"]["arm_height_mm"] = self.pad["top_mm"]
+        parameters["integration"]["crash_directions"] = list(self.crash)
         domain = build_design_domain(parameters)
         grid = domain["grid"]
         centers = grid_centers(grid)
@@ -92,12 +132,29 @@ class R2Domain:
         loads = [{"region": {"kind": "box", "min_mm": [sign * self.hoop["x_mm"] - r, self.hoop["load_y_min_mm"], self.hoop["load_z_mm"][0]], "max_mm": [sign * self.hoop["x_mm"] + r, y_max, self.hoop["load_z_mm"][1]]}, "force_n": [0.0, -force / 2, 0.0]} for sign in (-1, 1)]
         domain["load_cases"].append({"name": "crash_hoop", "analysis": "static", "fixed_regions": [dict(box) for box in front["fixed_regions"]], "loads": loads, "purpose": "Frontal crash on the camera hoop fronts"})
         domain["optimizer_settings"]["case_weights"]["crash_hoop"] = self.hoop["case_weight"]
-        domain["metadata"]["round2"] = {"pad": self.pad, "hoop": self.hoop, "hoop_cells": int(np.count_nonzero(tube & allowed)), "motors_mm": motors.tolist()}
+        if self.relief:
+            relief = self.masses(domain, fraction)
+            for case in domain["load_cases"]:
+                if case["analysis"] == "static" and any(case["name"].startswith(key) for key in self.relief["cases"]):
+                    case.update(fixed_regions=[], inertia_relief=relief)
+        domain["metadata"]["round2"] = {"pad": self.pad, "hoop": self.hoop, "hoop_cells": int(np.count_nonzero(tube & allowed)), "motors_mm": motors.tolist(), "crash_directions": list(self.crash),
+                                        "inertia_relief_cases": [case["name"] for case in domain["load_cases"] if "inertia_relief" in case], "inertia_relief_masses": relief if self.relief else None}
         return symmetric_domains(domain)
 
 def base_settings(domain, overrides):
     keys = ("interface_node_policy", "case_weights", "penalization", "min_stiffness_ratio")
     return neural_settings({**{key: domain["optimizer_settings"][key] for key in keys}, "linear_solver": "cuda_cudss", **overrides})
+
+def verify(cfg):
+    _, half = R2Domain(cfg).build(cfg["verify_shape"])
+    system = HexElasticity(half, interface_node_policy=half["optimizer_settings"]["interface_node_policy"])
+    density = np.where(half["allowed"], 0.3, 0.0).ravel()
+    density[half["preserve"].ravel()] = 1
+    rows = {case["name"]: {**case["inertia_relief"], "reactions": system.support_reactions(density, case["name"])} for case in system.cases if "inertia_relief" in case}
+    out = Path(cfg["root"])
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "inertia_relief_check.json").write_text(json.dumps({"shape": cfg["verify_shape"], "masses": half["metadata"]["round2"]["inertia_relief_masses"], "cases": rows}, indent=1))
+    print(json.dumps({name: max(entry["max_reaction_n"] / entry["nodal_force_sum_n"] for entry in row["reactions"]) for name, row in rows.items()}), flush=True)
 
 def time_solve(cfg):
     started = perf_counter()
@@ -295,6 +352,7 @@ def anchors(domain):
     return pads & domain["preserve"]
 
 def finish(out, density, fine_full, cfg, viewer):
+    sections = cross_sections(gaussian_filter(np.asarray(density, dtype=np.float32), cfg["render"]["sigma_cells"]), fine_full)
     mesh, connectivity = surface(density, fine_full["grid"], cfg["render"], fine_full["regions"], anchors(fine_full) if cfg["render"]["keep"] == "motor_pads" else None)
     mesh.export(out / "geometry.stl")
     if viewer is not None:
@@ -305,7 +363,8 @@ def finish(out, density, fine_full, cfg, viewer):
     solid = gaussian_filter(np.asarray(density, dtype=np.float32), cfg["render"]["sigma_cells"]) > cfg["render"]["threshold"]
     return {"mass_g": float(mesh.volume * 1.09 / 1000), "mesh_volume_mm3": float(mesh.volume), "volume_fraction_mesh": float(mesh.volume / allowed_volume),
             "watertight": bool(mesh.is_watertight), "bodies": len(mesh.split(only_watertight=False)), "connectivity": connectivity,
-            "member_width": member_widths(solid, fine_full["grid"]["spacing_mm"], fine_full["preserve"] | fine_full["forbidden"])}
+            "member_width": member_widths(solid, fine_full["grid"]["spacing_mm"], fine_full["preserve"] | fine_full["forbidden"]),
+            "width_height_ratio": sections["width_height_ratio"], "chord": lower_chord(density, fine_full["grid"], cfg["chord"], cfg["render"]["sigma_cells"], cfg["render"]["threshold"])}
 
 def run_variant(cfg, variant):
     neural, render_cfg = {**cfg["neural"], **variant.get("neural", {})}, {**cfg["render"], **variant.get("render", {})}
@@ -314,7 +373,7 @@ def run_variant(cfg, variant):
     out.mkdir(parents=True, exist_ok=True)
     started = perf_counter()
     builder = R2Domain(cfg)
-    _, half = builder.build(cfg["shape"])
+    _, half = builder.build(cfg["shape"], neural["volume_fraction"])
     settings = base_settings(half, neural)
     holder = {}
     original = topology_neural.NeuralDensity
@@ -334,11 +393,12 @@ def run_variant(cfg, variant):
         return
     summary = result["summary"]
     np.savez_compressed(out / "density_half.npz", density=result["density"])
-    fine_full, _ = builder.build(cfg["fine_shape"])
+    fine_full, _ = builder.build(cfg["fine_shape"], neural["volume_fraction"])
     density = sample_full(holder["mapping"], fine_full, render_cfg.get("sample_sharpness", summary["sharpness_final"]), settings["volume_fraction"])
     np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
-    viewer = Path(cfg["viewer_root"]) / ("r2_" + variant["name"]) if cfg["viewer_root"] else None
-    info = {"variant": variant["name"], "method": "neural round 2", "volume_fraction_target": settings["volume_fraction"], "volume_fraction_opt": summary["volume_fraction"],
+    viewer = Path(cfg["viewer_root"]) / (cfg["viewer_prefix"] + variant["name"]) if cfg["viewer_root"] else None
+    info = {"variant": variant["name"], "method": "neural round 3" if cfg["inertia_relief"] else "neural round 2",
+            "inertia_relief": [{key: value for key, value in case.items() if key in ("name", "inertia_relief")} for case in summary["system"]["cases"] if "inertia_relief" in case] or None, "volume_fraction_target": settings["volume_fraction"], "volume_fraction_opt": summary["volume_fraction"],
             "iterations": summary["iterations"], "stop_reason": summary["stop_reason"], "optimize_runtime_s": optimized,
             **finish(out, density, fine_full, cfg, viewer), "total_runtime_s": perf_counter() - started,
             "grid_opt_half": half["grid"], "grid_render_full": fine_full["grid"], "neural": {k: settings[k] for k in ("max_frequency_per_mm", "frequencies", "hidden", "learning_rate", "sharpness_final", "sharpness_iterations", "max_iterations", "max_width_penalty")},
@@ -353,7 +413,7 @@ def rerender(cfg, variant):
     out = Path(cfg["root"]) / variant["name"]
     fine_full, _ = R2Domain(cfg).build(cfg["fine_shape"])
     info = json.loads((out / "info.json").read_text())
-    info.update(finish(out, np.load(out / "density_fine.npz")["density"], fine_full, cfg, Path(cfg["viewer_root"]) / ("r2_" + variant["name"]) if cfg["viewer_root"] else None), render=render_cfg)
+    info.update(finish(out, np.load(out / "density_fine.npz")["density"], fine_full, cfg, Path(cfg["viewer_root"]) / (cfg["viewer_prefix"] + variant["name"]) if cfg["viewer_root"] else None), render=render_cfg)
     (out / "info.json").write_text(json.dumps(info, indent=1, default=str))
     print(json.dumps({k: info.get(k) for k in ("variant", "mass_g", "bodies", "connectivity")}), flush=True)
 
@@ -368,7 +428,8 @@ def render_main(overrides):
         rerender(cfg, variant)
 
 def main(argv=None):
-    return command_line({"run": run_main, "render": render_main, "time": lambda overrides: time_solve(configure(overrides))}, argv)
+    return command_line({"run": run_main, "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
+                         "compare": lambda overrides: stitch(**{key: [Path(path) for path in value] if key == "inputs" else Path(value) if key == "output" else value for key, value in configure(overrides)["compare"].items()})}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

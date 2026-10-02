@@ -1047,6 +1047,26 @@ def test_round2_domain_lifts_pads_and_adds_camera_hoops():
     assert "crash_hoop" in cases and half["optimizer_settings"]["case_weights"]["crash_hoop"] == 1.0
     assert all(box["min_mm"][2] == pytest.approx(bottom - 0.01) for box in cases["battery_impact"]["fixed_regions"])
 
+def test_round3_domain_turns_flight_and_crash_cases_into_inertia_relief():
+    full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16], 0.05)
+    cases = {case["name"]: case for case in half["load_cases"]}
+    relief = [name for name, case in cases.items() if "inertia_relief" in case]
+    assert {"arm_tip", "thrust_all", "crash_hoop", "crash_below"} <= set(relief) and all(not cases[name]["fixed_regions"] for name in relief)
+    assert "inertia_relief" not in cases["battery_impact"] and cases["battery_impact"]["fixed_regions"]
+    masses = cases["thrust_all"]["inertia_relief"]
+    assert sum(item["mass_g"] for item in masses["point_masses"]) == pytest.approx(37.0 + 7.2 + 2.3 + 4 * 5.2)
+    assert masses["preserve_mass_g"] == pytest.approx(0.05 * full["metadata"]["allowed_volume_mm3"] * 1.09 / 1000)
+
+def test_lower_chord_detects_a_continuous_low_member():
+    grid = {"origin_mm": [-30.0, -30.0, 0.0], "spacing_mm": [1.0, 1.0, 1.0], "shape": [60, 60, 20]}
+    density = np.zeros(grid["shape"])
+    density[27:33, 2:58, 2:6] = 1
+    cfg = {"half_width_mm": 20.0, "z_max_mm": 10.0, "y_span_mm": [-25.0, 25.0]}
+    assert neural_study.lower_chord(density, grid, cfg)["lower_chord"]
+    density[:, 28:32] = 0
+    report = neural_study.lower_chord(density, grid, cfg)
+    assert not report["lower_chord"] and report["y_slice_coverage"] < 1
+
 def test_keep_connected_drops_floating_parts():
     field = np.zeros((20, 10, 10))
     field[1:8, 2:6, 2:6], field[12:18, 2:6, 2:6] = 1, 1

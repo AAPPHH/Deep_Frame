@@ -336,7 +336,7 @@ class HexElasticity:
             if abs(float(domain["grid"]["origin_mm"][self.axis]) - plane) > 1e-9:
                 raise ValueError("Symmetric half domains must start at the symmetry plane")
             self.plane_nodes = np.intersect1d(np.flatnonzero(np.abs(self.points[:, self.axis] - plane) < 1e-7), self.active_nodes)
-        names = set()
+        names, self.support = set(), None
         for case in domain["load_cases"]:
             if case["name"] in names:
                 raise ValueError("Topology load-case names must be unique")
@@ -345,7 +345,9 @@ class HexElasticity:
                 raise ValueError("Unknown topology load-case analysis")
             relief = case.get("inertia_relief")
             if relief is not None:
-                fixed_nodes, fixed = self._relief_support(np.concatenate([np.concatenate(self._select_both(load["region"], other["name"], "load")) for other in domain["load_cases"] if "inertia_relief" in other for load in other["loads"]]))
+                if self.support is None:
+                    self.support = self._relief_support(np.concatenate([np.concatenate(self._select_both(load["region"], other["name"], "load")) for other in domain["load_cases"] if "inertia_relief" in other for load in other["loads"]]))
+                fixed_nodes, fixed = self.support
             else:
                 fixed_nodes = np.unique(np.concatenate([np.concatenate(self._select_both(region, case["name"], "fixture")) for region in case["fixed_regions"]]))
                 if len(fixed_nodes) < 3 or np.linalg.matrix_rank(self.points[fixed_nodes] - self.points[fixed_nodes[0]]) < 2:
@@ -619,7 +621,7 @@ class HexElasticity:
             errors.extend(solver.close())
         return errors
     def diagnostics(self):
-        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"])} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups)})
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups)})
 
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,

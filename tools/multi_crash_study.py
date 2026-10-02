@@ -287,21 +287,25 @@ def compare(config):
         rows[label] = {"source": str(directory), "mass_g": info["mass_g"], "bodies": info["bodies"], "iterations": info["iterations"], "stop_reason": info["stop_reason"], "optimize_runtime_s": info["optimize_runtime_s"],
                        **timing(directory / "iterations.jsonl"), **cross_sections(field, fine_full)}
     (out / "metrics.json").write_text(json.dumps(rows, indent=1))
+    stitch(config["inputs"], config["labels"], out)
+    print(json.dumps({label: {key: row[key] for key in ("mass_g", "bodies", "per_iteration_s", "width_height_ratio", "top_openness_envelope")} for label, row in rows.items()}), flush=True)
+    return 0
+
+def stitch(inputs, labels, output):
+    output.mkdir(parents=True, exist_ok=True)
     font = ImageFont.load_default(size=44)
     tiles = []
     for view in ("iso", "top", "side"):
-        images = [Image.open(directory / f"{view}.png").convert("RGB") for directory in config["inputs"]]
+        images = [Image.open(directory / f"{view}.png").convert("RGB") for directory in inputs]
         row = Image.new("RGB", (sum(image.width for image in images), images[0].height), "white")
-        for index, (image, label) in enumerate(zip(images, config["labels"])):
+        for index, (image, label) in enumerate(zip(images, labels)):
             row.paste(image, (index * image.width, 0))
             ImageDraw.Draw(row).text((index * image.width + 30, 24), f"{label} - {view}", fill="black", font=font)
         tiles.append(row)
     sheet = Image.new("RGB", (tiles[0].width, sum(tile.height for tile in tiles)), "white")
     for index, tile in enumerate(tiles):
         sheet.paste(tile, (0, index * tile.height))
-    sheet.resize((sheet.width // 2, sheet.height // 2), Image.LANCZOS).save(out / "side_by_side.png")
-    print(json.dumps({label: {key: row[key] for key in ("mass_g", "bodies", "per_iteration_s", "width_height_ratio", "top_openness_envelope")} for label, row in rows.items()}), flush=True)
-    return 0
+    sheet.resize((sheet.width // 2, sheet.height // 2), Image.LANCZOS).save(output / "side_by_side.png")
 
 def main(argv=None):
     return command_line({"run": lambda overrides: run(configure(RUN_CONFIG, RUN_KINDS, overrides, ("output",))),
