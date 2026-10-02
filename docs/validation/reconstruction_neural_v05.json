@@ -1,0 +1,195 @@
+{
+ "source": "C:/clones/Deep_Frame-neural/exports/fast/neural_v05 (density_fine.npz, geometry.stl)",
+ "raw": {
+  "status": "ok",
+  "diagnostics": [],
+  "frame_mass_g": 18.304047224088578,
+  "f1_hz": 175.6781,
+  "arm_tip_n_per_mm": 33.12526774793903,
+  "crash_front_mm": 0.1759471486370234,
+  "crash_arm_mm": 0.3881411283298841,
+  "runtime_s": 106.94922230002703
+ },
+ "reconstructed": {
+  "status": "ok",
+  "diagnostics": [],
+  "frame_mass_g": 18.085108555153894,
+  "f1_hz": 243.0289,
+  "arm_tip_n_per_mm": 12.421670215160804,
+  "crash_front_mm": 0.428802408288722,
+  "crash_arm_mm": 0.9859339254434041,
+  "runtime_s": 125.67764969999553
+ },
+ "relative_deviation": {
+  "frame_mass_g": -0.011961216350368382,
+  "f1_hz": 0.3833761863317055,
+  "arm_tip_n_per_mm": -0.6250092132180985,
+  "crash_front_mm": 1.4371091638054085
+ },
+ "acceptance_15pct": {
+  "frame_mass_g": true,
+  "f1_hz": false,
+  "arm_tip_n_per_mm": false
+ },
+ "walls": {
+  "raw": {
+   "passed": false,
+   "deep_fraction": 0.024273328465397218,
+   "largest_deep_mm3": 87.41300000000003,
+   "deep_volume_mm3": 408.0180000000001,
+   "motor_zone_hits": {},
+   "warning": {
+    "thin_fraction": 0.07759582436847558,
+    "very_thin_fraction": 0.02961391345923978,
+    "minimum_measured_mm": 0.0010449111864914186
+   }
+  },
+  "recon": {
+   "passed": false,
+   "deep_fraction": 0.030034256587138753,
+   "largest_deep_mm3": 187.06300000000005,
+   "deep_volume_mm3": 497.44700000000006,
+   "motor_zone_hits": {},
+   "warning": {
+    "thin_fraction": 0.07491144095463823,
+    "very_thin_fraction": 0.02498933178408559,
+    "minimum_measured_mm": 0.000839929814981063
+   }
+  }
+ },
+ "reconstruction": {
+  "members": 77,
+  "shells": 5,
+  "nodes": 44,
+  "graph_components": 6,
+  "spurs_dropped": {
+   "count": 5,
+   "length_mm": 8.666666666666666
+  },
+  "fragments_dropped": {
+   "count": 7,
+   "volume_mm3": 25.48148148148148
+  },
+  "extraction_debris": {
+   "count": 0,
+   "volume_mm3": 0.0
+  },
+  "volume_mm3": 16564.20035656132,
+  "solid_volume_mm3": 19953.777777777777,
+  "target_volume_mm3": 16802.325339566276,
+  "global_scale": 0.58203125,
+  "bodies": 1,
+  "watertight": true,
+  "exact_booleans": {
+   "status": "Error.NoError",
+   "components": 1,
+   "passed": 1.0,
+   "preserve_added_mm3": 2386.645141606492,
+   "forbidden_removed_mm3": 544.6378432216843,
+   "envelope_removed_mm3": 31.915498852504243,
+   "maximum_cylinder_oversize_mm": 0.009953685404951784
+  },
+  "runtime_s": {
+   "skeleton_s": 0.6539931000152137,
+   "calibration_s": 29.08589529999881,
+   "field_extract_s": 30.85630789998686,
+   "booleans_s": 1.9546127000066917,
+   "total_s": 63.41337670001667
+  },
+  "thin_member_length_mm": 9.24590199741583,
+  "member_length_mm": 445.2854604302557
+ },
+ "reconstruction_config": {
+  "source": "C:\\clones\\Deep_Frame-neural\\exports\\fast\\neural_v05\\density_fine.npz",
+  "output": "C:\\clones\\Deep_Frame-recon\\exports\\recon\\v2",
+  "fine_shape": [
+   204,
+   192,
+   48
+  ],
+  "density_sigma_cells": 1.0,
+  "threshold": 0.5,
+  "spur_factor": 2.0,
+  "spur_minimum_mm": 3.0,
+  "prune_passes": 3,
+  "path_sigma_samples": 4.0,
+  "section_sigma_samples": 6.0,
+  "minimum_radius_mm": 0.5,
+  "maximum_aspect": 4.0,
+  "volume_match": true,
+  "shell_aspect": 2.2,
+  "shell_sigma_mm": 1.0,
+  "transition_radius_mm": 1.5,
+  "voxel_mm": 0.25,
+  "target_volume_mm3": 16802.325339566276,
+  "calibration_steps": 7,
+  "calibration_voxel_mm": 0.5,
+  "selector_half_band_mm": 1.0,
+  "fea_surface_mm": 0.5,
+  "boolean_offset_mm": 0.3,
+  "closing_radius_mm": 0.75,
+  "geometry": "C:\\clones\\Deep_Frame-neural\\exports\\fast\\neural_v05\\geometry.stl",
+  "panels": null,
+  "labels": null
+ },
+ "fea_setup": {
+  "relaxed_settings": {
+   "surface_deviation_mm": 0.7,
+   "fea_remesh_targets_mm": [
+    1.5
+   ],
+   "tet_attempts": [
+    "remesh_hxt",
+    "remesh_delaunay"
+   ]
+  },
+  "fea_surface_mm": 0.5,
+  "fea_surface_taubin": 10,
+  "selector_half_band_mm": 1.0
+ },
+ "other_variants": {
+  "v1": {
+   "fea": {
+    "status": "ok",
+    "diagnostics": [],
+    "frame_mass_g": 20.280317077674894,
+    "f1_hz": 112.4727,
+    "arm_tip_n_per_mm": 17.332658433726603,
+    "crash_front_mm": 0.3123723974006815,
+    "crash_arm_mm": 0.728397143613956,
+    "runtime_s": 136.28041969999322
+   },
+   "volume_mm3": 18579.145792359315
+  },
+  "v3": {
+   "fea": {
+    "status": "failed",
+    "diagnostics": [
+     "RuntimeError: All tetrahedral meshing attempts failed: remesh_hxt failed, remesh_delaunay skipped"
+    ],
+    "frame_mass_g": null,
+    "f1_hz": null,
+    "arm_tip_n_per_mm": null,
+    "crash_front_mm": null,
+    "crash_arm_mm": null,
+    "runtime_s": 17.90066340001067
+   },
+   "volume_mm3": 16776.125559654873
+  },
+  "v5": {
+   "fea": {
+    "status": "failed",
+    "diagnostics": [
+     "RuntimeError: All tetrahedral meshing attempts failed: remesh_hxt failed, remesh_delaunay skipped"
+    ],
+    "frame_mass_g": null,
+    "f1_hz": null,
+    "arm_tip_n_per_mm": null,
+    "crash_front_mm": null,
+    "crash_arm_mm": null,
+    "runtime_s": 16.455041200009873
+   },
+   "volume_mm3": 24012.931584535178
+  }
+ }
+}
