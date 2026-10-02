@@ -136,13 +136,16 @@ class NeuralDensity:
         density[free] = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, fraction * np.count_nonzero(allowed) - np.count_nonzero(preserve))))
         return density.reshape(tuple(domain["grid"]["shape"]))
 
-def member_widths(density, spacing, threshold=0.5):
-    from scipy.ndimage import distance_transform_edt
+def member_widths(density, spacing, masks=None, threshold=0.5):
+    from scipy.ndimage import binary_dilation, distance_transform_edt
     from skimage.morphology import skeletonize
     solid = np.asarray(density) >= threshold
-    widths = 2 * distance_transform_edt(solid, sampling=spacing)[skeletonize(solid) > 0] - min(spacing)
-    return {"threshold": threshold, "method": "2 x Euclidean distance on the 3D skeleton minus one cell", "minimum_mm": float(widths.min()),
-            "p05_mm": float(np.percentile(widths, 5)), "median_mm": float(np.median(widths)), "skeleton_cells": int(widths.size)}
+    skeleton = skeletonize(solid) > 0
+    if masks is not None:
+        skeleton &= ~binary_dilation(masks, iterations=2)
+    widths = 2 * distance_transform_edt(solid, sampling=spacing)[skeleton] - min(spacing)
+    return {"threshold": threshold, "method": "2 x Euclidean distance on the 3D skeleton minus one cell, skeleton cells within two cells of preserve/forbidden excluded",
+            **{f"p{q:02d}_mm": float(np.percentile(widths, q)) for q in (5, 10, 25, 50)}, "fraction_below_2mm": float(np.mean(widths < 2)), "skeleton_cells": int(widths.size)}
 
 def optimize_neural(domain, settings, *, progress_callback=None, output_domain=None):
     started = perf_counter()
@@ -216,7 +219,7 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
             outcome["optimization_density"] = outcome["density"]
             outcome["density"] = mapping.sample(output_domain, sharpness, target)
             summary["output_grid"] = output_domain["grid"]
-            summary["member_width"] = member_widths(outcome["density"], output_domain["grid"]["spacing_mm"])
+            summary["member_width"] = member_widths(outcome["density"], output_domain["grid"]["spacing_mm"], output_domain["preserve"] | output_domain["forbidden"])
             summary["output_volume_fraction"] = float(np.sum(outcome["density"][output_domain["allowed"]]) / np.count_nonzero(output_domain["allowed"]))
         if not converged:
             diagnostics.append(f"Neural iteration stopped at {stop_reason}; convergence is not claimed")
