@@ -558,3 +558,32 @@ def test_symmetric_half_domain_matches_full_compliance_and_sensitivities():
         assert symmetric[name]["loads"][0]["mean_displacement_mm"] == pytest.approx(reference[name]["loads"][0]["mean_displacement_mm"], rel=1e-8, abs=1e-14)
         assert symmetric[name]["max_von_mises_mpa"] == pytest.approx(reference[name]["max_von_mises_mpa"], rel=1e-8)
     assert HexElasticity(half).diagnostics()["factorization_groups"] == 2
+
+def test_inertia_relief_is_balanced_support_free_and_matches_on_half_domain():
+    from deep_frame.topology_geometry import mirror_field, symmetric_domains
+    shape = (8, 4, 4)
+    box = lambda low, high: {"kind": "box", "min_mm": low, "max_mm": high}
+    preserve = np.zeros(shape, dtype=bool)
+    preserve[[0, -1]] = True
+    relief = {"point_masses": [{"region": box([-8.01, -0.01, -0.01], [-5.99, 8.01, 0.01]), "mass_g": 3.0}, {"region": box([-2.01, 1.99, 7.99], [2.01, 6.01, 8.01]), "mass_g": 5.0}], "preserve_mass_g": 2.0}
+    loads = {"thrust": [{"region": box([5.99, -0.01, 7.99], [8.01, 8.01, 8.01]), "force_n": [0.0, 0.0, 2.0]}, {"region": box([-8.01, -0.01, 7.99], [-5.99, 8.01, 8.01]), "force_n": [0.0, 0.0, 2.0]}],
+             "crash": [{"region": box([1.99, 7.99, 3.99], [6.01, 8.01, 8.01]), "force_n": [0.4, -3.0, 0.5]}]}
+    domain = {"grid": {"shape": list(shape), "spacing_mm": [2.0, 2.0, 2.0], "origin_mm": [-8.0, 0.0, 0.0], "order": "C", "axis_order": "xyz"},
+              "allowed": np.ones(shape, dtype=bool), "preserve": preserve, "forbidden": np.zeros(shape, dtype=bool),
+              "material": {"young_modulus_mpa": 4430.0, "poisson_ratio": 0.3, "density_g_cm3": 1.09}, "point_masses": [],
+              "load_cases": [{"name": name, "analysis": "static", "fixed_regions": [], "loads": load, "inertia_relief": relief} for name, load in loads.items()]}
+    full, half = symmetric_domains(domain)
+    half_density = np.random.default_rng(5).uniform(0.2, 1.0, half["grid"]["shape"])
+    density = mirror_field(half_density)
+    systems = {"full": HexElasticity(full), "half": HexElasticity(half)}
+    results = {"full": systems["full"].solve(density.ravel()), "half": systems["half"].solve(half_density.ravel())}
+    for name in loads:
+        assert results["half"][name]["compliance_n_mm"] == pytest.approx(results["full"][name]["compliance_n_mm"], rel=1e-8)
+        derivative = results["full"][name]["derivative"].reshape(shape)
+        assert np.allclose((derivative + np.flip(derivative, 0))[4:].ravel(), results["half"][name]["derivative"], rtol=1e-7, atol=1e-14)
+        for label, system in systems.items():
+            case = next(case for case in system.cases if case["name"] == name)
+            assert case["inertia_relief"]["mass_g"] == pytest.approx(10.0)
+            reactions = system.support_reactions(density.ravel() if label == "full" else half_density.ravel(), name)
+            assert sum(entry["support_dofs"] for entry in reactions) == (6 if label == "full" else 3 * len(reactions))
+            assert all(entry["max_reaction_n"] < 1e-9 * entry["nodal_force_sum_n"] for entry in reactions)

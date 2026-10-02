@@ -343,10 +343,14 @@ class HexElasticity:
             names.add(case["name"])
             if case["analysis"] not in ("static", "modal"):
                 raise ValueError("Unknown topology load-case analysis")
-            fixed_nodes = np.unique(np.concatenate([np.concatenate(self._select_both(region, case["name"], "fixture")) for region in case["fixed_regions"]]))
-            if len(fixed_nodes) < 3 or np.linalg.matrix_rank(self.points[fixed_nodes] - self.points[fixed_nodes[0]]) < 2:
-                raise ValueError("Topology fixture requires three non-collinear nodes")
-            fixed = (3 * fixed_nodes[:, None] + np.arange(3)).ravel()
+            relief = case.get("inertia_relief")
+            if relief is not None:
+                fixed_nodes, fixed = self._relief_support(np.concatenate([np.concatenate(self._select_both(load["region"], other["name"], "load")) for other in domain["load_cases"] if "inertia_relief" in other for load in other["loads"]]))
+            else:
+                fixed_nodes = np.unique(np.concatenate([np.concatenate(self._select_both(region, case["name"], "fixture")) for region in case["fixed_regions"]]))
+                if len(fixed_nodes) < 3 or np.linalg.matrix_rank(self.points[fixed_nodes] - self.points[fixed_nodes[0]]) < 2:
+                    raise ValueError("Topology fixture requires three non-collinear nodes")
+                fixed = (3 * fixed_nodes[:, None] + np.arange(3)).ravel()
             free = np.setdiff1d(self.active_dofs, fixed, assume_unique=True)
             compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "load_regions": [], "parts": []}
             if case["analysis"] == "static":
@@ -365,11 +369,13 @@ class HexElasticity:
                     if len(mirror):
                         np.add.at(mirrored, (3 * mirror[:, None] + np.arange(3)).ravel(), np.tile(share * self._flip(), len(mirror)))
                     compiled["load_regions"].append((direct, mirror, vector))
+                if relief is not None:
+                    compiled["inertia_relief"] = self._inertia(relief, case["name"], fixed_nodes, force, mirrored)
                 compiled["force"] = force
                 for fixed_part, part_force, sign in self._parts(fixed, force, mirrored):
                     part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
                     if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
-                        part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign}
+                        part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign, "support": fixed if self.symmetry is None else np.setdiff1d(fixed, self._plane_dofs(sign))}
                         compiled["parts"].append(part)
                         self.groups[fixed_part.tobytes()].append((compiled, part))
                 if not compiled["parts"]:
@@ -381,11 +387,68 @@ class HexElasticity:
         flip = np.ones(3)
         flip[self.axis] = -1
         return flip
+    def _plane_dofs(self, sign):
+        if sign > 0:
+            return 3 * self.plane_nodes + self.axis
+        return (3 * self.plane_nodes[:, None] + np.asarray([index for index in range(3) if index != self.axis])).ravel()
+    def _relief_support(self, loaded):
+        candidates = np.setdiff1d(np.intersect1d(self.interface_nodes, self.plane_nodes) if self.symmetry is not None else self.interface_nodes, loaded)
+        points = self.points[candidates]
+        a = int(np.argmin(points[:, 1] + 1e-3 * points[:, 2]))
+        b = int(np.argmax(np.linalg.norm(points - points[a], axis=1)))
+        normal = np.cross(points - points[a], points[b] - points[a])
+        c = int(np.argmax(np.linalg.norm(normal, axis=1)))
+        if np.linalg.norm(normal[c]) < 1e-9:
+            raise ValueError("Inertia-relief support requires three non-collinear interface nodes")
+        along, normal = np.abs(points[b] - points[a]), np.abs(np.cross(points[c] - points[a], points[b] - points[a]))
+        nodes = candidates[[a, b, c]]
+        dofs = [3 * nodes[0] + np.arange(3), 3 * nodes[1] + np.delete(np.arange(3), np.argmax(along)), [3 * nodes[2] + np.argmax(normal)]]
+        return nodes, np.sort(np.concatenate(dofs))
+    def _inertia(self, relief, case_name, support_nodes, force, mirrored):
+        flip = np.ones(3) if self.symmetry is None else self._flip()
+        direct, mirror = np.zeros(len(self.points)), np.zeros(len(self.points))
+        for item in relief.get("point_masses", []):
+            nodes = self._select_both(item["region"], case_name, "mass")
+            share = item["mass_g"] / (len(nodes[0]) + len(nodes[1]))
+            np.add.at(direct, nodes[0], share)
+            np.add.at(mirror, nodes[1], share)
+        if relief.get("preserve_mass_g", 0) > 0:
+            preserve = np.asarray(self.domain["preserve"], dtype=bool).ravel()
+            incidence = np.bincount(self.connectivity[preserve].ravel(), minlength=len(self.points)).astype(float)
+            incidence *= relief["preserve_mass_g"] / (incidence.sum() * (1 if self.symmetry is None else 2))
+            direct += incidence
+            if self.symmetry is not None:
+                mirror += incidence
+                direct[self.plane_nodes] += mirror[self.plane_nodes]
+                mirror[self.plane_nodes] = 0
+        positions = np.concatenate([self.points, self.points * flip])
+        masses = np.concatenate([direct, mirror])
+        applied = np.concatenate([force.reshape(-1, 3), mirrored.reshape(-1, 3) * flip])
+        total = masses.sum()
+        center = masses @ positions / total
+        arm = positions - center
+        inertia = np.eye(3) * np.sum(masses * np.sum(arm ** 2, axis=1)) - (arm * masses[:, None]).T @ arm
+        linear = applied.sum(axis=0) / total
+        angular = np.linalg.solve(inertia, np.cross(arm, applied).sum(axis=0))
+        inertial = -masses[:, None] * (linear + np.cross(angular, arm))
+        force += inertial[:len(self.points)].ravel()
+        mirrored += (inertial[len(self.points):] * flip).ravel()
+        return {"mass_g": float(total), "center_of_mass_mm": center.tolist(), "acceleration_n_per_g": linear.tolist(), "angular_acceleration": angular.tolist(), "support_nodes_mm": self.points[support_nodes].tolist()}
+    def support_reactions(self, physical_density, case_name, penalization=3.0, min_stiffness_ratio=1e-6):
+        case = next(case for case in self.cases if case["name"] == case_name)
+        density = np.asarray(physical_density, dtype=float).ravel()
+        stiffness = self.matrix(self.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization)).tocsr()
+        reactions = []
+        for part in case["parts"]:
+            displacement = np.zeros(self.ndof)
+            displacement[part["free"]] = splu(stiffness[part["free"], :][:, part["free"]].tocsc()).solve(part["force"][part["free"]])
+            residual = stiffness @ displacement - part["force"]
+            reactions.append({"sign": part["sign"], "support_dofs": len(part["support"]), "max_reaction_n": float(np.max(np.abs(residual[part["support"]]))), "nodal_force_sum_n": float(np.linalg.norm(part["force"].reshape(-1, 3), axis=1).sum())})
+        return reactions
     def _parts(self, fixed, force, mirrored):
         if self.symmetry is None:
             return [(fixed, force, 1.0)]
-        normal = 3 * self.plane_nodes + self.axis
-        tangential = (3 * self.plane_nodes[:, None] + np.asarray([index for index in range(3) if index != self.axis])).ravel()
+        normal, tangential = self._plane_dofs(1), self._plane_dofs(-1)
         symmetric, antisymmetric = (force + mirrored) / 2, (force - mirrored) / 2
         symmetric[normal], symmetric[tangential] = 0, force[tangential] / 2
         antisymmetric[tangential], antisymmetric[normal] = 0, force[normal] / 2
