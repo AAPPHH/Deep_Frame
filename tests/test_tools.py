@@ -185,9 +185,19 @@ def test_cached_ok_result_still_requires_all_verification_cases(tmp_path):
 def isolated_run_log(tmp_path, monkeypatch):
     monkeypatch.setattr(topology_pipeline, "RUN_LOG", tmp_path / "default_run_log.jsonl")
 
+CURRENT = {}
+
+def current_inputs():
+    if not CURRENT:
+        from deep_frame.frame import reference_parameters
+        parameters = reference_parameters()
+        built = pipeline.build_design_domain(deepcopy(parameters))
+        CURRENT.update(parameters=json.loads(json.dumps(parameters, default=str)), domain=json.loads(json.dumps({key: value for key, value in built.items() if not isinstance(value, np.ndarray)})))
+    return deepcopy(CURRENT)
+
 @pytest.fixture
 def study(tmp_path, monkeypatch):
-    historical = _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
+    historical = current_inputs()
     source = tmp_path / "source"
     source.mkdir()
     shape = (2, 2, 2)
@@ -858,7 +868,7 @@ def fake_fea(calls):
     return evaluate
 
 def implicit_source(tmp_path, connected=True):
-    historical = _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
+    historical = current_inputs()
     domain, density = mounted_domain()
     if not connected:
         density[28:40] = 0.0
@@ -930,13 +940,13 @@ def test_implicit_study_rejects_disconnected_mount_and_summarizes_ledger(tmp_pat
     assert run["kind"] == "implicit" and run["candidates"] == 1 and run["success_rate"] == 0.0 and run["statuses"] == {"mount_disconnected": 1}
 
 def test_comparison_inputs_check_saved_physics_against_the_saved_parameters():
-    historical = _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
+    historical, saved = current_inputs(), _read(pipeline.ROOT / "docs/validation/topology_phase1/inputs.json")
     variant = deepcopy(historical)
     variant["parameters"]["frame"]["wheelbase_mm"] = 131.0
     variant["domain"] = pipeline.build_design_domain(deepcopy(variant["parameters"]))
     assert variant["domain"]["comparison_load_cases"] != historical["domain"]["comparison_load_cases"]
     reference, settings = pipeline.comparison_inputs(variant, variant["domain"], 60.0, 70.0)
-    assert reference["settings"]["relative_constraints"] == historical["settings"]["relative_constraints"] and settings["mesh_timeout_s"] == 60.0
+    assert reference["settings"]["relative_constraints"] == saved["settings"]["relative_constraints"] and settings["mesh_timeout_s"] == 60.0
     with pytest.raises(ValueError, match="not consistent with the saved parameters: comparison_load_cases"):
         pipeline.comparison_inputs(variant, historical["domain"], 60.0, 70.0)
     tampered = deepcopy(variant["domain"])
