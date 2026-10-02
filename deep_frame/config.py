@@ -612,6 +612,79 @@ FEA_CONFIG = {
     },
 }
 
+PRINT_MATERIAL = {
+    "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+    "young_modulus_mpa": 4430.0,
+    "poisson_ratio": 0.30,
+    "density_g_cm3": 1.09,
+    "orthotropic": {"e_xy_mpa": 4430.0, "e_z_mpa": 2170.0, "nu_xy": 0.30, "nu_xz": 0.30, "g_xy_mpa": 1703.8, "g_z_mpa": 834.6},
+    "strength_xy_mpa": 102.0,
+    "strength_z_mpa": 48.0,
+    "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+    "measured": ["E_xy 4430 +/- 310 MPa", "E_z 2170 +/- 230 MPa", "tensile strength XY 102 +/- 7 MPa", "tensile strength Z 48 +/- 6 MPa", "density 1.09 g/cm3"],
+    "assumptions": {"nu_xy": "0.30 not in the TDS", "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)", "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+                    "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS", "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"},
+}
+
+EVALUATION_CONFIG = {
+    "name": None,
+    "stl": None,
+    "output": None,
+    "print_axis": [0.0, 0.0, 1.0],
+    "prop_diameter_mm": 65.0,
+    "motors": None,
+    "motor_up": {},
+    "ours": False,
+    "domain": None,
+    "datasheet": None,
+    "components": [],
+    "mount_patterns": [],
+    "keep_outs": [],
+    "connectors": [],
+    "selectors": None,
+    "domain_grid": [102, 96, 24],
+    "parts": ["geometry", "walls", "fea", "slicer"],
+    "python": sys.executable,
+    "compute": "C:/clones/Deep_Frame-int/tools/compute.py",
+    "voxel_mm": 0.4,
+    "loop_closing_mm": 3.0,
+    "overhang_deg": 45.0,
+    "bed_tolerance_mm": 0.2,
+    "fit_tolerance_mm3": 1.0,
+    "hub_radius_mm": 7.1,
+    "section_voxel_mm": 0.05,
+    "hole_tolerance_mm": 0.6,
+    "screw_head_radius_mm": 1.9,
+    "tool_skip_mm": 3.0,
+    "connector_radius_mm": 2.0,
+    "surface_samples": 5000,
+    "curvature_radius_mm": 1.0,
+    "seed": 0,
+    "loads": {"arm_tip_force_n": 3.6, "all_up_mass_g": 125.0, "standard_gravity_m_s2": 9.80665, "crash_front_g": 25.0, "crash_arm_g": 12.5, "crash_back_g": 12.5, "safety_factor": 2.0,
+              "sources": {"arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+                          "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+                          "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+                          "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+                          "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"}},
+    "fea_settings": {"threads": 4, "mesh_threads": 4, "mesh_timeout_s": 900.0, "solver_timeout_s": 900.0, "fea_memory_budget_mb": 9728.0, "mesh_minimum_sicn": 0.005, "fea_remesh_targets_mm": [2.0, 1.5], "num_modes": 6},
+    "slicer": {"executable": "C:/clones/prusaslicer/PrusaSlicer-2.9.6/prusa-slicer-console.exe", "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
+               "options": ["--nozzle-diameter", "0.4", "--layer-height", "0.2", "--first-layer-height", "0.2", "--perimeters", "2", "--fill-density", "15%", "--filament-diameter", "1.75", "--filament-density", "1.09",
+                           "--bed-shape", "0x0,256x0,256x256,0x256", "--max-print-height", "256", "--center", "128,128"],
+               "support": ["--support-material", "--support-material-auto"], "timeout_s": 1800.0,
+               "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed"},
+    "targets": {"airflow": ["geometry.airflow.prop_ring_share", None, 0.15], "overhang": ["geometry.printability.overhang_share", None, 0.25],
+                "support": ["scaled.support_per_volume", None, 1.5], "strut_min": ["geometry.form.strut_width_mm.p10", 1.19, None], "symmetry": ["scaled.symmetry_per_wheelbase", None, 0.0025],
+                "arm_tip_slope": ["scaled.arm_tip_slope", None, 0.007], "f1": ["fea.eigenfrequencies_hz.0", 330.0, None]},
+    "warnings": {"strut_max": ["geometry.form.strut_width_mm.p90", None, 6.5], "section_ratio": ["geometry.form.section_ratio.p50", 1.0, 1.4], "top_view_material": ["geometry.airflow.bbox_share", None, 0.45],
+                 "loops": ["geometry.form.loops.loops", 20, None], "roughness": ["geometry.form.roughness.curvature_neighbour_rms_per_mm", None, 0.18], "height": ["scaled.height_per_wheelbase", None, 0.4],
+                 "cog_offset": ["scaled.cog_offset_per_wheelbase", None, 0.01], "inertia_z": ["scaled.izz_per_mass_arm2", None, 0.45], "print_time": ["scaled.print_min_per_g", None, 16.0]},
+}
+
+EVALUATION_KINDS = {"name": "text", "stl": "path", "output": "path", "print_axis": ["float", "float", "float"], "prop_diameter_mm": "float", "motors": "object", "motor_up": "object", "ours": "flag", "domain": "path", "datasheet": "path", "components": "list",
+                    "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "slicer")], "python": "text", "compute": "text", "targets": "object", "warnings": "object",
+                    **{key: "float" for key in ("voxel_mm", "loop_closing_mm", "overhang_deg", "bed_tolerance_mm", "fit_tolerance_mm3", "hub_radius_mm", "section_voxel_mm", "hole_tolerance_mm", "screw_head_radius_mm", "tool_skip_mm", "connector_radius_mm", "curvature_radius_mm")},
+                    "surface_samples": "int", "seed": "int", "loads": "object", "fea_settings": "object", "slicer": "object"}
+
 INTEGRATION_CONFIG = {
     "model_version": "frame-v0-linear-fixtures-v1",
     "arm_tip_force_n": 3.6,
@@ -927,6 +1000,9 @@ def _convert(kind, value, key):
             return value
     elif kind == "text":
         if isinstance(value, str):
+            return value
+    elif kind in ("object", "list"):
+        if isinstance(value, dict if kind == "object" else list):
             return value
     elif kind == "path":
         if isinstance(value, (str, Path)):
