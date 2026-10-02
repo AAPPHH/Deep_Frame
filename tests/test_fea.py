@@ -466,7 +466,7 @@ def test_surface_preparation_never_welds_a_thin_web_silently(tmp_path):
     assert report["passed"] and not report["rejected_steps"] and report["merge_tolerance_mm"] < 1e-6
     welding = _mesh_settings({"fea_merge_relative_tolerance": 0.3 / web.scale})
     surface, report = _prepare_surface(web, welding, False, 2.0)
-    assert not report["rejected_steps"].get("merge_close_vertices", {}).get("watertight") and _topology(surface) == _topology(web) and not report["topology_changed"]
+    assert not report["cleanup_applied"] and not report["rejected_steps"] and _topology(surface) == _topology(web) and not report["topology_changed"]
     record = tmp_path / "attempt_metadata.json"
     with pytest.raises(ValueError, match="Prepared FEA surface"):
         _prepare_surface(thin_web_mesh(0.1), welding, False, 2.0, record)
