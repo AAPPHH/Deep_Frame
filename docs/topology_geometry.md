@@ -46,7 +46,7 @@ Die implizite Route blaeht jede Preserve-Primitive um `preserve_inflation_mm` = 
 
 ### Verbotene Volumina und Montage
 
-Die vorhandenen parametrisierbaren Komponenten-Platzhalter liefern die Bauraumhuellen fuer AIO15, Lux-Kamera mit Tilt, GNB5502S120A, vier Motoren, Props, XT30 und Balancer. Hardware erhaelt 0.5 mm Zusatzfreiraum; geplante untere Auflageflaechen behalten Kontaktabstand null ohne positives Durchdringungsvolumen. Props erhalten radial und axial 2 mm Freiraum. Die 65-mm-Scheibe bleibt die bewusst konservative Nutzervorgabe.
+Die vorhandenen parametrisierbaren Komponenten-Platzhalter liefern die Bauraumhuellen fuer AIO15, Lux-Kamera mit Tilt, GNB5502S120A, vier Motoren, Props, XT30 und Balancer. Hardware erhaelt 0.5 mm Zusatzfreiraum; geplante untere Auflageflaechen behalten Kontaktabstand null ohne positives Durchdringungsvolumen. Props erhalten radial und axial 2 mm Freiraum. Die Prop-Huelle ist die HQProp-T2.5X2X3V2S-Scheibe (63.5 mm) ueber die volle Nabenhoehe (5 mm ab Motoroberkante, Propebene aus der Nabengeometrie); mit Freiraum ergibt das einen Zylinder r = 33.75 mm, z = 11.9..20.9 mm.
 
 Zusaetzlich gesperrt werden Batterieentnahme nach oben, AIO-Einschub von rechts bei abgesteckten Kabeln, Kameraeinbau/Linsenkorridor nach vorne, Steckerentnahme nach oben, vorlaeufige Motor-/Balancer-Kabelkorridore und Schraub-/Antennenbohrungen. Diese Korridore sind nachvollziehbare Montageannahmen, keine vollstaendige Simulation aller Werkzeuge, biegsamen Kabel oder des Kamera-Sichtfeldes.
 

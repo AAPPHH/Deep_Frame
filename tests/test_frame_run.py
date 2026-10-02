@@ -20,7 +20,7 @@ def request(**changes):
 def test_component_defaults_stay_derivable_from_the_library():
     assert COMPONENT_DEFAULTS["aio15"]["mount_pitch_mm"] == 25.5 and COMPONENT_DEFAULTS["aio15"]["stack_height_mm"] == 6.0
     assert COMPONENT_DEFAULTS["motor"]["diameter_mm"] == 15.76 and COMPONENT_DEFAULTS["motor"]["mount_layout"] == "bolt_circle" and COMPONENT_DEFAULTS["motor"]["screw_clearance_mm"] == 2.2
-    assert COMPONENT_DEFAULTS["camera"]["tilt_deg"] == 20.0 and COMPONENT_DEFAULTS["prop"]["diameter_mm"] == 65.0
+    assert COMPONENT_DEFAULTS["camera"]["tilt_deg"] == 20.0 and COMPONENT_DEFAULTS["prop"]["diameter_mm"] == 63.5 and COMPONENT_DEFAULTS["prop"]["thickness_mm"] == 5.0 and COMPONENT_DEFAULTS["prop"]["mass_g"] == 1.2
     assert COMPONENT_DEFAULTS["xt30"]["mass_scope"] == "already_in_battery" and COMPONENT_DEFAULTS["balancer"]["pins"] == 3
     layout = FrameLayout(request())
     motor, aio = layout.components["motor"], layout.components["aio15"]
@@ -66,8 +66,8 @@ def test_presets_translate_deterministically():
     first, second = FrameLayout(request()), FrameLayout(request())
     assert json.dumps(first.summary(), sort_keys=True) == json.dumps(second.summary(), sort_keys=True)
     assert first.patch(["crash_front", "crash_arm"]) == second.patch(["crash_front", "crash_arm"])
-    assert first.frame["wheelbase_mm"] == 135.0 and first.frame["camera_y_mm"] == pytest.approx(35.0) and first.frame["antenna_y_mm"] == pytest.approx(56.0)
-    assert first.frame["connector_y_mm"] == pytest.approx(45.0) and first.motors()["front_right"] == pytest.approx([54.4632, 39.8749], abs=1e-4)
+    assert first.frame["wheelbase_mm"] == 132.5 and first.frame["camera_y_mm"] == pytest.approx(35.0) and first.frame["antenna_y_mm"] == pytest.approx(56.0)
+    assert first.frame["connector_y_mm"] == pytest.approx(45.0) and first.motors()["front_right"] == pytest.approx([53.4547, 39.1364], abs=1e-4)
     assert first.hoop()["x_mm"] == 12.0 and first.hoop()["path_yz_mm"][0] == pytest.approx([24.0, 27.5])
     patch = first.patch(["crash_front", "crash_arm"])
     assert patch["TOPOLOGY_CONFIG"]["optimizer"]["case_weights"] == {"crash_front": 2.0, "crash_arm": 2.0}

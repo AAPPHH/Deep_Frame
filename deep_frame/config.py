@@ -44,6 +44,26 @@ COMPONENT_LIBRARY = {
             "screw_clearance_mm": "design: 0.2 mm diametral clearance for M2",
         },
     },
+    "HQProp T2.5X2X3V2S": {
+        "type": "prop",
+        "dimensions_mm": {"diameter": 63.5, "hub_diameter": 9.8, "hub_height": 5.0, "shaft_diameter": 1.5},
+        "mass_g": 1.2,
+        "hole_pattern": None,
+        "keep_out": {"clearance_mm": 2.0},
+        "mounting": "shaft",
+        "data": {"size_in": 2.5, "pitch_in": 2.0, "blades": 3, "material": "polycarbonate", "rotation": "2 CW + 2 CCW", "adaptor_rings": False, "thrust_g_estimate": 206.0, "thrust_n_estimate": 2.02},
+        "source": "user decision: HQProp T2.5X2X3V2S (HQ Durable Prop T2.5X2X3 V2S), 2 CW + 2 CCW, polycarbonate, 1.5 mm shaft, no adaptor rings",
+        "model": "HQProp T2.5X2X3V2S 2.5 x 2 x 3 (user decision)",
+        "parameter_sources": {
+            "diameter_mm": "HQProp data: 2.5 inch = 63.5 mm",
+            "hub_diameter_mm": "HQProp data: hub diameter 9.8 mm",
+            "hub_height_mm": "HQProp data: hub thickness 5 mm; used as the axial extent of the swept prop disc",
+            "shaft_diameter_mm": "HQProp data: 1.5 mm shaft bore, matches GTS V3 1203 shaft tip",
+            "mass_g": "HQProp data: 1.2 g",
+            "thrust_n_estimate": "ESTIMATE: Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg, GTS V3 1203 8000KV table, row HQ T65R, 7.4 V, 100 % throttle: 206 g pull = 2.02 N; T65R is a 65 mm 3-blade HQ prop, not the T2.5X2X3V2S itself",
+            "keep_out_clearance_mm": "design: radial and axial prop clearance as TOPOLOGY_CONFIG prop_clearance_mm",
+        },
+    },
     "HDZero AIO15": {
         "type": "aio",
         "dimensions_mm": {"width": 31.3, "length": 31.3, "stack_height": 6.0, "grommet_height": 3.0},
@@ -126,9 +146,10 @@ LIBRARY_FIELDS = {
     "battery": ["dimensions_mm.length", "dimensions_mm.width", "dimensions_mm.height", "data.power_connector", "data.balance_connector"],
     "antennas": ["dimensions_mm.bore", "dimensions_mm.holder_height"],
     "connector": ["dimensions_mm.width", "dimensions_mm.length", "dimensions_mm.height"],
+    "prop": ["dimensions_mm.diameter", "dimensions_mm.hub_diameter", "dimensions_mm.hub_height", "dimensions_mm.shaft_diameter", "data.size_in", "data.pitch_in", "data.blades"],
 }
-MOUNTING_TYPES = ("grommets", "screws", "strap", "eyelet")
-PROP_RULE = {"swept_margin_mm": 1.5, "thickness_mm": 0.8, "mass_g": 0.7, "source": "layout rule: swept disk = prop size x 25.4 mm + 1.5 mm margin (2.5 inch -> 65 mm)",
+MOUNTING_TYPES = ("grommets", "screws", "strap", "eyelet", "shaft")
+PROP_RULE = {"swept_margin_mm": 1.5, "thickness_mm": 0.8, "mass_g": 0.7, "source": "PROVISIONAL layout rule for prop sizes without a library entry: swept disk = prop size x 25.4 mm + 1.5 mm margin",
              "parameter_sources": {"thickness_mm": "PROVISIONAL: swept disk thickness; excludes blade flex", "mass_g": "PROVISIONAL: prop model not selected; equivalent uniform disk inertia"}}
 LEGACY_HOLE_KEYS = {"layout": "mount_layout", "pitch_mm": "mount_pitch_mm", "screw_diameter_mm": "screw_diameter_mm", "clearance_diameter_mm": "screw_clearance_mm"}
 
@@ -142,14 +163,17 @@ def component_spec(entry):
     spec.update({key: deepcopy(entry[key]) for key in ("source", "model", "mass_scope", "parameter_sources") if key in entry})
     return spec
 
-def prop_spec(size_in, rule=PROP_RULE):
+def prop_spec(size_in, entry=None, rule=PROP_RULE):
+    if entry is not None and entry["data"]["size_in"] == size_in:
+        return {**component_spec(entry), "thickness_mm": entry["dimensions_mm"]["hub_height"]}
     return {"diameter_mm": round(size_in * 25.4 + rule["swept_margin_mm"], 3), **{key: deepcopy(value) for key, value in rule.items() if key != "swept_margin_mm"}}
 
 DEFAULT_SELECTION = {"aio15": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "motor": "GTS V3 1203", "xt30": "AMASS XT30U-F", "balancer": "JST XHP-3"}
+DEFAULT_PROP = "HQProp T2.5X2X3V2S"
 COMPONENT_DEFAULTS = {name: component_spec(COMPONENT_LIBRARY[part]) for name, part in DEFAULT_SELECTION.items()}
 COMPONENT_DEFAULTS["camera"]["tilt_deg"] = 20.0
 COMPONENT_DEFAULTS["camera"]["parameter_sources"]["tilt_deg"] = "design: adjustable initial camera tilt"
-COMPONENT_DEFAULTS["prop"] = prop_spec(2.5)
+COMPONENT_DEFAULTS["prop"] = prop_spec(2.5, COMPONENT_LIBRARY[DEFAULT_PROP])
 
 FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'lateral_longitudinal_ratio': 1.3658536585365855,
@@ -202,7 +226,7 @@ FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'antenna_y_mm': 56.0,
  'cable_slot_width_mm': 4.0,
  'cable_slot_height_mm': 3.0,
- 'prop_motor_gap_mm': 2.0}
+ 'prop_motor_gap_mm': 0.0}
 
 FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                   'kind': 'design_assumption',
@@ -624,15 +648,15 @@ FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                           'rationale': 'Aus Steckerhuellen, Clearance und '
                                        'Propellerfreigang abgeleitete eigene '
                                        'Heckabmessung.'},
- 'prop_motor_gap_mm': {'value': 2.0,
+ 'prop_motor_gap_mm': {'value': 0.0,
                        'kind': 'design_assumption',
                        'frame_ids': ['tadpole_hd_3', 'tadpole_2_5'],
                        'principle_ids': ['deck_load_path',
                                          'functional_voids',
                                          'component_driven'],
-                       'rationale': 'Aus AIO15- und Akkuhuelle, Stegbreiten '
-                                    'und2-mm-Mindestwand abgeleitete eigene '
-                                    'Druckabmessung.'}}
+                       'rationale': 'HQProp T2.5X2X3V2S ohne Adapterringe: die '
+                                    '5-mm-Nabe sitzt direkt auf der Motorglocke, '
+                                    'die Propscheibe beginnt an der Motoroberkante.'}}
 
 FEA_CONFIG = {
     "material": {
@@ -1054,13 +1078,13 @@ DURABILITY = {
 }
 
 FRAME_REQUEST = {"name": None, "style": "freestyle", "durability": "standard", "prop_size_in": 2.5, "layout": {"x_type": "compressed_x", "battery_mount": "top"},
-                 "components": {"motor": "GTS V3 1203", "aio": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "antennas": "HDZero VTX + ELRS"},
+                 "components": {"motor": "GTS V3 1203", "aio": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "antennas": "HDZero VTX + ELRS", "prop": "HQProp T2.5X2X3V2S"},
                  "material": "PA6-CF", "print": {"nozzle_mm": 0.4, "layer_mm": 0.2}, "overrides": {}, "grid": "coarse"}
 FRAME_REQUEST_KINDS = {"name": "text", "style": tuple(STYLES), "durability": tuple(DURABILITY), "prop_size_in": "float", "layout": "object", "components": "object",
                        "material": tuple(MATERIALS), "print": "object", "overrides": "object", "grid": ("coarse", "fine")}
 FRAME_LAYOUT_KINDS = {"x_type": tuple(LAYOUT_RULES["x_types"]), "battery_mount": tuple(LAYOUT_RULES["battery_mounts"])}
 FRAME_PRINT_KINDS = {"nozzle_mm": "float", "layer_mm": "float"}
-FRAME_COMPONENT_KINDS = {"motor": "text", "aio": "text", "camera": "text", "battery": "text", "antennas": "text"}
+FRAME_COMPONENT_KINDS = {"motor": "text", "aio": "text", "camera": "text", "battery": "text", "antennas": "text", "prop": "text"}
 
 RUN_GRIDS = {
     "coarse": {"shape": [68, 64, 24], "fine_shape": [136, 128, 48], "neural": {"max_iterations": 60, "minimum_iterations": 30, "sharpness_iterations": 45, "max_runtime_s": 900.0},

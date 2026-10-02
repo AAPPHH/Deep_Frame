@@ -25,7 +25,7 @@ def test_domain_is_free_connected_3d_space_with_small_preserve_fraction(domain):
     assert np.array_equal(domain["forbidden"], ~domain["allowed"])
     assert label(domain["allowed"])[1] == 1
     assert domain["metadata"]["free_fraction_of_allowed"] > 0.95
-    assert domain["metadata"]["allowed_cells"] > 5000
+    assert domain["metadata"]["allowed_cells"] > domain["allowed"].size / 2
     assert np.count_nonzero(domain["allowed"].any(axis=(0, 1))) == 8
     assert len([region for region in domain["regions"] if region["role"] == "allowed"]) == 1
     assert domain["metadata"]["preserve_volume_mm3"] == domain["preserve"].sum() * 64.0

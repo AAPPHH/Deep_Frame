@@ -74,7 +74,9 @@ class FrameLayout:
         battery = self.parts["battery"]
         connectors = {"xt30": battery["data"]["power_connector"], "balancer": battery["data"]["balance_connector"]}
         specs = {"aio15": component_spec(self.parts["aio"]), "camera": component_spec(self.parts["camera"]), "battery": component_spec(battery), "motor": component_spec(self.parts["motor"]),
-                 **{name: component_spec(library_part("connector", part)) for name, part in connectors.items()}, "prop": prop_spec(self.request["prop_size_in"])}
+                 **{name: component_spec(library_part("connector", part)) for name, part in connectors.items()}, "prop": prop_spec(self.request["prop_size_in"], self.parts["prop"])}
+        if self.parts["prop"]["data"]["size_in"] != self.request["prop_size_in"]:
+            self.notes.append(f"prop {self.request['components']['prop']} is {self.parts['prop']['data']['size_in']:g} inch; {self.request['prop_size_in']:g} inch uses the provisional swept-disk rule")
         specs["camera"]["tilt_deg"] = self._override("camera", "tilt_deg", COMPONENT_DEFAULTS["camera"]["tilt_deg"])
         specs["camera"].setdefault("parameter_sources", {})["tilt_deg"] = "override" if "tilt_deg" in self.overrides.get("camera", {}) else "design: adjustable initial camera tilt"
         return specs

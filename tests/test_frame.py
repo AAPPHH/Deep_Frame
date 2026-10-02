@@ -101,7 +101,7 @@ def test_component_envelopes_and_mass(component_config):
         "camera": (16.0, 14.0, 14.0),
         "battery": (30.0, 63.0, 11.0),
         "motor": (14.2, 14.2, 14.6),
-        "prop": (65.0, 65.0, 0.8),
+        "prop": (63.5, 63.5, 5.0),
         "xt30": (10.2, 12.4, 5.2),
         "balancer": (9.8, 7.5, 5.7),
     }
@@ -231,6 +231,7 @@ def test_cad_mass_and_parallel_axis_tensor_match_two_boxes():
 def test_projected_battery_overlap_matches_half_circle_area():
     parameters = reference_parameters()
     parameters["components"]["battery"].update(width_mm=65, length_mm=65)
+    parameters["components"]["prop"]["diameter_mm"] = 65.0
     components = {
         "battery": {"kind": "battery", "center_of_mass_mm": [32.5, 0, 30]},
         "prop": {"kind": "prop", "center_of_mass_mm": [0, 0, 20]},
