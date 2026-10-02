@@ -201,7 +201,7 @@ def blocked(mesh, starts, direction, skip):
     direction = np.asarray(direction, dtype=float) / np.linalg.norm(direction)
     inside = mesh.contains(starts)
     locations, rays, _ = mesh.ray.intersects_location(starts, np.repeat([direction], len(starts), axis=0), multiple_hits=True)
-    distance = np.round(np.einsum("ij,j->i", locations - starts[rays], direction), 4)
+    distance = np.round(np.einsum("ij,j->i", np.reshape(locations, (-1, 3)) - starts[rays], direction), 4)
     entries = [np.unique(distance[rays == index])[int(inside[index])::2] for index in range(len(starts))]
     return np.array([bool(np.any(values > skip)) for values in entries])
 
