@@ -603,6 +603,20 @@ FEA_CONFIG = {
     },
 }
 
+PRINT_MATERIAL = {
+    "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+    "young_modulus_mpa": 4430.0,
+    "poisson_ratio": 0.30,
+    "density_g_cm3": 1.09,
+    "orthotropic": {"e_xy_mpa": 4430.0, "e_z_mpa": 2170.0, "nu_xy": 0.30, "nu_xz": 0.30, "g_xy_mpa": 1703.8, "g_z_mpa": 834.6},
+    "strength_xy_mpa": 102.0,
+    "strength_z_mpa": 48.0,
+    "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+    "measured": ["E_xy 4430 +/- 310 MPa", "E_z 2170 +/- 230 MPa", "tensile strength XY 102 +/- 7 MPa", "tensile strength Z 48 +/- 6 MPa", "density 1.09 g/cm3"],
+    "assumptions": {"nu_xy": "0.30 not in the TDS", "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)", "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+                    "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS", "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"},
+}
+
 INTEGRATION_CONFIG = {
     "model_version": "frame-v0-linear-fixtures-v1",
     "arm_tip_force_n": 1.0,
@@ -854,6 +868,9 @@ def _convert(kind, value, key):
             return value
     elif kind == "text":
         if isinstance(value, str):
+            return value
+    elif kind == "object":
+        if isinstance(value, dict):
             return value
     elif kind == "path":
         if isinstance(value, (str, Path)):

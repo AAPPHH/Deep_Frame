@@ -141,13 +141,31 @@ def _mass_lines(nodes, elements, point_masses):
         coupling_info.append({"name": mass["name"], "mass_g": mass["mass_g"], "position_mm": list(mass["position_mm"]), "attachment_nodes": len(selected), "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"})
     return lines, coupling_info
 
+def print_axes(axis):
+    normal = _vector(axis, "print_axis")
+    normal = normal / np.linalg.norm(normal)
+    first = np.array([1.0, 0.0, 0.0]) if abs(normal[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+    first = first - first.dot(normal) * normal
+    first /= np.linalg.norm(first)
+    return first, np.cross(normal, first), normal
+
+def _elastic_lines(material):
+    constants = material.get("orthotropic")
+    if not constants:
+        return ["*ELASTIC", f"{material['young_modulus_mpa']:.12g},{material['poisson_ratio']:.12g}"], [], ""
+    c = constants
+    first, second, _ = print_axes(material.get("print_axis", (0, 0, 1)))
+    elastic = ["*ELASTIC,TYPE=ENGINEERING CONSTANTS", ",".join(f"{v:.12g}" for v in (c["e_xy_mpa"], c["e_xy_mpa"], c["e_z_mpa"], c["nu_xy"], c["nu_xz"], c["nu_xz"], c["g_xy_mpa"], c["g_z_mpa"])), f"{c['g_z_mpa']:.12g}"]
+    return elastic, ["*ORIENTATION,NAME=PRINTAXES,SYSTEM=RECTANGULAR", ",".join(f"{v:.12g}" for v in (*first, *second))], ",ORIENTATION=PRINTAXES"
+
 def _model_lines(nodes, elements, material, point_masses):
     lines = ["*HEADING", "Deep Frame linear elastic analysis", "*NODE"]
     lines.extend(f"{node}," + ",".join(f"{v:.12g}" for v in xyz) for node, xyz in nodes.items())
     lines.append("*ELEMENT,TYPE=C3D10,ELSET=FRAME")
     lines.extend(f"{element}," + ",".join(str(n) for n in connectivity) for element, connectivity in elements.items())
     lines.extend(_set_lines("NSET", "NALL", nodes))
-    lines.extend(["*MATERIAL,NAME=PRINT", "*ELASTIC", f"{material['young_modulus_mpa']:.12g},{material['poisson_ratio']:.12g}", "*DENSITY", f"{material['density_g_cm3'] * 1e-9:.12g}", "*SOLID SECTION,ELSET=FRAME,MATERIAL=PRINT"])
+    elastic, orientation, section = _elastic_lines(material)
+    lines.extend(["*MATERIAL,NAME=PRINT", *elastic, "*DENSITY", f"{material['density_g_cm3'] * 1e-9:.12g}", *orientation, "*SOLID SECTION,ELSET=FRAME,MATERIAL=PRINT" + section])
     mass_lines, information = _mass_lines(nodes, elements, point_masses)
     return lines + mass_lines, information
 
@@ -178,7 +196,7 @@ def _case_lines(nodes, case, settings):
             load_nodes.append((selected, force))
         for node, force in accumulated.items():
             lines.extend(f"{node},{axis + 1},{value:.12g}" for axis, value in enumerate(force) if value)
-        lines.extend(["*NODE PRINT,NSET=NALL", "U", "*EL PRINT,ELSET=FRAME", "S"])
+        lines.extend(["*NODE PRINT,NSET=NALL,GLOBAL=YES", "U", "*EL PRINT,ELSET=FRAME,GLOBAL=YES", "S"])
     else:
         raise ValueError(f"Unknown analysis type: {case['analysis']}")
     lines.append("*END STEP")
@@ -208,12 +226,15 @@ def _numeric_lines(content, header, columns):
         raise RuntimeError(f"Missing or non-finite CalculiX output: {header}")
     return np.asarray(results)
 
-def _static_result(content, load_nodes):
+def _static_result(content, load_nodes, axis=(0, 0, 1)):
     displacement_data = _numeric_lines(content, "displacements (", 4)
     stress_data = _numeric_lines(content, "stresses (", 8)
     displacements = {int(row[0]): row[1:] for row in displacement_data}
     sxx, syy, szz, sxy, sxz, syz = stress_data[:, 2:].T
     von_mises = np.sqrt(0.5 * ((sxx - syy) ** 2 + (syy - szz) ** 2 + (szz - sxx) ** 2) + 3 * (sxy ** 2 + sxz ** 2 + syz ** 2))
+    n = print_axes(axis)[2]
+    normal = sxx * n[0] ** 2 + syy * n[1] ** 2 + szz * n[2] ** 2 + 2 * (sxy * n[0] * n[1] + sxz * n[0] * n[2] + syz * n[1] * n[2])
+    quantiles = {f"{name}_p{label}_mpa": float(np.percentile(values, q)) for label, q in (("99", 99.0), ("999", 99.9)) for name, values in (("von_mises", von_mises), ("print_normal_tension", np.maximum(normal, 0.0)), ("print_normal_abs", np.abs(normal)))}
     loading = []
     for selected, force in load_nodes:
         mean = np.mean([displacements[node] for node in selected], axis=0)
@@ -221,7 +242,7 @@ def _static_result(content, load_nodes):
         if directional <= 0:
             raise RuntimeError("Non-positive directional compliance")
         loading.append({"node_count": len(selected), "force_n": force.tolist(), "mean_displacement_mm": mean.tolist(), "directional_displacement_mm": directional, "stiffness_n_per_mm": float(np.linalg.norm(force) / directional)})
-    return {"analysis": "static", "max_displacement_mm": float(np.max(np.linalg.norm(displacement_data[:, 1:], axis=1))), "max_von_mises_mpa": float(np.max(von_mises)), "loads": loading, "stiffness_n_per_mm": loading[0]["stiffness_n_per_mm"] if len(loading) == 1 else None}
+    return {"analysis": "static", "max_displacement_mm": float(np.max(np.linalg.norm(displacement_data[:, 1:], axis=1))), "max_von_mises_mpa": float(np.max(von_mises)), **quantiles, "stress_samples": len(von_mises), "print_axis": n.tolist(), "loads": loading, "stiffness_n_per_mm": loading[0]["stiffness_n_per_mm"] if len(loading) == 1 else None}
 
 def _modal_result(content, settings):
     values = _numeric_lines(content, "E I G E N V A L U E", 5)
@@ -380,7 +401,7 @@ def evaluate(solid, material, point_masses, load_cases, settings):
             if "Job finished" not in log:
                 raise RuntimeError(f"CalculiX did not finish case {case['name']}")
             content = (directory / f"{name}.dat").read_text(encoding="utf-8", errors="replace")
-            current = _static_result(content, load_nodes) if case["analysis"] == "static" else _modal_result(content, settings)
+            current = _static_result(content, load_nodes, material.get("print_axis", (0, 0, 1))) if case["analysis"] == "static" else _modal_result(content, settings)
             current["fixed_node_count"] = fixed_count
             result["load_cases"][case["name"]] = current
             result["artifacts"][case["name"]] = {"input": str(directory / f"{name}.inp"), "data": str(directory / f"{name}.dat"), "log": str(directory / f"{name}.log")}

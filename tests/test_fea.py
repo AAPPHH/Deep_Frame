@@ -9,7 +9,7 @@ import pytest
 import trimesh
 from build123d import Align, Box, Pos, Solid
 
-from deep_frame.config import CONFIG, FEA_CONFIG, IMPLICIT_CONFIG
+from deep_frame.config import CONFIG, FEA_CONFIG, IMPLICIT_CONFIG, PRINT_MATERIAL
 from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, _prepare_surface, _read_mesh, _run, _select, _topology, _volume_mesh, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
 from tests.test_frame import frame
@@ -526,3 +526,16 @@ def test_fallback_attempts_get_the_short_timeout(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="All tetrahedral meshing attempts failed"):
         _volume_mesh(trimesh.creation.box(extents=(4, 4, 4)), tmp_path, settings, {})
     assert seen == [("remesh_hxt", 900.0), ("classify_hxt", 120.0), ("classify_delaunay", 120.0)]
+
+def test_orthotropic_print_axis_sets_axial_stiffness_and_print_normal_stress(tmp_path):
+    solid = Box(10, 10, 20, align=(Align.CENTER, Align.CENTER, Align.MIN)).solid()
+    settings = deepcopy(FEA_CONFIG["settings"])
+    settings.update(mesh_size_mm=2.5, work_dir=str(tmp_path), stiffness_load_case="axial", num_modes=1)
+    cases = [{"name": "axial", "analysis": "static", "fixed_regions": [{"kind": "box", "min_mm": [-6, -6, -0.01], "max_mm": [6, 6, 0.01]}], "loads": [{"region": {"kind": "box", "min_mm": [-6, -6, 19.99], "max_mm": [6, 6, 20.01]}, "force_n": [0, 0, 100.0]}]}]
+    results = {axis: evaluate(solid, {**PRINT_MATERIAL, "print_axis": vector}, [], cases, settings) for axis, vector in (("z", [0, 0, 1]), ("x", [1, 0, 0]))}
+    assert all(result["status"] == "ok" for result in results.values()), [result["diagnostics"] for result in results.values()]
+    ratio = results["x"]["stiffness_n_per_mm"] / results["z"]["stiffness_n_per_mm"]
+    constants = PRINT_MATERIAL["orthotropic"]
+    assert ratio == pytest.approx(constants["e_xy_mpa"] / constants["e_z_mpa"], rel=0.04)
+    along, across = (results[axis]["load_cases"]["axial"]["print_normal_abs_p99_mpa"] for axis in ("z", "x"))
+    assert 0.9 < along < 2.0 and across < 0.25 * along
