@@ -1,0 +1,5 @@
+| Frame | 1 Masse | 2 Schwerpunkt, Trägheit | 3 Luftstrom (Material im Propkreis) | 4 Montage | 5 Druckbarkeit | 6 Form | 7 Steifigkeit Armspitze | 8 Resonanz | 9 Crash p99,9 v. Mises/σ_Druckachse | Verfehlt |
+|---|---|---|---|---|---|---|---|---|---|---|
+| BM Aether 4 (Ø9, body12) | 86,2 g | SP z 32,7 mm; Ixx/Iyy/Izz 324/310/554 kg·mm² (K) | 14,0 % (102 mm) | Bohrb. 24/24, Passung ok, Werkzeug nein, Stecker n/a | Überh. 23,8 %, Öffn. r=1 4,26 %, Stütze 114,89 cm³, 1086 min | Strebe 1,4/3,6/6,4 mm, H/B 1,25, offen 59 %, Höhe 76,2 mm, Körper 1, Schlaufen 28, Sym. 0,15 mm, Rauh. 0,129/mm | 12,7 N/mm (A) | f1 347 Hz; 416/779/823 (A) | front 9,5/2,7 MPa; arm 2,3/0,6 MPa; back 1,3/0,5 MPa (SF 2,0, A) | tools_reachable |
+
+(A) beruht auf Materialannahmen: ν = 0,30 und G13/G23 = E_z/(2(1+ν)) sind nicht im Bambu-PA6-CF-Datenblatt; E_xy, E_z, Festigkeiten und Dichte stammen aus dem Datenblatt. (K) Komponentenmassen und -maße aus unserer Hardware-Konfiguration, bei Referenzen auf deren Aufnahmen gesetzt. Crash: Spannung als 99,9-%-Wert der Integrationspunkte; Grenze σ_xy 102 MPa und σ_z 48 MPa geteilt durch SF.
