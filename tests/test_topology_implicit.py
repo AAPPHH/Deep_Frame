@@ -6,7 +6,7 @@ import trimesh
 from scipy.ndimage import distance_transform_edt, gaussian_filter
 
 from deep_frame.topology_geometry import rasterize_regions, region_contains
-from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, _connected, _round_float32, build_field, extension_guard, fill_enclosed_voids, capped_faces, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
+from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, _connected, _round_float32, build_field, extension_guard, fill_enclosed_voids, capped_faces, build_implicit, drop_specks, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
 
 def box(name, role, low, high, **extra):
     return {"name": name, "role": role, "kind": "box", "min_mm": list(low), "max_mm": list(high), **extra}
@@ -535,3 +535,13 @@ def test_float32_rounding_collapses_sub_spacing_boolean_edges():
     rounded, report = _round_float32(split, 1e-4)
     assert report["passed"] and report["merged_vertices"] == 1 and report["collapsed_faces"] == 2 and len(rounded.faces) == 12
     assert rounded.is_watertight and rounded.is_winding_consistent and vertex_manifold(rounded)["passed"] and rounded.volume == pytest.approx(64.0)
+
+def test_extraction_drops_only_tiny_specks():
+    body = trimesh.creation.box(bounds=[[0, 0, 0], [20, 20, 20]])
+    void = trimesh.creation.box(bounds=[[5, 5, 5], [5.1, 5.1, 5.1]])
+    void.invert()
+    kept, specks = drop_specks(trimesh.util.concatenate([body, void]), 0.005)
+    assert kept.body_count == 1 and np.isclose(kept.volume, 8000) and len(specks) == 1 and specks[0]["volume_mm3"] < 0
+    other = trimesh.creation.box(bounds=[[30, 0, 0], [40, 10, 10]])
+    mesh, specks = drop_specks(trimesh.util.concatenate([body, other]), 0.005)
+    assert mesh.body_count == 2 and not specks

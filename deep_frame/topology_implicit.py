@@ -761,6 +761,17 @@ def export_mesh(mesh, directory):
     mesh.export(directory/"geometry.stl")
     return {name: {"sha256": _file_digest(directory/name), "size_bytes": (directory/name).stat().st_size} for name in ("geometry.ply", "geometry.stl")}
 
+def drop_specks(mesh, fraction):
+    if mesh.body_count < 2:
+        return mesh, []
+    parts = mesh.split(only_watertight=False)
+    largest = max(abs(part.volume) for part in parts)
+    specks = [part for part in parts if abs(part.volume) < largest and abs(part.volume) <= fraction*largest]
+    if not specks or len(specks) != len(parts)-1:
+        return mesh, []
+    kept = next(part for part in parts if abs(part.volume) == largest)
+    return kept, [{"volume_mm3": float(part.volume), "faces": len(part.faces), "center_mm": part.bounds.mean(axis=0).tolist()} for part in specks]
+
 def build_implicit(domain, density, settings, progress=None):
     field, report = build_field(domain, density, settings, progress)
     config, timings = report["settings"], report["timings_s"]
@@ -776,6 +787,7 @@ def build_implicit(domain, density, settings, progress=None):
         fail("extraction", str(error), None)
     timings["extraction"] = perf_counter()-started
     _progress(progress, "extraction", report, mesh=raw)
+    raw, report["extraction"]["dropped_specks"] = drop_specks(raw, config["detached_volume_max_fraction"])
     if not _one_mesh(raw):
         fail("extraction", "Marching cubes surface is not one closed oriented body", raw)
     started = perf_counter()
