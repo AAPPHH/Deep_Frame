@@ -1,6 +1,8 @@
 # Kalibrierung der Wandprüfung an ManaFly3
 
-Ziel: Unsere 2-mm-Wandprüfung an einem realen Frame kalibrieren, der fliegt und Crashs übersteht (ManaFly 3" BETA V4). Gemessen wurde mit zwei Methoden, auf drei Netzen und mit identischen Einstellungen. Status: Proof of Concept, 2026-10-02.
+Ziel: Unsere 2-mm-Wandprüfung an einem realen Frame kalibrieren, der fliegt und Crashs übersteht (ManaFly 3" BETA V4). Gemessen wurde mit zwei Methoden, auf drei Netzen und mit identischen Einstellungen.
+
+**Status:** Umgesetzt als blockierende Prüfung (Commit 9d464e6). **VORLÄUFIG:** kalibriert an der Herstellergeometrie von ManaFly (BETA V4, kein eigener Test); Aether4 als zweiter Datenpunkt (ergänzt, Abschnitt unten); endgültig nach eigenen Falltests in M2.
 
 ## Eingaben
 
@@ -74,7 +76,7 @@ Zum Vergleich protokolliert die Pipeline mit Bohrungszugabe 338 (gpu708) bzw. 30
   - Methode A allein kann diese Fälle nicht von echten dünnen Wänden trennen; Methode B kann es.
 - **Kantenrundung (flacher Abtrag von B) liegt bei allen drei bei 0,5–0,9 %.** Das ist kein Wandmaß und darf nicht in eine Regel eingehen.
 
-## Empfohlene kalibrierte Regel (Vorschlag, nicht umgesetzt)
+## Kalibrierte Regel (umgesetzt, vorläufig)
 
 Die 2-mm-Mindestwand bleibt als Auslegungsvorgabe unverändert, und die Feld-Öffnung (r = 1,35 mm) bleibt Pflicht. Die Kalibrierung zeigt: Ein flugfähiger, crashfester Frame liegt weit über allen Werten unserer Frames. Die Regel ist deshalb von ManaFly abgeleitet, mit Sicherheitsfaktor ≈ 10 (mindestens 5, falls ein Teil von ManaFlys tiefem Volumen nur Quantisierung um 2,0 mm ist). Sie bewertet das Endnetz, nicht einzelne Strahlproben:
 
@@ -88,14 +90,45 @@ Die 2-mm-Mindestwand bleibt als Auslegungsvorgabe unverändert, und die Feld-Öf
    - Proben unter 0,1 mm und Proben in der Grundebene zählen als Artefakt, wenn B dort keine tiefe Komponente findet.
    - `wall_screen_blocking` bleibt `False`.
 
-Beide aktuellen Frames erfüllen diese Regel:
+Umsetzung (Commit 9d464e6): `wall_rule` in `deep_frame/topology_implicit_validation.py`, aufgerufen von `MeshAcceptance.features`. Bericht unter `checks.features.wall_opening` (blockierend) und `checks.features.wall_warning` (Warnung). Werte in `IMPLICIT_CONFIG`:
+
+| Schlüssel | Standard | Bedeutung |
+|---|---|---|
+| `wall_voxel_mm` | 0,1 | Voxelgröße h (Gate, darf nur kleiner werden) |
+| `wall_opening_radius_mm` | 1,0 | Öffnungsradius r (Gate, darf nur größer werden) |
+| `wall_deep_mm` | 0,45 | Tiefe, ab der eine Komponente „tief“ ist (Gate, nur kleiner) |
+| `wall_deep_max_fraction` | 0,005 | tiefes Volumen / Teilvolumen (Gate, nur kleiner) |
+| `wall_deep_component_max_mm3` | 5,0 | größte tiefe Komponente (Gate, nur kleiner) |
+| `wall_motor_zone_margin_mm` | 2,0 | Motorzone = Preserve-Regionen mit „motor“ im Namen, AABB ± Rand (Gate, nur größer) |
+| `wall_tile_voxels` | 120 | Kachelbreite in x (nur Speicher) |
+| `wall_thin_max_fraction` | 0,01 | Warnung: Anteil A < Minimum |
+| `wall_very_thin_mm` / `wall_very_thin_max_fraction` | 1,5 / 0,0005 | Warnung: Anteil A < 1,5 mm |
+
+Die Warnanteile werden vor jeder Bohrungszugabe gezählt. Die Artefaktausnahme (Proben < 0,1 mm, Grundebene) ist nicht umgesetzt; sie betrifft nur die Warnung. Spalten ohne Abschluss in z (Windungszahl ≠ 0) und ein leeres Teil lassen die Prüfung scheitern. Bericht: tiefes Volumen und Anteil, tiefe Komponenten, größte, Motortreffer, flacher Abtrag (Kantenrundung), Laufzeit.
+
+Nachprüfung aller PoC-Frames mit der eingebauten Prüfung (`exports/implicit/poc/*/candidates/c00/geometry.stl`, Regionen aus `density_source/inputs.json`, je ≈ 2 min CPU): alle bestehen den blockierenden Teil, keine Motortreffer. wb142 verfehlt nur die Warnung (A < 1,5 mm 0,069 % > 0,05 %).
+
+| Frame | B tief | größte tiefe Komponente | Motortreffer | flach mm³ | A < 2,0 mm | A < 1,5 mm | blockierend |
+|---|---|---|---|---|---|---|---|
+| bat_large | 0 % | – | 0 | 259 | 0,26 % | 0,003 % | bestanden |
+| bat_small | 0 % | – | 0 | 254 | 0,26 % | 0,002 % | bestanden |
+| combo_compact | 0 % | – | 0 | 249 | 0,27 % | 0,003 % | bestanden |
+| combo_heavy | 0 % | – | 0 | 256 | 0,28 % | 0,031 % | bestanden |
+| fine_c01 | 0,010 % (2 Komp.) | 3,1 mm³ | 0 | 280 | 0,27 % | 0,003 % | bestanden |
+| gpu708_t025 | 0 % | – | 0 | 256 | 0,26 % | 0,006 % | bestanden |
+| load_arm2 | 0 % | – | 0 | 255 | 0,27 % | 0,006 % | bestanden |
+| load_impact2 | 0 % | – | 0 | 254 | 0,26 % | 0,002 % | bestanden |
+| wb131 | 0 % | – | 0 | 251 | 0,27 % | 0,003 % | bestanden |
+| wb142 | 0 % | – | 0 | 255 | 0,33 % | **0,069 %** | bestanden (Warnung) |
+
+Ursprüngliche Kalibrierung (Skript im Scratchpad):
 
 | Frame | B tief entfernt | größte tiefe Komponente | A < 2,0 mm | A < 1,5 mm |
 |---|---|---|---|---|
 | gpu708 | 0 % | – | 0,26 % | 0,006 % |
 | fine c01 | 0,010 % | 3,1 mm³ | 0,26 % | 0,003 % |
 
-ManaFly verfehlt sie bewusst, denn die Regel enthält den Sicherheitsfaktor. Wenn die Regel eingeführt wird, ist B als Gate günstig: 2–3 min CPU pro Kandidat bei h = 0,1 mm.
+ManaFly verfehlt sie bewusst, denn die Regel enthält den Sicherheitsfaktor. B als Gate kostet ≈ 2 min CPU pro Kandidat bei h = 0,1 mm.
 
 ## Zweiter Datenpunkt: BM Aether4
 
