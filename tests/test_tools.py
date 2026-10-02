@@ -1039,11 +1039,13 @@ def test_round2_domain_lifts_pads_and_adds_camera_hoops():
     full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
     z = neural_study.grid_centers(full["grid"])[..., 2]
     pads = neural_study.anchors(full)
-    assert pads.any() and z[pads].min() >= 7 and z[pads].max() <= 10
+    pad = neural_study.STUDY["pad"]
+    bottom = pad["top_mm"] - pad["thickness_mm"]
+    assert pads.any() and z[pads].min() >= bottom and z[pads].max() <= pad["top_mm"]
     assert full["metadata"]["round2"]["hoop_cells"] > 0 and not np.any(full["preserve"] & ~full["allowed"])
     cases = {case["name"]: case for case in full["load_cases"]}
     assert "crash_hoop" in cases and half["optimizer_settings"]["case_weights"]["crash_hoop"] == 1.0
-    assert all(box["min_mm"][2] == pytest.approx(7 - 0.01, abs=0.05) for box in cases["battery_impact"]["fixed_regions"])
+    assert all(box["min_mm"][2] == pytest.approx(bottom - 0.01) for box in cases["battery_impact"]["fixed_regions"])
 
 def test_keep_connected_drops_floating_parts():
     field = np.zeros((20, 10, 10))

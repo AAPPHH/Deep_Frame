@@ -20,13 +20,13 @@ from tools.topology_study import study_parameters
 STUDY = {
     "root": "exports/r2",
     "viewer_root": "C:/clones/Deep_Frame-neural/exports",
-    "shape": [136, 128, 32],
-    "fine_shape": [272, 256, 64],
-    "pad": {"top_mm": 10.0, "thickness_mm": 3.0, "support_half_mm": 5.0, "bore_margin_mm": 0.5},
-    "hoop": {"x_mm": 12.0, "radius_mm": 1.5, "path_yz_mm": [[24, 27.5], [34, 26], [42, 23.5], [46.5, 18], [47.5, 11], [45.5, 5], [41, 2], [33, 1.5]],
+    "shape": [102, 96, 24],
+    "fine_shape": [204, 192, 48],
+    "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3, "support_half_mm": 5.0, "bore_margin_mm": 0.5},
+    "hoop": {"x_mm": 12.0, "radius_mm": 1.6, "path_yz_mm": [[24, 27.5], [34, 26], [42, 23.5], [46.5, 18], [47.5, 11], [45.5, 5], [41, 2], [33, 1.5]],
              "load_y_min_mm": 44.0, "load_z_mm": [4.0, 22.0], "case_weight": 1.0},
-    "neural": {"max_frequency_per_mm": 0.2, "max_iterations": 110, "minimum_iterations": 40, "sharpness_iterations": 80, "sharpness_final": 8.0, "max_width_penalty": 0.0, "max_runtime_s": 2700.0},
-    "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads"},
+    "neural": {"max_frequency_per_mm": 0.2, "max_iterations": 110, "minimum_iterations": 40, "sharpness_iterations": 80, "sharpness_final": 8.0, "max_width_penalty": 0.0, "max_runtime_s": 1500.0},
+    "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads", "min_body_mm3": 1.0},
     "variants": [{"name": "neural_r2_v05", "neural": {"volume_fraction": 0.05}}],
 }
 
@@ -162,6 +162,11 @@ def surface(density, grid, cfg, regions=(), anchor=None):
     field = np.pad(field, 1)
     vertices, faces, _, _ = marching_cubes(field, cfg["threshold"], spacing=tuple(spacing), allow_degenerate=False)
     mesh = trimesh.Trimesh(vertices + np.asarray(grid["origin_mm"]) - spacing, faces[:, ::-1], process=True)
+    parts = mesh.split(only_watertight=False)
+    slivers = [part for part in parts if abs(part.volume) < cfg["min_body_mm3"]]
+    if slivers:
+        mesh = trimesh.util.concatenate([part for part in parts if abs(part.volume) >= cfg["min_body_mm3"]])
+        connectivity = {**(connectivity or {}), "mesh_slivers_dropped": len(slivers), "mesh_slivers_mm3": float(sum(abs(part.volume) for part in slivers))}
     trimesh.smoothing.filter_taubin(mesh, lamb=0.5, nu=-0.53, iterations=cfg["taubin"])
     if mesh.volume < 0:
         mesh.invert()
