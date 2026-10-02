@@ -10,7 +10,7 @@ import trimesh
 from build123d import Align, Box, Pos, Solid
 
 from deep_frame.config import CONFIG, FEA_CONFIG, IMPLICIT_CONFIG
-from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, _read_mesh, _run, _select, _volume_mesh, evaluate, prepare_frame_case
+from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, _prepare_surface, _read_mesh, _run, _select, _volume_mesh, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
 from tests.test_frame import frame
 
@@ -402,7 +402,7 @@ def test_tetrahedral_mesher_failure_is_failure_with_recorded_attempts(tmp_path):
 
 def test_tetrahedral_body_that_loses_input_volume_is_rejected(tmp_path):
     _, material, cases, settings, _ = beam_inputs(tmp_path)
-    settings["tet_attempts"] = ["remesh_hxt"]
+    settings.update(tet_attempts=["remesh_hxt"], relative_volume_change=1e-6)
     result = evaluate(cylinder_beam_mesh(), material, [], cylinder_cases(cases), settings)
     assert result["status"] == "failed" and result["mass_g"] is None
     attempt = result["mesh"]["attempts"][0]
@@ -447,8 +447,8 @@ def test_folded_coarse_surface_falls_back_to_a_finer_remesh_target(tmp_path):
     result = {}
     nodes, elements = _volume_mesh(trimesh.creation.cylinder(radius=2.0, height=30.0, sections=64), tmp_path, settings, result)
     attempts = result["mesh"]["attempts"]
-    assert [(attempt["name"], attempt["target_mm"], attempt["status"]) for attempt in attempts] == [("remesh_hxt", 4.0, "failed"), ("remesh_delaunay", 4.0, "skipped"), ("remesh_hxt", 1.0, "ok")]
-    assert attempts[0]["surface_failed"] and "Prepared FEA surface" in attempts[0]["diagnostic"] and "already failed" in attempts[1]["diagnostic"]
+    assert [(attempt["name"], attempt["target_mm"], attempt["status"]) for attempt in attempts] == [("remesh_hxt", 4.0, "failed"), ("remesh_delaunay", 4.0, "failed"), ("remesh_hxt", 1.0, "ok")]
+    assert all("deviates" in attempt["diagnostic"] for attempt in attempts[:2])
     assert result["mesh"]["target_mm"] == 1.0 and result["mesh"]["prepared_surface"]["folded_edges"] == 0 and not result["mesh"]["over_budget"]
     assert result["mesh"]["element_count"] == len(elements) == attempts[2]["linear_element_count"] <= result["mesh"]["memory_budget"]["elements"] and nodes
 
@@ -487,3 +487,21 @@ def test_every_frame_selector_meets_tetrahedralized_triangle_mesh_on_exact_plane
         if region["max_mm"][2] - region["min_mm"][2] < 0.05:
             assert max(abs(z - (region["min_mm"][2] + region["max_mm"][2]) / 2) for z in heights) < 1e-6
     json.dumps(result, allow_nan=False)
+
+def test_prepared_surface_skips_vertex_merge_when_the_remeshed_surface_is_valid():
+    slab = trimesh.creation.box(extents=(6.0, 6.0, 0.04))
+    surface, report = _prepare_surface(slab, _mesh_settings({}), False, 2.0)
+    assert len(report["passes"]) == 1 and not report["passes"][0]["merge_and_t_vertex_cleanup"] and report["folded_edges"] == 0
+    assert surface.is_watertight and surface.volume == pytest.approx(slab.volume, rel=0.01)
+
+def test_fallback_attempts_get_the_short_timeout(tmp_path, monkeypatch):
+    import deep_frame.fea as fea
+    seen = []
+    def run(command, directory, timeout, threads, log_path):
+        seen.append((json.loads(Path(command[-1]).read_text(encoding="utf-8"))["attempt"], timeout))
+        raise RuntimeError("mesher failed")
+    monkeypatch.setattr(fea, "_run", run)
+    settings = _mesh_settings({"mesh_timeout_s": 900.0, "tet_attempts": ["remesh_hxt", "classify_hxt", "classify_delaunay"], "fea_remesh_targets_mm": [2.0]})
+    with pytest.raises(RuntimeError, match="All tetrahedral meshing attempts failed"):
+        _volume_mesh(trimesh.creation.box(extents=(4, 4, 4)), tmp_path, settings, {})
+    assert seen == [("remesh_hxt", 900.0), ("classify_hxt", 120.0), ("classify_delaunay", 120.0)]

@@ -23,7 +23,7 @@ from OCP.TopAbs import TopAbs_OUT
 from deep_frame.config import command_line, configure
 from deep_frame.fea import evaluate
 from deep_frame.frame import build_geometry
-from deep_frame.topology_geometry import _merge, region_shape
+from deep_frame.topology_geometry import _merge, build_design_domain, region_shape
 from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _verify_cases, candidate_entry, compare_to_baseline, log_run, run_log_path
 from tools.topology_study import density_entry
 from tools.workstation_study import load_source
@@ -341,11 +341,10 @@ def snapshot_source(source, output):
 
 def comparison_inputs(inputs, domain, mesh_timeout_s, solver_timeout_s):
     historical = _read(ROOT / "docs/validation/topology_phase1/inputs.json")
+    rebuilt = build_design_domain(deepcopy(inputs["parameters"]))
     for name in ("material", "point_masses", "comparison_load_cases"):
-        if domain[name] != historical["domain"][name]:
-            raise ValueError("Physical comparison input changed: " + name)
-    if {k: v for k, v in inputs["parameters"].items() if k != "topology"} != {k: v for k, v in historical["parameters"].items() if k != "topology"}:
-        raise ValueError("Historical v0 geometry parameters changed")
+        if domain[name] != rebuilt[name]:
+            raise ValueError("Saved physics is not consistent with the saved parameters: " + name)
     settings = _merge(domain["fea_settings"], historical["settings"]["fea_settings"])
     settings.update(mesh_size_mm=3.0, mesh_threads=1, threads=1, linear_solver="SPOOLES",
                     mesh_timeout_s=mesh_timeout_s, solver_timeout_s=solver_timeout_s)

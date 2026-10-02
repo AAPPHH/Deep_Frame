@@ -328,7 +328,9 @@ def _volume_mesh(solid, directory, settings, result):
                 attempt.update(status="skipped", diagnostic=reason)
                 continue
             label = f"{index:02d}_{name}" + (f"_{target:g}" if target else "")
-            _run(mesher(f"mesh_request_{label}.json", surface_path=str(directory / "surface.npz"), attempt=name, target_mm=target, element_budget=budget["elements"]), directory, timeout, threads, directory / f"gmsh_{label}.log")
+            limit = timeout if name.startswith(("remesh", "refine")) else min(timeout, settings["fea_fallback_timeout_s"])
+            attempt["timeout_s"] = limit
+            _run(mesher(f"mesh_request_{label}.json", surface_path=str(directory / "surface.npz"), attempt=name, target_mm=target, element_budget=budget["elements"]), directory, limit, threads, directory / f"gmsh_{label}.log")
             nodes, elements = _read_mesh(directory / "mesh.inp")
             result["mesh"].update(json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8")))
             attempt.update(status="ok", linear_element_count=result["mesh"]["linear_element_count"])
@@ -419,18 +421,23 @@ def _prepare_surface(source, settings, refine, target):
         meshes.meshing_surface_subdivision_midpoint(iterations=64, threshold=pymeshlab.PureValue(settings["fea_refine_edge_mm"]))
     meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_remesh_iterations"], targetlen=pymeshlab.PureValue(target), featuredeg=settings["fea_remesh_feature_deg"],
                                                 checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_refine_max_surface_distance_mm" if refine else "fea_remesh_max_surface_distance_mm"]))
-    meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(settings["fea_merge_distance_mm"]))
-    meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)
-    meshes.meshing_remove_null_faces()
-    meshes.meshing_remove_unreferenced_vertices()
-    current = meshes.current_mesh()
-    surface = trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
-    checks = mesh_checks(surface)
-    report = {"refined_input": refine, "target_mm": target, "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())), "topology_passed": checks["topology"]["passed"],
-              "self_intersections_passed": checks["self_intersections"]["passed"], "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179))), "runtime_s": time.monotonic() - start}
-    if not checks["passed"] or report["folded_edges"]:
-        raise ValueError(f"Prepared FEA surface is not one closed, oriented, fold- and self-intersection-free body: {report}")
-    return surface, report
+    report = {"refined_input": refine, "target_mm": target, "passes": []}
+    for cleanup in (False, True):
+        if cleanup:
+            meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(settings["fea_merge_distance_mm"]))
+            meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)
+        meshes.meshing_remove_null_faces()
+        meshes.meshing_remove_unreferenced_vertices()
+        current = meshes.current_mesh()
+        surface = trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
+        checks = mesh_checks(surface)
+        row = {"merge_and_t_vertex_cleanup": cleanup, "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())), "topology_passed": checks["topology"]["passed"],
+               "self_intersections_passed": checks["self_intersections"]["passed"], "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179)))}
+        report["passes"].append(row)
+        report.update(row, runtime_s=time.monotonic() - start)
+        if checks["passed"] and not row["folded_edges"]:
+            return surface, report
+    raise ValueError(f"Prepared FEA surface is not one closed, oriented, fold- and self-intersection-free body: {report}")
 
 def _surface_model(gmsh, request, settings):
     import trimesh

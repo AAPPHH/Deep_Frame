@@ -6,7 +6,7 @@ import trimesh
 from scipy.ndimage import distance_transform_edt, gaussian_filter
 
 from deep_frame.topology_geometry import rasterize_regions, region_contains
-from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, build_field, capped_faces, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
+from deep_frame.topology_implicit import ImplicitError, ImplicitField, _adjacent_pair, _connected, _round_float32, build_field, extension_guard, fill_enclosed_voids, capped_faces, build_implicit, exact_booleans, export_mesh, extend_density, implicit_settings, mesh_checks, primitive_distance, remesh, segments, surface_fidelity, vertex_manifold
 
 def box(name, role, low, high, **extra):
     return {"name": name, "role": role, "kind": "box", "min_mm": list(low), "max_mm": list(high), **extra}
@@ -227,7 +227,7 @@ def test_extension_that_closes_a_corner_gap_is_rejected():
         build_field(domain, density, {**SMALL, "threshold": 0.6, "extension": "preserve_forbidden"})
     assert error.value.status == "extension_changed_topology"
     guard = error.value.report["extension_guard"]
-    assert guard["original"]["components_6"] == 2 and guard["extended"]["components_6"] == 1
+    assert guard["original"]["components_6"] == 2 and guard["extended"]["components_6"] == 1 and guard["merged_components"] == 1
 
 @pytest.mark.parametrize("changes", [{"threshold": 1.2}, {"opening_radius_mm": -1.0}, {"subdivisions": 0}, {"remesh_target_mm": 0.0}, {"unknown": 1}, {"extension": "bridge"}])
 def test_invalid_implicit_settings_fail(changes):
@@ -235,7 +235,7 @@ def test_invalid_implicit_settings_fail(changes):
         implicit_settings({**SMALL, **changes})
 
 @pytest.mark.parametrize("changes", [{"segment_tolerance_mm": 0.6}, {"surface_deviation_mm": 25.0}, {"relative_volume_change": 0.9}, {"free_zone_minimum_samples": 1}, {"penetration_tolerance_mm": 0.5}, {"penetration_sample_spacing_mm": 2.0},
-                                     {"free_zone_preserve_mm": 5.0}, {"free_zone_constraint_mm": 9.0}, {"free_zone_modified_mm": 4.0}, {"free_zone_opening_cells": 0.1}, {"mesh_minimum_sicn": 0.001}, {"mesh_boundary_deviation_mm": 0.5}])
+                                     {"free_zone_preserve_mm": 5.0}, {"detached_volume_max_fraction": 0.01}, {"free_zone_constraint_mm": 9.0}, {"free_zone_modified_mm": 4.0}, {"free_zone_opening_cells": 0.1}, {"mesh_minimum_sicn": 0.001}, {"mesh_boundary_deviation_mm": 0.5}])
 def test_acceptance_gates_cannot_be_weakened(changes):
     with pytest.raises(ValueError, match="cannot be weakened"):
         implicit_settings({**SMALL, **changes})
@@ -407,3 +407,112 @@ def test_real_self_intersection_and_pinched_vertex_are_rejected():
     report = vertex_manifold(pinched)
     assert not report["passed"] and report["pinched_vertices"] == 1
     assert vertex_manifold(first)["passed"]
+
+def guard_case(shape=(12, 8, 3)):
+    field = ImplicitField([0.0, 0.0, 0.0], 1.0, np.zeros(shape))
+    return field, np.zeros(shape, dtype=bool)
+
+def test_extension_guard_rejects_loop_closure_and_merge_but_allows_removal():
+    field, original = guard_case()
+    original[1:11, 1:3] = original[1:3, 1:7] = original[9:11, 1:7] = True
+    ring = original.copy()
+    ring[1:11, 5:7] = True
+    guard = extension_guard(field, original, ring, [], np.full(original.shape, -np.inf))
+    assert not guard["passed"] and guard["handle_change"] == 1 and guard["cavity_change"] == 0 and guard["merged_components"] == 0
+    field, original = guard_case()
+    original[1:4, 1:3] = original[6:9, 1:3] = True
+    merged = original.copy()
+    merged[1:9, 1:3] = True
+    merged[10:12, 6:8] = True
+    guard = extension_guard(field, original, merged, [], np.full(original.shape, -np.inf))
+    assert not guard["passed"] and guard["merged_components"] == 1 and guard["handle_change"] == 0
+    field, original = guard_case()
+    original[1:11, 1:3] = True
+    removed = original.copy()
+    removed[5:7] = False
+    guard = extension_guard(field, original, removed, [], np.full(original.shape, -np.inf))
+    assert guard["passed"] and guard["extended"]["components_6"] == 2 and guard["added_blobs"]["count"] == 0
+    mounts = [box("left", "preserve", [1, 1, 0], [3, 3, 3]), box("right", "preserve", [9, 1, 0], [11, 3, 3])]
+    guard = extension_guard(field, original, removed, mounts, np.full(original.shape, -np.inf))
+    assert not guard["passed"] and not guard["witness"]
+
+def u_shape(shape=(24, 10, 5)):
+    original = np.zeros(shape, dtype=bool)
+    original[1:11, 1:3, 1:4] = original[1:3, 1:8, 1:4] = original[9:11, 1:8, 1:4] = True
+    extended = original.copy()
+    extended[1:11, 6:8, 1:4] = True
+    return ImplicitField([0.0, 0.0, 0.0], 1.0, np.zeros(shape)), original, extended
+
+def test_extension_guard_rejects_loop_closure_cancelled_by_filled_hole_or_new_cavity():
+    field, original, extended = u_shape()
+    original[13:22, 1:9, 2] = True
+    original[16:18, 4:6, 2] = False
+    extended[13:22, 1:9, 2] = True
+    guard = extension_guard(field, original, extended, [], np.full(original.shape, -np.inf))
+    assert guard["extended"]["euler_number_6"]-guard["extended"]["components_6"] == guard["base"]["euler_number_6"]-guard["base"]["components_6"]
+    assert not guard["passed"] and guard["merged_components"] == 0 and guard["handle_change"] == 0 and guard["added_blobs"] == {"count": 2, "topology_changing": 2}
+    field, original, extended = u_shape()
+    original[13:22, 1:9, 1:4] = True
+    original[17, 4, 0:3] = False
+    extended[13:22, 1:9, 1:4] = True
+    extended[17, 4, 2] = False
+    guard = extension_guard(field, original, extended, [], np.full(original.shape, -np.inf))
+    assert not guard["passed"] and guard["handle_change"] == 1 and guard["cavity_change"] == 1 and guard["merged_components"] == 0
+
+def detached_field(blob):
+    field = ImplicitField.from_function([0.0, 0.0, 0.0], 0.5, (40, 20, 12), lambda x, y, z: np.maximum(np.minimum(np.minimum(2-np.abs(y-5), 2-np.abs(z-3)), np.minimum(x-1, 12-x)), blob-np.sqrt((x-17)**2+(y-5)**2+(z-3)**2)))
+    mount = box("mount", "preserve", [2, 4, 2], [4, 6, 4])
+    return field, field.primitives([mount]), [mount], np.full(field.values.shape, -np.inf, dtype=np.float32)
+
+def test_small_detached_body_is_removed_and_recorded_and_large_one_rejected():
+    field, preserve, mounts, forbidden = detached_field(1.0)
+    report = {}
+    _connected(field, report, "final_witness", preserve, mounts, forbidden, 0.05)
+    detached = report["final_witness"]["detached"]
+    assert detached["removed"] and len(detached["bodies"]) == 1 and 0 < detached["volume_mm3"] < 0.05*detached["part_volume_mm3"]
+    assert detached["bodies"][0]["bbox_low_mm"][0] > 15 and report["final_witness"]["components_before_removal"] == 2 and report["final_witness"]["single_component"]
+    assert not np.any(field.values[field.axes()[0].ravel() > 14] > 0)
+    field, preserve, mounts, forbidden = detached_field(1.0)
+    with pytest.raises(ImplicitError) as error:
+        _connected(field, {}, "final_witness", preserve, mounts, forbidden, 0.0)
+    assert error.value.status == "field_disconnected" and error.value.report["final_witness"]["detached"]["bodies"]
+    field, preserve, mounts, forbidden = detached_field(2.5)
+    with pytest.raises(ImplicitError) as error:
+        _connected(field, {}, "final_witness", preserve, mounts, forbidden, 0.005)
+    assert error.value.status == "field_disconnected" and not error.value.report["final_witness"]["detached"]["removed"]
+
+def test_enclosed_single_sample_void_is_filled_before_extraction():
+    field = ImplicitField.from_function([-6.1, -6.1, -6.1], 0.5, (25, 25, 25), lambda x, y, z: 5-np.sqrt(x**2+y**2+z**2))
+    field.values[12, 12, 12] = -0.1
+    assert ImplicitField(field.origin, field.spacing, field.values.copy()).extract()[0].body_count == 2
+    report = fill_enclosed_voids(field, 0.005)
+    assert report["filled"] and len(report["voids"]) == 1 and report["voids"][0]["samples"] == 1
+    mesh = field.extract()[0]
+    assert mesh.body_count == 1 and mesh.is_watertight
+
+def test_void_reaching_outside_through_an_edge_or_corner_is_not_filled():
+    values = np.full((15, 15, 15), -1.0, dtype=np.float32)
+    values[8:12, 7, 7] = values[3:7, 7, 7] = values[7, 8:12, 7] = values[7, 3:7, 7] = values[7, 7, 8:12] = values[7, 7, 3:7] = 1.0
+    field = ImplicitField([0.0, 0.0, 0.0], 0.5, values.copy())
+    report = fill_enclosed_voids(field, 0.5)
+    assert not report["filled"] and not report["voids"] and np.array_equal(field.values, values)
+
+def test_float32_rounding_collapses_sub_spacing_boolean_edges():
+    mesh = trimesh.creation.box(extents=(4, 4, 4))
+    mesh.apply_translation([60, 0, 0])
+    edges = mesh.face_adjacency_edges[0]
+    first, second = mesh.face_adjacency[0]
+    a, b = edges
+    point = mesh.vertices[a]+1e-9*(mesh.vertices[b]-mesh.vertices[a])/np.linalg.norm(mesh.vertices[b]-mesh.vertices[a])
+    vertices = np.vstack((mesh.vertices, point))
+    m = len(vertices)-1
+    faces = [face for i, face in enumerate(mesh.faces.tolist()) if i not in (first, second)]
+    for face in (mesh.faces[first].tolist(), mesh.faces[second].tolist()):
+        i, j = face.index(a), face.index(b)
+        faces.append([m if k == i else v for k, v in enumerate(face)])
+        faces.append([m if k == j else v for k, v in enumerate(face)])
+    split = trimesh.Trimesh(vertices, faces, process=False)
+    assert split.is_watertight and split.is_winding_consistent and len(split.faces) == 14
+    rounded, report = _round_float32(split, 1e-4)
+    assert report["passed"] and report["merged_vertices"] == 1 and report["collapsed_faces"] == 2 and len(rounded.faces) == 12
+    assert rounded.is_watertight and rounded.is_winding_consistent and vertex_manifold(rounded)["passed"] and rounded.volume == pytest.approx(64.0)

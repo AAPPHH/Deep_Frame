@@ -218,15 +218,29 @@ class ImplicitStudy:
         footer = f"{record['id']} | t = {settings['threshold']:g}, {settings['extension']} | geometry.stl SHA256 {record['final_mesh']['files']['geometry.stl']['sha256'][:16]} | {len(mesh.faces)} Dreiecke"
         record["renders"] = render_views(mesh, self.domain, directory/"renders", LABELS[passed], footer, config["render_faces"], config["section_heights_mm"])
         timings["renders"] = perf_counter()-clock
-        if not passed or config["geometry_only"]:
+        diagnostic = not passed and config["diagnostic_fea"] and validation["violations"] == ["features"] and record["mass_screen"]["passed"]
+        if not (passed or diagnostic) or config["geometry_only"]:
             return
+        if not diagnostic:
+            return self.fea(directory, record, mesh, progress)
+        record["fea_diagnostic_only"] = True
+        try:
+            self.fea(directory, record, mesh, progress)
+        except Exception as error:
+            record["diagnostics"].append("diagnostic FEA "+type(error).__name__+": "+str(error))
+        if record.get("fea", {}).get("status") != "ok":
+            record["diagnostics"].append("diagnostic_fea_failed")
+        record.update(status="geometry_invalid", failure_stage="validation")
+
+    def fea(self, directory, record, mesh, progress):
+        timings = record["timings_s"]
         if self.baseline is None:
             self.step(record, "baseline_fea", progress)
             self.baseline = baseline_fea(self.output/"baseline", self.baseline_solid, self.domain, self.settings, evaluate)
         self.step(record, "candidate_fea", progress)
         clock = perf_counter()
         result = evaluate(mesh, self.domain["material"], self.domain["point_masses"], self.domain["comparison_load_cases"],
-                          {**self.settings, **{key: config[key] for key in MESH_KEYS}, "work_dir": str(directory/"fea")})
+                          {**self.settings, **{key: self.config[key] for key in MESH_KEYS}, "work_dir": str(directory/"fea")})
         timings["fea"] = perf_counter()-clock
         timings["fea_mesh"] = sum(attempt.get("runtime_s", 0.0) for attempt in result.get("mesh", {}).get("attempts", []))
         timings["fea_solve"] = timings["fea"]-timings["fea_mesh"]
@@ -294,6 +308,9 @@ class ImplicitStudy:
                 _save(self.output/"manifest.json", self.manifest)
             self.manifest.update(acceptance(self.records, complete=True), status="complete", stage="finished")
         except Exception as error:
+            if self.manifest["stage"] == "preparing":
+                log_run(self.config["run_log"], {"run_dir": str(self.output), "kind": "implicit", "candidate": None, "parameters": None, "source_sha256": self.manifest.get("source_manifest_sha256"),
+                                                 "success": False, "status": "failed", "failure_stage": "prepare", "runtime_s": perf_counter()-self.started, "timings_s": None, "error": type(error).__name__+": "+str(error)})
             self.manifest.update(status="failed", stage="failed", overall_acceptance=False, selected_id=None, error=type(error).__name__+": "+str(error))
         self.manifest.update(**self.summary(), runtime_s=perf_counter()-self.started, artifacts=artifacts(self.output))
         _save(self.output/"manifest.json", self.manifest)

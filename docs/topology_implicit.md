@@ -8,7 +8,7 @@ Code: Feld, Extraktion und Booleans in [deep_frame/topology_implicit.py](../deep
 
 Feinraster: `subdivisions = 10` auf dem 8/3-mm-Dichteraster ergibt h = 0,267 mm. Werte sind float32 und innen positiv.
 
-1. **Preserve-Erweiterung:** Preserve-Zellen erhalten die Dichte der naechsten freien Zelle. Die Variante `preserve_forbidden` erweitert zusaetzlich nur teilweise verbotene Zellen. Ein Topologie-Guard vergleicht die Komponentenzahl und die Euler-Zahl der harten Komposition mit und ohne Erweiterung. Bei einer Abweichung endet der Kandidat mit `extension_changed_topology`.
+1. **Preserve-Erweiterung:** Preserve-Zellen erhalten die Dichte der naechsten freien Zelle. Die Variante `preserve_forbidden` erweitert zusaetzlich nur teilweise verbotene Zellen. Ein Topologie-Guard vergleicht die harte Komposition mit und ohne Erweiterung: keine Verschmelzung von Komponenten, Henkelzahl b1 und Hohlraumzahl b2 (26-zusammenhaengender Hintergrund) jeweils einzeln unveraendert, und kein einzelner hinzugefuegter 6-zusammenhaengender Block aendert fuer sich die Euler-Zahl. So kann ein geschlossener Ring an einem Mount nicht gegen ein gefuelltes Loch an einem anderen aufgehen. Bei einer Abweichung endet der Kandidat mit `extension_changed_topology`.
 2. **Upsampling** (PCHIP, gemeinsam mit der CAD-Route) und Pegelfeld rho - t.
 3. **Reinitialisierung** mit bandkorrigierter EDT, danach Gauss-Glaettung sigma_d = 0,4 mm und erneute Reinitialisierung.
 4. **Anschluesse** werden als exakte Primitiv-SDFs per kubischem Smooth-Max eingefuegt. Die Uebergangsweite ist k = 2,0 mm, die Inflation delta = 0,3 mm.
