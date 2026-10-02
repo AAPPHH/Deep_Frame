@@ -213,9 +213,9 @@ class FrameRun:
         spec = self.stages[stage]
         return Path(spec["worktree"]).is_dir() and (Path(spec["worktree"]) / spec["tool"]).is_file()
 
-    def command(self, stage, request, action, compute=None):
+    def command(self, stage, request, action, compute=None, label=None):
         spec = self.stages[stage]
-        path = self.dir / "requests" / f"{stage}.json"
+        path = self.dir / "requests" / f"{label or stage}.json"
         _save(path, {"root": spec["worktree"], "tool": spec["tool"], "action": action, **request})
         inner = [spec["python"], str(ROOT / "run.py"), "stage", str(path)]
         kind = compute if compute is not None else spec["compute"]
@@ -244,7 +244,7 @@ class FrameRun:
     def domain(self):
         stage = self.settings["domain_stage"]
         out = self.dir / "domain.json"
-        command = self.command(stage, {"patch": self.layout.patch(), "shape": self.grid["shape"], "output": str(out)}, "domain", self.settings["domain_compute"])
+        command = self.command(stage, {"patch": self.layout.patch(), "shape": self.grid["shape"], "output": str(out)}, "domain", self.settings["domain_compute"], "layout")
         spec = self.stages[stage]
         self.manifest["stages"]["layout"] = {"status": "running"}
         started = perf_counter()
@@ -309,7 +309,6 @@ class FrameRun:
         return {"name": self.dir.name, "stl": str(mesh), "output": str(out), "prop_diameter_mm": self.layout.components["prop"]["diameter_mm"], "motors": motors, "mount_patterns": patterns,
                 "components": components, "connectors": [{"name": name, "position_mm": placements[name]["center_of_mass_mm"], "direction": [0, 0, 1]} for name in ("xt30", "balancer") if name in placements],
                 "keep_outs": [region for region in domain["regions"] if region["role"] == "forbidden"], "selectors": selectors,
-                "wall_zones": [region for region in domain["regions"] if region["role"] == "preserve" and "motor" in region["name"]],
                 "loads": {"safety_factor": self.layout.durability["safety_factor"]}, "python": self.stages["evaluation"]["python"], "compute": self.settings["compute"], **self.grid["evaluation"]}
 
     def evaluation(self, domain, mesh):
