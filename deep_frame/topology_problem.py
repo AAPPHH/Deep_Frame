@@ -3,7 +3,7 @@ from time import perf_counter
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
-from deep_frame.config import COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, PRINT_MATERIAL
+from deep_frame.config import COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import DensityMap, HexElasticity, ModalConstraint, StiffnessConstraint, _settings
 
@@ -12,8 +12,9 @@ ARM_TIP = {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0,
 COVARIANCE = {
     "support": "stiffness_arm_tip", "interfaces": ["motor_front_left", "motor_front_right", "motor_rear_left", "motor_rear_right", "battery", "camera"],
     "sigma": None, "labels": None, "model": None, "prefix": "sigma_", "ks": 50.0, "ks_cutoff": 1e-9,
-    "limits": {"mean_n_mm": None, "worst_n_mm": None, "source": None},
+    "limits": {"mean_n_mm": LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"], "worst_n_mm": LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"], "source": LOAD_COVARIANCE_LIMITS["source"], "calibration": 1.0},
     "definition": {
+        "limits": "read from config LOAD_COVARIANCE_LIMITS (evaluator on the references); the optimizer uses limit x calibration (optimizer measure / evaluator measure on the same design), 1.0 until calibrated",
         "support": "stack mount undersides fixed in all translations (fixed regions of stiffness_arm_tip = evaluator arm_tip / gap finder group 'stack fixed'); the stack wrench is reacted by the fixture, so its 6 rows are dropped from Sigma (36 x 36 block of motors, battery, camera)",
         "interfaces": "motor pads: thrust_all pad patches (pad top); battery: deck band of crash_back (deck top); camera: camera patch of crash_front; reference points as LOAD_COVARIANCE reference_points (pad top on the motor axis, deck top at the band centre on x = 0, midpoint of the camera side-screw axes)",
         "wrench": "unit wrench (F, M about the reference point) -> minimum-norm nodal forces over the patch nodes: f = B^T (B B^T)^-1 w with B_i = [I; skew(r_i - r_ref)]",
@@ -554,7 +555,8 @@ class InterfaceCovariance:
             total += np.einsum("ei,ij,ej->e", element, self.system.ke, element, optimize=True)
         return -self.factor * derivative * total
     def measure(self, solutions):
-        limits, s = self.settings["limits"], self.settings["ks"]
+        calibration, s = self.settings["limits"].get("calibration", 1.0), self.settings["ks"]
+        limits = {key: self.settings["limits"][key] and self.settings["limits"][key] * calibration for key in ("mean_n_mm", "worst_n_mm")}
         flexibility, stacked = self.matrix(solutions)
         mean = float(np.trace(flexibility))
         values, vectors = np.linalg.eigh(flexibility)

@@ -278,7 +278,7 @@ def test_covariance_placeholder_limits_are_monitored():
     result = placeholder.evaluate(np.full(placeholder.map.n, 0.5))
     rows = {row["name"]: row for row in result["rows"]}
     assert result["names"] == ["volume"] and rows["load_mean"]["status"] == rows["load_worst"]["status"] == "monitored"
-    assert PROBLEM["stiffness"] is None and PROBLEM["covariance"]["limits"]["mean_n_mm"] is None and PROBLEM["width"]["minimum_mm"] == 2.5
+    assert PROBLEM["stiffness"] is None and PROBLEM["width"]["minimum_mm"] == 2.5
     with pytest.raises(ValueError, match="interfaces"):
         TopologyProblem(cantilever_domain((12, 3, 4), 1.0), {**problem, "covariance": PROBLEM["covariance"]})
     placeholder.close()
