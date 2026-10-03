@@ -15,8 +15,10 @@ CONFIG = {
     "forward_env": ("CALCULIX_PATH", "PYTHONPATH", "CUDA_PATH", "LD_LIBRARY_PATH"),
     "forward_prefix": "DEEP_FRAME_",
     "thread_env": ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"),
-    "head": {"num_cpus": 24, "num_gpus": 1, "memory_gb": 40, "object_store_gb": 1, "gpu_gb": 14,
-             "dashboard_port": 8265, "start_timeout_s": 7 * 24 * 3600},
+    "heads": {"local": {"num_cpus": 24, "num_gpus": 1, "memory_gb": 40, "object_store_gb": 1, "gpu_gb": 14},
+              "dgx": {"num_cpus": 128, "num_gpus": 8, "memory_gb": 768, "object_store_gb": 8, "gpu_gb": 640}},
+    "dashboard_port": 8265,
+    "start_timeout_s": 7 * 24 * 3600,
 }
 JOB_TYPES = {
     "density_neural": {"num_cpus": 4, "memory_gb": 4, "gpu_gb": 12},
@@ -76,8 +78,8 @@ def submit(kind, command, cwd, config=CONFIG):
     print(f"compute: job {job} {info.status}: {info.message}", file=sys.stderr)
     return 0 if info.status == JobStatus.SUCCEEDED else 1
 
-def head(config=CONFIG):
-    spec = config["head"]
+def head(name="local", config=CONFIG):
+    spec = {**config["heads"][name], "dashboard_port": config["dashboard_port"], "start_timeout_s": config["start_timeout_s"]}
     command = [str(Path(config["ray_python"]).with_name("ray.exe" if os.name == "nt" else "ray")), "start", "--head",
                "--num-cpus", str(spec["num_cpus"]), "--num-gpus", str(spec["num_gpus"]),
                "--memory", str(spec["memory_gb"] * 2**30), "--object-store-memory", str(spec["object_store_gb"] * 2**30),
@@ -89,11 +91,11 @@ def head(config=CONFIG):
 def main(argv):
     if argv[:1] == ["exec"] and len(argv) == 2:
         return execute(argv[1])
-    if argv == ["head"]:
-        return head()
+    if argv[:1] == ["head"] and len(argv) <= 2 and set(argv[1:]) <= set(CONFIG["heads"]):
+        return head(*argv[1:])
     cwd, rest = (argv[2], argv[:1] + argv[3:]) if argv[1:2] == ["--cwd"] else (os.getcwd(), argv)
     if len(rest) < 3 or rest[0] not in JOB_TYPES or rest[1] != "--":
-        raise SystemExit("usage: compute.py {" + ",".join(JOB_TYPES) + "} [--cwd DIR] -- <command...> | head")
+        raise SystemExit("usage: compute.py {" + ",".join(JOB_TYPES) + "} [--cwd DIR] -- <command...> | head [" + ",".join(CONFIG["heads"]) + "]")
     if importlib.util.find_spec("ray") is None:
         return subprocess.call([CONFIG["ray_python"], __file__, rest[0], "--cwd", cwd, *rest[1:]])
     return submit(rest[0], rest[2:], cwd)

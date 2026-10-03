@@ -1071,6 +1071,10 @@ def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
     with pytest.raises(SystemExit):
         compute.main(["unknown", "--", "x"])
 
+def test_compute_dgx_head_fits_four_a100_jobs():
+    head, need = compute.CONFIG["heads"]["dgx"], compute.JOB_TYPES["gpu_a100"]
+    assert all(head[key] >= 4 * need[key] for key in ("num_cpus", "memory_gb", "gpu_gb", "num_gpus"))
+
 def test_round2_domain_lifts_pads_and_adds_camera_hoops():
     full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
     z = neural_study.grid_centers(full["grid"])[..., 2]
