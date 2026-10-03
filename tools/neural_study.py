@@ -14,7 +14,7 @@ from deep_frame.config import CRASH_DIRECTIONS, command_line
 from deep_frame.frame import motor_positions, prop_plane_z
 from deep_frame.topology_geometry import _merge, build_design_domain, grid_centers, mirror_field, region_contains, symmetric_domains
 from deep_frame.topology_neural import member_widths, neural_settings, optimize_neural
-from deep_frame.topology_optimization import HexElasticity, _settings, optimize_topology
+from deep_frame.topology_optimization import HexElasticity, ModalConstraint, _settings, optimize_topology
 from tools.multi_crash_study import cross_sections, stitch
 from tools.topology_study import study_parameters
 
@@ -37,6 +37,7 @@ STUDY = {
     "prop_discs": {"mode": None, "weight": 3.0, "length_mm": 10.0, "corridor_half_width_mm": 4.0, "hub_margin_mm": 2.0},
     "modal": {"f1_min_hz": None, "case": "modes", "modes": 4, "tracked": 2, "initial_iterations": 30, "warm_iterations": 2, "penalty": 10.0, "ks": 40.0, "mass_cutoff": 0.1, "multiplier_interval": 5, "start_iteration": 1},
     "method": "neural",
+    "calibration": {"inputs": [], "output": "exports/r4/modal_calibration.json", "linear_solver": "cpu_superlu"},
     "simp": {"filter_radius_mm": 4.0, "projection": "single", "beta_schedule": [1.0, 2.0, 4.0, 8.0], "beta_interval": 35, "max_iterations": 140, "minimum_iterations": 20, "move_limit": 0.1, "max_runtime_s": 1500.0},
     "variants": [{"name": "neural_r3_v05", "neural": {"volume_fraction": 0.05}}],
 }
@@ -447,6 +448,20 @@ def rerender(cfg, variant):
     (out / "info.json").write_text(json.dumps(info, indent=1, default=str))
     print(json.dumps({k: info.get(k) for k in ("variant", "mass_g", "bodies", "connectivity")}), flush=True)
 
+def calibrate(cfg):
+    _, half = R2Domain(cfg).build(cfg["shape"])
+    system = HexElasticity(half, interface_node_policy=half["optimizer_settings"]["interface_node_policy"], linear_solver=cfg["calibration"]["linear_solver"])
+    settings = {**cfg["modal"], "f1_min_hz": cfg["modal"]["f1_min_hz"] or 300.0}
+    rows = {}
+    for path in cfg["calibration"]["inputs"]:
+        started = perf_counter()
+        info = ModalConstraint(system, settings)(np.load(path)["density"].ravel(), half["optimizer_settings"]["penalization"], half["optimizer_settings"]["min_stiffness_ratio"], settings["initial_iterations"])[2]
+        rows[path] = {**info, "runtime_s": perf_counter() - started}
+    system.close()
+    Path(cfg["calibration"]["output"]).parent.mkdir(parents=True, exist_ok=True)
+    Path(cfg["calibration"]["output"]).write_text(json.dumps(rows, indent=1))
+    print(json.dumps({path: row["f1_hz"] for path, row in rows.items()}), flush=True)
+
 def run_main(overrides):
     cfg = configure(overrides)
     for variant in cfg["variants"]:
@@ -458,7 +473,7 @@ def render_main(overrides):
         rerender(cfg, variant)
 
 def main(argv=None):
-    return command_line({"run": run_main, "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
+    return command_line({"run": run_main, "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "calibrate": lambda overrides: calibrate(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
                          "compare": lambda overrides: stitch(**{key: [Path(path) for path in value] if key == "inputs" else Path(value) if key == "output" else value for key, value in configure(overrides)["compare"].items()})}, argv)
 
 if __name__ == "__main__":
