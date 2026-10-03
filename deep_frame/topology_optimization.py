@@ -367,14 +367,15 @@ class HexElasticity:
             if relief is not None:
                 if self.support is None:
                     self.support = self._relief_support(np.concatenate([np.concatenate(self._select_both(load["region"], other["name"], "load")) for other in domain["load_cases"] if "inertia_relief" in other for load in other["loads"]]))
-                fixed_nodes, fixed = self.support
+                fixed_nodes, fixed, split = self.support
             else:
+                split = None
                 fixed_nodes = np.unique(np.concatenate([np.concatenate(self._select_both(region, case["name"], "fixture")) for region in case["fixed_regions"]]))
                 if len(fixed_nodes) < 3 or np.linalg.matrix_rank(self.points[fixed_nodes] - self.points[fixed_nodes[0]]) < 2:
                     raise ValueError("Topology fixture requires three non-collinear nodes")
                 fixed = (3 * fixed_nodes[:, None] + np.arange(3)).ravel()
             free = np.setdiff1d(self.active_dofs, fixed, assume_unique=True)
-            compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "load_regions": [], "parts": []}
+            compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "split": split, "load_regions": [], "parts": []}
             if case["analysis"] == "static":
                 force, mirrored = np.zeros(self.ndof), np.zeros(self.ndof)
                 if not case.get("loads"):
@@ -393,16 +394,17 @@ class HexElasticity:
                     compiled["load_regions"].append((direct, mirror, vector))
                 if relief is not None:
                     compiled["inertia_relief"] = self._inertia(relief, case["name"], fixed_nodes, force, mirrored)
-                self._register(compiled, fixed, force, mirrored)
+                self._register(compiled, fixed, force, mirrored, split)
             self.cases.append(compiled)
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
-    def _register(self, compiled, fixed, force, mirrored):
+    def _register(self, compiled, fixed, force, mirrored, split=None):
         compiled["force"] = force
-        for fixed_part, part_force, sign in self._parts(fixed, force, mirrored):
+        for fixed_part, part_force, sign in self._parts(fixed, force, mirrored, split):
             part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
             if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
-                part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign, "support": fixed if self.symmetry is None else np.setdiff1d(fixed, self._plane_dofs(sign))}
+                base = fixed if split is None else split[sign]
+                part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign, "support": base if self.symmetry is None else np.setdiff1d(base, self._plane_dofs(sign))}
                 compiled["parts"].append(part)
                 self.groups[fixed_part.tobytes()].append((compiled, part))
         if not compiled["parts"]:
@@ -411,8 +413,8 @@ class HexElasticity:
         if name in {case["name"] for case in self.cases}:
             raise ValueError("Topology load-case names must be unique")
         source = next(case for case in self.cases if case["name"] == support)
-        compiled = {"name": name, "analysis": "static", "free": source["free"], "fixed": source["fixed"], "load_regions": [], "parts": [], "keep_fields": keep_fields}
-        self._register(compiled, source["fixed"], force, mirrored)
+        compiled = {"name": name, "analysis": "static", "free": source["free"], "fixed": source["fixed"], "split": source.get("split"), "load_regions": [], "parts": [], "keep_fields": keep_fields}
+        self._register(compiled, source["fixed"], force, mirrored, compiled["split"])
         self.cases.append(compiled)
         return compiled
     def _flip(self):
@@ -424,8 +426,9 @@ class HexElasticity:
             return 3 * self.plane_nodes + self.axis
         return (3 * self.plane_nodes[:, None] + np.asarray([index for index in range(3) if index != self.axis])).ravel()
     def _relief_support(self, loaded):
-        nodes = self.interface_nodes if self.symmetry is None or np.intersect1d(self.interface_nodes, self.plane_nodes).size else self.active_nodes
-        candidates = np.setdiff1d(np.intersect1d(nodes, self.plane_nodes) if self.symmetry is not None else nodes, loaded)
+        if self.symmetry is not None and not np.intersect1d(self.interface_nodes, self.plane_nodes).size:
+            return self._mirrored_support(np.setdiff1d(self.interface_nodes, loaded))
+        candidates = np.setdiff1d(np.intersect1d(self.interface_nodes, self.plane_nodes) if self.symmetry is not None else self.interface_nodes, loaded)
         points = self.points[candidates]
         a = int(np.argmin(points[:, 1] + 1e-3 * points[:, 2]))
         b = int(np.argmax(np.linalg.norm(points - points[a], axis=1)))
@@ -436,7 +439,21 @@ class HexElasticity:
         along, normal = np.abs(points[b] - points[a]), np.abs(np.cross(points[c] - points[a], points[b] - points[a]))
         nodes = candidates[[a, b, c]]
         dofs = [3 * nodes[0] + np.arange(3), 3 * nodes[1] + np.delete(np.arange(3), np.argmax(along)), [3 * nodes[2] + np.argmax(normal)]]
-        return nodes, np.sort(np.concatenate(dofs))
+        return nodes, np.sort(np.concatenate(dofs)), None
+    def _mirrored_support(self, candidates):
+        plane = np.asarray([index for index in range(3) if index != self.axis])
+        points = self.points[candidates][:, plane]
+        a = int(np.argmin(points[:, 0] + 1e-3 * points[:, 1]))
+        offset = points - points[a]
+        b = int(np.argmax(np.linalg.norm(offset, axis=1)))
+        area = np.abs(offset[:, 0] * offset[b, 1] - offset[:, 1] * offset[b, 0])
+        c = int(np.argmax(area))
+        if area[c] < 1e-9:
+            raise ValueError("Inertia-relief support requires three interface nodes non-collinear in the symmetry plane projection")
+        nodes = candidates[[a, b, c]]
+        symmetric = np.sort(np.concatenate([3 * nodes[0] + plane, [3 * nodes[1] + plane[np.argmin(np.abs(offset[b]))]]]))
+        antisymmetric = np.sort(3 * nodes + self.axis)
+        return nodes, np.union1d(symmetric, antisymmetric), {1.0: symmetric, -1.0: antisymmetric}
     def _inertia(self, relief, case_name, support_nodes, force, mirrored):
         flip = np.ones(3) if self.symmetry is None else self._flip()
         direct, mirror = np.zeros(len(self.points)), np.zeros(len(self.points))
@@ -478,14 +495,14 @@ class HexElasticity:
             residual = stiffness @ displacement - part["force"]
             reactions.append({"sign": part["sign"], "support_dofs": len(part["support"]), "max_reaction_n": float(np.max(np.abs(residual[part["support"]]))), "nodal_force_sum_n": float(np.linalg.norm(part["force"].reshape(-1, 3), axis=1).sum())})
         return reactions
-    def _parts(self, fixed, force, mirrored):
+    def _parts(self, fixed, force, mirrored, split=None):
         if self.symmetry is None:
             return [(fixed, force, 1.0)]
         normal, tangential = self._plane_dofs(1), self._plane_dofs(-1)
         symmetric, antisymmetric = (force + mirrored) / 2, (force - mirrored) / 2
         symmetric[normal], symmetric[tangential] = 0, force[tangential] / 2
         antisymmetric[tangential], antisymmetric[normal] = 0, force[normal] / 2
-        return [(np.union1d(fixed, normal), symmetric, 1.0), (np.union1d(fixed, tangential), antisymmetric, -1.0)]
+        return [(np.union1d(fixed if split is None else split[1.0], normal), symmetric, 1.0), (np.union1d(fixed if split is None else split[-1.0], tangential), antisymmetric, -1.0)]
     def _select_both(self, region, case_name, role):
         if self.symmetry is None:
             return self._select(region, case_name, role), np.zeros(0, dtype=int)
