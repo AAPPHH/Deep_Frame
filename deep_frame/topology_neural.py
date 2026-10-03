@@ -29,6 +29,8 @@ NEURAL_SETTINGS = {
     "max_width_penalty": 0.0,
     "max_width_window_mm": 8.0,
     "max_local_fraction": 0.3,
+    "initial_density": None,
+    "initial_fit_iterations": 300,
 }
 
 def neural_settings(settings):
@@ -39,6 +41,8 @@ def neural_settings(settings):
     result.update(deepcopy(settings))
     if not 0 < result["volume_fraction"] < 1 or result["max_frequency_per_mm"] <= 0 or result["frequencies"] < 1 or result["learning_rate"] <= 0:
         raise ValueError("Invalid neural topology settings")
+    if result["initial_fit_iterations"] < 0:
+        raise ValueError("initial_fit_iterations must be non-negative")
     if result["mirror_axis"] not in (None, 0, 1, 2):
         raise ValueError("mirror_axis must be None, 0, 1 or 2")
     result["minimum_iterations"] = min(result["minimum_iterations"], result["max_iterations"])
@@ -138,6 +142,22 @@ class NeuralDensity:
         density = preserve.astype(float)
         density[free] = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, fraction * np.count_nonzero(allowed) - np.count_nonzero(preserve))))
         return density.reshape(tuple(domain["grid"]["shape"]))
+    def warm_target(self, path, shape):
+        from scipy.ndimage import zoom
+        source = np.load(path)["density"]
+        target = zoom(np.asarray(source, dtype=float), np.asarray(shape) / np.asarray(source.shape), order=1, grid_mode=True, mode="nearest")
+        if target.shape != tuple(shape):
+            raise ValueError(f"Warm-start field {source.shape} cannot be resampled onto {tuple(shape)}")
+        target = np.clip(target, 0, 1).ravel()
+        target[self.preserve], target[~self.allowed] = 1.0, 0.0
+        return target, list(source.shape)
+    def fit(self, target, sharpness, iterations, rate):
+        optimizer = Adam(self.field.parameters, rate)
+        count = np.count_nonzero(self.free)
+        for _ in range(iterations):
+            physical, cache = self.physical(sharpness)
+            optimizer.step(self.field.parameters, self.gradient(cache, 2 * (physical - target) / count))
+        return float(np.sqrt(np.mean((self.physical(sharpness)[0] - target)[self.allowed] ** 2)))
 
 class LocalVolumePenalty:
     def __init__(self, domain, settings):
@@ -179,10 +199,19 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
         system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
         optimizer = Adam(mapping.field.parameters, settings["learning_rate"])
         penalty = LocalVolumePenalty(domain, settings)
+        warm = None
+        if settings["initial_density"] is not None:
+            fit_started = perf_counter()
+            target_density, source_shape = mapping.warm_target(settings["initial_density"], domain["grid"]["shape"])
+            initial_rmse = float(np.sqrt(np.mean((mapping.physical(settings["sharpness_final"])[0] - target_density)[mapping.allowed] ** 2)))
+            warm = {"path": str(settings["initial_density"]), "source_shape": source_shape, "target_shape": list(domain["grid"]["shape"]), "fit_iterations": settings["initial_fit_iterations"],
+                    "fit_sharpness": settings["sharpness_final"], "initial_rmse": initial_rmse, "fit_rmse": mapping.fit(target_density, settings["sharpness_final"], settings["initial_fit_iterations"], settings["learning_rate"]),
+                    "target_mean_free": float(np.mean(target_density[mapping.free])), "budget_mean_free": float(mapping.budget / np.count_nonzero(mapping.free)), "fit_runtime_s": perf_counter() - fit_started}
+        ramp = 0 if warm else settings["sharpness_iterations"]
         scales = None
         converged, stop_reason = False, "max_iterations"
         for iteration in range(1, settings["max_iterations"] + 1):
-            sharpness = 1 + (settings["sharpness_final"] - 1) * min(1.0, (iteration - 1) / max(settings["sharpness_iterations"], 1))
+            sharpness = settings["sharpness_final"] if warm else 1 + (settings["sharpness_final"] - 1) * min(1.0, (iteration - 1) / max(settings["sharpness_iterations"], 1))
             physical, cache = mapping.physical(sharpness)
             solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"])
             if scales is None:
@@ -201,7 +230,7 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
                 progress_callback(deepcopy(history[-1]))
             recent = [entry["objective"] for entry in history[-settings["objective_window"]:]]
             stall = (max(recent) - min(recent)) / min(recent) if len(recent) == settings["objective_window"] else None
-            if iteration >= max(settings["minimum_iterations"], settings["sharpness_iterations"]) and stall is not None and stall < settings["change_tolerance"]:
+            if iteration >= max(settings["minimum_iterations"], ramp) and stall is not None and stall < settings["change_tolerance"]:
                 converged, stop_reason = True, "objective_stall"
                 break
             if settings["max_runtime_s"] is not None and perf_counter() - started >= settings["max_runtime_s"]:
@@ -218,7 +247,8 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
         volume = float(np.sum(physical) * np.prod(system.spacing))
         summary = {
             "method": "Neural reparameterization (TOuNN-style): Fourier-feature MLP density, hard preserve/forbidden masks, Hex8 SIMP compliance with chain-rule sensitivities, Adam, exact volume by logit shift",
-            "initialization": "network output near the target fraction everywhere; no frame template",
+            "initialization": "network pre-fitted to the resampled warm-start field (MSE through the volume-preserving density mapping)" if warm else "network output near the target fraction everywhere; no frame template",
+            "warm_start": warm,
             "settings": settings,
             "converged": converged,
             "stop_reason": stop_reason,
