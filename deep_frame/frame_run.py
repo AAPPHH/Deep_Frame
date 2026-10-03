@@ -310,7 +310,8 @@ class FrameRun:
         components = [{"type": entry.get("prototype", name.split("_")[0]), "name": name, "center_mm": entry["center_of_mass_mm"]} for name, entry in placements.items() if entry["mass_g"] > 0]
         rails = [region["max_mm"][2] for name, region in regions.items() if name.startswith("battery_rail_")]
         deck = {**battery["attachment_region"], "min_mm": [*battery["attachment_region"]["min_mm"][:2], min(rails) - self.settings["deck_band_mm"]], "max_mm": [*battery["attachment_region"]["max_mm"][:2], max(rails) + 0.01]} if rails else battery["attachment_region"]
-        selectors = {"center_fixtures": cases["arm_tip"]["fixed_regions"], "motor_fixtures": cases["modes"]["fixed_regions"], "arm_tip": cases["arm_tip"]["loads"][0]["region"], "arm_motor": "front_left",
+        band = lambda boxes: [{**box, "max_mm": [*box["max_mm"][:2], box["max_mm"][2] + self.settings["fixture_band_mm"]]} for box in boxes]
+        selectors = {"center_fixtures": band(cases["arm_tip"]["fixed_regions"]), "motor_fixtures": band(cases["modes"]["fixed_regions"]), "arm_tip": cases["arm_tip"]["loads"][0]["region"], "arm_motor": "front_left",
                      "camera": cases["camera_side"]["loads"][0]["region"], "deck": deck, "battery_center_mm": battery["position_mm"], "battery_mass_g": battery["mass_g"]}
         out = self.dir / "evaluation"
         return {"name": self.dir.name, "stl": str(mesh), "output": str(out), "prop_diameter_mm": self.layout.components["prop"]["diameter_mm"], "motors": motors, "mount_patterns": patterns,
