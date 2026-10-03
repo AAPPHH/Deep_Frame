@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from time import perf_counter
 
 import networkx as nx
@@ -362,14 +364,8 @@ def shrunk_region(region, r):
         return dict(region, min_mm=(np.asarray(region["min_mm"], dtype=float)+r).tolist(), max_mm=(np.asarray(region["max_mm"], dtype=float)-r).tolist())
     return dict(region, radius_mm=region["radius_mm"]-r, height_mm=region["height_mm"]-2*r)
 
-def core_region(region, r):
-    if region["kind"] == "box":
-        lateral = np.array([r, r, 0.0])
-        return dict(region, min_mm=(np.asarray(region["min_mm"], dtype=float)+lateral).tolist(), max_mm=(np.asarray(region["max_mm"], dtype=float)-lateral).tolist())
-    return dict(region, radius_mm=region["radius_mm"]-r)
-
 def core_domain(domain, config):
-    return dict(domain, regions=[core_region(r, config["preserve_round_mm"]) if r["role"] == "preserve" else r for r in domain["regions"]])
+    return dict(domain, regions=[shrunk_region(r, config["preserve_round_mm"]) if r["role"] == "preserve" else r for r in domain["regions"]])
 
 def node_radius(node):
     return float(min((3*node["volume"]/(4*np.pi))**(1/3), node["radius"]))
@@ -377,6 +373,18 @@ def node_radius(node):
 def sections(a, b, scale, config):
     b = np.maximum(np.asarray(b, dtype=float)*scale, config["minimum_radius_mm"])
     return np.clip(np.asarray(a, dtype=float)*scale, b, config["maximum_aspect"]*b), b
+
+def stored_domain(path):
+    from deep_frame.topology_geometry import grid_centers, rasterize_regions
+    stored = json.loads(Path(path).read_text(encoding="utf-8"))
+    domain = stored.get("domain", stored)
+    masks = rasterize_regions(domain["grid"], domain["regions"])
+    centers = grid_centers(domain["grid"])
+    hoop = domain.get("metadata", {}).get("round2", {}).get("hoop")
+    for path in hoop_paths(hoop):
+        masks["preserve"] |= sweep_values([centers[..., 0], centers[..., 1], centers[..., 2]], *[tube(path, hoop["radius_mm"])[key] for key in ("points", "a", "b", "axis")]) >= 0
+    masks["preserve"] &= masks["allowed"]
+    return {**domain, **masks}
 
 def hoop_paths(hoop):
     return [np.array([[sign*hoop["x_mm"], y, z] for y, z in hoop["path_yz_mm"]], dtype=float) for sign in (-1, 1)] if hoop else []

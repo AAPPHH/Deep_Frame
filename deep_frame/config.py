@@ -1020,7 +1020,7 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "reference_subdivisions": 2,
     "preserve_blend_mm": 2.5,
     "preserve_round_mm": 0.8,
-    "preserve_flush_mm": 0.02,
+    "preserve_flush_mm": -0.3,
     "member_smooth_mm": 0.5,
     "root_preserves": "motor_contact",
     "root_distance_mm": 3.0,
