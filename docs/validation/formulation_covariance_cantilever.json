@@ -1,0 +1,115 @@
+{
+ "statement": "cantilever 32 x 12 x 12 mm (half model 32 x 6 x 12 cells), x = 0 clamped; two correlated vertical loads (tip and mid-span top, rho = 0.7) plus an independent lateral tip load (antisymmetric about the y = 0 mirror plane, exercises the antisymmetric half solve)",
+ "sigma": [
+  [
+   1.0,
+   0.7,
+   0.0
+  ],
+  [
+   0.7,
+   1.0,
+   0.0
+  ],
+  [
+   0.0,
+   0.0,
+   0.25
+  ]
+ ],
+ "labels": [
+  [
+   "tip",
+   "Fz"
+  ],
+  [
+   "mid",
+   "Fz"
+  ],
+  [
+   "tip",
+   "Fy"
+  ]
+ ],
+ "density": "uniform random [0.3, 1] physical field, SIMP p = 3",
+ "dense_full_model": {
+  "load_mean": 0.012475492698127155,
+  "load_worst": 0.010846362119775653
+ },
+ "optimizer": {
+  "half": {
+   "load_mean": 0.01247549269812598,
+   "load_worst": 0.010846362119774217
+  },
+  "full": {
+   "load_mean": 0.012475492698125073,
+   "load_worst": 0.010846362119773516
+  }
+ },
+ "relative_error": {
+  "half": {
+   "load_mean": 9.414691248821327e-14,
+   "load_worst": 1.3244960683778118e-13
+  },
+  "full": {
+   "load_mean": 1.6686652060116103e-13,
+   "load_worst": 1.9706458687096529e-13
+  }
+ },
+ "dense_flexibility": [
+  [
+   0.006432050769868185,
+   0.002279757813310472,
+   6.596652359151496e-16
+  ],
+  [
+   0.0022797578133104744,
+   0.001402414161886586,
+   2.7461125787339637e-16
+  ],
+  [
+   6.664650046574704e-16,
+   2.8102650012744323e-16,
+   0.005797467310950887
+  ]
+ ],
+ "rank_one": {
+  "load_mean": 0.013843347386112061,
+  "load_worst": 0.013843347386112061,
+  "relative_gap": 0.0
+ },
+ "beam_theory_info": {
+  "tip_Fz_n_mm_per_n": 0.0014268595156480784,
+  "tip_Fz_dense": 0.0017106408740828795
+ },
+ "finite_differences": {
+  "ks": 5.0,
+  "limits": {
+   "mean_n_mm": 0.014970591237752585,
+   "worst_n_mm": 0.013015634543730783
+  },
+  "rows": {
+   "objective": {
+    "analytic": 0.00961957681567863,
+    "finite_difference": 0.009619576810115937,
+    "relative_error": 5.782679194114578e-10
+   },
+   "load_mean": {
+    "analytic": 0.028102671677565805,
+    "finite_difference": 0.028102672411378645,
+    "relative_error": 2.6111852624244566e-08
+   },
+   "load_worst": {
+    "analytic": 0.04560038239340283,
+    "finite_difference": 0.04560038440182267,
+    "relative_error": 4.404392345605199e-08
+   },
+   "volume": {
+    "analytic": 0.00961957681567863,
+    "finite_difference": 0.009619576812891495,
+    "relative_error": 2.8973572957039375e-10
+   }
+  }
+ },
+ "sha": "8ecd53d14d92731332239e1ab0acb44da9942006"
+}

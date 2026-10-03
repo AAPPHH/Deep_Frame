@@ -1,0 +1,172 @@
+{
+ "variant": "mean",
+ "statement": "min mass subject to load_mean <= 4.0 x solid value (load_worst monitored); the constraint must end active",
+ "solid": {
+  "volume": 1.0,
+  "load_mean": 0.0032866310657769606,
+  "load_worst": 0.0028523540695530297
+ },
+ "limit_n_mm": 0.013146524263107843,
+ "status": "converged",
+ "iterations": 169,
+ "runtime_s": 135.20560990000376,
+ "levels": [
+  {
+   "beta": 1.0,
+   "iterations": 24,
+   "reason": "converged",
+   "mass_g": 2.1401698980957415,
+   "max_violation": 0.003477726853265972
+  },
+  {
+   "beta": 2.0,
+   "iterations": 10,
+   "reason": "converged",
+   "mass_g": 2.3862787552249873,
+   "max_violation": -0.0005802516866629803
+  },
+  {
+   "beta": 4.0,
+   "iterations": 10,
+   "reason": "converged",
+   "mass_g": 2.6642008265720167,
+   "max_violation": -0.0015558993073935268
+  },
+  {
+   "beta": 8.0,
+   "iterations": 13,
+   "reason": "converged",
+   "mass_g": 2.62615218445855,
+   "max_violation": -0.0006139928679632645
+  },
+  {
+   "beta": 16.0,
+   "iterations": 23,
+   "reason": "converged",
+   "mass_g": 2.5448180483970932,
+   "max_violation": -0.0013396000637778682
+  },
+  {
+   "beta": 32.0,
+   "iterations": 44,
+   "reason": "converged",
+   "mass_g": 2.547321736391315,
+   "max_violation": 0.0036683307516316432
+  },
+  {
+   "beta": 64.0,
+   "iterations": 45,
+   "reason": "converged",
+   "mass_g": 2.4301437282657035,
+   "max_violation": -6.134174747518539e-05
+  }
+ ],
+ "volume_fraction_intermediate": 0.4838302211283335,
+ "constraint": {
+  "name": "load_mean",
+  "value": 0.013145717832336319,
+  "limit": 0.013146524263107843,
+  "unit": "N mm",
+  "sense": "<=",
+  "field": "eroded",
+  "g": -6.134174747518539e-05,
+  "status": "active",
+  "margin": 6.134174747518539e-05
+ },
+ "monitored": {
+  "name": "load_worst",
+  "value": 0.010414494911200773,
+  "limit": null,
+  "unit": "N mm",
+  "sense": "<=",
+  "field": "eroded",
+  "info": {
+   "eigenvalues_n_mm": [
+    0.010414494911200773,
+    0.0024861713612975194,
+    0.00024505155983802493
+   ],
+   "ks_n_mm": 0.010414494911200773,
+   "ks": 50.0,
+   "rank": 3,
+   "worst_wrench": [
+    [
+     "tip/Fz",
+     -0.98692420707958
+    ],
+    [
+     "mid/Fz",
+     -0.8059560707232778
+    ],
+    [
+     "tip/Fy",
+     0.0
+    ]
+   ]
+  },
+  "g": null,
+  "status": "monitored",
+  "margin": null
+ },
+ "rows": [
+  {
+   "name": "load_mean",
+   "value": 0.013145717832336319,
+   "limit": 0.013146524263107843,
+   "unit": "N mm",
+   "sense": "<=",
+   "field": "eroded",
+   "g": -6.134174747518539e-05,
+   "status": "active",
+   "margin": 6.134174747518539e-05
+  },
+  {
+   "name": "volume",
+   "value": 0.4838302211283335,
+   "limit": 1.0,
+   "unit": "-",
+   "sense": "<=",
+   "field": "intermediate",
+   "g": -0.5161697788716665,
+   "status": "satisfied",
+   "margin": 0.5161697788716665
+  },
+  {
+   "name": "load_worst",
+   "value": 0.010414494911200773,
+   "limit": null,
+   "unit": "N mm",
+   "sense": "<=",
+   "field": "eroded",
+   "info": {
+    "eigenvalues_n_mm": [
+     0.010414494911200773,
+     0.0024861713612975194,
+     0.00024505155983802493
+    ],
+    "ks_n_mm": 0.010414494911200773,
+    "ks": 50.0,
+    "rank": 3,
+    "worst_wrench": [
+     [
+      "tip/Fz",
+      -0.98692420707958
+     ],
+     [
+      "mid/Fz",
+      -0.8059560707232778
+     ],
+     [
+      "tip/Fy",
+      0.0
+     ]
+    ]
+   },
+   "g": null,
+   "status": "monitored",
+   "margin": null
+  }
+ ],
+ "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| load_mean | 0.01315 | <= 0.01315 | N mm | active | +0.0 % |\n| volume | 0.4838 | <= 1 | - | satisfied | +51.6 % |\n| load_worst | 0.01041 |  | N mm | monitored |  |",
+ "sha": "8ecd53d14d92731332239e1ab0acb44da9942006"
+}
