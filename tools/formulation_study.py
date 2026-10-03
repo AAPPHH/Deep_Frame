@@ -16,7 +16,7 @@ from deep_frame.config import RUN_SETTINGS, STAGES, command_line
 from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge
 from deep_frame.topology_optimization import HexElasticity
-from deep_frame.topology_problem import ARM_TIP, CANTILEVER_COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
+from deep_frame.topology_problem import ARM_TIP, CANTILEVER_COVARIANCE, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
 FORMULATION = {
@@ -45,7 +45,7 @@ FORMULATION = {
     "v3": {"worktree": "C:/clones/Deep_Frame-recon3", "ref": "HEAD", "copy": "C:/Users/jfham/AppData/Local/Temp/claude/c--clones-Deep-Frame/2bec171b-ba58-44fe-ab0f-61ff45688b18/scratchpad/recon3_copy",
            "argv": ["splines"], "compute": "geometry", "compare": "recon"},
     "comparison": {"output": "exports/cov/comparison.json", "old": {"raw": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_raw_1", "recon": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_recon_1"},
-                   "old_fine": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/result.json", "gap": {}, "manafly_sigma": "exports/cov/eval/manafly3/sigma.json", "aether4_sigma": "exports/cov/eval/aether4/sigma.json",
+                   "old_fine": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/result.json", "previous": {}, "previous_fine": None, "gap": {}, "manafly_sigma": "exports/cov/eval/manafly3/sigma.json", "aether4_sigma": "exports/cov/eval/aether4/sigma.json",
                    "twist": {"motor_front_left": 1.0, "motor_rear_right": 1.0, "motor_front_right": -1.0, "motor_rear_left": -1.0}, "twist_dof": "Fz"},
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
                    "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "cuda_cudss"},
@@ -552,27 +552,30 @@ def body_summary(run, sigma_path, spec):
             "missed": (evaluation.get("assessment") or {}).get("missed"), "warnings": (evaluation.get("assessment") or {}).get("warnings"), "line": evaluation.get("line"),
             "datasheet": str(Path(run) / "datasheet.md") if run else None, "sigma_peak_memory_gb": sigma.get("peak_memory_gb")}
 
-def stiffness_table(bodies):
+def stiffness_table(bodies, base="manafly3"):
     names = [name for name in bodies if bodies[name]["stiffness"]]
-    labels = list(bodies[names[0]]["stiffness"]) if names else []
-    lines = ["| interface/dof | " + " | ".join(names) + " | " + " | ".join(f"{name}/{names[0]}" for name in names[1:]) + " |", "|---" * (2 * len(names)) + "|"]
+    labels = list(bodies[base]["stiffness"]) if base in names else []
+    others = [name for name in names if name != base]
+    lines = ["| interface/dof | " + " | ".join(names) + " | " + " | ".join(f"{name}/{base}" for name in others) + " |", "|---" * (1 + len(names) + len(others)) + "|"]
     for label in labels:
-        values = [bodies[name]["stiffness"].get(label) for name in names]
-        lines.append(f"| {label} | " + " | ".join(f"{value:.4g}" for value in values) + " | " + " | ".join(f"{value / values[0]:.2f}" for value in values[1:]) + " |")
+        values = {name: bodies[name]["stiffness"].get(label) for name in names}
+        lines.append(f"| {label} | " + " | ".join(f"{values[name]:.4g}" for name in names) + " | " + " | ".join(f"{values[name] / values[base]:.2f}" for name in others) + " |")
     return "\n".join(lines)
 
 def cov_compare(cfg):
     spec, root = cfg["comparison"], Path(cfg["mma"]["root"]).resolve()
     runs, fine, old_fine = read(root / "runs.json"), read(root / "fine" / "result.json"), read(spec["old_fine"])
     bodies = {"old_raw": body_summary(spec["old"]["raw"], "exports/cov/eval/simp_mma_raw_1/sigma.json", spec), "old_recon_1to1": body_summary(spec["old"]["recon"], "exports/cov/eval/simp_mma_recon_1/sigma.json", spec),
-              **{f"new_{suffix}": body_summary(path, None, spec) for suffix, path in runs.items()},
+              **{f"previous_{suffix}": body_summary(path, None, spec) for suffix, path in spec["previous"].items()}, **{f"new_{suffix}": body_summary(path, None, spec) for suffix, path in runs.items()},
               "manafly3": body_summary(None, spec["manafly_sigma"], spec), "aether4": body_summary(None, spec["aether4_sigma"], spec)}
-    rows = {row["name"]: row for row in fine.get("rows", [])}
-    old_rows = {row["name"]: row for row in old_fine.get("rows", [])}
-    record = {"optimizer": {"new": {"mass_g": fine.get("mass_g"), "status": fine.get("status"), "iterations": fine.get("iterations"), "table": fine.get("table"), "load_worst_info": (rows.get("load_worst") or {}).get("info")},
-                            "old": {"mass_g": old_fine.get("mass_g"), "table": old_fine.get("table")},
-                            "monitored": {name: [(old_rows.get(name) or {}).get("value"), (rows.get(name) or {}).get("value")] for name in ("thrust_all", "torsion_yaw", "twist", "f1_intermediate", "arm_tip_stiffness")}},
-              "limits": {"evaluator_diagonal": [config.LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"], config.LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"]],
+    stages = {"old": old_fine, "previous": read(spec["previous_fine"]), "new": fine}
+    values = lambda stage, name: ({row["name"]: row for row in stage.get("rows", [])}.get(name) or {}).get("value")
+    limits = COVARIANCE["limits"]
+    record = {"optimizer": {**{key: {"mass_g": stage.get("mass_g"), "status": stage.get("status"), "iterations": stage.get("iterations"), "table": stage.get("table"),
+                                     "load_worst_info": ({row["name"]: row for row in stage.get("rows", [])}.get("load_worst") or {}).get("info")} for key, stage in stages.items()},
+                            "monitored": {name: [values(stage, name) for stage in stages.values()] for name in ("thrust_all", "torsion_yaw", "twist", "f1_intermediate", "arm_tip_stiffness")}},
+              "limits": {"evaluator_full": [limits["mean_n_mm"], limits["worst_n_mm"]], "source": limits["source"], "calibration": limits["calibration"],
+                         "optimizer": [limits["mean_n_mm"] * limits["calibration"]["mean_n_mm"], limits["worst_n_mm"] * limits["calibration"]["worst_n_mm"]],
                          "evaluator_full_aether4_scaled": [read(spec["aether4_sigma"]).get("scaled", {}).get("mean_compliance_n_mm"), read(spec["aether4_sigma"]).get("scaled", {}).get("worst_case_compliance_n_mm")]},
               "bodies": bodies, "stiffness_table": stiffness_table(bodies)}
     Path(spec["output"]).parent.mkdir(parents=True, exist_ok=True)
