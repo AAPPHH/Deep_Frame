@@ -1,0 +1,7 @@
+{
+ "status": "ok",
+ "converged": false,
+ "volume_fraction_intermediate": 0.3193506761089738,
+ "stiffness_n_per_mm": 135.82664243743235,
+ "statement": "min-compliance at volume V* (OC, same robust filter) gives stiffness k*; min-mass subject to k >= k* must return volume ~ V* with the stiffness constraint active"
+}
