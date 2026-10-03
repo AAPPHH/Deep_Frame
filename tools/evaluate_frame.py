@@ -63,6 +63,7 @@ def limits(overrides):
     return 0
 
 def main(argv=None):
+    sys.stdout.reconfigure(encoding="utf-8")
     return command_line({"run": run, "report": report, "limits": limits, **{name: part(name) for name in PARTS}}, argv)
 
 if __name__ == "__main__":
