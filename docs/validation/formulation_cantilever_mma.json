@@ -1,0 +1,152 @@
+{
+ "dual": {
+  "status": "ok",
+  "converged": false,
+  "volume_fraction_intermediate": 0.3193506761089738,
+  "stiffness_n_per_mm": 135.82664243743235,
+  "statement": "min-compliance at volume V* (OC, same robust filter) gives stiffness k*; min-mass subject to k >= k* must return volume ~ V* with the stiffness constraint active"
+ },
+ "mma_duality": {
+  "statement": "MMA min-compliance at V gives k_V; MMA min-mass subject to k >= k_V must return volume ~ V with the stiffness constraint active",
+  "volume_max": 0.3,
+  "min_compliance": {
+   "status": "converged",
+   "iterations": 118,
+   "stiffness_n_per_mm": 168.97971688372078,
+   "volume_fraction_intermediate": 0.2999930299112568,
+   "volume_status": "active"
+  },
+  "min_mass": {
+   "status": "converged",
+   "iterations": 109,
+   "stiffness_n_per_mm": 169.02985717993644,
+   "stiffness_status": "active",
+   "volume_fraction_intermediate": 0.3106609474359963
+  },
+  "volume_deviation": 0.03556055128312563
+ },
+ "status": "converged",
+ "iterations": 115,
+ "runtime_s": 65.98329809999996,
+ "seconds_per_iteration": 0.573767809565217,
+ "levels": [
+  {
+   "beta": 1.0,
+   "iterations": 27,
+   "reason": "converged",
+   "mass_g": 1.584843462169055,
+   "max_violation": -0.0003757326509823411
+  },
+  {
+   "beta": 2.0,
+   "iterations": 10,
+   "reason": "converged",
+   "mass_g": 1.6754103047577007,
+   "max_violation": -0.00042328003208946807
+  },
+  {
+   "beta": 4.0,
+   "iterations": 10,
+   "reason": "converged",
+   "mass_g": 1.7452271331445284,
+   "max_violation": -0.0002532593162258845
+  },
+  {
+   "beta": 8.0,
+   "iterations": 10,
+   "reason": "converged",
+   "mass_g": 1.6893565656563228,
+   "max_violation": -0.00021070148339408235
+  },
+  {
+   "beta": 16.0,
+   "iterations": 13,
+   "reason": "converged",
+   "mass_g": 1.5093210530813708,
+   "max_violation": 0.0010495166192772132
+  },
+  {
+   "beta": 32.0,
+   "iterations": 16,
+   "reason": "converged",
+   "mass_g": 1.3593206418160004,
+   "max_violation": 1.1663929563754394e-05
+  },
+  {
+   "beta": 64.0,
+   "iterations": 29,
+   "reason": "converged",
+   "mass_g": 1.3062073223651922,
+   "max_violation": -0.00017567285932496013
+  }
+ ],
+ "volume_fraction_intermediate": 0.2600597529556081,
+ "volume_deviation": -0.18566086621696543,
+ "stiffness_n_per_mm": 135.85050768455804,
+ "stiffness_status": "active",
+ "rows": [
+  {
+   "name": "tip_stiffness",
+   "value": 135.85050768455804,
+   "limit": 135.82664243743235,
+   "unit": "N/mm",
+   "sense": ">=",
+   "field": "eroded",
+   "g": -0.00017567285932496013,
+   "status": "active",
+   "margin": 0.00017567285932496013
+  },
+  {
+   "name": "volume",
+   "value": 0.2600597529556081,
+   "limit": 1.0,
+   "unit": "-",
+   "sense": "<=",
+   "field": "intermediate",
+   "g": -0.7399402470443919,
+   "status": "satisfied",
+   "margin": 0.7399402470443919
+  }
+ ],
+ "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| tip_stiffness | 135.9 | >= 135.8 | N/mm | active | +0.0 % |\n| volume | 0.2601 | <= 1 | - | satisfied | +74.0 % |",
+ "finite_differences": {
+  "objective": {
+   "analytic": -0.03612720444944935,
+   "finite_difference": -0.036127204444680316,
+   "relative_error": 1.3200668207026556e-10
+  },
+  "tip_stiffness": {
+   "analytic": 3.0517429669881553,
+   "finite_difference": 3.0517429578935658,
+   "relative_error": 2.9801296018039473e-09
+  },
+  "volume": {
+   "analytic": -0.03612720444944935,
+   "finite_difference": -0.03612720445023143,
+   "relative_error": 2.1648027955962523e-11
+  }
+ },
+ "mma": {
+  "package": "mmapy==0.3.1 (Deetman, Python port of Svanberg's MMA)",
+  "move": 0.1,
+  "scale": 100.0,
+  "asyinit": 0.5,
+  "asydecr": 0.7,
+  "asyincr": 1.2,
+  "raa0": 1e-05,
+  "c": 10000.0,
+  "d": 1.0,
+  "start_level": 0,
+  "level_window": 5,
+  "level_mass_change": 0.01,
+  "level_violation": 0.01,
+  "level_min_iterations": 10,
+  "level_max_iterations": 80,
+  "final_max_iterations": 300,
+  "stall_window": 40,
+  "stall_improvement": 0.001,
+  "checkpoint_interval": 10,
+  "objective": null
+ },
+ "sha": "cbe6a6b51d1b5c4203e9cebd98bc5947dc6f056d"
+}

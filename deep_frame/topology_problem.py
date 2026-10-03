@@ -232,7 +232,7 @@ def cantilever_dual(volume_fraction=0.3, domain=None, problem=None):
 
 MMA = {"package": "mmapy==0.3.1 (Deetman, Python port of Svanberg's MMA)", "move": 0.1, "scale": 100.0, "asyinit": 0.5, "asydecr": 0.7, "asyincr": 1.2, "raa0": 1e-5, "c": 1e4, "d": 1.0,
        "start_level": 0, "level_window": 5, "level_mass_change": 1e-2, "level_violation": 1e-2, "level_min_iterations": 10, "level_max_iterations": 80, "final_max_iterations": 300,
-       "stall_window": 40, "stall_improvement": 1e-3, "checkpoint_interval": 10}
+       "stall_window": 40, "stall_improvement": 1e-3, "checkpoint_interval": 10, "objective": None}
 
 class MMAOptimizer:
     def __init__(self, problem, settings=MMA):
@@ -244,13 +244,21 @@ class MMAOptimizer:
         x[self.problem.map.preserve] = 1
         x[~self.problem.map.allowed] = 0
         return x
+    def terms(self, result):
+        name = self.settings.get("objective")
+        if not name:
+            return result["objective"], result["objective_gradient"], result["constraints"], result["constraint_gradients"]
+        index = result["names"].index(name)
+        keep = np.arange(len(result["names"])) != index
+        return result["constraints"][index] + 1, result["constraint_gradients"][index], result["constraints"][keep], result["constraint_gradients"][keep]
     def step(self, x, result, state):
         settings, free = self.settings, self.free
-        n, m = int(np.count_nonzero(free)), len(result["constraints"])
+        f0, df0, g, dg = self.terms(result)
+        n, m = int(np.count_nonzero(free)), len(g)
         value = x[free][:, None]
         zeros, ones = np.zeros((n, 1)), np.ones((n, 1))
-        moved = self.subproblem(m, n, state["iteration"], value, zeros, ones, state["old1"], state["old2"], settings["scale"] * result["objective"], settings["scale"] * result["objective_gradient"][free][:, None],
-                                settings["scale"] * result["constraints"][:, None], settings["scale"] * result["constraint_gradients"][:, free], state["low"], state["upp"], 1.0, np.zeros((m, 1)), np.full((m, 1), settings["c"]), np.full((m, 1), settings["d"]),
+        moved = self.subproblem(m, n, state["iteration"], value, zeros, ones, state["old1"], state["old2"], settings["scale"] * f0, settings["scale"] * df0[free][:, None],
+                                settings["scale"] * g[:, None], settings["scale"] * dg[:, free], state["low"], state["upp"], 1.0, np.zeros((m, 1)), np.full((m, 1), settings["c"]), np.full((m, 1), settings["d"]),
                                 move=settings["move"], asyinit=settings["asyinit"], asydecr=settings["asydecr"], asyincr=settings["asyincr"], raa0=settings["raa0"])
         state.update(old2=state["old1"], old1=value.copy(), low=moved[9], upp=moved[10], iteration=state["iteration"] + 1)
         x = x.copy()
@@ -263,7 +271,7 @@ class MMAOptimizer:
         window = self.settings["stall_window"]
         if len(history) < window:
             return False
-        masses, violations = [row["mass_g"] for row in history[-window:]], [row["max_violation"] for row in history[-window:]]
+        masses, violations = [row["f0"] for row in history[-window:]], [row["max_violation"] for row in history[-window:]]
         return (max(masses) - min(masses)) / max(min(masses), 1e-30) < self.settings["level_mass_change"] and violations[0] - min(violations) < self.settings["stall_improvement"]
     def advance_ready(self, level):
         settings = self.settings
@@ -271,7 +279,7 @@ class MMAOptimizer:
             return "iteration_cap"
         if len(level) < max(settings["level_min_iterations"], settings["level_window"]):
             return None
-        masses = [row["mass_g"] for row in level[-settings["level_window"]:]]
+        masses = [row["f0"] for row in level[-settings["level_window"]:]]
         if (max(masses) - min(masses)) / max(min(masses), 1e-30) < settings["level_mass_change"] and level[-1]["max_violation"] <= settings["level_violation"]:
             return "converged"
         return "stalled" if self.stalled(level) else None
@@ -285,11 +293,12 @@ class MMAOptimizer:
         while True:
             clock = perf_counter()
             result = problem.evaluate(x, initial if not level else None)
-            row = {"iteration": len(history), "level": problem.level, "beta": problem.beta, "objective": result["objective"], "mass_g": result["mass_g"], "max_violation": result["max_violation"],
+            f0, _, g, _ = self.terms(result)
+            row = {"iteration": len(history), "level": problem.level, "beta": problem.beta, "objective": result["objective"], "f0": float(f0), "mass_g": result["mass_g"], "max_violation": float(np.max(g)),
                    "constraints": dict(zip(result["names"], result["constraints"].tolist()))}
             history.append(row)
             level.append(row)
-            converged = termination(result["mass_g"], result["max_violation"], problem.final_level)
+            converged = termination(row["f0"], row["max_violation"], problem.final_level)
             reason = "converged" if converged else None
             if problem.final_level and not converged:
                 reason = "iteration_cap" if len(level) >= settings["final_max_iterations"] else "stalled" if self.stalled(level) else None

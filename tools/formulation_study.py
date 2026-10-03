@@ -11,7 +11,7 @@ import deep_frame.config as config
 from deep_frame.config import command_line
 from deep_frame.topology_geometry import _merge
 from deep_frame.topology_optimization import HexElasticity
-from deep_frame.topology_problem import PROBLEM, TopologyProblem, cantilever_dual, format_report, orthotropic_material, shadow_thickness
+from deep_frame.topology_problem import MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, format_report, orthotropic_material, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
 FORMULATION = {
@@ -32,6 +32,7 @@ FORMULATION = {
               "crash_source": "ASSUMPTION: all-up mass 125 g (INTEGRATION_CONFIG), impact speed 5 m/s, 50 mm combined stopping distance (props, battery, frame); E = m v^2 / 2, F = E / d per direction",
               "rotation": {"front_left": 1.0, "rear_right": 1.0, "front_right": 0.0, "rear_left": 0.0}},
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7},
 }
 
 def configure(overrides):
@@ -191,8 +192,44 @@ def cantilever(cfg):
     Path(cfg["output"]).with_name("formulation_cantilever.json").write_text(json.dumps(result, indent=1, default=float), encoding="utf-8")
     print(json.dumps(result, default=float), flush=True)
 
+def finite_differences(problem, design, step, seed):
+    direction = np.random.default_rng(seed).standard_normal(problem.map.n) * problem.map.free
+    result, plus, minus = problem.evaluate(design), problem.evaluate(design + step * direction), problem.evaluate(design - step * direction)
+    rows = {"objective": [float(result["objective_gradient"] @ direction), float((plus["objective"] - minus["objective"]) / (2 * step))]}
+    rows.update({name: [float(gradient @ direction), float((high - low) / (2 * step))] for name, gradient, high, low in zip(result["names"], result["constraint_gradients"], plus["constraints"], minus["constraints"])})
+    return {name: {"analytic": a, "finite_difference": f, "relative_error": abs(a - f) / max(abs(f), 1e-30)} for name, (a, f) in rows.items()}
+
+def cantilever_mma(cfg):
+    dual = json.loads(Path(cfg["output"]).with_name("formulation_cantilever.json").read_text(encoding="utf-8"))
+    domain = cantilever_domain()
+    problem = TopologyProblem(domain, cantilever_problem(dual["stiffness_n_per_mm"]))
+    random = np.random.default_rng(cfg["mma"]["fd_seed"]).uniform(0.2, 0.8, problem.map.n)
+    checks = finite_differences(problem, random, cfg["mma"]["fd_step"], cfg["mma"]["fd_seed"])
+    result = MMAOptimizer(problem, cfg["mma"]["settings"]).run(np.full(problem.map.n, cfg["mma"]["cantilever_start"]))
+    rows = {row["name"]: row for row in result["result"]["rows"]}
+    problem.close()
+    problem = TopologyProblem(domain, cantilever_problem(1.0, dual_volume := cfg["mma"]["dual_volume"]))
+    compliance = MMAOptimizer(problem, {**cfg["mma"]["settings"], "objective": "tip_stiffness"}).run(np.full(problem.map.n, dual_volume))
+    reverse = {row["name"]: row for row in compliance["result"]["rows"]}
+    problem.close()
+    problem = TopologyProblem(domain, cantilever_problem(reverse["tip_stiffness"]["value"]))
+    closing = MMAOptimizer(problem, cfg["mma"]["settings"]).run(np.full(problem.map.n, cfg["mma"]["cantilever_start"]))
+    closed = {row["name"]: row for row in closing["result"]["rows"]}
+    problem.close()
+    duality = {"statement": "MMA min-compliance at V gives k_V; MMA min-mass subject to k >= k_V must return volume ~ V with the stiffness constraint active", "volume_max": dual_volume,
+               "min_compliance": {"status": compliance["status"], "iterations": compliance["iterations"], "stiffness_n_per_mm": reverse["tip_stiffness"]["value"], "volume_fraction_intermediate": reverse["volume"]["value"], "volume_status": reverse["volume"]["status"]},
+               "min_mass": {"status": closing["status"], "iterations": closing["iterations"], "stiffness_n_per_mm": closed["tip_stiffness"]["value"], "stiffness_status": closed["tip_stiffness"]["status"], "volume_fraction_intermediate": closed["volume"]["value"]},
+               "volume_deviation": closed["volume"]["value"] / reverse["volume"]["value"] - 1}
+    record = {"dual": dual, "mma_duality": duality, "status": result["status"], "iterations": result["iterations"], "runtime_s": result["runtime_s"], "seconds_per_iteration": result["seconds_per_iteration"], "levels": result["levels"],
+              "volume_fraction_intermediate": rows["volume"]["value"], "volume_deviation": rows["volume"]["value"] / dual["volume_fraction_intermediate"] - 1, "stiffness_n_per_mm": rows["tip_stiffness"]["value"],
+              "stiffness_status": rows["tip_stiffness"]["status"], "rows": result["result"]["rows"], "table": format_report(result["result"]["rows"]), "finite_differences": checks, "mma": result["settings"], "sha": git_sha()}
+    Path(cfg["output"]).with_name("formulation_cantilever_mma.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({key: record[key] for key in ("status", "iterations", "volume_fraction_intermediate", "volume_deviation", "stiffness_n_per_mm", "stiffness_status", "mma_duality")}, default=float), flush=True)
+    print(record["table"], flush=True)
+
 def main(argv=None):
-    return command_line({"references": lambda overrides: references(configure(overrides)), "modal_split": lambda overrides: modal_split(configure(overrides)), "cantilever": lambda overrides: cantilever(configure(overrides))}, argv)
+    return command_line({"references": lambda overrides: references(configure(overrides)), "modal_split": lambda overrides: modal_split(configure(overrides)), "cantilever": lambda overrides: cantilever(configure(overrides)),
+                         "cantilever_mma": lambda overrides: cantilever_mma(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())
