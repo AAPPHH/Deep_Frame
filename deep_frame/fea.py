@@ -489,12 +489,18 @@ def uniform_surface(mesh, target, taubin):
     return trimesh.Trimesh(meshes.current_mesh().vertex_matrix(), meshes.current_mesh().face_matrix())
 
 def robust_surface(mesh, settings, plan):
+    from deep_frame.topology_implicit import surface_fidelity
     settings, trials = _mesh_settings(settings), []
     for volume in settings["fea_remesh_targets_mm"]:
         for feature in plan["feature_degs"]:
             for target in plan["targets_mm"]:
                 surface = uniform_surface(mesh, target, plan["taubin"])
-                row = {"surface_mm": target, "taubin": plan["taubin"], "volume_mm": volume, "feature_deg": feature}
+                fidelity = surface_fidelity(mesh, surface)
+                row = {"surface_mm": target, "taubin": plan["taubin"], "volume_mm": volume, "feature_deg": feature, "deviation_mm": fidelity["maximum_sampled_deviation_mm"], "relative_volume_change": fidelity["relative_volume_change"]}
+                row["deviation_within_limit"] = row["deviation_mm"] <= settings["surface_deviation_mm"]
+                if abs(row["relative_volume_change"]) > settings["relative_volume_change"]:
+                    trials.append({**row, "passed": False, "diagnostic": "uniform surface changes the volume beyond the limit"})
+                    continue
                 try:
                     _prepare_surface(surface, {**settings, "fea_remesh_feature_deg": feature}, False, volume)
                     trials.append({**row, "passed": True})
