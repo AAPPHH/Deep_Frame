@@ -139,3 +139,30 @@ def test_cantilever_fixture_stiffness_constraint():
     assert solid["names"] == ["tip_stiffness", "volume"] and rows["tip_stiffness"]["value"] > 1.0 and rows["volume"]["value"] == pytest.approx(1.0)
     assert solid["mass_g"] == pytest.approx(32 * 12 * 12 * 1.09 / 1000)
     problem.close()
+
+@pytest.mark.parametrize("axis, modulus", [(0, PRINT_MATERIAL["orthotropic"]["e_xy_mpa"]), (1, PRINT_MATERIAL["orthotropic"]["e_xy_mpa"]), (2, PRINT_MATERIAL["orthotropic"]["e_z_mpa"])])
+def test_orthotropic_bar_modulus(axis, modulus):
+    from deep_frame.topology_optimization import HexElasticity
+    shape = [2, 2, 2]
+    shape[axis] = 12
+    allowed = np.ones(shape, dtype=bool)
+    end = np.asarray(shape, dtype=float)
+    def face(at):
+        low, high = np.full(3, -0.01), end + 0.01
+        low[axis], high[axis] = at - 0.01, at + 0.01
+        return box(low, high)
+    force = np.zeros(3)
+    force[axis] = 1.0
+    nodes = [face(0.0)]
+    domain = {"grid": {"origin_mm": [0.0, 0.0, 0.0], "spacing_mm": [1.0, 1.0, 1.0], "shape": shape, "axis_order": "xyz", "order": "C"}, "allowed": allowed, "preserve": np.zeros(shape, dtype=bool), "forbidden": ~allowed,
+              "material": orthotropic_material({"density_g_cm3": 1.09, "poisson_ratio": 0.3}), "load_cases": [{"name": "bar", "analysis": "static", "fixed_regions": nodes, "loads": [{"region": face(end[axis]), "force_n": force.tolist()}]}]}
+    system = HexElasticity(domain)
+    stiffness = system.matrix(np.full(system.nelem, system.young))
+    case = system.cases[0]
+    clamp = (3 * np.flatnonzero(np.abs(system.points[:, axis]) < 1e-9)[:, None] + np.asarray([index for index in range(3) if index != axis])).ravel()
+    free = np.setdiff1d(np.arange(system.ndof), np.union1d(clamp, 3 * np.flatnonzero(np.abs(system.points[:, axis]) < 1e-9) + axis))
+    from scipy.sparse.linalg import spsolve
+    displacement = np.zeros(system.ndof)
+    displacement[free] = spsolve(stiffness[free][:, free].tocsc(), case["force"][free])
+    tip = displacement[3 * np.flatnonzero(np.abs(system.points[:, axis] - end[axis]) < 1e-9) + axis].mean()
+    assert 1.0 * 12 / (4 * tip) == pytest.approx(modulus, rel=0.04)
