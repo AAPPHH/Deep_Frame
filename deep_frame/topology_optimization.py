@@ -285,12 +285,16 @@ def select_nodes(points, region):
     return selected
 
 class HexElasticity:
-    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu"):
+    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident"):
         if linear_solver not in ("cpu_superlu", "cuda_cudss"):
             raise ValueError("Unknown topology linear_solver")
+        if gpu_solver_residency not in ("resident", "transient"):
+            raise ValueError("Unknown topology gpu_solver_residency")
         self.linear_solver = linear_solver
+        self.gpu_solver_residency = gpu_solver_residency
         self.gpu_solvers = {}
         self.gpu_reanalyses = 0
+        self.gpu_transient_releases = 0
         self.gpu_solver_history = []
         self.domain = domain
         self.points, self.connectivity, self.dofs = regular_grid(domain["grid"])
@@ -325,38 +329,149 @@ class HexElasticity:
         self.cases = []
         self.selector_expansions = []
         self.selector_filtering = []
-        names = set()
+        self.symmetry = domain.get("symmetry")
+        if self.symmetry is not None:
+            self.axis = int(self.symmetry["axis"])
+            plane = float(self.symmetry.get("plane_mm", 0.0))
+            if abs(float(domain["grid"]["origin_mm"][self.axis]) - plane) > 1e-9:
+                raise ValueError("Symmetric half domains must start at the symmetry plane")
+            self.plane_nodes = np.intersect1d(np.flatnonzero(np.abs(self.points[:, self.axis] - plane) < 1e-7), self.active_nodes)
+        names, self.support = set(), None
         for case in domain["load_cases"]:
             if case["name"] in names:
                 raise ValueError("Topology load-case names must be unique")
             names.add(case["name"])
             if case["analysis"] not in ("static", "modal"):
                 raise ValueError("Unknown topology load-case analysis")
-            fixed_nodes = np.unique(np.concatenate([self._select(region, case["name"], "fixture") for region in case["fixed_regions"]]))
-            if len(fixed_nodes) < 3 or np.linalg.matrix_rank(self.points[fixed_nodes] - self.points[fixed_nodes[0]]) < 2:
-                raise ValueError("Topology fixture requires three non-collinear nodes")
-            fixed = (3 * fixed_nodes[:, None] + np.arange(3)).ravel()
+            relief = case.get("inertia_relief")
+            if relief is not None:
+                if self.support is None:
+                    self.support = self._relief_support(np.concatenate([np.concatenate(self._select_both(load["region"], other["name"], "load")) for other in domain["load_cases"] if "inertia_relief" in other for load in other["loads"]]))
+                fixed_nodes, fixed = self.support
+            else:
+                fixed_nodes = np.unique(np.concatenate([np.concatenate(self._select_both(region, case["name"], "fixture")) for region in case["fixed_regions"]]))
+                if len(fixed_nodes) < 3 or np.linalg.matrix_rank(self.points[fixed_nodes] - self.points[fixed_nodes[0]]) < 2:
+                    raise ValueError("Topology fixture requires three non-collinear nodes")
+                fixed = (3 * fixed_nodes[:, None] + np.arange(3)).ravel()
             free = np.setdiff1d(self.active_dofs, fixed, assume_unique=True)
-            compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "load_regions": []}
+            compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "load_regions": [], "parts": []}
             if case["analysis"] == "static":
-                force = np.zeros(self.ndof)
+                force, mirrored = np.zeros(self.ndof), np.zeros(self.ndof)
                 if not case.get("loads"):
                     raise ValueError("Static topology cases require loads")
                 for load in case["loads"]:
-                    nodes = self._select(load["region"], case["name"], "load")
-                    if np.intersect1d(nodes, fixed_nodes).size:
+                    direct, mirror = self._select_both(load["region"], case["name"], "load")
+                    if np.intersect1d(np.concatenate([direct, mirror]), fixed_nodes).size:
                         raise ValueError("Topology force patch overlaps the fixture")
                     vector = np.asarray(load["force_n"], dtype=float)
                     if vector.shape != (3,) or not np.all(np.isfinite(vector)) or np.linalg.norm(vector) == 0:
                         raise ValueError("Topology force must be a finite nonzero 3-vector")
-                    dofs = 3 * nodes[:, None] + np.arange(3)
-                    np.add.at(force, dofs.ravel(), np.tile(vector / len(nodes), len(nodes)))
-                    compiled["load_regions"].append((nodes, vector))
+                    share = vector / (len(direct) + len(mirror))
+                    np.add.at(force, (3 * direct[:, None] + np.arange(3)).ravel(), np.tile(share, len(direct)))
+                    if len(mirror):
+                        np.add.at(mirrored, (3 * mirror[:, None] + np.arange(3)).ravel(), np.tile(share * self._flip(), len(mirror)))
+                    compiled["load_regions"].append((direct, mirror, vector))
+                if relief is not None:
+                    compiled["inertia_relief"] = self._inertia(relief, case["name"], fixed_nodes, force, mirrored)
                 compiled["force"] = force
-                self.groups[fixed.tobytes()].append(compiled)
+                for fixed_part, part_force, sign in self._parts(fixed, force, mirrored):
+                    part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
+                    if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
+                        part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign, "support": fixed if self.symmetry is None else np.setdiff1d(fixed, self._plane_dofs(sign))}
+                        compiled["parts"].append(part)
+                        self.groups[fixed_part.tobytes()].append((compiled, part))
+                if not compiled["parts"]:
+                    raise ValueError("Topology load case has no resolvable force")
             self.cases.append(compiled)
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
+    def _flip(self):
+        flip = np.ones(3)
+        flip[self.axis] = -1
+        return flip
+    def _plane_dofs(self, sign):
+        if sign > 0:
+            return 3 * self.plane_nodes + self.axis
+        return (3 * self.plane_nodes[:, None] + np.asarray([index for index in range(3) if index != self.axis])).ravel()
+    def _relief_support(self, loaded):
+        candidates = np.setdiff1d(np.intersect1d(self.interface_nodes, self.plane_nodes) if self.symmetry is not None else self.interface_nodes, loaded)
+        points = self.points[candidates]
+        a = int(np.argmin(points[:, 1] + 1e-3 * points[:, 2]))
+        b = int(np.argmax(np.linalg.norm(points - points[a], axis=1)))
+        normal = np.cross(points - points[a], points[b] - points[a])
+        c = int(np.argmax(np.linalg.norm(normal, axis=1)))
+        if np.linalg.norm(normal[c]) < 1e-9:
+            raise ValueError("Inertia-relief support requires three non-collinear interface nodes")
+        along, normal = np.abs(points[b] - points[a]), np.abs(np.cross(points[c] - points[a], points[b] - points[a]))
+        nodes = candidates[[a, b, c]]
+        dofs = [3 * nodes[0] + np.arange(3), 3 * nodes[1] + np.delete(np.arange(3), np.argmax(along)), [3 * nodes[2] + np.argmax(normal)]]
+        return nodes, np.sort(np.concatenate(dofs))
+    def _inertia(self, relief, case_name, support_nodes, force, mirrored):
+        flip = np.ones(3) if self.symmetry is None else self._flip()
+        direct, mirror = np.zeros(len(self.points)), np.zeros(len(self.points))
+        for item in relief.get("point_masses", []):
+            nodes = self._select_both(item["region"], case_name, "mass")
+            share = item["mass_g"] / (len(nodes[0]) + len(nodes[1]))
+            np.add.at(direct, nodes[0], share)
+            np.add.at(mirror, nodes[1], share)
+        if relief.get("preserve_mass_g", 0) > 0:
+            preserve = np.asarray(self.domain["preserve"], dtype=bool).ravel()
+            incidence = np.bincount(self.connectivity[preserve].ravel(), minlength=len(self.points)).astype(float)
+            incidence *= relief["preserve_mass_g"] / (incidence.sum() * (1 if self.symmetry is None else 2))
+            direct += incidence
+            if self.symmetry is not None:
+                mirror += incidence
+                direct[self.plane_nodes] += mirror[self.plane_nodes]
+                mirror[self.plane_nodes] = 0
+        positions = np.concatenate([self.points, self.points * flip])
+        masses = np.concatenate([direct, mirror])
+        applied = np.concatenate([force.reshape(-1, 3), mirrored.reshape(-1, 3) * flip])
+        total = masses.sum()
+        center = masses @ positions / total
+        arm = positions - center
+        inertia = np.eye(3) * np.sum(masses * np.sum(arm ** 2, axis=1)) - (arm * masses[:, None]).T @ arm
+        linear = applied.sum(axis=0) / total
+        angular = np.linalg.solve(inertia, np.cross(arm, applied).sum(axis=0))
+        inertial = -masses[:, None] * (linear + np.cross(angular, arm))
+        force += inertial[:len(self.points)].ravel()
+        mirrored += (inertial[len(self.points):] * flip).ravel()
+        return {"mass_g": float(total), "center_of_mass_mm": center.tolist(), "acceleration_n_per_g": linear.tolist(), "angular_acceleration": angular.tolist(), "support_nodes_mm": self.points[support_nodes].tolist()}
+    def support_reactions(self, physical_density, case_name, penalization=3.0, min_stiffness_ratio=1e-6):
+        case = next(case for case in self.cases if case["name"] == case_name)
+        density = np.asarray(physical_density, dtype=float).ravel()
+        stiffness = self.matrix(self.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization)).tocsr()
+        reactions = []
+        for part in case["parts"]:
+            displacement = np.zeros(self.ndof)
+            displacement[part["free"]] = splu(stiffness[part["free"], :][:, part["free"]].tocsc()).solve(part["force"][part["free"]])
+            residual = stiffness @ displacement - part["force"]
+            reactions.append({"sign": part["sign"], "support_dofs": len(part["support"]), "max_reaction_n": float(np.max(np.abs(residual[part["support"]]))), "nodal_force_sum_n": float(np.linalg.norm(part["force"].reshape(-1, 3), axis=1).sum())})
+        return reactions
+    def _parts(self, fixed, force, mirrored):
+        if self.symmetry is None:
+            return [(fixed, force, 1.0)]
+        normal, tangential = self._plane_dofs(1), self._plane_dofs(-1)
+        symmetric, antisymmetric = (force + mirrored) / 2, (force - mirrored) / 2
+        symmetric[normal], symmetric[tangential] = 0, force[tangential] / 2
+        antisymmetric[tangential], antisymmetric[normal] = 0, force[normal] / 2
+        return [(np.union1d(fixed, normal), symmetric, 1.0), (np.union1d(fixed, tangential), antisymmetric, -1.0)]
+    def _select_both(self, region, case_name, role):
+        if self.symmetry is None:
+            return self._select(region, case_name, role), np.zeros(0, dtype=int)
+        mirrored = deepcopy(region)
+        mirrored["min_mm"][self.axis], mirrored["max_mm"][self.axis] = -region["max_mm"][self.axis], -region["min_mm"][self.axis]
+        selected = []
+        for candidate in (region, mirrored):
+            try:
+                selected.append(self._select(candidate, case_name, role))
+            except ValueError as error:
+                if not str(error).startswith("Empty topology node selector"):
+                    raise
+                selected.append(np.zeros(0, dtype=int))
+        selected[1] = np.setdiff1d(selected[1], self.plane_nodes, assume_unique=True)
+        if not len(selected[0]) + len(selected[1]):
+            raise ValueError(f"Empty topology node selector on the symmetric half domain: {region}")
+        return selected
     def _select(self, region, case_name, role):
         try:
             selected = select_nodes(self.points, region)
@@ -409,58 +524,79 @@ class HexElasticity:
         stiffness = self.matrix(moduli)
         moduli[~self.active_elements] = 0
         derivative[~self.active_elements] = 0
-        results = {}
-        for cases in self.groups.values():
-            free = cases[0]["free"]
-            forces = np.column_stack([case["force"][free] for case in cases])
+        factor = 1.0 if self.symmetry is None else 2.0
+        accumulated = {}
+        for members in self.groups.values():
+            free = members[0][1]["free"]
+            forces = np.column_stack([part["force"][free] for _, part in members])
             reduced = stiffness[free, :][:, free].tocsc()
-            if self.linear_solver == "cpu_superlu":
-                factor = splu(reduced, permc_spec="MMD_AT_PLUS_A", options={"SymmetricMode": True})
-                solutions = factor.solve(forces)
-            else:
-                key = cases[0]["fixed"].tobytes()
-                if key in self.gpu_solvers and not self.gpu_solvers[key].same_structure(reduced):
-                    previous = self.gpu_solvers.pop(key)
-                    self.gpu_solver_history.append(previous.diagnostics())
-                    cleanup = previous.close()
-                    if cleanup:
-                        raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
-                    self.gpu_reanalyses += 1
-                if key not in self.gpu_solvers:
-                    self.gpu_solvers[key] = CudaDirectSolver(reduced, forces)
-                solutions = self.gpu_solvers[key].solve(reduced, forces)
+            solutions = self._linear_solve(members[0][1]["fixed"].tobytes(), reduced, forces)
             residual = np.linalg.norm(reduced @ solutions - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
-            tolerance = 1e-8 if self.linear_solver == "cuda_cudss" else 1e-4
+            tolerance = 1e-6 if self.linear_solver == "cuda_cudss" else 1e-4
             if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
                 raise RuntimeError(f"Topology linear solve failed residual check: {residual.tolist()}")
-            for column, case in enumerate(cases):
+            for column, (case, part) in enumerate(members):
                 displacement = np.zeros(self.ndof)
                 displacement[free] = solutions[:, column]
                 element_displacement = displacement[self.dofs]
-                energy = np.einsum("ei,ij,ej->e", element_displacement, self.ke, element_displacement, optimize=True)
-                compliance = float(np.dot(case["force"], displacement))
-                if not np.isfinite(compliance) or compliance <= 0:
-                    raise RuntimeError("Topology compliance must be finite and positive")
-                result = {"compliance_n_mm": compliance, "derivative": -derivative * energy, "relative_residual": float(residual[column])}
-                if metrics:
-                    result.update(self._metrics(displacement, element_displacement, moduli, case))
-                results[case["name"]] = result
+                entry = accumulated.setdefault(case["name"], {"case": case, "compliance": 0.0, "energy": np.zeros(self.nelem), "residual": 0.0, "fields": []})
+                entry["compliance"] += factor * float(np.dot(part["force"], displacement))
+                entry["energy"] += factor * np.einsum("ei,ij,ej->e", element_displacement, self.ke, element_displacement, optimize=True)
+                entry["residual"] = max(entry["residual"], float(residual[column]))
+                entry["fields"].append((part["sign"], displacement))
+        results = {}
+        for name, entry in accumulated.items():
+            if not np.isfinite(entry["compliance"]) or entry["compliance"] <= 0:
+                raise RuntimeError("Topology compliance must be finite and positive")
+            result = {"compliance_n_mm": entry["compliance"], "derivative": -derivative * entry["energy"], "relative_residual": entry["residual"]}
+            if metrics:
+                direct = sum(displacement for _, displacement in entry["fields"])
+                mirror = sum(sign * displacement for sign, displacement in entry["fields"])
+                result.update(self._metrics([direct] if self.symmetry is None else [direct, mirror], moduli, entry["case"]))
+            results[name] = result
         return results
-    def _metrics(self, displacement, element_displacement, moduli, case):
-        nodal = displacement.reshape(-1, 3)
+    def _linear_solve(self, key, reduced, forces):
+        if self.linear_solver == "cpu_superlu":
+            return splu(reduced, permc_spec="MMD_AT_PLUS_A", options={"SymmetricMode": True}).solve(forces)
+        if key in self.gpu_solvers and not self.gpu_solvers[key].same_structure(reduced):
+            previous = self.gpu_solvers.pop(key)
+            self.gpu_solver_history.append(previous.diagnostics())
+            cleanup = previous.close()
+            if cleanup:
+                raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
+            self.gpu_reanalyses += 1
+        if key not in self.gpu_solvers:
+            self.gpu_solvers[key] = CudaDirectSolver(reduced, forces)
+        solutions = self.gpu_solvers[key].solve(reduced, forces)
+        if self.gpu_solver_residency == "transient":
+            released = self.gpu_solvers.pop(key)
+            self.gpu_solver_history.append(released.diagnostics())
+            cleanup = released.close()
+            if cleanup:
+                raise RuntimeError("cuDSS cleanup failed: " + "; ".join(cleanup))
+            self.gpu_transient_releases += 1
+        return solutions
+    def _metrics(self, fields, moduli, case):
+        nodal = [field.reshape(-1, 3) for field in fields]
+        flip = np.ones(3) if self.symmetry is None else self._flip()
         loads = []
-        for nodes, force in case["load_regions"]:
-            mean = np.mean(nodal[nodes], axis=0)
+        for direct, mirror, force in case["load_regions"]:
+            values = np.concatenate([nodal[0][direct], nodal[-1][mirror] * flip])
+            mean = np.mean(values, axis=0)
             directional = float(mean @ force / np.linalg.norm(force))
-            loads.append({"node_count": len(nodes), "force_n": force.tolist(), "mean_displacement_mm": mean.tolist(), "directional_displacement_mm": directional, "stiffness_n_per_mm": float(np.linalg.norm(force) / directional) if directional > 0 else None})
+            loads.append({"node_count": len(values), "force_n": force.tolist(), "mean_displacement_mm": mean.tolist(), "directional_displacement_mm": directional, "stiffness_n_per_mm": float(np.linalg.norm(force) / directional) if directional > 0 else None})
         stress_maximum = 0.0
-        for strain in self.strain:
-            stress = ((element_displacement @ strain.T) @ self.constitutive.T) * moduli[:, None]
-            xx, yy, zz, xy, yz, xz = stress.T
-            von_mises = np.sqrt(0.5 * ((xx - yy) ** 2 + (yy - zz) ** 2 + (zz - xx) ** 2) + 3 * (xy ** 2 + yz ** 2 + xz ** 2))
-            stress_maximum = max(stress_maximum, float(np.max(von_mises)))
-        return {"max_displacement_mm": float(np.max(np.linalg.norm(nodal, axis=1))), "max_von_mises_mpa": stress_maximum, "loads": loads, "stiffness_n_per_mm": loads[0]["stiffness_n_per_mm"] if len(loads) == 1 else None}
+        for field in fields:
+            element_displacement = field[self.dofs]
+            for strain in self.strain:
+                stress = ((element_displacement @ strain.T) @ self.constitutive.T) * moduli[:, None]
+                xx, yy, zz, xy, yz, xz = stress.T
+                von_mises = np.sqrt(0.5 * ((xx - yy) ** 2 + (yy - zz) ** 2 + (zz - xx) ** 2) + 3 * (xy ** 2 + yz ** 2 + xz ** 2))
+                stress_maximum = max(stress_maximum, float(np.max(von_mises)))
+        return {"max_displacement_mm": float(max(np.max(np.linalg.norm(values, axis=1)) for values in nodal)), "max_von_mises_mpa": stress_maximum, "loads": loads, "stiffness_n_per_mm": loads[0]["stiffness_n_per_mm"] if len(loads) == 1 else None}
     def elastic_frequencies(self, physical_density, case_name, number=3, penalization=3.0, min_stiffness_ratio=1e-6):
+        if self.symmetry is not None:
+            raise ValueError("Voxel modal analysis is not available on symmetric half domains")
         if self.domain.get("point_masses"):
             raise ValueError("Point-mass modal coupling is verified by independent CalculiX, not the voxel surrogate")
         case = next((case for case in self.cases if case["name"] == case_name and case["analysis"] == "modal"), None)
@@ -485,7 +621,7 @@ class HexElasticity:
             errors.extend(solver.close())
         return errors
     def diagnostics(self):
-        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(nodes) for nodes, _ in case["load_regions"]]} for case in self.cases]})
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups)})
 
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,
@@ -503,6 +639,17 @@ DEFAULT_SETTINGS = {
     "max_runtime_s": None,
     "interface_node_policy": "allowed_adjacent",
     "linear_solver": "cpu_superlu",
+    "projection": "single",
+    "robust_delta": 0.25,
+    "beta_schedule": None,
+    "beta_interval": 50,
+    "beta_minimum_iterations": 20,
+    "beta_change_tolerance": 0.01,
+    "move_limit_late": None,
+    "move_limit_late_beta": 8.0,
+    "volume_target_relaxation": 0.2,
+    "objective_window": 10,
+    "gpu_solver_residency": "resident",
 }
 
 def _settings(settings):
@@ -529,6 +676,30 @@ def _settings(settings):
         raise ValueError("Invalid topology interface_node_policy")
     if result["linear_solver"] not in ("cpu_superlu", "cuda_cudss"):
         raise ValueError("Invalid topology linear_solver")
+    if result["gpu_solver_residency"] not in ("resident", "transient"):
+        raise ValueError("Invalid topology gpu_solver_residency")
+    if result["projection"] not in ("single", "robust"):
+        raise ValueError("Invalid topology projection")
+    delta = result["robust_delta"]
+    if result["projection"] == "robust" and (not np.isfinite(delta) or delta <= 0 or not 0 < result["projection_eta"] - delta < result["projection_eta"] + delta < 1):
+        raise ValueError("Robust projection thresholds must lie within (0, 1)")
+    for name in ("beta_interval", "beta_minimum_iterations"):
+        if isinstance(result[name], bool) or int(result[name]) != result[name] or result[name] < 1:
+            raise ValueError(f"{name} must be a positive integer")
+    if isinstance(result["objective_window"], bool) or int(result["objective_window"]) != result["objective_window"] or result["objective_window"] < 2:
+        raise ValueError("objective_window must be an integer of at least 2")
+    result["beta_minimum_iterations"] = min(result["beta_minimum_iterations"], result["beta_interval"])
+    if result["beta_schedule"] is not None:
+        schedule = [float(beta) for beta in result["beta_schedule"]]
+        if not schedule or not np.all(np.isfinite(schedule)) or schedule[0] <= 0 or np.any(np.diff(schedule) <= 0):
+            raise ValueError("beta_schedule must be a nonempty strictly increasing list of positive values")
+        result["beta_schedule"] = schedule
+    late = result["move_limit_late"]
+    if late is not None and (not np.isfinite(late) or not 0 < late <= 1):
+        raise ValueError("move_limit_late must be in (0, 1] or None")
+    relaxation = result["volume_target_relaxation"]
+    if not np.isfinite(result["beta_change_tolerance"]) or result["beta_change_tolerance"] <= 0 or not np.isfinite(result["move_limit_late_beta"]) or not np.isfinite(relaxation) or not 0 < relaxation <= 1:
+        raise ValueError("Invalid beta continuation settings")
     return result
 
 def validate_masks(domain):
@@ -549,6 +720,10 @@ def validate_masks(domain):
 class DensityMap:
     def __init__(self, domain, settings):
         self.settings = settings
+        self.beta = settings["beta_schedule"][0] if settings["beta_schedule"] else settings["projection_beta"]
+        self.robust = settings["projection"] == "robust"
+        eta, delta = settings["projection_eta"], settings["robust_delta"]
+        self.thresholds = {"eroded": eta + delta, "intermediate": eta, "dilated": eta - delta} if self.robust else {"intermediate": eta}
         self.allowed, self.preserve, self.forbidden = validate_masks(domain)
         self.free = self.allowed & ~self.preserve
         self.n = self.allowed.size
@@ -566,14 +741,29 @@ class DensityMap:
         self.sums[self.forbidden] = 1
         if np.any(self.sums <= 0):
             raise ValueError("Density filter contains an empty allowed-cell neighborhood")
-    def physical(self, design):
+    def filtered(self, design):
         design = np.asarray(design, dtype=float).ravel()
         if design.size != self.n or not np.all(np.isfinite(design)) or np.any(design < 0) or np.any(design > 1):
             raise ValueError("Design densities must be finite and within [0, 1]")
-        filtered = np.asarray(self.filter @ design).ravel() / self.sums
-        beta = self.settings["projection_beta"]
-        eta = self.settings["projection_eta"]
-        if beta:
+        return np.asarray(self.filter @ design).ravel() / self.sums
+    def physical(self, design):
+        return self.project(self.filtered(design), self.settings["projection_eta"])
+    def fields(self, design):
+        filtered = self.filtered(design)
+        return {name: self.project(filtered, eta) for name, eta in self.thresholds.items()}, filtered
+    def volume(self, design):
+        if self.robust:
+            return float(np.sum(self.project(self.filtered(design), self.thresholds["dilated"])[0]))
+        return np.sum(self.physical(design)[0])
+    def project(self, filtered, eta):
+        beta = self.beta
+        if beta and self.robust:
+            denominator = np.tanh(beta * eta) + np.tanh(beta * (1 - eta))
+            shifted = beta * (filtered - eta)
+            decay = np.exp(-2 * np.abs(shifted))
+            physical = (np.tanh(beta * eta) + np.tanh(shifted)) / denominator
+            derivative = beta * 4 * decay / (1 + decay) ** 2 / denominator
+        elif beta:
             denominator = np.tanh(beta * eta) + np.tanh(beta * (1 - eta))
             physical = (np.tanh(beta * eta) + np.tanh(beta * (filtered - eta))) / denominator
             derivative = beta * (1 - np.tanh(beta * (filtered - eta)) ** 2) / denominator
@@ -593,33 +783,39 @@ class DensityMap:
         design[self.preserve] = 1
         lower = self.settings["minimum_design_density"]
         design[self.free] = lower
-        if np.sum(self.physical(design)[0]) > target + 1e-8:
+        if self.volume(design) > target + 1e-8:
             raise ValueError("Volume budget cannot contain preserves and their filtered transition")
         upper = 1.0
         for _ in range(70):
             value = (lower + upper) / 2
             design[self.free] = value
-            if np.sum(self.physical(design)[0]) > target:
+            if self.volume(design) > target:
                 upper = value
             else:
                 lower = value
         design[self.free] = lower
         return design
 
-def _oc_update(design, objective_derivative, volume_derivative, mapping, target, settings):
+def _oc_update(design, objective_derivative, volume_derivative, mapping, target, settings, move_limit):
     free = mapping.free
-    if np.any(volume_derivative[free] <= 0) or not np.all(np.isfinite(objective_derivative[free])):
+    volume_derivative = volume_derivative[free]
+    if np.any(volume_derivative < 0) or not np.all(np.isfinite(volume_derivative)) or not np.max(volume_derivative) > 0 or not np.all(np.isfinite(objective_derivative[free])):
         raise RuntimeError("Invalid OC sensitivities")
-    ratios = np.maximum(1e-30, -objective_derivative[free] / volume_derivative[free])
-    lower_density = np.maximum(settings["minimum_design_density"], design[free] - settings["move_limit"])
-    upper_density = np.minimum(1.0, design[free] + settings["move_limit"])
+    volume_derivative = np.maximum(volume_derivative, 1e-12 * np.max(volume_derivative))
+    ratios = np.maximum(1e-30, -objective_derivative[free] / volume_derivative)
+    lower_density = np.maximum(settings["minimum_design_density"], design[free] - move_limit)
+    upper_density = np.minimum(1.0, design[free] + move_limit)
     def proposal(multiplier):
         result = design.copy()
         result[free] = np.clip(design[free] * np.sqrt(ratios / max(multiplier, 1e-100)), lower_density, upper_density)
         return result
+    lowest = design.copy()
+    lowest[free] = lower_density
+    if mapping.volume(lowest) > target:
+        return lowest
     upper = max(float(np.max(ratios)), 1e-12)
     for _ in range(100):
-        if np.sum(mapping.physical(proposal(upper))[0]) <= target + 1e-9:
+        if mapping.volume(proposal(upper)) <= target + 1e-9:
             break
         upper *= 2
     else:
@@ -629,7 +825,7 @@ def _oc_update(design, objective_derivative, volume_derivative, mapping, target,
     for _ in range(70):
         multiplier = (lower + upper) / 2
         proposed = proposal(multiplier)
-        if np.sum(mapping.physical(proposed)[0]) > target:
+        if mapping.volume(proposed) > target:
             lower = multiplier
         else:
             upper = multiplier
@@ -661,6 +857,13 @@ def _history_entry(iteration, physical, solutions, scales, change, elapsed, fina
         "elapsed_s": elapsed,
     }
 
+def _stage_entry(mapping, fields, volume_target, move_limit):
+    entry = {"projection_beta": mapping.beta, "move_limit": move_limit}
+    if mapping.robust:
+        entry.update({"dilated_volume_target": volume_target, "eroded_density_sum": float(np.sum(fields["eroded"][0])),
+                      "dilated_density_sum": float(np.sum(fields["dilated"][0]))})
+    return entry
+
 def optimize_topology(domain, settings, *, progress_callback=None):
     started = perf_counter()
     history = []
@@ -675,36 +878,62 @@ def optimize_topology(domain, settings, *, progress_callback=None):
         if np.count_nonzero(mapping.preserve) >= target:
             raise ValueError("The volume budget must exceed the preserve-cell volume")
         design = mapping.initial(target)
-        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"])
+        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
         scales = None
         converged = False
         stop_reason = "max_iterations"
+        schedule = settings["beta_schedule"] or [mapping.beta]
+        staged = mapping.robust or settings["beta_schedule"] is not None
+        stiffness_name, volume_name = ("eroded", "dilated") if mapping.robust else ("intermediate", "intermediate")
+        minimum_iterations = max(settings["minimum_iterations"], settings["beta_minimum_iterations"]) if staged else settings["minimum_iterations"]
+        level = level_iterations = 0
+        volume_target = target
         for iteration in range(1, settings["max_iterations"] + 1):
-            physical, projection_derivative = mapping.physical(design)
+            fields, _ = mapping.fields(design)
+            physical = fields["intermediate"][0]
             density = physical.reshape(tuple(domain["grid"]["shape"]))
-            solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"])
+            if mapping.robust:
+                dilated = float(np.sum(fields[volume_name][0]))
+                reference = dilated if level_iterations == 0 else volume_target
+                volume_target = reference + settings["volume_target_relaxation"] * (target * dilated / float(np.sum(physical)) - reference)
+            solutions = system.solve(fields[stiffness_name][0], settings["penalization"], settings["min_stiffness_ratio"])
             if scales is None:
                 scales, normalization, weights = _case_scaling(solutions, settings)
             physical_gradient = sum(scales[name] * result["derivative"] for name, result in solutions.items())
-            gradient = mapping.pullback(physical_gradient, projection_derivative)
-            volume_gradient = mapping.pullback(np.ones(mapping.n), projection_derivative)
-            candidate = _oc_update(design, gradient, volume_gradient, mapping, target, settings)
+            gradient = mapping.pullback(physical_gradient, fields[stiffness_name][1])
+            volume_gradient = mapping.pullback(np.ones(mapping.n), fields[volume_name][1])
+            late = settings["move_limit_late"] is not None and mapping.beta >= settings["move_limit_late_beta"]
+            move_limit = settings["move_limit_late"] if late else settings["move_limit"]
+            candidate = _oc_update(design, gradient, volume_gradient, mapping, volume_target, settings, move_limit)
             change = float(np.max(np.abs(candidate - design)))
             history.append(_history_entry(iteration, physical, solutions, scales, change, perf_counter() - started))
+            if staged:
+                recent = [entry["objective"] for entry in history[-min(level_iterations + 1, settings["objective_window"]):]]
+                stall = (max(recent) - min(recent)) / min(recent) if len(recent) == settings["objective_window"] else None
+                history[-1].update(_stage_entry(mapping, fields, volume_target, move_limit), objective_stall=stall)
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
             design = candidate
-            if iteration >= settings["minimum_iterations"] and change < settings["change_tolerance"]:
-                converged = True
-                stop_reason = "change_tolerance"
-                break
+            level_iterations += 1
+            if level == len(schedule) - 1:
+                if level_iterations >= minimum_iterations and change < settings["change_tolerance"]:
+                    converged = True
+                    stop_reason = "change_tolerance"
+                    break
+            elif level_iterations >= settings["beta_interval"] or (level_iterations >= settings["beta_minimum_iterations"] and change < settings["beta_change_tolerance"]):
+                level += 1
+                level_iterations = 0
+                mapping.beta = schedule[level]
             if settings["max_runtime_s"] is not None and perf_counter() - started >= settings["max_runtime_s"]:
                 stop_reason = "max_runtime_s"
                 break
-        physical, _ = mapping.physical(design)
+        fields, filtered = mapping.fields(design)
+        physical = fields["intermediate"][0]
         density = physical.reshape(tuple(domain["grid"]["shape"]))
-        solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"], metrics=True)
+        solutions = system.solve(fields[stiffness_name][0], settings["penalization"], settings["min_stiffness_ratio"], metrics=True)
         final_entry = _history_entry(iteration + 1, physical, solutions, scales, None, perf_counter() - started, final=True)
+        if staged:
+            final_entry.update(_stage_entry(mapping, fields, volume_target, None))
         history.append(final_entry)
         if progress_callback is not None:
             progress_callback(deepcopy(final_entry))
@@ -735,9 +964,22 @@ def optimize_topology(domain, settings, *, progress_callback=None):
             "system": system.diagnostics(),
             "elapsed_s": perf_counter() - started,
         }
+        if staged:
+            summary["continuation"] = {"beta_schedule": schedule, "beta_final": mapping.beta, "final_level_reached": level == len(schedule) - 1,
+                                       "level_iterations_final": level_iterations}
+        outcome = {"status": "ok", "density": density.copy(), "design_density": design.reshape(density.shape).copy(), "summary": summary, "history": history, "diagnostics": diagnostics}
+        if mapping.robust:
+            allowed = np.count_nonzero(mapping.allowed)
+            summary["method"] = "3D Hex8 SIMP, spatial density filter, robust eroded/intermediate/dilated Heaviside projection with beta continuation, eroded-design normalized multi-load compliance, OC dilated-volume constraint"
+            summary["robust"] = {"thresholds": mapping.thresholds, "objective_field": "eroded", "volume_constraint_field": "dilated",
+                                 "reported_density_field": "intermediate", "dilated_volume_target_final": volume_target,
+                                 "eroded_volume_fraction": float(np.sum(fields["eroded"][0]) / allowed),
+                                 "dilated_volume_fraction": float(np.sum(fields["dilated"][0]) / allowed),
+                                 "dilated_frame_mass_g": float(np.sum(fields["dilated"][0]) * np.prod(system.spacing) * system.density / 1000)}
+            outcome.update({name + "_density": fields[name][0].reshape(density.shape).copy() for name in ("eroded", "dilated")})
+            outcome["filtered_density"] = filtered.reshape(density.shape).copy()
         if not converged:
             diagnostics.append(f"Density iteration stopped at {stop_reason}; convergence is not claimed")
-        outcome = {"status": "ok", "density": density.copy(), "design_density": design.reshape(density.shape).copy(), "summary": summary, "history": history, "diagnostics": diagnostics}
         return outcome
     except ValueError as error:
         outcome = {"status": "invalid", "density": density, "summary": {}, "history": history, "diagnostics": [str(error)]}

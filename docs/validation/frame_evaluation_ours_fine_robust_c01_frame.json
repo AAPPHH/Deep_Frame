@@ -1,0 +1,8 @@
+{
+ "name": "Deep Frame fine_robust c01 (implizite Route)",
+ "stl": "C:/clones/Deep_Frame-int/exports/implicit/fine_robust/candidates/c01/geometry.stl",
+ "output": "C:/clones/Deep_Frame-eval/exports/evaluation/ours_fine_robust_c01",
+ "print_axis": [0, 0, 1],
+ "ours": true,
+ "domain_grid": [102, 96, 24]
+}

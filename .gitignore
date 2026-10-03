@@ -21,3 +21,10 @@ env/
 /exports/topology/
 /exports/topology_solver_*/
 /Examples/
+/exports/implicit/
+/exports/run_log.jsonl
+/exports/mcrash/
+/exports/r2/
+/exports/r3/
+/exports/recon/
+/exports/runs/

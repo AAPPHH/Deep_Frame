@@ -16,8 +16,11 @@ import numpy as np
 
 if __name__ != "__main__":
     from build123d import export_step
-    from deep_frame.config import _json_copy, _json_digest
+    from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS, _json_copy, _json_digest
     from deep_frame.frame import assembly_placements, build_components, build_geometry, motor_positions
+    MESH_ATTEMPTS = IMPLICIT_KINDS["tet_attempts"][0]
+    MESH_KEYS = ("tet_attempts", "mesh_minimum_sicn", "mesh_boundary_deviation_mm", "surface_deviation_mm", "relative_volume_change", *(key for key in IMPLICIT_CONFIG if key.startswith("fea_")))
+    MESH_NUMBERS = tuple(key for key in MESH_KEYS[2:] if key != "fea_remesh_targets_mm")
 
 def resolve_solver(settings):
     explicit = settings.get("solver_path") or os.environ.get("CALCULIX_PATH")
@@ -138,13 +141,31 @@ def _mass_lines(nodes, elements, point_masses):
         coupling_info.append({"name": mass["name"], "mass_g": mass["mass_g"], "position_mm": list(mass["position_mm"]), "attachment_nodes": len(selected), "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"})
     return lines, coupling_info
 
+def print_axes(axis):
+    normal = _vector(axis, "print_axis")
+    normal = normal / np.linalg.norm(normal)
+    first = np.array([1.0, 0.0, 0.0]) if abs(normal[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
+    first = first - first.dot(normal) * normal
+    first /= np.linalg.norm(first)
+    return first, np.cross(normal, first), normal
+
+def _elastic_lines(material):
+    constants = material.get("orthotropic")
+    if not constants:
+        return ["*ELASTIC", f"{material['young_modulus_mpa']:.12g},{material['poisson_ratio']:.12g}"], [], ""
+    c = constants
+    first, second, _ = print_axes(material.get("print_axis", (0, 0, 1)))
+    elastic = ["*ELASTIC,TYPE=ENGINEERING CONSTANTS", ",".join(f"{v:.12g}" for v in (c["e_xy_mpa"], c["e_xy_mpa"], c["e_z_mpa"], c["nu_xy"], c["nu_xz"], c["nu_xz"], c["g_xy_mpa"], c["g_z_mpa"])), f"{c['g_z_mpa']:.12g}"]
+    return elastic, ["*ORIENTATION,NAME=PRINTAXES,SYSTEM=RECTANGULAR", ",".join(f"{v:.12g}" for v in (*first, *second))], ",ORIENTATION=PRINTAXES"
+
 def _model_lines(nodes, elements, material, point_masses):
     lines = ["*HEADING", "Deep Frame linear elastic analysis", "*NODE"]
     lines.extend(f"{node}," + ",".join(f"{v:.12g}" for v in xyz) for node, xyz in nodes.items())
     lines.append("*ELEMENT,TYPE=C3D10,ELSET=FRAME")
     lines.extend(f"{element}," + ",".join(str(n) for n in connectivity) for element, connectivity in elements.items())
     lines.extend(_set_lines("NSET", "NALL", nodes))
-    lines.extend(["*MATERIAL,NAME=PRINT", "*ELASTIC", f"{material['young_modulus_mpa']:.12g},{material['poisson_ratio']:.12g}", "*DENSITY", f"{material['density_g_cm3'] * 1e-9:.12g}", "*SOLID SECTION,ELSET=FRAME,MATERIAL=PRINT"])
+    elastic, orientation, section = _elastic_lines(material)
+    lines.extend(["*MATERIAL,NAME=PRINT", *elastic, "*DENSITY", f"{material['density_g_cm3'] * 1e-9:.12g}", *orientation, "*SOLID SECTION,ELSET=FRAME,MATERIAL=PRINT" + section])
     mass_lines, information = _mass_lines(nodes, elements, point_masses)
     return lines + mass_lines, information
 
@@ -175,7 +196,7 @@ def _case_lines(nodes, case, settings):
             load_nodes.append((selected, force))
         for node, force in accumulated.items():
             lines.extend(f"{node},{axis + 1},{value:.12g}" for axis, value in enumerate(force) if value)
-        lines.extend(["*NODE PRINT,NSET=NALL", "U", "*EL PRINT,ELSET=FRAME", "S"])
+        lines.extend(["*NODE PRINT,NSET=NALL,GLOBAL=YES", "U", "*EL PRINT,ELSET=FRAME,GLOBAL=YES", "S"])
     else:
         raise ValueError(f"Unknown analysis type: {case['analysis']}")
     lines.append("*END STEP")
@@ -205,12 +226,15 @@ def _numeric_lines(content, header, columns):
         raise RuntimeError(f"Missing or non-finite CalculiX output: {header}")
     return np.asarray(results)
 
-def _static_result(content, load_nodes):
+def _static_result(content, load_nodes, axis=(0, 0, 1)):
     displacement_data = _numeric_lines(content, "displacements (", 4)
     stress_data = _numeric_lines(content, "stresses (", 8)
     displacements = {int(row[0]): row[1:] for row in displacement_data}
     sxx, syy, szz, sxy, sxz, syz = stress_data[:, 2:].T
     von_mises = np.sqrt(0.5 * ((sxx - syy) ** 2 + (syy - szz) ** 2 + (szz - sxx) ** 2) + 3 * (sxy ** 2 + sxz ** 2 + syz ** 2))
+    n = print_axes(axis)[2]
+    normal = sxx * n[0] ** 2 + syy * n[1] ** 2 + szz * n[2] ** 2 + 2 * (sxy * n[0] * n[1] + sxz * n[0] * n[2] + syz * n[1] * n[2])
+    quantiles = {f"{name}_p{label}_mpa": float(np.percentile(values, q)) for label, q in (("99", 99.0), ("999", 99.9)) for name, values in (("von_mises", von_mises), ("print_normal_tension", np.maximum(normal, 0.0)), ("print_normal_abs", np.abs(normal)))}
     loading = []
     for selected, force in load_nodes:
         mean = np.mean([displacements[node] for node in selected], axis=0)
@@ -218,7 +242,7 @@ def _static_result(content, load_nodes):
         if directional <= 0:
             raise RuntimeError("Non-positive directional compliance")
         loading.append({"node_count": len(selected), "force_n": force.tolist(), "mean_displacement_mm": mean.tolist(), "directional_displacement_mm": directional, "stiffness_n_per_mm": float(np.linalg.norm(force) / directional)})
-    return {"analysis": "static", "max_displacement_mm": float(np.max(np.linalg.norm(displacement_data[:, 1:], axis=1))), "max_von_mises_mpa": float(np.max(von_mises)), "loads": loading, "stiffness_n_per_mm": loading[0]["stiffness_n_per_mm"] if len(loading) == 1 else None}
+    return {"analysis": "static", "max_displacement_mm": float(np.max(np.linalg.norm(displacement_data[:, 1:], axis=1))), "max_von_mises_mpa": float(np.max(von_mises)), **quantiles, "stress_samples": len(von_mises), "print_axis": n.tolist(), "loads": loading, "stiffness_n_per_mm": loading[0]["stiffness_n_per_mm"] if len(loading) == 1 else None}
 
 def _modal_result(content, settings):
     values = _numeric_lines(content, "E I G E N V A L U E", 5)
@@ -237,7 +261,19 @@ def _validate(solid, material, point_masses, load_cases, settings):
     threads = settings.get("threads", 2)
     if not isinstance(threads, int) or isinstance(threads, bool) or threads < 1:
         raise ValueError("threads must be a positive integer")
-    if len(solid.solids()) != 1 or not solid.is_valid or solid.volume <= 0:
+    if _is_mesh(solid):
+        if not (np.all(np.isfinite(solid.vertices)) and solid.is_watertight and solid.is_winding_consistent and solid.body_count == 1 and solid.volume > 0):
+            raise ValueError("FEA requires one closed, consistently oriented triangle mesh with positive volume")
+        if not settings["tet_attempts"] or not set(settings["tet_attempts"]) <= set(MESH_ATTEMPTS):
+            raise ValueError(f"tet_attempts must be a non-empty subset of {MESH_ATTEMPTS}")
+        targets = settings["fea_remesh_targets_mm"]
+        if not all(isinstance(value, (int, float)) and not isinstance(value, bool) and 0 < value < math.inf for value in [*(settings[key] for key in MESH_NUMBERS), *targets]) or not isinstance(settings["fea_remesh_iterations"], int):
+            raise ValueError(f"{', '.join(MESH_KEYS[2:])} must be finite and positive, fea_remesh_iterations an integer")
+        if not targets or any(finer >= coarser for coarser, finer in zip(targets, targets[1:])):
+            raise ValueError("fea_remesh_targets_mm must be a non-empty, strictly decreasing list")
+        if not 0 < settings["mesh_minimum_sicn"] < 1:
+            raise ValueError("mesh_minimum_sicn must lie in (0, 1)")
+    elif len(solid.solids()) != 1 or not solid.is_valid or solid.volume <= 0:
         raise ValueError("FEA requires exactly one valid solid with positive volume")
     for key in ("young_modulus_mpa", "density_g_cm3"):
         if not math.isfinite(material[key]) or material[key] <= 0:
@@ -256,11 +292,86 @@ def _validate(solid, material, point_masses, load_cases, settings):
             raise ValueError("Point masses must be finite and positive")
         _vector(mass["position_mm"], "position_mm")
 
+def _is_mesh(solid):
+    return hasattr(solid, "is_winding_consistent")
+
+def _mesh_settings(settings):
+    return {**{key: deepcopy(IMPLICIT_CONFIG[key]) for key in MESH_KEYS}, **settings}
+
+def _element_budget(settings):
+    import psutil
+    own = psutil.Process().memory_info()
+    process_mb, available_mb = getattr(own, "private", own.rss)/2**20, psutil.virtual_memory().available/2**20
+    memory_mb = min(settings["fea_memory_budget_mb"]-process_mb, available_mb)
+    return {"elements": max(0, int(memory_mb*1024/settings["fea_memory_per_element_kb"])), "solver_memory_mb": memory_mb, "process_mb": process_mb, "available_mb": available_mb,
+            "memory_budget_mb": settings["fea_memory_budget_mb"], "memory_per_element_kb": settings["fea_memory_per_element_kb"]}
+
+def _mesh_plan(settings):
+    names, targets = settings["tet_attempts"], settings["fea_remesh_targets_mm"]
+    return [(name, target) for target in targets for name in names if name.startswith("remesh")] + [(name, targets[0] if name == "refine_hxt" else None) for name in names if not name.startswith("remesh")]
+
+def _skip_reason(name, target, attempts, angle, settings):
+    if name == "direct_hxt" and angle < settings["fea_direct_minimum_angle_deg"]:
+        return f"minimum input triangle angle {angle:.3g} deg below {settings['fea_direct_minimum_angle_deg']} deg"
+    if not name.startswith("remesh"):
+        return None
+    for attempt in attempts:
+        if attempt.get("over_budget") and attempt["name"].startswith("remesh") and attempt["target_mm"] >= target:
+            return f"predicted element count exceeds the budget: {attempt['name']} at the coarser or equal surface target {attempt['target_mm']} mm already had {attempt['linear_element_count']} elements"
+        if attempt.get("surface_failed") and attempt["target_mm"] == target and attempt["name"].startswith("remesh"):
+            return f"prepared surface at {target} mm already failed in {attempt['name']}"
+    return None
+
+def _volume_mesh(solid, directory, settings, result):
+    timeout, threads = settings.get("mesh_timeout_s", 180), settings.get("threads", 2)
+    def mesher(name, **request):
+        path = directory / name
+        path.write_text(json.dumps({**request, "output_dir": str(directory), "settings": settings}), encoding="utf-8")
+        return [sys.executable, "-m", "deep_frame.fea", str(path)]
+    if not _is_mesh(solid):
+        export_step(solid, directory / "solid.step")
+        _run(mesher("mesh_request.json", step_path=str(directory / "solid.step")), directory, timeout, threads, directory / "gmsh.log")
+        result["mesh"] = json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8"))
+        return _read_mesh(directory / "mesh.inp")
+    np.savez(directory / "surface.npz", vertices=np.asarray(solid.vertices, dtype=np.float64), faces=np.asarray(solid.faces, dtype=np.int64))
+    angle = float(np.degrees(solid.face_angles.min()))
+    attempts, budget = [], _element_budget(settings)
+    result["mesh"] = {"attempts": attempts, "input_face_count": len(solid.faces), "input_minimum_angle_deg": angle, "memory_budget": budget}
+    for index, (name, target) in enumerate(_mesh_plan(settings)):
+        start = time.monotonic()
+        attempt = {"name": name, "target_mm": target, "status": "failed"}
+        attempts.append(attempt)
+        try:
+            for stale in ("mesh.inp", "mesh.msh", "mesh_metadata.json", "attempt_metadata.json"):
+                (directory / stale).unlink(missing_ok=True)
+            reason = _skip_reason(name, target, attempts[:-1], angle, settings)
+            if reason:
+                attempt.update(status="skipped", diagnostic=reason)
+                continue
+            label = f"{index:02d}_{name}" + (f"_{target:g}" if target else "")
+            limit = timeout if name.startswith(("remesh", "refine")) else min(timeout, settings["fea_fallback_timeout_s"])
+            attempt["timeout_s"] = limit
+            _run(mesher(f"mesh_request_{label}.json", surface_path=str(directory / "surface.npz"), attempt=name, target_mm=target, element_budget=budget["elements"]), directory, limit, threads, directory / f"gmsh_{label}.log")
+            nodes, elements = _read_mesh(directory / "mesh.inp")
+            result["mesh"].update(json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8")))
+            attempt.update(status="ok", linear_element_count=result["mesh"]["linear_element_count"])
+            return nodes, elements
+        except Exception as error:
+            attempt["diagnostic"] = f"{type(error).__name__}: {str(error)[-800:]}"
+            if (directory / "attempt_metadata.json").exists():
+                attempt.update(json.loads((directory / "attempt_metadata.json").read_text(encoding="utf-8")))
+            attempt["surface_failed"] = attempt.get("prepared_surface", {}).get("passed") is False or "Prepared FEA surface" in attempt["diagnostic"]
+        finally:
+            attempt["runtime_s"] = time.monotonic() - start
+    raise RuntimeError("All tetrahedral meshing attempts failed: " + ", ".join(f"{attempt['name']} {attempt['status']}" for attempt in attempts))
+
 def evaluate(solid, material, point_masses, load_cases, settings):
     start = time.monotonic()
     result = {"status": "failed", "mass_g": None, "eigenfrequencies_hz": [], "max_displacement_mm": None, "max_von_mises_mpa": None, "stiffness_n_per_mm": None, "load_cases": {}, "diagnostics": [], "artifacts": {}}
     directory = None
     try:
+        if _is_mesh(solid):
+            settings = _mesh_settings(settings)
         _validate(solid, material, point_masses, load_cases, settings)
         result.update(linear_solver=settings.get("linear_solver"), solver_threads=settings.get("threads", 2))
         solver = resolve_solver(settings)
@@ -268,14 +379,7 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         base.mkdir(parents=True, exist_ok=True)
         directory = Path(mkdtemp(prefix="evaluation_", dir=base))
         result["artifacts"]["directory"] = str(directory)
-        step_path = directory / "solid.step"
-        export_step(solid, step_path)
-        request = {"step_path": str(step_path), "output_dir": str(directory), "settings": settings}
-        request_path = directory / "mesh_request.json"
-        request_path.write_text(json.dumps(request), encoding="utf-8")
-        _run([sys.executable, "-m", "deep_frame.fea", str(request_path)], directory, settings.get("mesh_timeout_s", 180), settings.get("threads", 2), directory / "gmsh.log")
-        nodes, elements = _read_mesh(directory / "mesh.inp")
-        result["mesh"] = json.loads((directory / "mesh_metadata.json").read_text(encoding="utf-8"))
+        nodes, elements = _volume_mesh(solid, directory, settings, result)
         result["mesh"]["node_count"] = len(nodes)
         model, coupling = _model_lines(nodes, elements, material, point_masses)
         result["point_mass_coupling"] = coupling
@@ -286,6 +390,8 @@ def evaluate(solid, material, point_masses, load_cases, settings):
                 raise ValueError("A point-mass attachment region overlaps a fixed fixture")
         prepared = [(case, *_case_lines(nodes, case, settings)) for case in load_cases]
         result["frame_mass_g"] = float(solid.volume * material["density_g_cm3"] / 1000)
+        if _is_mesh(solid):
+            result["model_frame_mass_g"] = float(result["mesh"]["tet_volume_mm3"] * material["density_g_cm3"] / 1000)
         result["point_mass_g"] = float(sum(mass["mass_g"] for mass in point_masses))
         result["mass_g"] = result["frame_mass_g"] + result["point_mass_g"]
         for index, (case, lines, load_nodes, fixed_count) in enumerate(prepared):
@@ -295,7 +401,7 @@ def evaluate(solid, material, point_masses, load_cases, settings):
             if "Job finished" not in log:
                 raise RuntimeError(f"CalculiX did not finish case {case['name']}")
             content = (directory / f"{name}.dat").read_text(encoding="utf-8", errors="replace")
-            current = _static_result(content, load_nodes) if case["analysis"] == "static" else _modal_result(content, settings)
+            current = _static_result(content, load_nodes, material.get("print_axis", (0, 0, 1))) if case["analysis"] == "static" else _modal_result(content, settings)
             current["fixed_node_count"] = fixed_count
             result["load_cases"][case["name"]] = current
             result["artifacts"][case["name"]] = {"input": str(directory / f"{name}.inp"), "data": str(directory / f"{name}.dat"), "log": str(directory / f"{name}.log")}
@@ -325,6 +431,137 @@ def evaluate(solid, material, point_masses, load_cases, settings):
         (directory / "result.json").write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
     return result
 
+def _topology(mesh):
+    return {"watertight": bool(mesh.is_watertight), "winding_consistent": bool(mesh.is_winding_consistent), "body_count": int(mesh.body_count), "euler_number": int(mesh.euler_number)}
+
+def _prepare_surface(source, settings, refine, target, record=None):
+    import pymeshlab
+    import trimesh
+    from deep_frame.topology_implicit import mesh_checks
+    start = time.monotonic()
+    meshes = pymeshlab.MeshSet()
+    def snapshot():
+        current = meshes.current_mesh()
+        return trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
+    def restore(mesh):
+        meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
+    restore(source)
+    if refine:
+        meshes.meshing_surface_subdivision_midpoint(iterations=64, threshold=pymeshlab.PureValue(settings["fea_refine_edge_mm"]))
+    meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_remesh_iterations"], targetlen=pymeshlab.PureValue(target), featuredeg=settings["fea_remesh_feature_deg"],
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_refine_max_surface_distance_mm" if refine else "fea_remesh_max_surface_distance_mm"]))
+    tolerance = settings["fea_merge_relative_tolerance"]*float(source.scale)
+    steps = {"merge_close_vertices": lambda: meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(tolerance)),
+             "remove_t_vertices": lambda: meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)}
+    surface, topology, rejected = snapshot(), {"input": _topology(source)}, {}
+    topology["remeshed"] = _topology(surface)
+    cleanup = topology["remeshed"] != topology["input"] or not mesh_checks(surface)["passed"] or bool(np.any(surface.face_adjacency_angles > math.radians(179)))
+    for name, step in steps.items() if cleanup else ():
+        step()
+        meshes.meshing_remove_null_faces()
+        meshes.meshing_remove_unreferenced_vertices()
+        candidate = snapshot()
+        if _topology(candidate) == _topology(surface):
+            surface = candidate
+        else:
+            rejected[name] = _topology(candidate)
+            restore(surface)
+    topology["prepared"] = _topology(surface)
+    checks = mesh_checks(surface)
+    report = {"refined_input": refine, "target_mm": target, "merge_tolerance_mm": tolerance, "cleanup_applied": cleanup, "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())),
+              "topology": topology, "topology_changed": topology["prepared"] != topology["input"], "rejected_steps": rejected, "topology_passed": checks["topology"]["passed"],
+              "self_intersections_passed": checks["self_intersections"]["passed"], "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179))), "runtime_s": time.monotonic() - start}
+    report["passed"] = not report["topology_changed"] and checks["passed"] and not report["folded_edges"]
+    if not report["passed"]:
+        if record:
+            Path(record).write_text(json.dumps({"prepared_surface": report}), encoding="utf-8")
+        raise ValueError(f"Prepared FEA surface changed topology or is not one closed, oriented, fold- and self-intersection-free body: {report}")
+    return surface, report
+
+def _collapse_short_edges(mesh, threshold):
+    import trimesh
+    from scipy.sparse import coo_matrix
+    from scipy.sparse.csgraph import connected_components
+    edges = mesh.edges_unique[mesh.edges_unique_length < threshold]
+    count = len(mesh.vertices)
+    _, labels = connected_components(coo_matrix((np.ones(len(edges)), (edges[:, 0], edges[:, 1])), shape=(count, count)), directed=False)
+    vertices = np.zeros((labels.max() + 1, 3))
+    np.add.at(vertices, labels, mesh.vertices)
+    vertices /= np.bincount(labels)[:, None]
+    faces = labels[mesh.faces]
+    faces = faces[(faces[:, 0] != faces[:, 1]) & (faces[:, 1] != faces[:, 2]) & (faces[:, 0] != faces[:, 2])]
+    result = trimesh.Trimesh(vertices, faces, process=False)
+    result.update_faces(result.unique_faces())
+    result.remove_unreferenced_vertices()
+    return result
+
+def clean_slivers(mesh, settings):
+    import pymeshlab
+    import trimesh
+    from deep_frame.topology_implicit import mesh_checks, surface_fidelity
+    meshes = pymeshlab.MeshSet()
+    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
+    meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_sliver_iterations"], targetlen=pymeshlab.PureValue(settings["fea_sliver_target_mm"]), featuredeg=settings["fea_remesh_feature_deg"],
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_remesh_max_surface_distance_mm"]))
+    current = meshes.current_mesh()
+    surface = trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
+    collapsed = _collapse_short_edges(surface, settings["fea_sliver_collapse_mm"])
+    if _topology(collapsed) == _topology(surface) and mesh_checks(collapsed)["passed"]:
+        surface = collapsed
+    fidelity = surface_fidelity(mesh, surface)
+    report = {"target_mm": settings["fea_sliver_target_mm"], "iterations": settings["fea_sliver_iterations"], "collapse_mm": settings["fea_sliver_collapse_mm"], "collapsed": surface is collapsed, "input_minimum_angle_deg": float(np.degrees(mesh.face_angles.min())), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())),
+              "face_count": len(surface.faces), "topology_unchanged": _topology(surface) == _topology(mesh), "checks_passed": mesh_checks(surface)["passed"],
+              "maximum_sampled_deviation_mm": fidelity["maximum_sampled_deviation_mm"], "relative_volume_change": fidelity["relative_volume_change"]}
+    report["passed"] = report["topology_unchanged"] and report["checks_passed"] and report["maximum_sampled_deviation_mm"] <= settings["surface_deviation_mm"] and abs(report["relative_volume_change"]) <= settings["relative_volume_change"]
+    return (surface if report["passed"] else mesh), report
+
+def _surface_model(gmsh, request, settings):
+    import trimesh
+    data = np.load(request["surface_path"])
+    source = trimesh.Trimesh(data["vertices"], data["faces"], process=False)
+    attempt = request["attempt"]
+    report = {"attempt": attempt, "target_mm": request["target_mm"]}
+    surface = source
+    if attempt.startswith(("remesh", "refine")):
+        surface, report["prepared_surface"] = _prepare_surface(source, settings, attempt.startswith("refine"), request["target_mm"], Path(request["output_dir"]) / "attempt_metadata.json")
+    tag = gmsh.model.addDiscreteEntity(2)
+    gmsh.model.mesh.addNodes(2, tag, np.arange(1, len(surface.vertices) + 1), np.asarray(surface.vertices, dtype=np.float64).ravel())
+    gmsh.model.mesh.addElementsByType(tag, 2, [], np.asarray(surface.faces, dtype=np.int64).ravel() + 1)
+    if attempt.startswith("classify"):
+        gmsh.model.mesh.classifySurfaces(math.radians(settings["fea_classify_angle_deg"]), True, True, math.pi)
+        gmsh.model.mesh.createGeometry()
+    gmsh.model.geo.addVolume([gmsh.model.geo.addSurfaceLoop([entity for _, entity in gmsh.model.getEntities(2)])])
+    gmsh.model.geo.synchronize()
+    gmsh.option.setNumber("Mesh.Algorithm3D", 1 if attempt.endswith("delaunay") else 10)
+    return source, report
+
+def _boundary_report(gmsh, source, settings):
+    import trimesh
+    from deep_frame.topology_implicit import surface_fidelity
+    tags, coordinates, _ = gmsh.model.mesh.getNodes()
+    lookup = np.zeros(int(tags.max()) + 1, dtype=np.int64)
+    lookup[tags] = np.arange(len(tags))
+    coordinates = coordinates.reshape(-1, 3)
+    types, _, connectivity = gmsh.model.mesh.getElements(2)
+    if list(types) != [2]:
+        raise ValueError("The tetrahedral boundary must consist of linear triangles")
+    boundary = trimesh.Trimesh(coordinates, lookup[connectivity[0].astype(np.int64)].reshape(-1, 3), process=False)
+    boundary.remove_unreferenced_vertices()
+    _, distance, _ = trimesh.proximity.closest_point(source, boundary.vertices)
+    fidelity = surface_fidelity(source, boundary)
+    types, _, connectivity = gmsh.model.mesh.getElements(3)
+    if list(types) != [4]:
+        raise ValueError("The volume mesh must consist of linear tetrahedra before elevation")
+    corners = coordinates[lookup[connectivity[0].astype(np.int64)].reshape(-1, 4)]
+    volume = float(np.sum(np.einsum("ij,ij->i", corners[:, 1]-corners[:, 0], np.cross(corners[:, 2]-corners[:, 0], corners[:, 3]-corners[:, 0])))/6)
+    report = {"boundary_node_count": len(boundary.vertices), "boundary_node_deviation_mm": float(distance.max()), "boundary_fidelity": fidelity, "input_volume_mm3": float(source.volume), "tet_volume_mm3": volume,
+              "tet_volume_relative_change": volume/source.volume-1}
+    if not distance.max() <= settings["mesh_boundary_deviation_mm"]:
+        raise ValueError(f"Boundary nodes deviate {distance.max():.4g} mm from the input surface (limit {settings['mesh_boundary_deviation_mm']} mm)")
+    if not fidelity["maximum_sampled_deviation_mm"] <= settings["surface_deviation_mm"] or not abs(fidelity["relative_volume_change"]) <= settings["relative_volume_change"] or not abs(report["tet_volume_relative_change"]) <= settings["relative_volume_change"]:
+        raise ValueError(f"Tetrahedral body deviates {fidelity['maximum_sampled_deviation_mm']:.4g} mm and {report['tet_volume_relative_change']:.4%} in volume from the input surface (limits {settings['surface_deviation_mm']} mm, {settings['relative_volume_change']:.2%})")
+    return report
+
 def generate_mesh(request_path):
     import gmsh
     request = json.loads(Path(request_path).read_text(encoding="utf-8"))
@@ -345,13 +582,25 @@ def generate_mesh(request_path):
             raise ValueError("Explicit boolean mesh_second_order_linear and optimization mode 0..4 required")
         gmsh.option.setNumber("Mesh.SecondOrderLinear", int(second_order_linear))
         gmsh.model.add("frame")
-        gmsh.model.occ.importShapes(request["step_path"])
-        gmsh.model.occ.synchronize()
+        source, surface = None, {}
+        if "surface_path" in request:
+            source, surface = _surface_model(gmsh, request, settings)
+        else:
+            gmsh.model.occ.importShapes(request["step_path"])
+            gmsh.model.occ.synchronize()
         volumes = gmsh.model.getEntities(3)
         if len(volumes) != 1:
             raise ValueError("The STEP input must contain exactly one volume")
         gmsh.model.addPhysicalGroup(3, [volumes[0][1]], name="FRAME")
         gmsh.model.mesh.generate(3)
+        if source is not None:
+            count = len(gmsh.model.mesh.getElements(3)[1][0])
+            measured = {"linear_element_count": count, "element_budget": request["element_budget"], "over_budget": count > request["element_budget"]}
+            surface.update(measured)
+            (destination / "attempt_metadata.json").write_text(json.dumps(surface), encoding="utf-8")
+            if measured["over_budget"]:
+                raise ValueError(f"{count} tetrahedra exceed the element budget of {request['element_budget']} derived from available memory")
+            surface.update(_boundary_report(gmsh, source, settings))
         gmsh.model.mesh.setOrder(2)
         if high_order_optimize in (2, 3):
             gmsh.model.mesh.optimize("HighOrderElastic")
@@ -365,6 +614,12 @@ def generate_mesh(request_path):
         quality = gmsh.model.mesh.getElementQualities(tags[0], "minDetJac")
         if not np.all(np.isfinite(quality)) or np.min(quality) <= 0:
             raise ValueError("The mesh contains a non-positive Jacobian")
+        if source is not None:
+            sicn = gmsh.model.mesh.getElementQualities(tags[0], "minSICN")
+            surface.update(minimum_sicn=float(np.min(sicn)), elements_below_sicn=int(np.sum(sicn < settings["mesh_minimum_sicn"])))
+            (destination / "attempt_metadata.json").write_text(json.dumps(surface), encoding="utf-8")
+            if not np.all(np.isfinite(sicn)) or np.min(sicn) < settings["mesh_minimum_sicn"]:
+                raise ValueError(f"Minimum SICN {np.min(sicn):.4g} below {settings['mesh_minimum_sicn']}")
         gmsh.write(str(destination / "mesh.inp"))
         gmsh.write(str(destination / "mesh.msh"))
         metadata = {
@@ -376,6 +631,7 @@ def generate_mesh(request_path):
             "second_order_linear": second_order_linear,
             "high_order_optimize": high_order_optimize,
             "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes" if second_order_linear else "quadratic boundary nodes projected to CAD",
+            **surface,
         }
         (destination / "mesh_metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
     finally:
@@ -450,6 +706,28 @@ def prepare_frame_case(parameters, fea_config=None, integration_config=None):
         {"name": "camera_side", "analysis": "static", "fixed_regions": motor_fixtures, "loads": [{"region": camera_region, "force_n": [integration["camera_side_force_n"], 0.0, 0.0]}]},
         {"name": "modes", "analysis": "modal", "fixed_regions": motor_fixtures},
     ]
+    weight = integration["all_up_mass_g"] / 1000 * integration["standard_gravity_m_s2"]
+    thrust = parameters["components"]["motor"]["thrust_n"] * integration["thrust_safety_factor"]
+    pads = [_box((mx - pad_half, my - pad_half, frame["arm_height_mm"] - tolerance), (mx + pad_half, my + pad_half, frame["arm_height_mm"] + tolerance)) for mx, my in motors.values()]
+    def oblique(mx, my):
+        radial, tangential = np.array([mx, my]) / math.hypot(mx, my), np.array([-my, mx]) / math.hypot(mx, my)
+        vector = np.append(-radial + tangential, -0.5)
+        return vector / np.linalg.norm(vector)
+    load_cases[3:3] = [
+        {"name": "thrust_all", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": pad, "force_n": [0.0, 0.0, thrust]} for pad in pads]},
+        {"name": "crash_front", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": camera_region, "force_n": [0.0, -weight * integration["crash_front_g_factor"], 0.0]}]},
+        {"name": "crash_arm", "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": arm_region, "force_n": (weight * integration["crash_arm_g_factor"] * oblique(x, y)).tolist()}]},
+    ]
+    if integration["crash_directions"]:
+        sides = {name: [pad for pad, (mx, _) in zip(pads, motors.values()) if np.sign(mx) == sign] for name, sign in (("side_left", -1), ("side_right", 1))}
+        patches = {"front": [(camera_region, (0.0, -1.0, 0.0))], "side_left": [(pad, (1.0, 0.0, 0.0)) for pad in sides["side_left"]], "side_right": [(pad, (-1.0, 0.0, 0.0)) for pad in sides["side_right"]],
+                   **{"arm_" + name: [(pad, oblique(mx, my))] for pad, (name, (mx, my)) in zip(pads, motors.items())}, "below": [(camera_region, (0.0, 0.0, 1.0))], "back": [(deck_region, (0.0, 0.0, -1.0))]}
+        unknown = sorted(set(integration["crash_directions"]) - set(patches))
+        if unknown:
+            raise ValueError("Unknown crash directions: " + ", ".join(unknown))
+        crash = weight * integration["crash_front_g_factor"]
+        load_cases[3:] = [case for case in load_cases[3:] if not case["name"].startswith("crash_")]
+        load_cases[4:4] = [{"name": "crash_" + name, "analysis": "static", "fixed_regions": [central_fixture], "loads": [{"region": deepcopy(region), "force_n": (crash / len(patches[name]) * np.asarray(direction)).tolist()} for region, direction in patches[name]]} for name in integration["crash_directions"]]
     fea["settings"]["stiffness_load_case"] = "arm_tip"
     result = {
         "material": fea["material"],

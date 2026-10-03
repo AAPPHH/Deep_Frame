@@ -100,8 +100,8 @@ def test_component_envelopes_and_mass(component_config):
         "aio15": (31.3, 31.3, 6.0),
         "camera": (16.0, 14.0, 14.0),
         "battery": (30.0, 63.0, 11.0),
-        "motor": (14.2, 14.2, 14.6),
-        "prop": (65.0, 65.0, 0.8),
+        "motor": (15.76, 15.76, 9.9),
+        "prop": (63.5, 63.5, 5.0),
         "xt30": (10.2, 12.4, 5.2),
         "balancer": (9.8, 7.5, 5.7),
     }
@@ -156,8 +156,8 @@ def test_placement_transforms_geometry_mass_center_and_mount_axes(component_conf
         "front_motor": {"prototype": "motor", "position": (40, 30, 3), "rotation": (0, 0, 90)},
         "rear_motor": {"prototype": "motor", "position": (-40, -30, 3)},
     })
-    np.testing.assert_allclose(parts["front_motor"]["center_of_mass_mm"], (40, 30, 10.3))
-    np.testing.assert_allclose(parts["rear_motor"]["center_of_mass_mm"], (-40, -30, 10.3))
+    np.testing.assert_allclose(parts["front_motor"]["center_of_mass_mm"], (40, 30, 3 + 9.9 / 2))
+    np.testing.assert_allclose(parts["rear_motor"]["center_of_mass_mm"], (-40, -30, 3 + 9.9 / 2))
     np.testing.assert_allclose(parts["front_motor"]["mount_holes"][0], (44.5, 25.5, 3))
     assert parts["front_motor"]["shape"].distance_to(parts["rear_motor"]["shape"]) > 0
 
@@ -196,7 +196,7 @@ def test_default_configuration_passes_and_results_are_json_serializable(default_
     assert default_result["checks"]["mounts"]["passed"]
     json.dumps(default_result, allow_nan=False)
     mass = default_result["checks"]["mass_properties"]
-    assert mass["mass_g"] - mass["frame_mass_g"] == pytest.approx(72.9)
+    assert mass["mass_g"] - mass["frame_mass_g"] == pytest.approx(7.2 + 2.3 + 37.0 + 4 * 4.5 + 4 * 1.2)
     tensor = np.array(mass["inertia_tensor_g_mm2"])
     np.testing.assert_allclose(tensor, tensor.T, atol=1e-7)
     assert min(np.linalg.eigvalsh(tensor)) > 0
@@ -231,6 +231,7 @@ def test_cad_mass_and_parallel_axis_tensor_match_two_boxes():
 def test_projected_battery_overlap_matches_half_circle_area():
     parameters = reference_parameters()
     parameters["components"]["battery"].update(width_mm=65, length_mm=65)
+    parameters["components"]["prop"]["diameter_mm"] = 65.0
     components = {
         "battery": {"kind": "battery", "center_of_mass_mm": [32.5, 0, 30]},
         "prop": {"kind": "prop", "center_of_mass_mm": [0, 0, 20]},

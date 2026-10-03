@@ -1,0 +1,802 @@
+{
+ "schema_version": "deep-frame-implicit-variants-pilot-v1",
+ "code_commit": "c407b01",
+ "branch": "feature/implicit-integration",
+ "variants": [
+  {
+   "variant": "wb131",
+   "density_source": "C:\\clones\\Deep_Frame-variants\\exports\\topology\\variants\\wb131",
+   "changed_parameters": {
+    "frame.wheelbase_mm": [
+     135.0,
+     131.25
+    ]
+   },
+   "extension_guard": {
+    "two_sided_original": {
+     "components_6": 1,
+     "euler_number_6": -43
+    },
+    "two_sided_extended": {
+     "components_6": 1,
+     "euler_number_6": -45
+    },
+    "one_sided_passed": true,
+    "removed_mm3": 2295.24,
+    "added_mm3": 222.99
+   },
+   "runs": {
+    "requested_t025_preserve": {
+     "run": "wb131",
+     "status": "extension_changed_topology",
+     "stage": "field",
+     "violations": null,
+     "err": [
+      "ImplicitError: Density extension changed components or Euler number of the hard composition"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 3.3,
+     "record_sha256": "c29fccd43cb5574bded651b6e60dcc003154cb38e6addf34364251c1742f006a"
+    },
+    "extension_none": {
+     "run": "wb131_none",
+     "status": "geometry_invalid",
+     "stage": "booleans",
+     "violations": null,
+     "err": [
+      "ImplicitError: Exact Booleans did not yield one valid manifold"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 103.7,
+     "record_sha256": "86ea63135bab20e75c980ac46708f8d2feb5b6d0d1d8c65c5ba26d96dca56ad6"
+    },
+    "one_sided_guard_preserve": {
+     "run": "wb131_guard_diag",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features"
+     ],
+     "err": [
+      "RuntimeError: All tetrahedral meshing attempts failed: remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, refine_hxt failed, classify_hxt failed, classify_delaunay failed, direct_hxt skipped"
+     ],
+     "thin": 39,
+     "min_wall": 0.0006,
+     "mass_g": 55.4,
+     "fea": "failed",
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 103.0,
+     "val_s": 31.2,
+     "fea_s": 1853.2,
+     "fea_mesh_s": 1853.0,
+     "baseline_s": 49.2,
+     "runtime_s": 2039.4,
+     "record_sha256": "b777d8249999af0c87a84e499ab340f0ba733d2ed5c6af6a77b57acab28c6ec4"
+    }
+   }
+  },
+  {
+   "variant": "wb142",
+   "density_source": "C:\\clones\\Deep_Frame-variants\\exports\\topology\\variants\\wb142",
+   "changed_parameters": {
+    "frame.wheelbase_mm": [
+     135.0,
+     142.0
+    ]
+   },
+   "extension_guard": {
+    "two_sided_original": {
+     "components_6": 1,
+     "euler_number_6": -44
+    },
+    "two_sided_extended": {
+     "components_6": 1,
+     "euler_number_6": -47
+    },
+    "one_sided_passed": true,
+    "removed_mm3": 2252.55,
+    "added_mm3": 249.67
+   },
+   "runs": {
+    "requested_t025_preserve": {
+     "run": "wb142",
+     "status": "extension_changed_topology",
+     "stage": "field",
+     "violations": null,
+     "err": [
+      "ImplicitError: Density extension changed components or Euler number of the hard composition"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 3.1,
+     "record_sha256": "c66422716d8d28d4bb6e82f680fc81c42540ba01ddd7b157721716132854bb31"
+    },
+    "extension_none_harness_artifact": {
+     "run": "wb142_none",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features"
+     ],
+     "err": [
+      "ValueError: FEA requires one closed, consistently oriented triangle mesh with positive volume"
+     ],
+     "thin": 234,
+     "min_wall": 0.0013,
+     "mass_g": 59.19,
+     "fea": "invalid",
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 103.3,
+     "val_s": 33.6,
+     "fea_s": 0.0,
+     "fea_mesh_s": 0,
+     "baseline_s": 49.9,
+     "runtime_s": 189.8,
+     "record_sha256": "41ba25e415f98e1ab34809ed816c7014197dbd0bb05bb3d5cf4dcf4dc08b5f35"
+    },
+    "extension_none": {
+     "run": "wb142_none_r2",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features"
+     ],
+     "err": [
+      "RuntimeError: All tetrahedral meshing attempts failed: remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, refine_hxt failed, classify_hxt failed, classify_delaunay failed, direct_hxt skipped"
+     ],
+     "thin": 234,
+     "min_wall": 0.0013,
+     "mass_g": 59.19,
+     "fea": "failed",
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 103.1,
+     "val_s": 33.3,
+     "fea_s": 88.3,
+     "fea_mesh_s": 88.1,
+     "baseline_s": 49.4,
+     "runtime_s": 277.1,
+     "record_sha256": "a04d961062901f7f8e2f87509bfbc411b5b1fdebead1b3be46af0467efee1a59"
+    }
+   }
+  },
+  {
+   "variant": "bat_small",
+   "density_source": "C:\\clones\\Deep_Frame-variants\\exports\\topology\\variants\\bat_small",
+   "changed_parameters": {
+    "components.battery.length_mm": [
+     63.0,
+     57.0
+    ],
+    "components.battery.width_mm": [
+     30.0,
+     26.0
+    ],
+    "components.battery.height_mm": [
+     11.0,
+     10.0
+    ],
+    "components.battery.mass_g": [
+     37.0,
+     29.0
+    ]
+   },
+   "extension_guard": {
+    "two_sided_original": {
+     "components_6": 1,
+     "euler_number_6": -43
+    },
+    "two_sided_extended": {
+     "components_6": 1,
+     "euler_number_6": -45
+    },
+    "one_sided_passed": true,
+    "removed_mm3": 2290.14,
+    "added_mm3": 240.96
+   },
+   "runs": {
+    "requested_t025_preserve": {
+     "run": "bat_small",
+     "status": "extension_changed_topology",
+     "stage": "field",
+     "violations": null,
+     "err": [
+      "ImplicitError: Density extension changed components or Euler number of the hard composition"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 3.4,
+     "record_sha256": "2a6c0cd4957e2c344bd87f64677ed95ab37699b30bfc443a7739153b195d1ea0"
+    },
+    "extension_none": {
+     "run": "bat_small_none",
+     "status": "geometry_invalid",
+     "stage": "extraction",
+     "violations": null,
+     "err": [
+      "ImplicitError: Marching cubes surface is not one closed oriented body"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 75.6,
+     "record_sha256": "1ab14e9c796d3506dcb0212858544c6ec508a368e71c907a37b6345c75507ee0"
+    }
+   }
+  },
+  {
+   "variant": "bat_large",
+   "density_source": "C:\\clones\\Deep_Frame-variants\\exports\\topology\\variants\\bat_large",
+   "changed_parameters": {
+    "frame.deck_width_mm": [
+     40.0,
+     44.0
+    ],
+    "components.battery.length_mm": [
+     63.0,
+     68.0
+    ],
+    "components.battery.width_mm": [
+     30.0,
+     34.0
+    ],
+    "components.battery.height_mm": [
+     11.0,
+     14.0
+    ],
+    "components.battery.mass_g": [
+     37.0,
+     55.0
+    ]
+   },
+   "extension_guard": {
+    "two_sided_original": {
+     "components_6": 1,
+     "euler_number_6": -46
+    },
+    "two_sided_extended": {
+     "components_6": 3,
+     "euler_number_6": -46
+    },
+    "one_sided_passed": true,
+    "removed_mm3": 2701.62,
+    "added_mm3": 245.13
+   },
+   "runs": {
+    "requested_t025_preserve": {
+     "run": "bat_large",
+     "status": "extension_changed_topology",
+     "stage": "field",
+     "violations": null,
+     "err": [
+      "ImplicitError: Density extension changed components or Euler number of the hard composition"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 3.1,
+     "record_sha256": "129ab65d984862c9a7602407001a2064dd23bd4322f2f17c2f6ecb66249e266f"
+    },
+    "extension_none_harness_artifact": {
+     "run": "bat_large_none",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features"
+     ],
+     "err": [
+      "ValueError: FEA requires one closed, consistently oriented triangle mesh with positive volume"
+     ],
+     "thin": 25,
+     "min_wall": 0.028,
+     "mass_g": 58.91,
+     "fea": "invalid",
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 102.0,
+     "val_s": 33.9,
+     "fea_s": 0.0,
+     "fea_mesh_s": 0,
+     "baseline_s": 48.8,
+     "runtime_s": 187.9,
+     "record_sha256": "577ec6f927c67771bcff7edb9fb2190ef77b3f35d18aa6685d8f14435982e906"
+    },
+    "extension_none": {
+     "run": "bat_large_none_r2",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features"
+     ],
+     "err": [],
+     "thin": 25,
+     "min_wall": 0.028,
+     "mass_g": 58.91,
+     "fea": "ok",
+     "f1": 805.7936,
+     "arm_tip_k": 250.80218366627878,
+     "cmp": true,
+     "geom_s": 101.3,
+     "val_s": 34.0,
+     "fea_s": 178.6,
+     "fea_mesh_s": 14.9,
+     "baseline_s": 48.8,
+     "runtime_s": 365.6,
+     "record_sha256": "cf2466d428c4c4ef5803ebfcf9c00d7caa37df49dcf37c2af024159aceab154e"
+    },
+    "one_sided_guard_preserve": {
+     "run": "bat_large_guard_diag",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features"
+     ],
+     "err": [],
+     "thin": 31,
+     "min_wall": 0.0005,
+     "mass_g": 56.93,
+     "fea": "ok",
+     "f1": 772.6873,
+     "arm_tip_k": 243.9285884844697,
+     "cmp": true,
+     "geom_s": 103.1,
+     "val_s": 32.2,
+     "fea_s": 171.5,
+     "fea_mesh_s": 14.9,
+     "baseline_s": 49.0,
+     "runtime_s": 358.7,
+     "record_sha256": "769719f8acba2b620261f1222943dd5ff6526098b60e5d421a9378633b7d0db4"
+    }
+   }
+  },
+  {
+   "variant": "load_arm2",
+   "density_source": "C:\\clones\\Deep_Frame-variants\\exports\\topology\\variants\\load_arm2",
+   "changed_parameters": {
+    "integration.arm_tip_force_n": [
+     1.0,
+     2.0
+    ],
+    "topology.optimizer.case_weights.arm_tip": [
+     null,
+     2.0
+    ]
+   },
+   "extension_guard": {
+    "two_sided_original": {
+     "components_6": 1,
+     "euler_number_6": -44
+    },
+    "two_sided_extended": {
+     "components_6": 1,
+     "euler_number_6": -47
+    },
+    "one_sided_passed": true,
+    "removed_mm3": 2508.02,
+    "added_mm3": 219.78
+   },
+   "runs": {
+    "requested_t025_preserve": {
+     "run": "load_arm2",
+     "status": "extension_changed_topology",
+     "stage": "field",
+     "violations": null,
+     "err": [
+      "ImplicitError: Density extension changed components or Euler number of the hard composition"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 3.0,
+     "record_sha256": "2ef59ef15f89d54036b9e2ebb56f28cf73fc8e3a93c4d0642bb83fd83a230ddf"
+    },
+    "extension_none": {
+     "run": "load_arm2_none",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features"
+     ],
+     "err": [],
+     "thin": 24,
+     "min_wall": 0.0844,
+     "mass_g": 58.5,
+     "fea": "ok",
+     "f1": 1063.606,
+     "arm_tip_k": 313.3615906220283,
+     "cmp": true,
+     "geom_s": 100.9,
+     "val_s": 32.5,
+     "fea_s": 192.3,
+     "fea_mesh_s": 14.9,
+     "baseline_s": 48.7,
+     "runtime_s": 377.4,
+     "record_sha256": "a1c199e7231db0bfd74dc0f4ed4dbd471cbf5f0ba6b9fa8197e931b5364bcb8f"
+    }
+   }
+  },
+  {
+   "variant": "load_impact2",
+   "density_source": "C:\\clones\\Deep_Frame-variants\\exports\\topology\\variants\\load_impact2",
+   "changed_parameters": {
+    "integration.battery_impact_g_factor": [
+     10.0,
+     20.0
+    ],
+    "topology.optimizer.case_weights.battery_impact": [
+     null,
+     2.0
+    ]
+   },
+   "extension_guard": {
+    "two_sided_original": {
+     "components_6": 1,
+     "euler_number_6": -42
+    },
+    "two_sided_extended": {
+     "components_6": 1,
+     "euler_number_6": -43
+    },
+    "one_sided_passed": true,
+    "removed_mm3": 2336.52,
+    "added_mm3": 208.04
+   },
+   "runs": {
+    "requested_t025_preserve": {
+     "run": "load_impact2",
+     "status": "extension_changed_topology",
+     "stage": "field",
+     "violations": null,
+     "err": [
+      "ImplicitError: Density extension changed components or Euler number of the hard composition"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 3.1,
+     "record_sha256": "12a908f38647893328e0461dd23bd6115c3de97ee73977097cf8e39200bb8c07"
+    },
+    "extension_none": {
+     "run": "load_impact2_none",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features"
+     ],
+     "err": [],
+     "thin": 35,
+     "min_wall": 0.0132,
+     "mass_g": 58.88,
+     "fea": "ok",
+     "f1": 1155.125,
+     "arm_tip_k": 246.91996866602062,
+     "cmp": true,
+     "geom_s": 103.6,
+     "val_s": 32.0,
+     "fea_s": 182.1,
+     "fea_mesh_s": 14.7,
+     "baseline_s": 48.7,
+     "runtime_s": 369.4,
+     "record_sha256": "9e1e1ae85cae4e9f02b78411cfc95f33908b77bbfe7b47a24f95032e9a01d205"
+    }
+   }
+  },
+  {
+   "variant": "combo_compact",
+   "density_source": "C:\\clones\\Deep_Frame-variants\\exports\\topology\\variants\\combo_compact",
+   "changed_parameters": {
+    "frame.wheelbase_mm": [
+     135.0,
+     131.25
+    ],
+    "components.battery.length_mm": [
+     63.0,
+     57.0
+    ],
+    "components.battery.width_mm": [
+     30.0,
+     26.0
+    ],
+    "components.battery.height_mm": [
+     11.0,
+     10.0
+    ],
+    "components.battery.mass_g": [
+     37.0,
+     29.0
+    ],
+    "integration.arm_tip_force_n": [
+     1.0,
+     2.0
+    ],
+    "topology.optimizer.case_weights.arm_tip": [
+     null,
+     2.0
+    ]
+   },
+   "extension_guard": {
+    "two_sided_original": {
+     "components_6": 1,
+     "euler_number_6": -40
+    },
+    "two_sided_extended": {
+     "components_6": 1,
+     "euler_number_6": -43
+    },
+    "one_sided_passed": true,
+    "removed_mm3": 2397.15,
+    "added_mm3": 219.72
+   },
+   "runs": {
+    "requested_t025_preserve": {
+     "run": "combo_compact",
+     "status": "extension_changed_topology",
+     "stage": "field",
+     "violations": null,
+     "err": [
+      "ImplicitError: Density extension changed components or Euler number of the hard composition"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 3.1,
+     "record_sha256": "67e2dc1f1b1f7c5e045ba97d7b0638a8c3b257eac38db915fffd118e115faa58"
+    },
+    "extension_none": {
+     "run": "combo_compact_none",
+     "status": "geometry_invalid",
+     "stage": "validation",
+     "violations": [
+      "features",
+      "supports"
+     ],
+     "err": [],
+     "thin": 26,
+     "min_wall": 0.0267,
+     "mass_g": 55.93,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 99.4,
+     "val_s": 31.3,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 133.3,
+     "record_sha256": "1d322f793fef3a2056e94ce36e90902a4f1fc734b502ea646e5a0e09464667e7"
+    }
+   }
+  },
+  {
+   "variant": "combo_heavy",
+   "density_source": "C:\\clones\\Deep_Frame-variants\\exports\\topology\\variants\\combo_heavy",
+   "changed_parameters": {
+    "frame.wheelbase_mm": [
+     135.0,
+     142.0
+    ],
+    "frame.deck_width_mm": [
+     40.0,
+     44.0
+    ],
+    "components.camera.tilt_deg": [
+     20.0,
+     30.0
+    ],
+    "components.battery.length_mm": [
+     63.0,
+     68.0
+    ],
+    "components.battery.width_mm": [
+     30.0,
+     34.0
+    ],
+    "components.battery.height_mm": [
+     11.0,
+     14.0
+    ],
+    "components.battery.mass_g": [
+     37.0,
+     55.0
+    ],
+    "integration.battery_impact_g_factor": [
+     10.0,
+     20.0
+    ],
+    "topology.optimizer.case_weights.battery_impact": [
+     null,
+     2.0
+    ]
+   },
+   "extension_guard": {
+    "two_sided_original": {
+     "components_6": 1,
+     "euler_number_6": -46
+    },
+    "two_sided_extended": {
+     "components_6": 3,
+     "euler_number_6": -47
+    },
+    "one_sided_passed": true,
+    "removed_mm3": 2369.31,
+    "added_mm3": 280.37
+   },
+   "runs": {
+    "requested_t025_preserve": {
+     "run": "combo_heavy",
+     "status": "extension_changed_topology",
+     "stage": "field",
+     "violations": null,
+     "err": [
+      "ImplicitError: Density extension changed components or Euler number of the hard composition"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 3.0,
+     "record_sha256": "c896e10cff549ddbd0bf181bfbe1646f4d2539cdbeb434b490b1a346f3bcd96f"
+    },
+    "extension_none": {
+     "run": "combo_heavy_none",
+     "status": "geometry_invalid",
+     "stage": "booleans",
+     "violations": null,
+     "err": [
+      "ImplicitError: Exact Booleans did not yield one valid manifold"
+     ],
+     "thin": null,
+     "min_wall": null,
+     "mass_g": null,
+     "fea": null,
+     "f1": null,
+     "arm_tip_k": null,
+     "cmp": null,
+     "geom_s": 0,
+     "val_s": null,
+     "fea_s": null,
+     "fea_mesh_s": null,
+     "baseline_s": null,
+     "runtime_s": 102.7,
+     "record_sha256": "bcde08264599bcfa281d816954ece0e391a618d119d41bfe6ee9733b6e9b5913"
+    }
+   }
+  }
+ ],
+ "requested_config": {
+  "threshold": 0.25,
+  "extension": "preserve",
+  "accepted": 0,
+  "candidates": 8,
+  "success_rate": 0.0,
+  "statuses": [
+   "extension_changed_topology"
+  ],
+  "runtime_s": {
+   "median": 3.1,
+   "max": 3.4
+  }
+ },
+ "default_driver_probe": {
+  "variant": "wb131",
+  "status": "failed",
+  "stage": "prepare",
+  "error": "ValueError: Physical comparison input changed: comparison_load_cases",
+  "runtime_s": 0.08,
+  "ledger_line": false
+ },
+ "ledger": {
+  "path": "exports/implicit/variants/run_ledger.jsonl",
+  "lines": 20,
+  "git_commits": [
+   "c407b01"
+  ]
+ },
+ "harnesses": {
+  "variant_harness.py": "domain-aware comparison_inputs (D1 patch) plus diagnostic FEA when features is the only failing check",
+  "guard_harness.py": "one-sided extension guard (D4 patch)",
+  "location": "C:\\Users\\jfham\\AppData\\Local\\Temp\\claude\\c--clones-Deep-Frame\\dde445c7-bb8c-4c33-963c-1b6913020443\\scratchpad"
+ }
+}

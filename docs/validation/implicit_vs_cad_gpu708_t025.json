@@ -1,0 +1,1682 @@
+{
+ "schema_version": "deep-frame-implicit-vs-cad-v2",
+ "code_commit": "c407b01",
+ "branch": "feature/implicit-integration",
+ "columns": {
+  "a": {
+   "run": "gpu708_t025",
+   "candidate": "c00",
+   "parameters": {
+    "threshold": 0.25,
+    "extension": "preserve",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 10,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "success": false,
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "checks_passed": {
+    "gates": true,
+    "topology": true,
+    "self_intersections": true,
+    "envelope": true,
+    "forbidden": true,
+    "preserve": true,
+    "features": false,
+    "supports": true,
+    "deviation": true,
+    "surface_maturity": true,
+    "connectivity": true
+   },
+   "thin_samples": 52,
+   "minimum_wall_mm": 0.00045917419098041135,
+   "minimum_wall_position_mm": [
+    2.703258514404297,
+    -58.64289093017578,
+    9.984843254089355
+   ],
+   "rays": 296758,
+   "unresolved": 0,
+   "prescribed_bore_web": {
+    "sample_count": 424,
+    "minimum_measured_mm": 1.9838975846660496,
+    "maximum_allowance_mm": 0.01908363442783867
+   },
+   "deviation": {
+    "gated_processed_field_max_mm": 0.0699862390756607,
+    "extraction_max_mm": 0.11511601507663727,
+    "free_area_fraction": 0.28251347720012343,
+    "raw_density_diagnostic_max_mm": null,
+    "limit_mm": 0.2
+   },
+   "opening_removed_mm3": {
+    "density_opening": 1201.7777777777778,
+    "opening": 3580.5677037037035,
+    "reopening": 754.2328888888889
+   },
+   "witness_components": {
+    "witness": 1,
+    "density_witness": 1,
+    "opening_witness": 1,
+    "final_witness": 1
+   },
+   "mass_g": 57.03948677417774,
+   "mass_screen": {
+    "ratio_to_v0": 1.773455790728502,
+    "maximum_ratio": 2.0,
+    "passed": true
+   },
+   "runtime_s": 513.2543211000157,
+   "runtime_without_fea_s": 154.83935800002655,
+   "baseline_fea_s": 54.12013110000407,
+   "geometry_build_s": 115.95394899998792,
+   "validation_s": 34.40657549997559,
+   "metrics_s": 0.6893794999923557,
+   "renders_s": 2.546904499991797,
+   "timings_s": {
+    "extension": 0.001262800011318177,
+    "upsample": 1.1503036000067368,
+    "primitives": 0.870777599979192,
+    "witness": 1.5366601000423543,
+    "reinit": 8.740055499976734,
+    "smoothing": 8.77578630001517,
+    "density_witness": 15.96787769999355,
+    "composition": 0.6028266999928746,
+    "opening": 24.55730690000928,
+    "ripple": 0.28854979999596253,
+    "reopening": 24.118907500000205,
+    "restore": 0.029373199999099597,
+    "extraction": 1.7199370000162162,
+    "remesh": 20.5831478999753,
+    "remesh_checks": 5.840321700001368,
+    "booleans": 0.24130359999253415,
+    "final_checks": 0.8973313999886159,
+    "export": 0.032219699991401285,
+    "validation": {
+     "topology": 0.7122895999928005,
+     "envelope": 0.010191200010012835,
+     "forbidden": 1.0011867999855895,
+     "preserve": 1.1976437999983318,
+     "features": 9.584815999987768,
+     "supports": 0.2571575999900233,
+     "deviation": 19.19253650002065,
+     "surface_maturity": 2.450691000005463,
+     "connectivity": 6.299998494796455e-05
+    },
+    "metrics": 0.6893794999923557,
+    "renders": 2.546904499991797,
+    "baseline_fea": 54.12013110000407,
+    "diagnostic_fea": 304.29483199998504,
+    "diagnostic_fea_mesh": 22.551464600022882,
+    "diagnostic_fea_solve": 281.74336739996215
+   },
+   "peak_rss_mb": 2669.66015625,
+   "final_mesh": {
+    "files": {
+     "geometry.ply": {
+      "sha256": "0eacb6b219eb1ba9da54a53ac49ce3adb6222dee655a1069f13f586916d6eecb",
+      "size_bytes": 3655769
+     },
+     "geometry.stl": {
+      "sha256": "827562a9d5c920f17bd4aac196300177a789b71c5d291486cb8a054b2ae4e163",
+      "size_bytes": 7315484
+     }
+    },
+    "faces": 146308,
+    "vertices": 73066,
+    "volume_mm3": 52329.80437997958
+   },
+   "fea": {
+    "status": "ok",
+    "source": "record.diagnostic_fea (int_e2e/run.py, driver MESH_KEYS, ungated)",
+    "frame_mass_g": 57.03948677417774,
+    "eigenfrequencies_hz": [
+     1015.653,
+     1192.196,
+     1308.167,
+     1471.209,
+     1832.626,
+     2316.441
+    ],
+    "f1_hz": 1015.653,
+    "arm_tip_stiffness_n_per_mm": 244.50179963156342,
+    "arm_tip_compliance_mm_per_n": 0.004089949446208114,
+    "max_displacement_mm": 0.006355744436304657,
+    "max_von_mises_mpa": 0.602681909816071,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 244.50179963156342,
+      "max_displacement_mm": 0.006355744436304657,
+      "max_von_mises_mpa": 0.602681909816071
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 3408.6161952806683,
+      "max_displacement_mm": 0.001112018886033488,
+      "max_von_mises_mpa": 0.345831711785766
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 6572.805082880628,
+      "max_displacement_mm": 0.0013158244633903605,
+      "max_von_mises_mpa": 0.2817711293348293
+     }
+    },
+    "elements": 129481,
+    "minimum_sicn": 0.06747055894151585,
+    "boundary_node_deviation_mm": 1.3246939164223332e-10,
+    "boundary_surface_deviation_mm": 0.12287051975727081,
+    "attempts": [
+     [
+      "remesh_hxt",
+      2.0,
+      "failed"
+     ],
+     [
+      "remesh_delaunay",
+      2.0,
+      "skipped"
+     ],
+     [
+      "remesh_hxt",
+      1.5,
+      "ok"
+     ]
+    ],
+    "linear_solver": "SPOOLES",
+    "solver_threads": 1,
+    "runtime_s": 304.29483199998504,
+    "fea_mesh_s": 22.551464600022882,
+    "fea_solve_s": 281.74336739996215,
+    "comparison_diagnostic": {
+     "passed": true,
+     "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+     },
+     "ratios": {
+      "frame_mass_ratio": 1.773455790728502,
+      "stiffness_ratio": 47.34932857319929,
+      "frequency_ratio": 4.966421194695458,
+      "displacement_ratio": 0.024883166312099615,
+      "stress_ratio": 0.10072399795642219
+     },
+     "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+     },
+     "candidate": {
+      "frame_mass_g": 57.03948677417774,
+      "stiffness_n_per_mm": 244.50179963156342,
+      "max_displacement_mm": 0.006355744436304657,
+      "max_von_mises_mpa": 0.602681909816071,
+      "first_frequency_hz": 1015.653
+     },
+     "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+     },
+     "selection_score": 2.1215348121458026
+    },
+    "diagnostic_only": true
+   },
+   "diagnostics": [
+    "features"
+   ],
+   "record_sha256": "35b0eba08c5fb3f9049c44baee3c537706b0f46283280c45083378ab022df492"
+  },
+  "b_c00": {
+   "run": "fine_robust",
+   "candidate": "c00",
+   "parameters": {
+    "threshold": 0.5,
+    "extension": "preserve",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 5
+   },
+   "status": "field_disconnected",
+   "success": false,
+   "failure_stage": "field",
+   "violations": null,
+   "checks_passed": {},
+   "thin_samples": null,
+   "minimum_wall_mm": null,
+   "minimum_wall_position_mm": null,
+   "rays": null,
+   "unresolved": null,
+   "prescribed_bore_web": null,
+   "deviation": null,
+   "opening_removed_mm3": {
+    "density_opening": 2515.114666666667,
+    "opening": 5438.445037037037,
+    "reopening": 867.9537777777778
+   },
+   "witness_components": {
+    "witness": 1,
+    "density_witness": 1,
+    "opening_witness": 1,
+    "final_witness": 2
+   },
+   "mass_g": null,
+   "mass_screen": null,
+   "runtime_s": 79.88917800001218,
+   "runtime_without_fea_s": 79.88917800001218,
+   "baseline_fea_s": null,
+   "geometry_build_s": 0,
+   "validation_s": null,
+   "metrics_s": null,
+   "renders_s": null,
+   "timings_s": {},
+   "peak_rss_mb": 2540.46875,
+   "final_mesh": null,
+   "fea": null,
+   "diagnostics": [
+    "ImplicitError: Field has detached bodies at final_witness; they are neither bridged nor removed"
+   ],
+   "record_sha256": "6dc07b16a3221eb7f235a6119f3b44f9fd612fea386456ec2fe6d9544994a37f",
+   "detached_fragment": {
+    "diagnosis": "int_e2e/detached.py (read-only wrapper around _connected)",
+    "opening_witness": [
+     {
+      "label": 1,
+      "samples": 2179523,
+      "volume_mm3": 41330.21392592593,
+      "bbox_low": [
+       -64.13,
+       -59.6,
+       -0.13
+      ],
+      "bbox_high": [
+       64.13,
+       49.47,
+       31.6
+      ],
+      "max_phi": 5.40699577331543
+     }
+    ],
+    "final_witness": [
+     {
+      "label": 1,
+      "samples": 2140245,
+      "volume_mm3": 40585.386666666665,
+      "bbox_low": [
+       -64.13,
+       -59.6,
+       -0.13
+      ],
+      "bbox_high": [
+       64.13,
+       49.47,
+       31.6
+      ],
+      "max_phi": 5.380415916442871
+     },
+     {
+      "label": 2,
+      "samples": 2026,
+      "volume_mm3": 38.418962962962965,
+      "bbox_low": [
+       -1.2,
+       -41.73,
+       0.4
+      ],
+      "bbox_high": [
+       2.0,
+       -37.73,
+       5.2
+      ],
+      "max_phi": 1.6401454210281372
+     }
+    ],
+    "result": "ImplicitError: Field has detached bodies at final_witness; they are neither bridged nor removed"
+   }
+  },
+  "b_c01": {
+   "run": "fine_robust",
+   "candidate": "c01",
+   "parameters": {
+    "threshold": 0.5,
+    "extension": "preserve_forbidden",
+    "k_mm": 2.0,
+    "sigma_d_mm": 0.4,
+    "delta_mm": 0.3,
+    "c_mm": 0.3,
+    "r_open_mm": 1.35,
+    "sigma_r_mm": 0.25,
+    "subdivisions": 5,
+    "h_mm": 0.26666666666666666
+   },
+   "status": "geometry_invalid",
+   "success": false,
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "checks_passed": {
+    "gates": true,
+    "topology": true,
+    "self_intersections": true,
+    "envelope": true,
+    "forbidden": true,
+    "preserve": true,
+    "features": false,
+    "supports": true,
+    "deviation": true,
+    "surface_maturity": true,
+    "connectivity": true
+   },
+   "thin_samples": 40,
+   "minimum_wall_mm": 0.030867305057341865,
+   "minimum_wall_position_mm": [
+    11.93323834737142,
+    -40.74855327606201,
+    2.799999952316284
+   ],
+   "rays": 287480,
+   "unresolved": 0,
+   "prescribed_bore_web": {
+    "sample_count": 424,
+    "minimum_measured_mm": 1.9838975846660496,
+    "maximum_allowance_mm": 0.01908363442783867
+   },
+   "deviation": {
+    "gated_processed_field_max_mm": 0.09374979883432388,
+    "extraction_max_mm": 0.12483891099691391,
+    "free_area_fraction": 0.26856562785071664,
+    "raw_density_diagnostic_max_mm": null,
+    "limit_mm": 0.2
+   },
+   "opening_removed_mm3": {
+    "density_opening": 1208.0165925925926,
+    "opening": 4795.657481481481,
+    "reopening": 1072.583111111111
+   },
+   "witness_components": {
+    "witness": 1,
+    "density_witness": 1,
+    "opening_witness": 1,
+    "final_witness": 1
+   },
+   "mass_g": 45.67451658817272,
+   "mass_screen": {
+    "ratio_to_v0": 1.4200993121258256,
+    "maximum_ratio": 2.0,
+    "passed": true
+   },
+   "runtime_s": 451.8033492999966,
+   "runtime_without_fea_s": 140.07609640000737,
+   "baseline_fea_s": 52.60586519999197,
+   "geometry_build_s": 105.03495009997278,
+   "validation_s": 31.09406900004251,
+   "metrics_s": 0.6133471000066493,
+   "renders_s": 2.135290399979567,
+   "timings_s": {
+    "extension": 0.8464194000116549,
+    "upsample": 1.5339712999993935,
+    "primitives": 0.7965012000058778,
+    "witness": 1.365837899968028,
+    "reinit": 7.848404699994717,
+    "smoothing": 8.12699980000616,
+    "density_witness": 14.749804499995662,
+    "composition": 0.5458791999844834,
+    "opening": 20.98138170002494,
+    "ripple": 0.23119719998794608,
+    "reopening": 20.523513599997386,
+    "restore": 0.023737500014249235,
+    "extraction": 1.5839195000007749,
+    "remesh": 19.56419299999834,
+    "remesh_checks": 5.303525399998762,
+    "booleans": 0.21555029999581166,
+    "final_checks": 0.7632187999843154,
+    "export": 0.030895100004272535,
+    "validation": {
+     "topology": 0.6883349000127055,
+     "envelope": 0.009453300008317456,
+     "forbidden": 0.8249369999975897,
+     "preserve": 1.0554947000055108,
+     "features": 8.66732890001731,
+     "supports": 0.24008359998697415,
+     "deviation": 17.42170870001428,
+     "surface_maturity": 2.1866675000055693,
+     "connectivity": 6.0399994254112244e-05
+    },
+    "metrics": 0.6133471000066493,
+    "renders": 2.135290399979567,
+    "baseline_fea": 52.60586519999197,
+    "diagnostic_fea": 259.1213876999973,
+    "diagnostic_fea_mesh": 41.74211649998324,
+    "diagnostic_fea_solve": 217.37927120001405
+   },
+   "peak_rss_mb": 2841.00390625,
+   "final_mesh": {
+    "files": {
+     "geometry.ply": {
+      "sha256": "69a79c0c872f74a002b4cfc9a7f5c32c4cb95f562d45fb09ceb950d1f0ad8c87",
+      "size_bytes": 3429725
+     },
+     "geometry.stl": {
+      "sha256": "fe8a2fdbfa8a100a1a35ac1b4115d5bd9495fcb2bff9c9edd86c8be7222f628d",
+      "size_bytes": 6863684
+     }
+    },
+    "faces": 137272,
+    "vertices": 68542,
+    "volume_mm3": 41903.22622768139
+   },
+   "fea": {
+    "status": "ok",
+    "source": "record.diagnostic_fea (int_e2e/run.py, driver MESH_KEYS, ungated)",
+    "frame_mass_g": 45.67451658817272,
+    "eigenfrequencies_hz": [
+     748.1958,
+     985.032,
+     1162.121,
+     1209.259,
+     1409.794,
+     1583.61
+    ],
+    "f1_hz": 748.1958,
+    "arm_tip_stiffness_n_per_mm": 278.9841005491978,
+    "arm_tip_compliance_mm_per_n": 0.003584433657801419,
+    "max_displacement_mm": 0.005232265789483556,
+    "max_von_mises_mpa": 0.6826368463740056,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 278.9841005491978,
+      "max_displacement_mm": 0.005232265789483556,
+      "max_von_mises_mpa": 0.6826368463740056
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 2863.3385671933775,
+      "max_displacement_mm": 0.00149676614017604,
+      "max_von_mises_mpa": 0.4551717907952082
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 8837.965398645418,
+      "max_displacement_mm": 0.000900089149870578,
+      "max_von_mises_mpa": 0.24063772930218402
+     }
+    },
+    "elements": 115730,
+    "minimum_sicn": 0.07772549389247602,
+    "boundary_node_deviation_mm": 4.997257069646765e-11,
+    "boundary_surface_deviation_mm": 0.15094973146915436,
+    "attempts": [
+     [
+      "remesh_hxt",
+      2.0,
+      "failed"
+     ],
+     [
+      "remesh_delaunay",
+      2.0,
+      "failed"
+     ],
+     [
+      "remesh_hxt",
+      1.5,
+      "ok"
+     ]
+    ],
+    "linear_solver": "SPOOLES",
+    "solver_threads": 1,
+    "runtime_s": 259.1213876999973,
+    "fea_mesh_s": 41.74211649998324,
+    "fea_solve_s": 217.37927120001405,
+    "comparison_diagnostic": {
+     "passed": true,
+     "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+     },
+     "ratios": {
+      "frame_mass_ratio": 1.4200993121258256,
+      "stiffness_ratio": 54.02704545941165,
+      "frequency_ratio": 3.65858760708837,
+      "displacement_ratio": 0.020484671958353063,
+      "stress_ratio": 0.11408657070881331
+     },
+     "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+     },
+     "candidate": {
+      "frame_mass_g": 45.67451658817272,
+      "stiffness_n_per_mm": 278.9841005491978,
+      "max_displacement_mm": 0.005232265789483556,
+      "max_von_mises_mpa": 0.6826368463740056,
+      "first_frequency_hz": 748.1958
+     },
+     "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+     },
+     "selection_score": 1.8465093246024238
+    },
+    "diagnostic_only": true
+   },
+   "diagnostics": [
+    "features"
+   ],
+   "record_sha256": "b7513dcd59c8c01fd76fd872c10e8b6d67c88455c04fac13a16bafe9e5a4f0ee"
+  },
+  "d": {
+   "run": "C:\\clones\\Deep_Frame\\exports\\topology\\workstation_20260930\\candidate_study\\grid4_iter300\\candidates\\density_t01",
+   "status": "ok",
+   "frame_mass_g": 50.95297892131847,
+   "fea": {
+    "status": "ok",
+    "source": "record.json",
+    "frame_mass_g": 50.952978921316564,
+    "eigenfrequencies_hz": [
+     964.0308,
+     1034.19,
+     1258.949,
+     1435.334,
+     1836.414,
+     1950.414
+    ],
+    "f1_hz": 964.0308,
+    "arm_tip_stiffness_n_per_mm": 142.10801922428675,
+    "arm_tip_compliance_mm_per_n": 0.007036900559578671,
+    "max_displacement_mm": 0.011805356212589742,
+    "max_von_mises_mpa": 0.5755087878082749,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 142.10801922428675,
+      "max_displacement_mm": 0.011805356212589742,
+      "max_von_mises_mpa": 0.5755087878082749
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 2246.3518899054257,
+      "max_displacement_mm": 0.0018614078441663913,
+      "max_von_mises_mpa": 0.32322244306884046
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 4599.716834606967,
+      "max_displacement_mm": 0.0018040357637762203,
+      "max_von_mises_mpa": 0.27746379495355894
+     }
+    },
+    "elements": 58196,
+    "minimum_sicn": null,
+    "boundary_node_deviation_mm": null,
+    "boundary_surface_deviation_mm": null,
+    "attempts": [],
+    "linear_solver": "PaStiX (native)",
+    "solver_threads": 2,
+    "runtime_s": 55.080722699989565,
+    "fea_mesh_s": null,
+    "fea_solve_s": null,
+    "comparison_diagnostic": {
+     "passed": true,
+     "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+     },
+     "ratios": {
+      "frame_mass_ratio": 1.584215788627751,
+      "stiffness_ratio": 27.520121754836545,
+      "frequency_ratio": 4.713994836286821,
+      "displacement_ratio": 0.0462187624054694,
+      "stress_ratio": 0.09618265460264847
+     },
+     "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+     },
+     "candidate": {
+      "frame_mass_g": 50.952978921316564,
+      "stiffness_n_per_mm": 142.10801922428675,
+      "max_displacement_mm": 0.011805356212589742,
+      "max_von_mises_mpa": 0.5755087878082749,
+      "first_frequency_hz": 964.0308
+     },
+     "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+     },
+     "selection_score": 1.9750885552779414
+    },
+    "diagnostic_only": false
+   },
+   "comparison": {
+    "passed": true,
+    "checks": {
+     "frame_mass": true,
+     "stiffness": true,
+     "frequency": true,
+     "displacement": true,
+     "stress": true
+    },
+    "ratios": {
+     "frame_mass_ratio": 1.584215788627751,
+     "stiffness_ratio": 27.520121754836545,
+     "frequency_ratio": 4.713994836286821,
+     "displacement_ratio": 0.0462187624054694,
+     "stress_ratio": 0.09618265460264847
+    },
+    "limits": {
+     "frame_mass_ratio_max": 2.0,
+     "stiffness_ratio_min": 0.5,
+     "frequency_ratio_min": 0.7,
+     "displacement_ratio_max": 2.0,
+     "stress_ratio_max": 2.0
+    },
+    "candidate": {
+     "frame_mass_g": 50.952978921316564,
+     "stiffness_n_per_mm": 142.10801922428675,
+     "max_displacement_mm": 0.011805356212589742,
+     "max_von_mises_mpa": 0.5755087878082749,
+     "first_frequency_hz": 964.0308
+    },
+    "reference": {
+     "frame_mass_g": 32.16290311400827,
+     "stiffness_n_per_mm": 5.163785992309858,
+     "max_displacement_mm": 0.25542346004471833,
+     "max_von_mises_mpa": 5.983498689923118,
+     "first_frequency_hz": 204.504
+    },
+    "selection_score": 1.9750885552779414
+   },
+   "step_sha256": "d10b4b10c7f5e4a6e115a4817caeedb76258357614dc7acaa4a714c82a831fee",
+   "reconstruction_method": "conservative_voxel_threshold_greedy_cuboids"
+  }
+ },
+ "v0_baseline": {
+  "status": "ok",
+  "result": {
+   "status": "ok",
+   "mass_g": 69.16290311400827,
+   "eigenfrequencies_hz": [
+    204.504,
+    240.6657,
+    240.9864,
+    426.2794,
+    464.7615,
+    601.5691
+   ],
+   "max_displacement_mm": 0.25542346004471833,
+   "max_von_mises_mpa": 5.983498689923118,
+   "stiffness_n_per_mm": 5.163785992309858,
+   "load_cases": {
+    "arm_tip": {
+     "analysis": "static",
+     "max_displacement_mm": 0.25542346004471833,
+     "max_von_mises_mpa": 2.938383537483186,
+     "loads": [
+      {
+       "node_count": 1248,
+       "force_n": [
+        0.0,
+        0.0,
+        -1.0
+       ],
+       "mean_displacement_mm": [
+        -0.011528314294871797,
+        0.006203563523237182,
+        -0.19365636017628246
+       ],
+       "directional_displacement_mm": 0.19365636017628246,
+       "stiffness_n_per_mm": 5.163785992309858
+      }
+     ],
+     "stiffness_n_per_mm": 5.163785992309858,
+     "fixed_node_count": 716
+    },
+    "battery_impact": {
+     "analysis": "static",
+     "max_displacement_mm": 0.028385830163246792,
+     "max_von_mises_mpa": 1.126452415192182,
+     "loads": [
+      {
+       "node_count": 58,
+       "force_n": [
+        0.0,
+        0.0,
+        -3.6284604999999996
+       ],
+       "mean_displacement_mm": [
+        -1.1580045517241378e-05,
+        0.0004473436224137933,
+        -0.023297142931034485
+       ],
+       "directional_displacement_mm": 0.023297142931034485,
+       "stiffness_n_per_mm": 155.74701630758642
+      }
+     ],
+     "stiffness_n_per_mm": 155.74701630758642,
+     "fixed_node_count": 4933
+    },
+    "camera_side": {
+     "analysis": "static",
+     "max_displacement_mm": 0.1943364860042192,
+     "max_von_mises_mpa": 5.983498689923118,
+     "loads": [
+      {
+       "node_count": 738,
+       "force_n": [
+        5.0,
+        0.0,
+        0.0
+       ],
+       "mean_displacement_mm": [
+        0.14997036653116527,
+        0.0003627629945799421,
+        -0.0010043117886178858
+       ],
+       "directional_displacement_mm": 0.14997036653116527,
+       "stiffness_n_per_mm": 33.339919849838815
+      }
+     ],
+     "stiffness_n_per_mm": 33.339919849838815,
+     "fixed_node_count": 4933
+    },
+    "modes": {
+     "analysis": "modal",
+     "eigenfrequencies_hz": [
+      204.504,
+      240.6657,
+      240.9864,
+      426.2794,
+      464.7615,
+      601.5691
+     ],
+     "discarded_rigid_modes": 0,
+     "fixture": "all translations fixed on selected nodes",
+     "fixed_node_count": 4933
+    }
+   },
+   "diagnostics": [],
+   "artifacts": {
+    "directory": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a",
+    "arm_tip": {
+     "input": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_0.inp",
+     "data": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_0.dat",
+     "log": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_0.log"
+    },
+    "battery_impact": {
+     "input": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_1.inp",
+     "data": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_1.dat",
+     "log": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_1.log"
+    },
+    "camera_side": {
+     "input": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_2.inp",
+     "data": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_2.dat",
+     "log": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_2.log"
+    },
+    "modes": {
+     "input": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_3.inp",
+     "data": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_3.dat",
+     "log": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\case_3.log"
+    },
+    "result": "C:\\clones\\Deep_Frame-int\\exports\\implicit\\gpu708_t025\\baseline\\fea\\evaluation_fmmaae6a\\result.json"
+   },
+   "linear_solver": "SPOOLES",
+   "solver_threads": 1,
+   "mesh": {
+    "gmsh_version": "4.15.2",
+    "element_type": "C3D10",
+    "element_count": 45491,
+    "minimum_jacobian_mm3": 0.053391162260114436,
+    "mesh_size_mm": 3.0,
+    "second_order_linear": true,
+    "high_order_optimize": 0,
+    "boundary_geometry": "piecewise planar quadratic tetrahedra with straight midside nodes",
+    "node_count": 83406
+   },
+   "point_mass_coupling": [
+    {
+     "name": "battery",
+     "mass_g": 37.0,
+     "position_mm": [
+      -1.6781509643504353e-16,
+      -3.0144237274670914e-16,
+      34.5
+     ],
+     "attachment_nodes": 58,
+     "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+    }
+   ],
+   "frame_mass_g": 32.16290311400827,
+   "point_mass_g": 37.0,
+   "solver_version": "2.22",
+   "runtime_s": 53.99956230001408
+  },
+  "artifacts": {
+   "fea/evaluation_fmmaae6a/case_0.12d": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size_bytes": 0
+   },
+   "fea/evaluation_fmmaae6a/case_0.cvg": {
+    "sha256": "7949113325cb32be7bffd2b865928ef5606322c0f7f08d37a302e5063b074593",
+    "size_bytes": 278
+   },
+   "fea/evaluation_fmmaae6a/case_0.dat": {
+    "sha256": "ca3121919130b03df841731e30b380445634fdcde822ef3403e11dd810d69703",
+    "size_bytes": 22700586
+   },
+   "fea/evaluation_fmmaae6a/case_0.frd": {
+    "sha256": "4ad8300fc16e61d3e852a5c89b74992e040a36ff332e0601495a4923dd88b8d7",
+    "size_bytes": 10221643
+   },
+   "fea/evaluation_fmmaae6a/case_0.inp": {
+    "sha256": "9c80302815d25ee8792d0c5d7c3f2b5744f559ff78fbe5f4cadb9d542c9f590e",
+    "size_bytes": 7109242
+   },
+   "fea/evaluation_fmmaae6a/case_0.log": {
+    "sha256": "0ca7a23624d4194d653e1604d99afa512e73704ed72507a6f669467cc7af27ee",
+    "size_bytes": 2443
+   },
+   "fea/evaluation_fmmaae6a/case_0.sta": {
+    "sha256": "253efd59462bae0a6fce7b06552a063c82349747e482366b56da923c68b7ca9d",
+    "size_bytes": 173
+   },
+   "fea/evaluation_fmmaae6a/case_1.12d": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size_bytes": 0
+   },
+   "fea/evaluation_fmmaae6a/case_1.cvg": {
+    "sha256": "7949113325cb32be7bffd2b865928ef5606322c0f7f08d37a302e5063b074593",
+    "size_bytes": 278
+   },
+   "fea/evaluation_fmmaae6a/case_1.dat": {
+    "sha256": "c9e533c4e54da3df4a11633ff40a76e9a876df88b16e7401b02619d3e40698ac",
+    "size_bytes": 22700586
+   },
+   "fea/evaluation_fmmaae6a/case_1.frd": {
+    "sha256": "7f023220d8edf315f3e53c7c11cb86c87b62523a2b920d5250433b504686f278",
+    "size_bytes": 10221643
+   },
+   "fea/evaluation_fmmaae6a/case_1.inp": {
+    "sha256": "9b7ed7ed5d86ba0c4e2408c3fdce3cf040388841d9f17b14d9ebb672e4dbfe96",
+    "size_bytes": 7100511
+   },
+   "fea/evaluation_fmmaae6a/case_1.log": {
+    "sha256": "ec410ec6d7d2b7598ed3d191540429f5b7d4f1f47ea4a4153268f983ad5ea08b",
+    "size_bytes": 2443
+   },
+   "fea/evaluation_fmmaae6a/case_1.sta": {
+    "sha256": "253efd59462bae0a6fce7b06552a063c82349747e482366b56da923c68b7ca9d",
+    "size_bytes": 173
+   },
+   "fea/evaluation_fmmaae6a/case_2.12d": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size_bytes": 0
+   },
+   "fea/evaluation_fmmaae6a/case_2.cvg": {
+    "sha256": "7949113325cb32be7bffd2b865928ef5606322c0f7f08d37a302e5063b074593",
+    "size_bytes": 278
+   },
+   "fea/evaluation_fmmaae6a/case_2.dat": {
+    "sha256": "70385da4d521a0a23c2afae4d6a59608de8e0540ae9482c08683eab2a3a610aa",
+    "size_bytes": 22700586
+   },
+   "fea/evaluation_fmmaae6a/case_2.frd": {
+    "sha256": "c241dd9f86ce7b7e2115f2bc8060399f5d2325e4057ad6f87fa7ab5482c6799e",
+    "size_bytes": 10221643
+   },
+   "fea/evaluation_fmmaae6a/case_2.inp": {
+    "sha256": "8e3f3b654e38af9f8d2c8017dd4ce3f1389e8eff4f1b6a6c4159dd1ee8699b1c",
+    "size_bytes": 7118158
+   },
+   "fea/evaluation_fmmaae6a/case_2.log": {
+    "sha256": "865206e683587234fa3ee0c1f3f4735aa375f21f2057a3505f637741621df330",
+    "size_bytes": 2443
+   },
+   "fea/evaluation_fmmaae6a/case_2.sta": {
+    "sha256": "253efd59462bae0a6fce7b06552a063c82349747e482366b56da923c68b7ca9d",
+    "size_bytes": 173
+   },
+   "fea/evaluation_fmmaae6a/case_3.12d": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size_bytes": 0
+   },
+   "fea/evaluation_fmmaae6a/case_3.cvg": {
+    "sha256": "7949113325cb32be7bffd2b865928ef5606322c0f7f08d37a302e5063b074593",
+    "size_bytes": 278
+   },
+   "fea/evaluation_fmmaae6a/case_3.dat": {
+    "sha256": "1e76d208ff48e44aae828c47ec9deacd5f958bc060f38c854ef5b1db24eab329",
+    "size_bytes": 2673
+   },
+   "fea/evaluation_fmmaae6a/case_3.frd": {
+    "sha256": "903acb6d573dd9e828a10a7694a7a14b2685c4a7ffeab3fbfa6c5e9fbba978c4",
+    "size_bytes": 10221643
+   },
+   "fea/evaluation_fmmaae6a/case_3.inp": {
+    "sha256": "7704001ff5a6bc0b897970be14742fd3d96514babb70e6b5c6d20628a1893ffe",
+    "size_bytes": 7098964
+   },
+   "fea/evaluation_fmmaae6a/case_3.log": {
+    "sha256": "61782190304eb11d0569bed4ac7aeb4507b67a79ec2ee4df6d1f40ff73806f6f",
+    "size_bytes": 3015
+   },
+   "fea/evaluation_fmmaae6a/case_3.sta": {
+    "sha256": "996b9c2185a886af77592a4dd2183af438e4b5ea56e3621262de46da071adf89",
+    "size_bytes": 100
+   },
+   "fea/evaluation_fmmaae6a/gmsh.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size_bytes": 0
+   },
+   "fea/evaluation_fmmaae6a/mesh.inp": {
+    "sha256": "e0e96756b5908810dbbf00e0668bb4792fe77c2037167f7c3555f4de2a7a4502",
+    "size_bytes": 7995376
+   },
+   "fea/evaluation_fmmaae6a/mesh.msh": {
+    "sha256": "ae15c83d64121e3cf26f8198312804b3252c9631da1ad63caf5fa40b862f448e",
+    "size_bytes": 7615964
+   },
+   "fea/evaluation_fmmaae6a/mesh_metadata.json": {
+    "sha256": "30b593dfe6defefb7b874add432c955b2a92bd5ddc4e36c408c7aadbfe74d77e",
+    "size_bytes": 314
+   },
+   "fea/evaluation_fmmaae6a/mesh_request.json": {
+    "sha256": "927b3a5003b2ef18ac5b9e600cbe1b66fce625da27398d7f659bea38afa1ccba",
+    "size_bytes": 719
+   },
+   "fea/evaluation_fmmaae6a/result.json": {
+    "sha256": "55ccf5fef26f18968993c5f4401edd53f240cd9eb74a50059822ed645d67b46b",
+    "size_bytes": 5528
+   },
+   "fea/evaluation_fmmaae6a/solid.step": {
+    "sha256": "959c57ee216510ff84653ae6d99f51838d15348304298f353c47e39499477df2",
+    "size_bytes": 664982
+   },
+   "fea/evaluation_fmmaae6a/spooles.out": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size_bytes": 0
+   },
+   "raw_fea_result.json": {
+    "sha256": "a0acaaff291326672dded1d1dc59af28200c969000f22587d049c34b4b813724",
+    "size_bytes": 5530
+   }
+  }
+ },
+ "cad_route": {
+  "gpu708_t025_ef_buffer050_preunion_root": {
+   "status": "failed",
+   "violations": null,
+   "diagnostics": [
+    "SurfaceReconstructionError: No decimation budget met the explicit surface deviation, volume and topology limits"
+   ],
+   "runtime_s": 17.463443400003598,
+   "mass_g": null,
+   "record_sha256": "c3bb25772c796ae2c8b33cb5721c1e9bc891e6bba8340d1da8bb43b578091ba9",
+   "independent_fea": false
+  },
+  "gpu708_grayopen125_t025_envelope_bounds_root": {
+   "status": "geometry_invalid",
+   "violations": [
+    "topology:closed_manifold_single_solid"
+   ],
+   "diagnostics": [],
+   "runtime_s": 270.5409686000057,
+   "mass_g": 61.31076530301041,
+   "record_sha256": "425a5f646bf754e04223d9c2fe67f014e6664f87c0b767e14d3eadc19a89f9fe",
+   "independent_fea": false
+  }
+ },
+ "shape_metrics": {
+  "a": {
+   "surface_area_mm2": 26063.43642928995,
+   "free_surface_area_mm2": 22314.07831118712,
+   "free_sharp_edge_length_per_area_per_mm": 0.03864510388653837,
+   "free_axis_normal_area_fraction": 0.15813035839456463,
+   "free_source_grid_plane_area_fraction": 0.008917807768172307,
+   "triangle_count": 146308,
+   "free_source_grid_plane_area_fraction_own_grid": 0.008917807768172307,
+   "own_grid_spacing_mm": 2.6666666666666665,
+   "volume_mm3": 52329.80437997958,
+   "watertight": true,
+   "curvature_abs_mean_per_mm": {
+    "max": 0.873753585793639,
+    "p50": 0.10243458380378948,
+    "p95": 0.4657667685334424,
+    "p99": 0.5526082065095597,
+    "mean": 0.14910847707073585
+   },
+   "curvature_neighbour_rms_per_mm": 0.15203328950874553,
+   "curvature_neighbour_pairs": 1189
+  },
+  "b_c01": {
+   "surface_area_mm2": 24463.040873177815,
+   "free_surface_area_mm2": 20714.08539827543,
+   "free_sharp_edge_length_per_area_per_mm": 0.05091391359175537,
+   "free_axis_normal_area_fraction": 0.20378450828013148,
+   "free_source_grid_plane_area_fraction": 0.008463425623519595,
+   "triangle_count": 137272,
+   "free_source_grid_plane_area_fraction_own_grid": 0.010400473999862348,
+   "own_grid_spacing_mm": 1.3333333333333333,
+   "volume_mm3": 41903.22622768139,
+   "watertight": true,
+   "curvature_abs_mean_per_mm": {
+    "max": 0.8267762863303735,
+    "p50": 0.11791229405807271,
+    "p95": 0.4673348637656463,
+    "p99": 0.5569222303446474,
+    "mean": 0.1578093785601636
+   },
+   "curvature_neighbour_rms_per_mm": 0.157765395496306,
+   "curvature_neighbour_pairs": 1558
+  },
+  "d": {
+   "surface_area_mm2": 30082.104445529312,
+   "free_surface_area_mm2": 21243.936578131485,
+   "free_sharp_edge_length_per_area_per_mm": 0.2373515997083829,
+   "free_axis_normal_area_fraction": 1.0,
+   "free_source_grid_plane_area_fraction": 0.4635762340621163,
+   "triangle_count": 24308,
+   "free_source_grid_plane_area_fraction_own_grid": 1.0,
+   "own_grid_spacing_mm": 4.0,
+   "volume_mm3": 46745.43903227017,
+   "watertight": true,
+   "curvature_abs_mean_per_mm": {
+    "max": 1.2595313662384255,
+    "p50": 0.0,
+    "p95": 0.49991241258813934,
+    "p99": 0.831862303082543,
+    "mean": 0.17005983129829788
+   },
+   "curvature_neighbour_rms_per_mm": 0.2679745312578394,
+   "curvature_neighbour_pairs": 584
+  }
+ },
+ "shape_metrics_method": "surface_metrics(mesh, gpu708 domain) for all columns (identical regions in all three domains, asserted); grid-plane fraction additionally against each source grid; ball_curvature r=1 mm, 5000 samples, seed 0; (d) mesh = reference_geometry() OCCT tessellation 0.03 mm of the t01 STEP, the same mesh as the surface-maturity reference; fine c00 has no mesh (field_disconnected)",
+ "sweep": [
+  {
+   "study": "t020",
+   "id": "c00",
+   "threshold": 0.2,
+   "extension": "none",
+   "status": "geometry_invalid",
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "diagnostics": [
+    "features",
+    "mass_screen"
+   ],
+   "thin_samples": 100,
+   "min_wall_mm": 0.03623573647739631,
+   "min_wall_position_mm": [
+    -12.65550454457601,
+    -38.29999923706055,
+    2.7480289936065674
+   ],
+   "mass_g": 64.58037978274305,
+   "mass_ratio_to_v0": 2.007915129857032,
+   "mass_screen_passed": false,
+   "runtime_s": 156.2253778000013,
+   "fea": null,
+   "record_sha256": "1b45dc5ab16b97b220847a3d0539f13033e58e6e9ff8cd0ce98e1dbf7a4f7070"
+  },
+  {
+   "study": "t020",
+   "id": "c01",
+   "threshold": 0.2,
+   "extension": "preserve",
+   "status": "geometry_invalid",
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "diagnostics": [
+    "features"
+   ],
+   "thin_samples": 130,
+   "min_wall_mm": 0.013283464966881096,
+   "min_wall_position_mm": [
+    15.5,
+    20.305688858032227,
+    29.020936330159504
+   ],
+   "mass_g": 63.40735402007039,
+   "mass_ratio_to_v0": 1.9714437404891436,
+   "mass_screen_passed": true,
+   "runtime_s": 156.91189660000964,
+   "fea": {
+    "status": "failed",
+    "source": "diag_fea.json (scratchpad sweep/diag_fea.py)",
+    "attempts": [
+     [
+      "remesh_hxt",
+      2.0,
+      "failed"
+     ],
+     [
+      "remesh_delaunay",
+      2.0,
+      "skipped"
+     ],
+     [
+      "remesh_hxt",
+      1.5,
+      "failed"
+     ],
+     [
+      "remesh_delaunay",
+      1.5,
+      "skipped"
+     ],
+     [
+      "remesh_hxt",
+      1.2,
+      "failed"
+     ],
+     [
+      "remesh_delaunay",
+      1.2,
+      "skipped"
+     ],
+     [
+      "remesh_hxt",
+      1.0,
+      "failed"
+     ],
+     [
+      "remesh_delaunay",
+      1.0,
+      "skipped"
+     ],
+     [
+      "refine_hxt",
+      2.0,
+      "failed"
+     ],
+     [
+      "classify_hxt",
+      null,
+      "failed"
+     ],
+     [
+      "classify_delaunay",
+      null,
+      "failed"
+     ],
+     [
+      "direct_hxt",
+      null,
+      "skipped"
+     ]
+    ]
+   },
+   "record_sha256": "bb809eb1799f69469978c7839745ae2e3e12e35badab03ee1075ee2996168fd1"
+  },
+  {
+   "study": "t020",
+   "id": "c02",
+   "threshold": 0.2,
+   "extension": "preserve_forbidden",
+   "status": "extension_changed_topology",
+   "failure_stage": "field",
+   "violations": null,
+   "diagnostics": [
+    "ImplicitError: Density extension changed components or Euler number of the hard composition"
+   ],
+   "thin_samples": null,
+   "min_wall_mm": null,
+   "min_wall_position_mm": null,
+   "mass_g": null,
+   "mass_ratio_to_v0": null,
+   "mass_screen_passed": null,
+   "runtime_s": 3.3163382000057027,
+   "fea": null,
+   "record_sha256": "7513ca995dcc18d532c95431bafe3c07d18681a86ab12e99946cbd097242ad84"
+  },
+  {
+   "study": "t025",
+   "id": "c00",
+   "threshold": 0.25,
+   "extension": "none",
+   "status": "geometry_invalid",
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "diagnostics": [
+    "features"
+   ],
+   "thin_samples": 36,
+   "min_wall_mm": 0.02066714693322702,
+   "min_wall_position_mm": [
+    -2.2396416664123535,
+    -38.29999923706055,
+    2.66432785987854
+   ],
+   "mass_g": 58.60895260475873,
+   "mass_ratio_to_v0": 1.822253183955652,
+   "mass_screen_passed": true,
+   "runtime_s": 153.80789100000402,
+   "fea": {
+    "status": "ok",
+    "source": "diag_fea.json (scratchpad sweep/diag_fea.py)",
+    "frame_mass_g": 58.60895260475873,
+    "eigenfrequencies_hz": [
+     1041.713,
+     1192.591,
+     1307.873,
+     1505.187,
+     1818.851,
+     2343.561
+    ],
+    "f1_hz": 1041.713,
+    "arm_tip_stiffness_n_per_mm": 245.7269897391895,
+    "arm_tip_compliance_mm_per_n": 0.0040695570358851635,
+    "max_displacement_mm": 0.006180033264420731,
+    "max_von_mises_mpa": 0.5675761461986601,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 245.7269897391895,
+      "max_displacement_mm": 0.006180033264420731,
+      "max_von_mises_mpa": 0.5675761461986601
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 3314.7824808474456,
+      "max_displacement_mm": 0.0013154392114129371,
+      "max_von_mises_mpa": 0.42221337073584925
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 6681.7141688349075,
+      "max_displacement_mm": 0.001271570332296704,
+      "max_von_mises_mpa": 0.2589250739886132
+     }
+    },
+    "elements": 99324,
+    "minimum_sicn": 0.034373251422935604,
+    "boundary_node_deviation_mm": 4.844241394187237e-12,
+    "boundary_surface_deviation_mm": 0.12527720630168915,
+    "attempts": [
+     [
+      "remesh_hxt",
+      2.0,
+      "ok"
+     ]
+    ],
+    "linear_solver": "SPOOLES",
+    "solver_threads": 1,
+    "runtime_s": 194.00782230001641,
+    "fea_mesh_s": 15.46728370001074,
+    "fea_solve_s": null,
+    "comparison_diagnostic": {
+     "passed": true,
+     "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+     },
+     "ratios": {
+      "frame_mass_ratio": 1.822253183955652,
+      "stiffness_ratio": 47.58659442996614,
+      "frequency_ratio": 5.0938514650080196,
+      "displacement_ratio": 0.024195245273628194,
+      "stress_ratio": 0.09485690155736509
+     },
+     "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+     },
+     "candidate": {
+      "frame_mass_g": 58.60895260475873,
+      "stiffness_n_per_mm": 245.7269897391895,
+      "max_displacement_mm": 0.006180033264420731,
+      "max_von_mises_mpa": 0.5675761461986601,
+      "first_frequency_hz": 1041.713
+     },
+     "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+     },
+     "selection_score": 2.158634760307456
+    },
+    "diagnostic_only": true
+   },
+   "record_sha256": "f6c80f7f772a233c918186762a5a41aa353142f2ca24de187f1eab57758a8539"
+  },
+  {
+   "study": "t025",
+   "id": "c01",
+   "threshold": 0.25,
+   "extension": "preserve_forbidden",
+   "status": "extension_changed_topology",
+   "failure_stage": "field",
+   "violations": null,
+   "diagnostics": [
+    "ImplicitError: Density extension changed components or Euler number of the hard composition"
+   ],
+   "thin_samples": null,
+   "min_wall_mm": null,
+   "min_wall_position_mm": null,
+   "mass_g": null,
+   "mass_ratio_to_v0": null,
+   "mass_screen_passed": null,
+   "runtime_s": 3.332197100011399,
+   "fea": null,
+   "record_sha256": "64c70ced2895239e2344445f5722beba901d631f8597aea27374a698768898bb"
+  },
+  {
+   "study": "t030",
+   "id": "c00",
+   "threshold": 0.3,
+   "extension": "none",
+   "status": "geometry_invalid",
+   "failure_stage": "validation",
+   "violations": [
+    "features"
+   ],
+   "diagnostics": [
+    "features"
+   ],
+   "thin_samples": 32,
+   "min_wall_mm": 0.09190646428254973,
+   "min_wall_position_mm": [
+    12.605916976928711,
+    -49.25,
+    2.688852866490682
+   ],
+   "mass_g": 53.29334616909961,
+   "mass_ratio_to_v0": 1.656981833393272,
+   "mass_screen_passed": true,
+   "runtime_s": 150.68799189999118,
+   "fea": {
+    "status": "ok",
+    "source": "diag_fea.json (scratchpad sweep/diag_fea.py)",
+    "frame_mass_g": 53.29334616909961,
+    "eigenfrequencies_hz": [
+     560.8151,
+     1021.997,
+     1159.15,
+     1283.387,
+     1429.571,
+     1674.363
+    ],
+    "f1_hz": 560.8151,
+    "arm_tip_stiffness_n_per_mm": 232.06211565883692,
+    "arm_tip_compliance_mm_per_n": 0.004309191085158152,
+    "max_displacement_mm": 0.006548098869184127,
+    "max_von_mises_mpa": 0.6442492052856206,
+    "load_cases": {
+     "arm_tip": {
+      "stiffness_n_per_mm": 232.06211565883692,
+      "max_displacement_mm": 0.006548098869184127,
+      "max_von_mises_mpa": 0.6442492052856206
+     },
+     "battery_impact": {
+      "stiffness_n_per_mm": 3125.7870547847842,
+      "max_displacement_mm": 0.0012630187463080645,
+      "max_von_mises_mpa": 0.5090051677846886
+     },
+     "camera_side": {
+      "stiffness_n_per_mm": 5893.420437402351,
+      "max_displacement_mm": 0.0014846724735149838,
+      "max_von_mises_mpa": 0.3197183919308946
+     }
+    },
+    "elements": 92616,
+    "minimum_sicn": 0.0499708038537406,
+    "boundary_node_deviation_mm": 2.818912310055564e-11,
+    "boundary_surface_deviation_mm": 0.12246064096689224,
+    "attempts": [
+     [
+      "remesh_hxt",
+      2.0,
+      "ok"
+     ]
+    ],
+    "linear_solver": "SPOOLES",
+    "solver_threads": 1,
+    "runtime_s": 165.37857210001675,
+    "fea_mesh_s": 15.374279000010574,
+    "fea_solve_s": null,
+    "comparison_diagnostic": {
+     "passed": true,
+     "checks": {
+      "frame_mass": true,
+      "stiffness": true,
+      "frequency": true,
+      "displacement": true,
+      "stress": true
+     },
+     "ratios": {
+      "frame_mass_ratio": 1.656981833393272,
+      "stiffness_ratio": 44.94030465329784,
+      "frequency_ratio": 2.7423184876579434,
+      "displacement_ratio": 0.025636246835109497,
+      "stress_ratio": 0.10767098626938924
+     },
+     "limits": {
+      "frame_mass_ratio_max": 2.0,
+      "stiffness_ratio_min": 0.5,
+      "frequency_ratio_min": 0.7,
+      "displacement_ratio_max": 2.0,
+      "stress_ratio_max": 2.0
+     },
+     "candidate": {
+      "frame_mass_g": 53.29334616909961,
+      "stiffness_n_per_mm": 232.06211565883692,
+      "max_displacement_mm": 0.006548098869184127,
+      "max_von_mises_mpa": 0.6442492052856206,
+      "first_frequency_hz": 560.8151
+     },
+     "reference": {
+      "frame_mass_g": 32.16290311400827,
+      "stiffness_n_per_mm": 5.163785992309858,
+      "max_displacement_mm": 0.25542346004471833,
+      "max_von_mises_mpa": 5.983498689923118,
+      "first_frequency_hz": 204.504
+     },
+     "selection_score": 2.177195753049934
+    },
+    "diagnostic_only": true
+   },
+   "record_sha256": "dbd6be49caf7b3a957b8c3de856eb2365739d8b182950faa93d133666d3e8d27"
+  },
+  {
+   "study": "t030",
+   "id": "c01",
+   "threshold": 0.3,
+   "extension": "preserve",
+   "status": "extension_changed_topology",
+   "failure_stage": "field",
+   "violations": null,
+   "diagnostics": [
+    "ImplicitError: Density extension changed components or Euler number of the hard composition"
+   ],
+   "thin_samples": null,
+   "min_wall_mm": null,
+   "min_wall_position_mm": null,
+   "mass_g": null,
+   "mass_ratio_to_v0": null,
+   "mass_screen_passed": null,
+   "runtime_s": 3.1616906999843195,
+   "fea": null,
+   "record_sha256": "c312b5f2ce8c5bfe1172b0ca9db618638c61596029d6fa8fb070218158107077"
+  },
+  {
+   "study": "t030",
+   "id": "c02",
+   "threshold": 0.3,
+   "extension": "preserve_forbidden",
+   "status": "extension_changed_topology",
+   "failure_stage": "field",
+   "violations": null,
+   "diagnostics": [
+    "ImplicitError: Density extension changed components or Euler number of the hard composition"
+   ],
+   "thin_samples": null,
+   "min_wall_mm": null,
+   "min_wall_position_mm": null,
+   "mass_g": null,
+   "mass_ratio_to_v0": null,
+   "mass_screen_passed": null,
+   "runtime_s": 3.331265100016026,
+   "fea": null,
+   "record_sha256": "a6e63e1f6c6566f458d3d99b9fc87ce01a24f61cd9b6adb00744d29e56d26eb4"
+  }
+ ],
+ "sweep_summary": {
+  "source": "C:/clones/Deep_Frame-gpu/exports/topology/gpu_pilot/grid8over3_gpu1000",
+  "git_commit": "c407b0111c13858c6b3adcdf611cd9e153acb947",
+  "candidates": 8,
+  "accepted": 0,
+  "success_rate": 0.0,
+  "geometry_valid_rate": 0.0,
+  "runtime_mean_all_s": 78.84683105000295,
+  "runtime_mean_full_geometry_s": 154.40828932500153,
+  "runtime_median_all_s": 77.01009450000129,
+  "v0_baseline_diag": {
+   "frame_mass_g": 32.16290311400827,
+   "arm_tip_stiffness_n_per_mm": 5.163785992309858,
+   "f1_hz": 204.504,
+   "runtime_s": 53.97751190001145
+  },
+  "diagnostic_fea_note": "Diagnostic FEA (scratchpad sweep/diag_fea.py, driver default settings) only where 'features' is the sole failing check; records stay failed; not in run_log.jsonl"
+ },
+ "shell_competition": {
+  "commits": {
+   "option": "bedb04e",
+   "default_off": "c407b01"
+  },
+  "metric": "C6 thin wall samples on gpu708 t025 preserve plus fine c01-style build, summed",
+  "variants": {
+   "base": {
+    "gpu708": {
+     "log": "compete/base_gpu708.log",
+     "thin_samples": 52,
+     "unresolved": 0,
+     "minimum_wall_mm": 0.00045917419098041135
+    },
+    "fine": {
+     "log": "compete/base_fine.log",
+     "thin_samples": 40,
+     "unresolved": 0,
+     "minimum_wall_mm": 0.030867305057341865
+    },
+    "thin_total": 92
+   },
+   "protectopen": {
+    "gpu708": {
+     "log": "compete/protectopen_gpu708.log",
+     "thin_samples": 370,
+     "unresolved": 0,
+     "minimum_wall_mm": 0.2012667506333584
+    },
+    "fine": {
+     "log": "compete/protectopen_fine.log",
+     "thin_samples": 467,
+     "unresolved": 0,
+     "minimum_wall_mm": 0.4256512735670518
+    },
+    "thin_total": 837
+   },
+   "fillet": {
+    "gpu708": {
+     "log": "compete/fillet_gpu708.log",
+     "thin_samples": 3687,
+     "unresolved": 27,
+     "minimum_wall_mm": 0.09972304458941135
+    },
+    "fine": {
+     "log": "compete/fillet_fine.log",
+     "thin_samples": 5128,
+     "unresolved": 0,
+     "minimum_wall_mm": 0.006146756257161005
+    },
+    "thin_total": 8815
+   },
+   "noshell": {
+    "gpu708": {
+     "log": "compete/exp_e01_gpu708.log",
+     "thin_samples": 4338,
+     "unresolved": 0,
+     "minimum_wall_mm": 0.09152781099948049
+    },
+    "fine": {
+     "log": "compete/noshell_e01_fine.log",
+     "thin_samples": 5398,
+     "unresolved": 0,
+     "minimum_wall_mm": 0.005334748754008521
+    },
+    "thin_total": 9736
+   }
+  },
+  "result": "protected_opening, fillet and no-shell variants are all worse than the base preserve shell; protected_opening kept as option, off by default"
+ },
+ "ledger": {
+  "exports/run_log.jsonl": {
+   "lines": 11,
+   "c407b01_lines": 11
+  }
+ },
+ "render": {
+  "path": "implicit_vs_cad_gpu708_t025.png",
+  "sha256": "ed83458c30969d44b974e794bc3bee31b60da1985463df05ae65234c29afdc5e",
+  "size_bytes": 435058,
+  "render_faces": 30000,
+  "columns": [
+   "a",
+   "b_c01",
+   "d"
+  ],
+  "views": [
+   "isometric",
+   "isometric_rear",
+   "top",
+   "low_front"
+  ]
+ },
+ "decisions": {
+  "deviation": "User decision: C9 free-zone gate measures the final mesh against marching cubes of the processed field (CAD-route density_isosurface definition); the raw-density iso-surface distance is recorded ungated (plan section 5 C9(ii) had gated it; it exceeds 0.20 mm on all three columns)",
+  "bore_web": "User decision: C6 chords with both ends on prescribed bore polygons may fall short of 2.0 mm by exactly the summed circumscribed-polygon oversize (about 0.019 mm), because the analytic bore ligament is exactly 2.0 mm and a circumscribed polygon can never meet it; all other chords keep the strict 2.0 mm minimum",
+  "robust_fine_run": "The fine density stopped on objective_stall at beta 16 after 14 iterations (minimum_iterations 10, max_iterations 360); the design change stayed at the move limit in every iteration and change_tolerance 0.005 was never met, so it is a stall stop, not design convergence in the sense of plan section 11"
+ }
+}

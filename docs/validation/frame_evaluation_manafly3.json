@@ -1,0 +1,1775 @@
+{
+ "name": "ManaFly 3 BETA V4",
+ "stl": "C:\\clones\\Deep_Frame-neural\\exports\\manafly_ref\\manafly3_repaired.stl",
+ "print_axis": [
+  0.0,
+  0.0,
+  1.0
+ ],
+ "material": {
+  "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+  "young_modulus_mpa": 4430.0,
+  "poisson_ratio": 0.3,
+  "density_g_cm3": 1.09,
+  "orthotropic": {
+   "e_xy_mpa": 4430.0,
+   "e_z_mpa": 2170.0,
+   "nu_xy": 0.3,
+   "nu_xz": 0.3,
+   "g_xy_mpa": 1703.8,
+   "g_z_mpa": 834.6
+  },
+  "strength_xy_mpa": 102.0,
+  "strength_z_mpa": 48.0,
+  "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+  "measured": [
+   "E_xy 4430 +/- 310 MPa",
+   "E_z 2170 +/- 230 MPa",
+   "tensile strength XY 102 +/- 7 MPa",
+   "tensile strength Z 48 +/- 6 MPa",
+   "density 1.09 g/cm3"
+  ],
+  "assumptions": {
+   "nu_xy": "0.30 not in the TDS",
+   "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+   "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+   "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+   "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+  }
+ },
+ "geometry": {
+  "mass": {
+   "frame_mass_g": 29.321081799227418,
+   "frame_volume_mm3": 26900.075045162765,
+   "total_mass_g": 102.22108179922745,
+   "component_mass_g": 72.90000000000003,
+   "center_of_mass_mm": [
+    -0.0011308407889916567,
+    -0.2094479358973216,
+    21.29174388610379
+   ],
+   "frame_center_of_mass_mm": [
+    -0.003942411456198188,
+    -7.353411994291447,
+    12.523586133145077
+   ],
+   "inertia_g_mm2": [
+    [
+     171699.39657458937,
+     8.933542983300413,
+     -5.046606978717335
+    ],
+    [
+     8.933542983300413,
+     126652.44207552979,
+     220.85832137626088
+    ],
+    [
+     -5.046606978717335,
+     220.85832137626088,
+     272954.0031493914
+    ]
+   ],
+   "principal_inertia_g_mm2": [
+    126652.10689165379,
+    171699.398099079,
+    272954.3368087778
+   ],
+   "components": [
+    {
+     "name": "battery",
+     "type": "battery",
+     "mass_g": 37.0,
+     "center_mm": [
+      0.0,
+      0.0,
+      33.3
+     ],
+     "size_mm": [
+      30.0,
+      63.0,
+      11.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "aio15",
+     "type": "aio15",
+     "mass_g": 7.2,
+     "center_mm": [
+      0.0,
+      11.0,
+      8.0
+     ],
+     "size_mm": [
+      31.3,
+      31.3,
+      6.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "camera",
+     "type": "camera",
+     "mass_g": 2.3,
+     "center_mm": [
+      0.0,
+      50.0,
+      16.0
+     ],
+     "size_mm": [
+      16.0,
+      14.0,
+      14.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "motor_front_left",
+     "type": "motor",
+     "mass_g": 5.9,
+     "center_mm": [
+      -56.6,
+      56.6,
+      17.3
+     ],
+     "size_mm": [
+      14.2,
+      14.2,
+      14.6
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_front_left",
+     "type": "prop",
+     "mass_g": 0.7,
+     "center_mm": [
+      -56.6,
+      56.6,
+      26.6
+     ],
+     "size_mm": [
+      76.2,
+      76.2,
+      0.8
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_front_right",
+     "type": "motor",
+     "mass_g": 5.9,
+     "center_mm": [
+      56.6,
+      56.6,
+      17.3
+     ],
+     "size_mm": [
+      14.2,
+      14.2,
+      14.6
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_front_right",
+     "type": "prop",
+     "mass_g": 0.7,
+     "center_mm": [
+      56.6,
+      56.6,
+      26.6
+     ],
+     "size_mm": [
+      76.2,
+      76.2,
+      0.8
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_rear_left",
+     "type": "motor",
+     "mass_g": 5.9,
+     "center_mm": [
+      -56.6,
+      -56.6,
+      17.3
+     ],
+     "size_mm": [
+      14.2,
+      14.2,
+      14.6
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_rear_left",
+     "type": "prop",
+     "mass_g": 0.7,
+     "center_mm": [
+      -56.6,
+      -56.6,
+      26.6
+     ],
+     "size_mm": [
+      76.2,
+      76.2,
+      0.8
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_rear_right",
+     "type": "motor",
+     "mass_g": 5.9,
+     "center_mm": [
+      56.6,
+      -56.6,
+      17.3
+     ],
+     "size_mm": [
+      14.2,
+      14.2,
+      14.6
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_rear_right",
+     "type": "prop",
+     "mass_g": 0.7,
+     "center_mm": [
+      56.6,
+      -56.6,
+      26.6
+     ],
+     "size_mm": [
+      76.2,
+      76.2,
+      0.8
+     ],
+     "shape": "disc"
+    }
+   ],
+   "model": "frame: exact mesh volume integrals x density; components: homogeneous boxes (props: discs) with parallel-axis theorem about the total centre of mass"
+  },
+  "airflow": {
+   "projected_area_mm2": 5668.8,
+   "bbox_share": 0.28962405277484854,
+   "hull_share": 0.3021658202100576,
+   "prop_disc_share": 0.1275599003801536,
+   "prop_ring_share": 0.10960473443188362,
+   "prop_diameter_mm": 76.2,
+   "hub_radius_mm": 7.1,
+   "discs_overlap": false,
+   "method": "top-view silhouette of the winding-number voxel grid; prop share = material inside the four prop discs / disc area, ring share excludes the motor hub radius"
+  },
+  "assembly": {
+   "bolt_patterns": [
+    {
+     "name": "motor_front_left",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -61.09999296296123,
+        56.592041777873604
+       ],
+       "centroid_mm": [
+        -61.82002617801047,
+        56.59076840160148
+       ],
+       "diameter_mm": 3.2148906675636244
+      },
+      {
+       "position_mm": [
+        -56.592925665176836,
+        52.10000556069379
+       ],
+       "centroid_mm": [
+        -56.591671929270596,
+        51.30250236817177
+       ],
+       "diameter_mm": 3.1750392273861205
+      },
+      {
+       "position_mm": [
+        -56.58934384254473,
+        61.099987382905454
+       ],
+       "centroid_mm": [
+        -56.58760200878845,
+        61.83554613935969
+       ],
+       "diameter_mm": 3.184549100550276
+      },
+      {
+       "position_mm": [
+        -52.10002190127983,
+        56.585960376116
+       ],
+       "centroid_mm": [
+        -51.3127879457242,
+        56.583504260018934
+       ],
+       "diameter_mm": 3.176041607593378
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_front_right",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        52.100038512841586,
+        56.58138242521084
+       ],
+       "centroid_mm": [
+        51.29470130282809,
+        56.578050524308864
+       ],
+       "diameter_mm": 3.1649979649604667
+      },
+      {
+       "position_mm": [
+        56.581194129777785,
+        52.100039295811
+       ],
+       "centroid_mm": [
+        56.57781130876747,
+        51.29058132147395
+       ],
+       "diameter_mm": 3.1655007845624885
+      },
+      {
+       "position_mm": [
+        56.58728723121934,
+        61.09998204279861
+       ],
+       "centroid_mm": [
+        56.58523869346733,
+        61.82510992462311
+       ],
+       "diameter_mm": 3.183549399034338
+      },
+      {
+       "position_mm": [
+        61.0999878807413,
+        56.58955618932517
+       ],
+       "centroid_mm": [
+        61.82897994359136,
+        56.58786430586023
+       ],
+       "diameter_mm": 3.1870469824156595
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_rear_left",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -61.09988541666546,
+        -56.5678871228082
+       ],
+       "centroid_mm": [
+        -61.810310913705585,
+        -56.56281725888325
+       ],
+       "diameter_mm": 3.1675112647807717
+      },
+      {
+       "position_mm": [
+        -56.57421899227775,
+        -61.09992614824297
+       ],
+       "centroid_mm": [
+        -56.570143487858715,
+        -61.811281929990535
+       ],
+       "diameter_mm": 3.1770436715424615
+      },
+      {
+       "position_mm": [
+        -56.59948236686415,
+        -52.100000029771564
+       ],
+       "centroid_mm": [
+        -56.59939178515008,
+        -51.31253554502369
+       ],
+       "diameter_mm": 3.17403653062106
+      },
+      {
+       "position_mm": [
+        -52.100002267082296,
+        -56.59548295057379
+       ],
+       "centroid_mm": [
+        -51.31316830117051,
+        -56.59469313508383
+       ],
+       "diameter_mm": 3.1720301862166482
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_rear_right",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        52.100005806943244,
+        -56.59277072234162
+       ],
+       "centroid_mm": [
+        51.30480132450331,
+        -56.59149321980448
+       ],
+       "diameter_mm": 3.1770436715424615
+      },
+      {
+       "position_mm": [
+        56.59104507106266,
+        -61.0999910899076
+       ],
+       "centroid_mm": [
+        56.58960899014778,
+        -61.82164408866995
+       ],
+       "diameter_mm": 3.2153856849916966
+      },
+      {
+       "position_mm": [
+        56.58567404114973,
+        -52.10002280373522
+       ],
+       "centroid_mm": [
+        56.58316487681617,
+        -51.3118603916614
+       ],
+       "diameter_mm": 3.174537918592061
+      },
+      {
+       "position_mm": [
+        61.09999127653849,
+        -56.59113935230924
+       ],
+       "centroid_mm": [
+        61.83360719874804,
+        -56.58969483568075
+       ],
+       "diameter_mm": 3.18904387921711
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "stack_20",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -10.000150125749023,
+        1.0003419327218115
+       ],
+       "centroid_mm": [
+        -10.014459193101324,
+        0.9860335694487227
+       ],
+       "diameter_mm": 3.2148906675636244
+      },
+      {
+       "position_mm": [
+        -10.01579343514488,
+        20.983989476382106
+       ],
+       "centroid_mm": [
+        -10.017694016039481,
+        20.985884022208516
+       ],
+       "diameter_mm": 3.212414436226823
+      },
+      {
+       "position_mm": [
+        9.985843313543251,
+        0.9860548574818147
+       ],
+       "centroid_mm": [
+        9.979873074553298,
+        0.9920418977202721
+       ],
+       "diameter_mm": 3.21439557390279
+      },
+      {
+       "position_mm": [
+        9.99788559870618,
+        21.001922193017876
+       ],
+       "centroid_mm": [
+        9.981636224333439,
+        20.985666258044745
+       ],
+       "diameter_mm": 3.2228018223553696
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "stack_25.5",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -18.030999693854938,
+        10.99667731989959
+       ],
+       "centroid_mm": [
+        -17.659640776699028,
+        10.996745752427186
+       ],
+       "diameter_mm": 3.2390575556198042
+      },
+      {
+       "position_mm": [
+        -0.005046052346067146,
+        -7.030999293920335
+       ],
+       "centroid_mm": [
+        -0.004941318814274531,
+        -6.656756200846943
+       ],
+       "diameter_mm": 3.2439674531715204
+      },
+      {
+       "position_mm": [
+        0.004580094685296578,
+        29.03099941829994
+       ],
+       "centroid_mm": [
+        0.004489930868653063,
+        28.67604087766757
+       ],
+       "diameter_mm": 3.254254125500146
+      },
+      {
+       "position_mm": [
+        18.03099876771431,
+        11.006666234701497
+       ],
+       "centroid_mm": [
+        17.672934697562447,
+        11.00653385495035
+       ],
+       "diameter_mm": 3.2522972677612616
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    }
+   ],
+   "keep_out_material_mm3": {
+    "battery_envelope": 0.0,
+    "aio15_envelope": 0.0,
+    "camera_envelope": 0.0
+   },
+   "connector_reachable": {},
+   "fit_tolerance_mm3": 1.0,
+   "bolt_patterns_passed": true,
+   "tools_passed": true,
+   "fit_passed": true,
+   "connectors_checked": false,
+   "method": "holes from an exact plane section rasterised at the section voxel; reachability = 9 parallel rays (axis plus screw-head or connector radius) from the hole or connector along the tool axis must not re-enter material beyond the tool skip distance (the pad itself); fit = material voxels inside each keep-out shrunk by one voxel"
+  },
+  "printability": {
+   "overhang_area_mm2": 4119.887672259753,
+   "overhang_share": 0.16132030532947436,
+   "bed_contact_mm2": 853.3867428928825,
+   "print_height_mm": 32.400001525878906,
+   "print_footprint_mm": [
+    134.79988861083984,
+    145.11389923095703
+   ],
+   "overhang_deg": 45.0,
+   "method": "faces whose normal lies within 45 deg of straight down above the bed, area share of the surface"
+  },
+  "form": {
+   "strut_width_mm": {
+    "p10": 1.2000000000000002,
+    "p50": 2.4844410203711917,
+    "p90": 3.6
+   },
+   "share_below_2mm": 0.1901916340407995,
+   "section_ratio": {
+    "p10": 0.5,
+    "p50": 1.1180339887498947,
+    "p90": 4.0
+   },
+   "upright_share": 0.3432928085720173,
+   "flat_share": 0.1708221718524624,
+   "skeleton_voxels": 4853,
+   "method": "widths 2 x EDT on the 3D skeleton minus one voxel; section ratio = vertical material run / in-plane width at each skeleton voxel (> 1 upright, < 1 flat)",
+   "loops": {
+    "closing_radius_mm": 3.0,
+    "voxel_mm": 0.4,
+    "bodies": 1,
+    "cavities": 0,
+    "loops": 26,
+    "method": "first Betti number b1 = b0 + b2 - chi of the voxel solid after a morphological closing that fills bores and slots up to 2 x the closing radius"
+   },
+   "mesh_bodies": 1,
+   "mesh_genus": 68,
+   "flight_height_mm": 32.400001525878906,
+   "symmetry": {
+    "plane_x_mm": 0.0,
+    "rms_mm": 0.03840986223368033,
+    "p95_mm": 0.048256065051767445,
+    "max_mm": 0.6014979461892184,
+    "samples": 5000,
+    "method": "surface samples mirrored at x = mean motor x, distance to the original surface"
+   },
+   "roughness": {
+    "curvature_neighbour_rms_per_mm": 0.16759003106946843,
+    "mean_abs_curvature_per_mm": {
+     "max": 1.0886439203738911,
+     "p50": 0.2112969150600663,
+     "p95": 0.5266003712836639,
+     "p99": 0.7104873816212576,
+     "mean": 0.22582167689831548
+    },
+    "radius_mm": 1.0,
+    "method": "Cohen-Steiner/Morvan mean curvature measure of each ball around evenly sampled surface points divided by the disc area pi r^2 (sphere 1/R, cylinder 1/(2R), plane 0); RMS of the |H| differences of sample pairs closer than 1.5 r; independent of the triangulation, record only"
+   }
+  },
+  "voxel_mm": 0.4,
+  "unbalanced_columns": 0,
+  "runtime_s": 8.26836329998332
+ },
+ "walls": {
+  "voxel_mm": 0.1,
+  "opening_radius_mm": 1.0,
+  "deep_depth_mm": 0.45,
+  "grid_shape": [
+   1372,
+   1476,
+   349
+  ],
+  "unbalanced_columns": 0,
+  "part_volume_mm3": 26920.386000000006,
+  "removed_volume_mm3": 1557.6370000000002,
+  "components": 26487,
+  "deep_components": 44,
+  "deep_volume_mm3": 1362.5290000000005,
+  "deep_fraction": 0.05061327872490388,
+  "largest_deep_mm3": 345.9320000000001,
+  "shallow_volume_mm3": 195.10800000000006,
+  "motor_zone_hits": {
+   "motor_front_left": {
+    "components": 5,
+    "volume_mm3": 62.87600000000002
+   },
+   "motor_front_right": {
+    "components": 4,
+    "volume_mm3": 64.21000000000002
+   },
+   "motor_rear_left": {
+    "components": 4,
+    "volume_mm3": 66.88000000000001
+   },
+   "motor_rear_right": {
+    "components": 3,
+    "volume_mm3": 67.23900000000002
+   }
+  },
+  "motor_zones": [
+   "motor_front_left",
+   "motor_front_right",
+   "motor_rear_left",
+   "motor_rear_right"
+  ],
+  "largest_deep_components": [
+   {
+    "volume_mm3": 345.9320000000001,
+    "max_depth_mm": 0.9899494936611666,
+    "centroid_mm": [
+     -0.115,
+     7.835,
+     1.03
+    ],
+    "extent_mm": [
+     63.6,
+     40.2,
+     3.4
+    ]
+   },
+   {
+    "volume_mm3": 168.94100000000003,
+    "max_depth_mm": 0.9273618495495705,
+    "centroid_mm": [
+     0.142,
+     -24.832,
+     1.051
+    ],
+    "extent_mm": [
+     67.2,
+     28.7,
+     6.5
+    ]
+   },
+   {
+    "volume_mm3": 119.35200000000003,
+    "max_depth_mm": 0.9273618495495705,
+    "centroid_mm": [
+     -11.375,
+     -66.597,
+     5.3
+    ],
+    "extent_mm": [
+     13.2,
+     12.3,
+     7.6
+    ]
+   },
+   {
+    "volume_mm3": 118.76000000000003,
+    "max_depth_mm": 0.9486832980505139,
+    "centroid_mm": [
+     11.46,
+     -66.667,
+     5.32
+    ],
+    "extent_mm": [
+     13.2,
+     12.3,
+     8.2
+    ]
+   },
+   {
+    "volume_mm3": 64.59900000000002,
+    "max_depth_mm": 0.9,
+    "centroid_mm": [
+     0.245,
+     -67.783,
+     18.77
+    ],
+    "extent_mm": [
+     8.1,
+     16.2,
+     17.9
+    ]
+   },
+   {
+    "volume_mm3": 59.07400000000001,
+    "max_depth_mm": 0.9848857801796105,
+    "centroid_mm": [
+     0.245,
+     29.075,
+     1.027
+    ],
+    "extent_mm": [
+     16.6,
+     5.8,
+     2.8
+    ]
+   },
+   {
+    "volume_mm3": 48.80100000000001,
+    "max_depth_mm": 0.7000000000000001,
+    "centroid_mm": [
+     60.341,
+     -60.026,
+     8.619
+    ],
+    "extent_mm": [
+     14.1,
+     14.7,
+     5.0
+    ]
+   },
+   {
+    "volume_mm3": 48.53600000000001,
+    "max_depth_mm": 0.7000000000000001,
+    "centroid_mm": [
+     -60.293,
+     -60.073,
+     8.617
+    ],
+    "extent_mm": [
+     14.8,
+     14.7,
+     5.2
+    ]
+   },
+   {
+    "volume_mm3": 45.72100000000001,
+    "max_depth_mm": 0.7000000000000001,
+    "centroid_mm": [
+     59.678,
+     58.572,
+     8.638
+    ],
+    "extent_mm": [
+     18.9,
+     14.1,
+     5.6
+    ]
+   },
+   {
+    "volume_mm3": 42.62100000000001,
+    "max_depth_mm": 0.9899494936611666,
+    "centroid_mm": [
+     -12.421,
+     -45.282,
+     1.019
+    ],
+    "extent_mm": [
+     11.9,
+     8.7,
+     2.9
+    ]
+   }
+  ],
+  "limits": {
+   "deep_max_fraction": 0.005,
+   "deep_component_max_mm3": 5.0,
+   "motor_zone_margin_mm": 2.0
+  },
+  "elapsed_s": 202.47544939999352,
+  "method": "Winding-number voxelisation at h; exact EDT opening with a ball of the radius (erosion EDT >= r, dilation EDT <= r) tiled along x with halo; removed voxels grouped with 26-connectivity; deep components reach the depth below the original surface (true walls under 2 r), shallow ones are edge rounding",
+  "status": "Provisional: calibrated on the ManaFly 3 BETA V4 manufacturer geometry (no own test); final after own drop tests in M2",
+  "calibrated_rule_passed": false
+ },
+ "fea": {
+  "status": "ok",
+  "mass_g": 66.32108179922741,
+  "eigenfrequencies_hz": [
+   344.1492,
+   417.2392,
+   549.0521,
+   777.5802,
+   788.4282,
+   872.9409
+  ],
+  "max_displacement_mm": 1.0743041166445795,
+  "max_von_mises_mpa": 60.33638166808174,
+  "stiffness_n_per_mm": 6.576030899904205,
+  "load_cases": {
+   "arm_tip": {
+    "analysis": "static",
+    "max_displacement_mm": 0.709026288248015,
+    "max_von_mises_mpa": 18.619642890468167,
+    "von_mises_p99_mpa": 2.279635862789786,
+    "print_normal_tension_p99_mpa": 0.4936640840000015,
+    "print_normal_abs_p99_mpa": 0.6176158740000004,
+    "von_mises_p999_mpa": 4.719011492959342,
+    "print_normal_tension_p999_mpa": 1.5889578740000747,
+    "print_normal_abs_p999_mpa": 1.7280913930000634,
+    "stress_samples": 371080,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 1077,
+      "force_n": [
+       0.0,
+       0.0,
+       3.6
+      ],
+      "mean_displacement_mm": [
+       0.05066428245125356,
+       -0.06079759843082641,
+       0.5474426831012066
+      ],
+      "directional_displacement_mm": 0.5474426831012066,
+      "stiffness_n_per_mm": 6.576030899904205
+     }
+    ],
+    "stiffness_n_per_mm": 6.576030899904205,
+    "fixed_node_count": 1034
+   },
+   "modes": {
+    "analysis": "modal",
+    "eigenfrequencies_hz": [
+     344.1492,
+     417.2392,
+     549.0521,
+     777.5802,
+     788.4282,
+     872.9409
+    ],
+    "discarded_rigid_modes": 0,
+    "fixture": "all translations fixed on selected nodes",
+    "fixed_node_count": 5433
+   },
+   "crash_front": {
+    "analysis": "static",
+    "max_displacement_mm": 1.0743041166445795,
+    "max_von_mises_mpa": 60.33638166808174,
+    "von_mises_p99_mpa": 6.539851270093693,
+    "print_normal_tension_p99_mpa": 1.3817581900000009,
+    "print_normal_abs_p99_mpa": 1.768579610000005,
+    "von_mises_p999_mpa": 12.399921209772073,
+    "print_normal_tension_p999_mpa": 4.159854488000179,
+    "print_normal_abs_p999_mpa": 4.575439001000078,
+    "stress_samples": 371080,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 2468,
+      "force_n": [
+       0.0,
+       -30.64578125,
+       0.0
+      ],
+      "mean_displacement_mm": [
+       0.007334304216887366,
+       -0.47197244250405207,
+       0.46312403188816886
+      ],
+      "directional_displacement_mm": 0.47197244250405207,
+      "stiffness_n_per_mm": 64.93129363106172
+     }
+    ],
+    "stiffness_n_per_mm": 64.93129363106172,
+    "fixed_node_count": 1034
+   },
+   "crash_arm": {
+    "analysis": "static",
+    "max_displacement_mm": 0.8309405923212922,
+    "max_von_mises_mpa": 27.30899903211524,
+    "von_mises_p99_mpa": 4.855632051583599,
+    "print_normal_tension_p99_mpa": 0.6347500410000013,
+    "print_normal_abs_p99_mpa": 0.9256666890000005,
+    "von_mises_p999_mpa": 10.056777084097254,
+    "print_normal_tension_p999_mpa": 1.4599188040000226,
+    "print_normal_abs_p999_mpa": 2.048815312000002,
+    "stress_samples": 371080,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 1077,
+      "force_n": [
+       0.0,
+       -14.44655982442303,
+       -5.107630208333331
+      ],
+      "mean_displacement_mm": [
+       -0.30472468765088234,
+       -0.30120850696378837,
+       -0.5327274013927579
+      ],
+      "directional_displacement_mm": 0.4615579042311462,
+      "stiffness_n_per_mm": 33.198197852389846
+     }
+    ],
+    "stiffness_n_per_mm": 33.198197852389846,
+    "fixed_node_count": 1034
+   },
+   "crash_back": {
+    "analysis": "static",
+    "max_displacement_mm": 0.07438090542687294,
+    "max_von_mises_mpa": 5.802231460627226,
+    "von_mises_p99_mpa": 1.467931584868215,
+    "print_normal_tension_p99_mpa": 0.24376827800000025,
+    "print_normal_abs_p99_mpa": 0.35350616800000023,
+    "von_mises_p999_mpa": 2.698651473784166,
+    "print_normal_tension_p999_mpa": 0.6092337586000276,
+    "print_normal_abs_p999_mpa": 0.6898294189000247,
+    "stress_samples": 371080,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 73,
+      "force_n": [
+       0.0,
+       0.0,
+       -15.322890625
+      ],
+      "mean_displacement_mm": [
+       -0.0007892712671232878,
+       -0.0050952716027397255,
+       -0.07162288383561641
+      ],
+      "directional_displacement_mm": 0.07162288383561641,
+      "stiffness_n_per_mm": 213.9384761463665
+     }
+    ],
+    "stiffness_n_per_mm": 213.9384761463665,
+    "fixed_node_count": 5433
+   }
+  },
+  "diagnostics": [],
+  "artifacts": {
+   "directory": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk",
+   "arm_tip": {
+    "input": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_0.inp",
+    "data": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_0.dat",
+    "log": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_0.log"
+   },
+   "modes": {
+    "input": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_1.inp",
+    "data": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_1.dat",
+    "log": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_1.log"
+   },
+   "crash_front": {
+    "input": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_2.inp",
+    "data": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_2.dat",
+    "log": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_2.log"
+   },
+   "crash_arm": {
+    "input": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_3.inp",
+    "data": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_3.dat",
+    "log": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_3.log"
+   },
+   "crash_back": {
+    "input": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_4.inp",
+    "data": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_4.dat",
+    "log": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\case_4.log"
+   },
+   "result": "C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\fea\\evaluation_hu3u8efk\\result.json"
+  },
+  "linear_solver": null,
+  "solver_threads": 4,
+  "mesh": {
+   "attempts": [
+    {
+     "name": "remesh_hxt",
+     "target_mm": 2.0,
+     "status": "ok",
+     "timeout_s": 900.0,
+     "linear_element_count": 92770,
+     "runtime_s": 31.859452099975897
+    }
+   ],
+   "input_face_count": 184156,
+   "input_minimum_angle_deg": 0.396859013756389,
+   "memory_budget": {
+    "elements": 247216,
+    "solver_memory_mb": 9174.03515625,
+    "process_mb": 553.96484375,
+    "available_mb": 24416.29296875,
+    "memory_budget_mb": 9728.0,
+    "memory_per_element_kb": 38.0
+   },
+   "gmsh_version": "4.15.2",
+   "element_type": "C3D10",
+   "element_count": 92770,
+   "minimum_jacobian_mm3": 3.4860583887193146e-06,
+   "mesh_size_mm": 3.0,
+   "second_order_linear": false,
+   "high_order_optimize": 0,
+   "boundary_geometry": "quadratic boundary nodes projected to CAD",
+   "attempt": "remesh_hxt",
+   "target_mm": 2.0,
+   "prepared_surface": {
+    "refined_input": false,
+    "target_mm": 2.0,
+    "merge_tolerance_mm": 2.0069582411795255e-07,
+    "cleanup_applied": false,
+    "face_count": 56166,
+    "minimum_angle_deg": 0.42143727271015685,
+    "topology": {
+     "input": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -134
+     },
+     "remeshed": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -134
+     },
+     "prepared": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -134
+     }
+    },
+    "topology_changed": false,
+    "rejected_steps": {},
+    "topology_passed": true,
+    "self_intersections_passed": true,
+    "folded_edges": 0,
+    "runtime_s": 19.091694399976404,
+    "passed": true
+   },
+   "linear_element_count": 92770,
+   "element_budget": 247216,
+   "over_budget": false,
+   "boundary_node_count": 27949,
+   "boundary_node_deviation_mm": 3.2085253330984006e-14,
+   "boundary_fidelity": {
+    "method": "bidirectional vertices, centroids and all edge midpoints; exact nearest-surface distance by MeshLab per-vertex distance",
+    "reference_to_approximation": {
+     "sample_count": 828568,
+     "surface_distance_mm": {
+      "max": 0.1397639513015747,
+      "p50": 0.01564313005656004,
+      "p95": 0.048842862248420715,
+      "p99": 0.06396920718252647,
+      "mean": 0.01884065275839577
+     }
+    },
+    "approximation_to_reference": {
+     "sample_count": 252613,
+     "surface_distance_mm": {
+      "max": 0.12418681383132935,
+      "p50": 0.013708708807826042,
+      "p95": 0.047025392204523085,
+      "p99": 0.05960938334465027,
+      "mean": 0.017216319298935353
+     }
+    },
+    "maximum_sampled_deviation_mm": 0.1397639513015747,
+    "relative_volume_change": -0.00875543645088761,
+    "runtime_s": 1.8991144000028726
+   },
+   "input_volume_mm3": 26900.075045162765,
+   "tet_volume_mm3": 26664.553147580726,
+   "tet_volume_relative_change": -0.008755436450887943,
+   "minimum_sicn": 0.00953602060302174,
+   "elements_below_sicn": 0,
+   "node_count": 183002
+  },
+  "point_mass_coupling": [
+   {
+    "name": "battery",
+    "mass_g": 37.0,
+    "position_mm": [
+     0.0,
+     0.0,
+     32.5
+    ],
+    "attachment_nodes": 73,
+    "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+   }
+  ],
+  "frame_mass_g": 29.321081799227418,
+  "model_frame_mass_g": 29.064362930862995,
+  "point_mass_g": 37.0,
+  "solver_version": "2.22",
+  "runtime_s": 133.02811719998135,
+  "model": {
+   "material": {
+    "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+    "young_modulus_mpa": 4430.0,
+    "poisson_ratio": 0.3,
+    "density_g_cm3": 1.09,
+    "orthotropic": {
+     "e_xy_mpa": 4430.0,
+     "e_z_mpa": 2170.0,
+     "nu_xy": 0.3,
+     "nu_xz": 0.3,
+     "g_xy_mpa": 1703.8,
+     "g_z_mpa": 834.6
+    },
+    "strength_xy_mpa": 102.0,
+    "strength_z_mpa": 48.0,
+    "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+    "measured": [
+     "E_xy 4430 +/- 310 MPa",
+     "E_z 2170 +/- 230 MPa",
+     "tensile strength XY 102 +/- 7 MPa",
+     "tensile strength Z 48 +/- 6 MPa",
+     "density 1.09 g/cm3"
+    ],
+    "assumptions": {
+     "nu_xy": "0.30 not in the TDS",
+     "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+     "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+     "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+     "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+    },
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "point_masses": [
+    {
+     "name": "battery",
+     "mass_g": 37.0,
+     "position_mm": [
+      0.0,
+      0.0,
+      32.5
+     ],
+     "attachment_region": {
+      "kind": "box",
+      "min_mm": [
+       -20.1,
+       -2.0,
+       26.65
+      ],
+      "max_mm": [
+       20.1,
+       2.0,
+       27.35
+      ]
+     }
+    }
+   ],
+   "load_cases": [
+    {
+     "name": "arm_tip",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -3.2,
+        -9.9,
+        -0.35
+       ],
+       "max_mm": [
+        3.2,
+        -3.5,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -3.2,
+        25.5,
+        -0.35
+       ],
+       "max_mm": [
+        3.2,
+        31.9,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -20.85,
+        7.8,
+        -0.35
+       ],
+       "max_mm": [
+        -14.45,
+        14.2,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        14.45,
+        7.8,
+        -0.35
+       ],
+       "max_mm": [
+        20.85,
+        14.2,
+        0.35
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -66.2,
+         47.0,
+         9.65
+        ],
+        "max_mm": [
+         -47.0,
+         66.2,
+         10.35
+        ]
+       },
+       "force_n": [
+        0.0,
+        0.0,
+        3.6
+       ]
+      }
+     ]
+    },
+    {
+     "name": "modes",
+     "analysis": "modal",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -66.2,
+        47.0,
+        6.65
+       ],
+       "max_mm": [
+        -47.0,
+        66.2,
+        7.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        47.0,
+        47.0,
+        6.65
+       ],
+       "max_mm": [
+        66.2,
+        66.2,
+        7.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -66.2,
+        -66.2,
+        6.65
+       ],
+       "max_mm": [
+        -47.0,
+        -47.0,
+        7.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        47.0,
+        -66.2,
+        6.65
+       ],
+       "max_mm": [
+        66.2,
+        -47.0,
+        7.35
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_front",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -3.2,
+        -9.9,
+        -0.35
+       ],
+       "max_mm": [
+        3.2,
+        -3.5,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -3.2,
+        25.5,
+        -0.35
+       ],
+       "max_mm": [
+        3.2,
+        31.9,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -20.85,
+        7.8,
+        -0.35
+       ],
+       "max_mm": [
+        -14.45,
+        14.2,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        14.45,
+        7.8,
+        -0.35
+       ],
+       "max_mm": [
+        20.85,
+        14.2,
+        0.35
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -17.5,
+         38.0,
+         28.0
+        ],
+        "max_mm": [
+         17.5,
+         56.0,
+         32.6
+        ]
+       },
+       "force_n": [
+        0.0,
+        -30.64578125,
+        0.0
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_arm",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -3.2,
+        -9.9,
+        -0.35
+       ],
+       "max_mm": [
+        3.2,
+        -3.5,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -3.2,
+        25.5,
+        -0.35
+       ],
+       "max_mm": [
+        3.2,
+        31.9,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -20.85,
+        7.8,
+        -0.35
+       ],
+       "max_mm": [
+        -14.45,
+        14.2,
+        0.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        14.45,
+        7.8,
+        -0.35
+       ],
+       "max_mm": [
+        20.85,
+        14.2,
+        0.35
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -66.2,
+         47.0,
+         9.65
+        ],
+        "max_mm": [
+         -47.0,
+         66.2,
+         10.35
+        ]
+       },
+       "force_n": [
+        0.0,
+        -14.44655982442303,
+        -5.107630208333331
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_back",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -66.2,
+        47.0,
+        6.65
+       ],
+       "max_mm": [
+        -47.0,
+        66.2,
+        7.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        47.0,
+        47.0,
+        6.65
+       ],
+       "max_mm": [
+        66.2,
+        66.2,
+        7.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -66.2,
+        -66.2,
+        6.65
+       ],
+       "max_mm": [
+        -47.0,
+        -47.0,
+        7.35
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        47.0,
+        -66.2,
+        6.65
+       ],
+       "max_mm": [
+        66.2,
+        -47.0,
+        7.35
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -20.1,
+         -2.0,
+         26.65
+        ],
+        "max_mm": [
+         20.1,
+         2.0,
+         27.35
+        ]
+       },
+       "force_n": [
+        0.0,
+        0.0,
+        -15.322890625
+       ]
+      }
+     ]
+    }
+   ],
+   "loads": {
+    "arm_tip_force_n": 3.6,
+    "all_up_mass_g": 125.0,
+    "standard_gravity_m_s2": 9.80665,
+    "crash_front_g": 25.0,
+    "crash_arm_g": 12.5,
+    "crash_back_g": 12.5,
+    "safety_factor": 2.0,
+    "sources": {
+     "arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+     "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+     "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+     "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+     "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"
+    }
+   },
+   "support": {
+    "arm_tip": "centre mount undersides fixed (all translations)",
+    "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
+    "crash_front": "centre mount undersides fixed",
+    "crash_arm": "centre mount undersides fixed",
+    "crash_back": "four motor seat undersides fixed"
+   }
+  }
+ },
+ "slicer": {
+  "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
+  "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed",
+  "options": [
+   "--nozzle-diameter",
+   "0.4",
+   "--layer-height",
+   "0.2",
+   "--first-layer-height",
+   "0.2",
+   "--perimeters",
+   "2",
+   "--fill-density",
+   "15%",
+   "--filament-diameter",
+   "1.75",
+   "--filament-density",
+   "1.09",
+   "--bed-shape",
+   "0x0,256x0,256x256,0x256",
+   "--max-print-height",
+   "256",
+   "--center",
+   "128,128"
+  ],
+  "supports": {
+   "returncode": 0,
+   "runtime_s": 4.471542900020722,
+   "log_tail": "10 => Processing triangulated mesh\n20 => Generating perimeters\n30 => Preparing infill\n45 => Making infill\n65 => Searching support spots\n69 => Alert if supports needed\n70 => Generating support material\n89 => Calculating overhanging perimeters\n88 => Generating skirt and brim\n90 => Exporting G-code to C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\slicer\\supports.gcode\nSlicing result exported to C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\slicer\\supports.gcode\n",
+   "print_time": "7h 41m 46s",
+   "print_time_min": 461.76666666666665,
+   "filament_mm3": 53280.0,
+   "filament_g": 58.07
+  },
+  "no_supports": {
+   "returncode": 0,
+   "runtime_s": 2.12129680000362,
+   "log_tail": "10 => Processing triangulated mesh\n20 => Generating perimeters\n30 => Preparing infill\n45 => Making infill\n65 => Searching support spots\n69 => Alert if supports needed\nprint warning: Detected print stability issues:\n\nprinted.stl\nFloating object part, Floating bridge anchors, Low bed adhesion, Loose extrusions, Long bridging extrusions\n\nConsider enabling supports.\nAlso consider enabling brim.\n89 => Calculating overhanging perimeters\n88 => Generating skirt and brim\n90 => Exporting G-code to C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\slicer\\no_supports.gcode\nSlicing result exported to C:\\clones\\Deep_Frame-eval\\exports\\evaluation\\manafly3\\slicer\\no_supports.gcode\n",
+   "print_time": "4h 16m 5s",
+   "print_time_min": 256.0833333333333,
+   "filament_mm3": 23050.0,
+   "filament_g": 25.13
+  },
+  "support_mm3": 30230.0,
+  "passed": true
+ },
+ "assessment": {
+  "conditions": {
+   "one_body": true,
+   "bolt_patterns": true,
+   "keep_outs_free": true,
+   "tools_reachable": true,
+   "fea_solved": true,
+   "slicer": true,
+   "crash_front_strength": true,
+   "crash_arm_strength": true,
+   "crash_back_strength": true
+  },
+  "missed": [],
+  "good": true,
+  "crash": {
+   "crash_front": {
+    "von_mises_p999_mpa": 12.399921209772073,
+    "print_normal_p999_mpa": 4.575439001000078,
+    "utilisation_xy": 0.24313570999553083,
+    "utilisation_z": 0.19064329170833658
+   },
+   "crash_arm": {
+    "von_mises_p999_mpa": 10.056777084097254,
+    "print_normal_p999_mpa": 2.048815312000002,
+    "utilisation_xy": 0.1971917075313187,
+    "utilisation_z": 0.08536730466666675
+   },
+   "crash_back": {
+    "von_mises_p999_mpa": 2.698651473784166,
+    "print_normal_p999_mpa": 0.6898294189000247,
+    "utilisation_xy": 0.052914734780081685,
+    "utilisation_z": 0.028742892454167696
+   }
+  },
+  "safety_factor": 2.0,
+  "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed"
+ },
+ "line": "| ManaFly 3 BETA V4 | 29,3 g | SP z 21,3 mm; Ixx/Iyy/Izz 172/127/273 kg\u00b7mm\u00b2 (K) | 11,0 % (76 mm) | Bohrb. 24/24, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 16,1 %, \u00d6ffn. r=1 5,06 %, St\u00fctze 30,23 cm\u00b3, 462 min | Strebe 1,2/2,5/3,6 mm, H/B 1,12, offen 71 %, H\u00f6he 32,4 mm, K\u00f6rper 1, Schlaufen 26, Sym. 0,04 mm, Rauh. 0,168/mm | 6,6 N/mm (A) | f1 344 Hz; 417/549/778 (A) | front 12,4/4,6 MPa; arm 10,1/2,0 MPa; back 2,7/0,7 MPa (SF 2,0, A) | keine |"
+}

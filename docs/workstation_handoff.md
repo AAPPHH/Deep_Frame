@@ -83,6 +83,41 @@ python3.13 -m venv .venv
 
 `ccx` wird im PATH gefunden; alternativ `CALCULIX_PATH` auf das lokale Binary setzen. Die Distributionsversion kann abweichen: [Ubuntu 24.04 liefert beispielsweise CalculiX 2.21](https://packages.ubuntu.com/noble/calculix-ccx), der abgenommene Windows-Lauf verwendete 2.22. Native Downloads/Quellen nennt die [CalculiX-Projektseite](https://www.dhondt.de/); Plattform- und Python-SDK-Hinweise stehen bei [Gmsh](https://gmsh.info/). Die Import- und Identitaetspruefung entscheidet, ob die neu installierte Plattform bereit ist.
 
+## Rechenlaeufe ueber Ray
+
+Alle Rechenlaeufe gehen ueber einen lokalen Ray-Head; Job-Slots und Ressourcen-Ampel entfallen. Leichte Befehle (git, grep, Lesen, einzelne schnelle Tests) laufen direkt. Ray 2.59 (`ray[default]`) liegt in einer eigenen Python-3.12-Umgebung `C:/clones/ray-venv` (`uv venv --python 3.12 ray-venv`, `uv pip install "ray[default]"`); die Jobs selbst nutzen weiter ihre eigenen venvs.
+
+Head starten (24 CPU, 1 GPU, 40 GiB logischer RAM, 1 GiB Object Store, Zusatzressource `gpu_gb` = 14, Dashboard 127.0.0.1:8265, `RAY_JOB_START_TIMEOUT_SECONDS` = 7 Tage, damit wartende Jobs nicht nach 15 min verfallen). Unter Windows losgeloest von der startenden Sitzung:
+
+```powershell
+Invoke-CimMethod Win32_Process -MethodName Create -Arguments @{CommandLine='C:\clones\ray-venv\Scripts\python.exe C:\clones\Deep_Frame-int\tools\compute.py head'}
+ay-venv\Scripts\python.exe C:\clones\Deep_Frame-int	ools\compute.py head'}
+```
+
+Einreichen (wartet, bis die deklarierten Ressourcen frei sind, streamt das Log und endet mit dem Exit-Code des Jobs):
+
+```bash
+python /c/clones/Deep_Frame-int/tools/compute.py <typ> [--cwd DIR] -- <befehl...>
+```
+
+Ohne `ray` im aufrufenden Python startet sich `compute.py` mit `C:/clones/ray-venv/Scripts/python.exe` neu. Der Befehl laeuft im Arbeitsverzeichnis des Aufrufers (oder `--cwd`); `CALCULIX_PATH`, `PYTHONPATH`, `CUDA_PATH` und `DEEP_FRAME_*` werden weitergereicht, `OMP/MKL/OPENBLAS/NUMEXPR_NUM_THREADS` = deklarierte Kerne. GPU-Jobs belegen `gpu_gb` statt ganzer GPUs, damit kleine GPU-Jobs nebeneinander laufen. Auf dem Cluster aendert sich nur `RAY_ADDRESS`; jeder Knoten startet mit seinen eigenen Werten (`ray start --address ... --resources '{"gpu_gb": N}'`).
+
+| Typ | Kerne | RAM GB | gpu_gb | Quelle |
+| --- | --- | --- | --- | --- |
+| density_neural | 4 | 4 | 12 | Neural 4/3 mm: ca. 3 GB Host; 13.8 GB Device inkl. ca. 2 GB Desktop (Lauf-Notizen) |
+| density_simp | 4 | 8 | 10 | SIMP 4/3 mm cuDSS: FP32-Cholesky 8.7 GB geschaetzt (GPU-Notizen); Host Schaetzung |
+| density_simp_1mm | 8 | 28 | 14 | cuDSS 1 mm ca. 25 GB Host (Lauf-Notizen), ganze Karte |
+| geometry | 8 | 4 | 0 | implizite Route je Kandidat: `process_peak_rss_mb` 1.8-3.0 GB, ca. 80 s (`exports/implicit/*/record.json`) |
+| reconstruction | 8 | 26 | 0 | laufende Rekonstruktion ca. 24 GB |
+| fea_static | 4 | 10 | 0 | SPOOLES 1.5 mm 7.5 GB; `solver_memory_mb` bis 8.7 GB (records); ab ca. 400k Elementen >10 GB |
+| fea_modal | 4 | 13 | 0 | SPOOLES 1.5 mm modal 11.7 GB |
+| render | 2 | 3 | 0 | Teilschritt des Kandidatenprozesses, dessen Spitze 3 GB ist (Obergrenze) |
+| wall_check | 4 | 3 | 0 | ebenso Teilschritt, Obergrenze 3 GB |
+| suite | 8 | 6 | 0 | nicht gemessen, Schaetzung mit Reserve |
+| cpu / gpu | 8 / 4 | 10 / 6 | 0 / 14 | generische Typen fuer den alten `jobslot.py`-Aufruf |
+
+RAM und `gpu_gb` sind logische Ressourcen: Ray zaehlt die Deklarationen, nicht den echten Verbrauch, und Prozesse ausserhalb von Ray sind nicht erfasst. Werte nachschaerfen, sobald Messungen vorliegen.
+
 ## Wiederaufnahme und naechster Arbeitsschritt
 
 Eine neue Maschine erzeugt normalerweise einen **neuen Run-Fingerprint**, auch bei unveraenderten Parametern: Solverpfad und Binary-Hash, Python-Version, Plattform, Pakete und tatsaechliche Quellbytes gehen in die Provenienz ein. Git-Zeilenenden koennen sich zwischen Windows und Linux ebenfalls unterscheiden. Exaktes Resume ist nur bei identischer Provenienz und intakten Artefakten moeglich; ein neuer Run ist sonst das vorgesehene Verhalten. Den archivierten akzeptierten Lauf als unveraenderte Referenz behalten.

@@ -61,7 +61,7 @@ Jede Einspanngruppe besitzt ein eigenes cuDSS-Objekt. Die Symbolanalyse wird nur
 Messungen, Hardware, Gleichheitsnachweise und der laengere 708-Update-Lauf stehen in [workstation_gpu.md](validation/workstation_gpu.md). Die zusammengefassten Studienwerkzeuge werden als `python -m tools.<werkzeug> <befehl> [config.json]` gestartet. Jeder Befehl besitzt ein Default-Dict im Werkzeug, z. B. `RUN_CONFIG` und `BENCHMARK_CONFIG` in `tools/topology_study.py`; die JSON-Datei ueberschreibt nur bekannte Schluessel, unbekannte Schluessel, falsche Typen, unzulaessige Auswahlwerte und fehlende Pflichtwerte werden vor dem Start abgelehnt. Die dort dokumentierten Laeufe lauten aus dem Repository mit dem GPU-Interpreter; Ausgabeverzeichnisse muessen neu sein:
 
 ```powershell
-$gpuPython = 'C:\clones\Deep_Frame-gpu\.venv\Scripts\python.exe'
+$gpuPython = 'C:\clones\Deep_Frame-gpu-venv\Scripts\python.exe'
 '{"source": "docs/validation/workstation_density_study/grid8over3_iter150", "output": "exports/topology/gpu_replay/three_updates"}' | Out-File -Encoding ascii benchmark.json
 & $gpuPython -m tools.topology_study benchmark benchmark.json
 '{"directory": "exports/topology/gpu_replay/grid8over3_gpu1000", "shape": [51, 48, 12], "max_iterations": 1000, "max_runtime_s": 1200, "change_tolerance": 0.005, "linear_solver": "cuda_cudss"}' | Out-File -Encoding ascii study.json

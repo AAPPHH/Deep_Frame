@@ -1,0 +1,435 @@
+{
+ "neural_v05": {
+  "source": "C:/clones/Deep_Frame-neural/exports/fast/neural_v05/density_fine.npz",
+  "raw": {
+   "status": "ok",
+   "diagnostics": [],
+   "frame_mass_g": 21.595066928510324,
+   "f1_hz": 275.985,
+   "arm_tip_n_per_mm": 35.689890254707485,
+   "crash_front_mm": 0.16965893325222514,
+   "crash_arm_mm": 0.33651889412909103,
+   "runtime_s": 125.4475408999997,
+   "run": "fea3_raw",
+   "mesh_choice": {
+    "fea_remesh_targets_mm": [
+     1.5
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "surface_trials": 2
+  },
+  "raw_runs": [
+   {
+    "run": "fea3_raw",
+    "status": "ok",
+    "mesh_choice": {
+     "fea_remesh_targets_mm": [
+      1.5
+     ],
+     "fea_remesh_feature_deg": 40.0
+    },
+    "surface_trials": 2,
+    "arm_tip_n_per_mm": 35.689890254707485,
+    "f1_hz": 275.985
+   },
+   {
+    "run": "raw_fea",
+    "status": "ok",
+    "mesh_choice": {
+     "surface_mm": 0.4,
+     "taubin": 10
+    },
+    "surface_trials": 2,
+    "arm_tip_n_per_mm": 35.143665679799454,
+    "f1_hz": 274.318
+   }
+  ],
+  "raw_walls": {
+   "passed": false,
+   "deep_fraction": 0.02178613602453734,
+   "largest_deep_mm3": 58.670000000000016,
+   "deep_volume_mm3": 431.28800000000007,
+   "motor_zone_hits": {
+    "front_left_motor_contact": {
+     "components": 1,
+     "volume_mm3": 23.186000000000007
+    },
+    "front_right_motor_contact": {
+     "components": 1,
+     "volume_mm3": 31.17900000000001
+    },
+    "rear_left_motor_contact": {
+     "components": 1,
+     "volume_mm3": 8.824000000000002
+    },
+    "rear_right_motor_contact": {
+     "components": 1,
+     "volume_mm3": 8.728000000000002
+    }
+   },
+   "warning": {
+    "thin_fraction": 0.037934392994754616,
+    "very_thin_fraction": 0.008037529844958874,
+    "minimum_measured_mm": 1.5765352013618095e-07
+   }
+  },
+  "v2": {
+   "status": "ok",
+   "diagnostics": [],
+   "frame_mass_g": 24.536407370799523,
+   "f1_hz": 307.4973,
+   "arm_tip_n_per_mm": 32.68733971977438,
+   "crash_front_mm": 0.16676425448355953,
+   "crash_arm_mm": 0.3601845050537962,
+   "runtime_s": 271.61989790000007,
+   "run": "v2s_fea",
+   "mesh_choice": {
+    "surface_mm": 0.4,
+    "taubin": 0,
+    "volume_mm": 1.0
+   },
+   "surface_trials": 17
+  },
+  "v2_runs": [
+   {
+    "run": "fea3_v2",
+    "status": "failed",
+    "mesh_choice": {},
+    "surface_trials": 18,
+    "arm_tip_n_per_mm": null,
+    "f1_hz": null
+   },
+   {
+    "run": "v2s_fea",
+    "status": "ok",
+    "mesh_choice": {
+     "surface_mm": 0.4,
+     "taubin": 0,
+     "volume_mm": 1.0
+    },
+    "surface_trials": 17,
+    "arm_tip_n_per_mm": 32.68733971977438,
+    "f1_hz": 307.4973
+   }
+  ],
+  "v2_walls": {
+   "passed": false,
+   "deep_fraction": 0.0066048123840343,
+   "largest_deep_mm3": 39.93000000000001,
+   "deep_volume_mm3": 149.02600000000004,
+   "motor_zone_hits": {},
+   "warning": {
+    "thin_fraction": 0.01746831985596787,
+    "very_thin_fraction": 0.00255153072608505,
+    "minimum_measured_mm": 0.004012899862694755
+   }
+  },
+  "relative_deviation": {
+   "frame_mass_g": 0.13620427535725632,
+   "arm_tip_n_per_mm": -0.08412888113426098,
+   "f1_hz": 0.11418120550029887,
+   "crash_front_mm": -0.017061752736369118,
+   "crash_arm_mm": 0.07032476136578181
+  },
+  "acceptance_15pct": {
+   "frame_mass_g": true,
+   "arm_tip_n_per_mm": true,
+   "f1_hz": true
+  },
+  "reconstruction": {
+   "members": 77,
+   "shells": 5,
+   "nodes": 44,
+   "graph_components": 6,
+   "global_scale": 0.90625,
+   "mass_budget": {
+    "target_mm3": 19798.675684396945,
+    "assigned_members_mm3": 12400.296296296294,
+    "built_members_mm3": 9559.38152800565,
+    "assigned_nodes_mm3": 822.2222222222221,
+    "node_spheres_mm3": 671.122344821392,
+    "preserves_mm3": 7071.407407407407,
+    "result_mm3": 22554.40073640493,
+    "relative_to_target": 0.13918734242309605
+   },
+   "reference": {
+    "density_integral_mm3": 20987.763671875,
+    "threshold_voxels_mm3": 20987.25925925926,
+    "extracted_mm3": 19898.972579544923,
+    "volume_mm3": 19798.675684396945,
+    "debris_mm3": 19.319125487460973,
+    "booleans_passed": true,
+    "bodies": 1,
+    "watertight": true,
+    "runtime_s": 3.4072274999998626,
+    "method": "density smoothed by density_sigma_cells, PCHIP-upsampled, marching cubes at the threshold, largest body, exact forbidden/envelope booleans",
+    "render_stl_mm3": 16802.325339566276
+   },
+   "volume_mm3": 22554.40073640493,
+   "bodies": 1,
+   "watertight": true,
+   "exact_booleans": {
+    "status": "Error.NoError",
+    "components": 1,
+    "passed": 1.0,
+    "preserve_added_mm3": 576.6871380432676,
+    "forbidden_removed_mm3": 544.8975256616723,
+    "envelope_removed_mm3": 239.07671083680907,
+    "maximum_cylinder_oversize_mm": 0.009953685404951784
+   },
+   "runtime_s": {
+    "skeleton_s": 0.5896269999998367,
+    "calibration_s": 13.91746460000013,
+    "field_extract_s": 15.828431699999783,
+    "booleans_s": 2.1839821000003212,
+    "total_s": 33.65988379999999
+   },
+   "preserve_blend_mm": 2.5
+  },
+  "reference_volume_vs_render_stl": 0.17832950405827663
+ },
+ "mcrash_v05": {
+  "source": "C:/clones/Deep_Frame-mcrash/exports/mcrash/neural_v05/density_fine.npz",
+  "raw": {
+   "status": "ok",
+   "diagnostics": [],
+   "frame_mass_g": 21.95736191015636,
+   "f1_hz": 261.9987,
+   "arm_tip_n_per_mm": 21.934636415216225,
+   "crash_front_mm": 0.12370951358067514,
+   "crash_arm_mm": 0.34745780859888586,
+   "runtime_s": 125.6166247000001,
+   "run": "fea4_raw_b",
+   "mesh_choice": {
+    "fea_remesh_targets_mm": [
+     1.5
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "surface_trials": 4
+  },
+  "raw_runs": [
+   {
+    "run": "fea3_raw",
+    "status": "failed",
+    "mesh_choice": {},
+    "surface_trials": 18,
+    "arm_tip_n_per_mm": null,
+    "f1_hz": null
+   },
+   {
+    "run": "raw_fea",
+    "status": "failed",
+    "mesh_choice": {},
+    "surface_trials": 18,
+    "arm_tip_n_per_mm": null,
+    "f1_hz": null
+   },
+   {
+    "run": "fea4_raw_b",
+    "status": "ok",
+    "mesh_choice": {
+     "fea_remesh_targets_mm": [
+      1.5
+     ],
+     "fea_remesh_feature_deg": 40.0
+    },
+    "surface_trials": 4,
+    "arm_tip_n_per_mm": 21.934636415216225,
+    "f1_hz": 261.9987
+   }
+  ],
+  "raw_walls": {
+   "passed": false,
+   "deep_fraction": 0.004386478061192713,
+   "largest_deep_mm3": 15.190000000000003,
+   "deep_volume_mm3": 88.181,
+   "motor_zone_hits": {
+    "rear_left_motor_contact": {
+     "components": 1,
+     "volume_mm3": 8.395000000000001
+    },
+    "rear_right_motor_contact": {
+     "components": 1,
+     "volume_mm3": 8.333000000000002
+    }
+   },
+   "warning": {
+    "thin_fraction": 0.0113694616289772,
+    "very_thin_fraction": 0.0016034042850651847,
+    "minimum_measured_mm": 4.560883920375305e-06
+   }
+  },
+  "v2": {
+   "status": "ok",
+   "diagnostics": [],
+   "frame_mass_g": 24.69694482567645,
+   "f1_hz": 278.9599,
+   "arm_tip_n_per_mm": 27.72439286048223,
+   "crash_front_mm": 0.09852491478138936,
+   "crash_arm_mm": 0.33773137067035985,
+   "runtime_s": 143.86247169999933,
+   "run": "fea3_v2",
+   "mesh_choice": {
+    "fea_remesh_targets_mm": [
+     1.5
+    ],
+    "fea_remesh_feature_deg": 60.0
+   },
+   "surface_trials": 4
+  },
+  "v2_runs": [
+   {
+    "run": "fea3_v2",
+    "status": "ok",
+    "mesh_choice": {
+     "fea_remesh_targets_mm": [
+      1.5
+     ],
+     "fea_remesh_feature_deg": 60.0
+    },
+    "surface_trials": 4,
+    "arm_tip_n_per_mm": 27.72439286048223,
+    "f1_hz": 278.9599
+   },
+   {
+    "run": "v2s_fea",
+    "status": "failed",
+    "mesh_choice": {},
+    "surface_trials": 18,
+    "arm_tip_n_per_mm": null,
+    "f1_hz": null
+   }
+  ],
+  "v2_walls": {
+   "passed": false,
+   "deep_fraction": 0.0004605048417169498,
+   "largest_deep_mm3": 6.895000000000001,
+   "deep_volume_mm3": 10.443000000000003,
+   "motor_zone_hits": {},
+   "warning": {
+    "thin_fraction": 0.007840101275684097,
+    "very_thin_fraction": 0.0010818969714675236,
+    "minimum_measured_mm": 0.003220701112030728
+   }
+  },
+  "relative_deviation": {
+   "frame_mass_g": 0.12476830899493874,
+   "arm_tip_n_per_mm": 0.2639549767622136,
+   "f1_hz": 0.06473772579787607,
+   "crash_front_mm": -0.2035785128430082,
+   "crash_arm_mm": -0.027993148197611673
+  },
+  "acceptance_15pct": {
+   "frame_mass_g": true,
+   "arm_tip_n_per_mm": false,
+   "f1_hz": true
+  },
+  "reconstruction": {
+   "members": 65,
+   "shells": 3,
+   "nodes": 34,
+   "graph_components": 5,
+   "global_scale": 0.90625,
+   "mass_budget": {
+    "target_mm3": 20103.88741152932,
+    "assigned_members_mm3": 12901.33333333333,
+    "built_members_mm3": 11514.164296662644,
+    "assigned_nodes_mm3": 632.2962962962962,
+    "node_spheres_mm3": 519.2980324074072,
+    "preserves_mm3": 7071.407407407407,
+    "result_mm3": 22668.45612278268,
+    "relative_to_target": 0.1275658114650311
+   },
+   "reference": {
+    "density_integral_mm3": 20987.763671875,
+    "threshold_voxels_mm3": 20989.037037037036,
+    "extracted_mm3": 20202.035465890458,
+    "volume_mm3": 20103.88741152932,
+    "debris_mm3": 37.34166526341703,
+    "booleans_passed": true,
+    "bodies": 1,
+    "watertight": true,
+    "runtime_s": 3.2125708000003215,
+    "method": "density smoothed by density_sigma_cells, PCHIP-upsampled, marching cubes at the threshold, largest body, exact forbidden/envelope booleans",
+    "render_stl_mm3": 17325.543095802306
+   },
+   "volume_mm3": 22668.45612278268,
+   "bodies": 1,
+   "watertight": true,
+   "exact_booleans": {
+    "status": "Error.NoError",
+    "components": 1,
+    "passed": 1.0,
+    "preserve_added_mm3": 576.6633928357114,
+    "forbidden_removed_mm3": 544.9166563954532,
+    "envelope_removed_mm3": 298.60664882755736,
+    "maximum_cylinder_oversize_mm": 0.009953685404951784
+   },
+   "runtime_s": {
+    "skeleton_s": 0.5755279999998493,
+    "calibration_s": 10.176272499999868,
+    "field_extract_s": 9.93576639999992,
+    "booleans_s": 2.0403615000000173,
+    "total_s": 23.780844999999772
+   },
+   "preserve_blend_mm": 2.5
+  },
+  "reference_volume_vs_render_stl": 0.16036116734488748
+ },
+ "config": {
+  "fine_shape": [
+   204,
+   192,
+   48
+  ],
+  "density_sigma_cells": 1.0,
+  "threshold": 0.5,
+  "spur_factor": 2.0,
+  "spur_minimum_mm": 3.0,
+  "prune_passes": 3,
+  "path_sigma_samples": 4.0,
+  "section_sigma_samples": 6.0,
+  "minimum_radius_mm": 0.5,
+  "maximum_aspect": 4.0,
+  "volume_match": true,
+  "shell_aspect": 2.2,
+  "shell_sigma_mm": 1.0,
+  "transition_radius_mm": 1.5,
+  "voxel_mm": 0.25,
+  "target_volume_mm3": 0.0,
+  "calibration_steps": 4,
+  "calibration_voxel_mm": 0.5,
+  "selector_half_band_mm": 1.0,
+  "fea_surface_mm": 0.5,
+  "fea_surface_taubin": 10,
+  "boolean_offset_mm": 0.3,
+  "closing_radius_mm": 0.0,
+  "reference_subdivisions": 2,
+  "preserve_blend_mm": 2.5,
+  "preserve_round_mm": 0.8,
+  "preserve_flush_mm": 0.02,
+  "member_smooth_mm": 0.5,
+  "root_preserves": "motor_contact",
+  "root_distance_mm": 3.0,
+  "root_taper_mm": 6.0,
+  "root_taper_slope": 0.5,
+  "root_slope_floor_mm": 1.0,
+  "minimum_scale": 0.9,
+  "maximum_scale": 1.15,
+  "calibration_tolerance": 0.03,
+  "panels": null,
+  "labels": null,
+  "fea_surface_targets_mm": [
+   0.5,
+   0.4,
+   0.6
+  ],
+  "fea_volume_targets_mm": [
+   1.5,
+   1.2,
+   1.0
+  ]
+ }
+}

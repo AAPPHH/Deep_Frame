@@ -1,0 +1,5 @@
+| Frame | 1 Masse | 2 Schwerpunkt, Trägheit | 3 Luftstrom (Material im Propkreis) | 4 Montage | 5 Druckbarkeit | 6 Form | 7 Steifigkeit Armspitze | 8 Resonanz | 9 Crash p99,9 v. Mises/σ_Druckachse | Verfehlt |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ManaFly 3 BETA V4 | 29,3 g | SP z 21,3 mm; Ixx/Iyy/Izz 172/127/273 kg·mm² (K) | 11,0 % (76 mm) | Bohrb. 24/24, Passung ok, Werkzeug ok, Stecker n/a | Überh. 16,1 %, Öffn. r=1 5,06 %, Stütze 30,23 cm³, 462 min | Strebe 1,2/2,5/3,6 mm, H/B 1,12, offen 71 %, Höhe 32,4 mm, Körper 1, Schlaufen 26, Sym. 0,04 mm, Rauh. 0,168/mm | 6,6 N/mm (A) | f1 344 Hz; 417/549/778 (A) | front 12,4/4,6 MPa; arm 10,1/2,0 MPa; back 2,7/0,7 MPa (SF 2,0, A) | keine |
+
+(A) beruht auf Materialannahmen: ν = 0,30 und G13/G23 = E_z/(2(1+ν)) sind nicht im Bambu-PA6-CF-Datenblatt; E_xy, E_z, Festigkeiten und Dichte stammen aus dem Datenblatt. (K) Komponentenmassen und -maße aus unserer Hardware-Konfiguration, bei Referenzen auf deren Aufnahmen gesetzt. Crash: Spannung als 99,9-%-Wert der Integrationspunkte; Grenze σ_xy 102 MPa und σ_z 48 MPa geteilt durch SF.

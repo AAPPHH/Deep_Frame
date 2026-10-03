@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 from time import perf_counter
 
@@ -10,13 +11,17 @@ from scipy.ndimage import label
 from deep_frame.config import TOPOLOGY_CONFIG, command_line, configure
 from deep_frame.frame import reference_parameters
 from deep_frame.topology_geometry import build_design_domain
+from deep_frame.topology_neural import NEURAL_SETTINGS, neural_settings, optimize_neural
 from deep_frame.topology_optimization import _settings, optimize_topology
-from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save
+from deep_frame.topology_pipeline import _file_digest, _plot_modules, _provenance, _read, _save, log_run
 
+OPTIMIZER_KINDS = {"filter_radius_mm": "float", "projection": ("single", "robust"), "beta_schedule": ["float"],
+                   "beta_interval": "int", "move_limit_late": "float", "volume_target_relaxation": "float",
+                   "gpu_solver_residency": ("resident", "transient")}
 RUN_CONFIG = {"directory": None, "shape": [34, 32, 8], "max_iterations": 300, "change_tolerance": 0.005,
-              "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu"}
+              "max_runtime_s": 1800.0, "linear_solver": "cpu_superlu", "run_log": None, **dict.fromkeys(OPTIMIZER_KINDS)}
 RUN_KINDS = {"directory": "text", "shape": ["int"] * 3, "max_iterations": "int", "change_tolerance": "float",
-             "max_runtime_s": "float", "linear_solver": ("cpu_superlu", "cuda_cudss")}
+             "max_runtime_s": "float", "linear_solver": ("cpu_superlu", "cuda_cudss"), "run_log": "path", **OPTIMIZER_KINDS}
 SUMMARIZE_CONFIG = {"root": "exports/topology/workstation_20260930/density_study", "runs": None,
                     "output": "docs/validation/workstation_density_study.json"}
 PLOT_CONFIG = {"root": "exports/topology/workstation_20260930/density_study", "runs": None,
@@ -26,6 +31,13 @@ BENCHMARK_CONFIG = {"source": None, "output": None, "updates": 3}
 BENCHMARK_KINDS = {"source": "text", "output": "text", "updates": "int"}
 GPU_PLOT_CONFIG = {"evidence": "docs/validation/workstation_gpu", "output": "docs/validation/workstation_gpu_convergence.png"}
 GPU_PLOT_KINDS = {"evidence": "text", "output": "text"}
+NEURAL_KINDS = {"max_iterations": "int", "minimum_iterations": "int", "change_tolerance": "float", "learning_rate": "float", "frequencies": "int",
+                "max_frequency_per_mm": "float", "hidden": ["int"], "seed": "int", "mirror_axis": "int", "sharpness_final": "float",
+                "sharpness_iterations": "int", "max_runtime_s": "float", "max_width_penalty": "float", "max_width_window_mm": "float", "max_local_fraction": "float", "gpu_solver_residency": ("resident", "transient")}
+NEURAL_CONFIG = {"directory": None, "shape": [68, 64, 16], "output_shape": [102, 96, 24], "volume_fractions": [0.12, 0.18, 0.25],
+                 "linear_solver": "cuda_cudss", "run_log": None, **{key: NEURAL_SETTINGS[key] for key in NEURAL_KINDS}}
+NEURAL_CONFIG_KINDS = {"directory": "text", "shape": ["int"] * 3, "output_shape": ["int"] * 3, "volume_fractions": ["float"],
+                       "linear_solver": ("cpu_superlu", "cuda_cudss"), "run_log": "path", **NEURAL_KINDS}
 
 def study_parameters(shape):
     shape = np.asarray(shape, dtype=int)
@@ -37,7 +49,16 @@ def study_parameters(shape):
     parameters["topology"] = {"grid": {"shape": shape.tolist(), "spacing_mm": (extent / shape).tolist()}}
     return parameters
 
-def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu"):
+def density_entry(directory, shape, max_iterations, linear_solver, status, started, result=None, optimizer=None):
+    cupy = sys.modules.get("cupy")
+    return {"run_dir": str(directory), "kind": "density", "candidate": None, "source_sha256": None,
+            "parameters": {"shape": list(shape), "max_iterations": max_iterations, "linear_solver": linear_solver, **(optimizer or {})},
+            "success": status == "ok", "status": status, "failure_stage": None if status == "ok" else "optimization",
+            "runtime_s": perf_counter() - started, "timings_s": None, "iterations": (result or {}).get("summary", {}).get("iterations"),
+            "gpu_pool_mb": cupy.get_default_memory_pool().total_bytes() / 2**20 if cupy else None}
+
+def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu", optimizer=None, run_log=None, generator=optimize_topology, output_shape=None):
+    optimizer = optimizer or {}
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=False)
     started = perf_counter()
@@ -45,21 +66,26 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
     _save(status_path, {"status": "building_domain", "pid": os.getpid()})
     try:
         parameters = study_parameters(shape)
-        provenance = _provenance({"domain_builder": build_design_domain, "generator": optimize_topology}, {}, False)
+        provenance = _provenance({"domain_builder": build_design_domain, "generator": generator}, {}, False)
         provenance["runner_sha256"] = _file_digest(__file__)
         provenance["thread_environment"] = {key: os.environ.get(key) for key in
                                             ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS")}
         _save(directory / "request.json", {"parameters": parameters, "provenance": provenance,
                                            "requested_settings": {"max_iterations": max_iterations,
                                                                   "change_tolerance": change_tolerance,
-                                                                  "max_runtime_s": max_runtime_s, "linear_solver": linear_solver}})
+                                                                  "max_runtime_s": max_runtime_s, "linear_solver": linear_solver, **optimizer}})
         domain = build_design_domain(parameters)
-        settings = _settings({**domain["optimizer_settings"], "max_iterations": max_iterations,
-                              "change_tolerance": change_tolerance, "max_runtime_s": max_runtime_s, "linear_solver": linear_solver})
-        masks = {name: domain[name] for name in ("allowed", "preserve", "forbidden")}
+        requested = {"max_iterations": max_iterations, "change_tolerance": change_tolerance, "max_runtime_s": max_runtime_s, "linear_solver": linear_solver, **optimizer}
+        if generator is optimize_topology:
+            settings = _settings({**domain["optimizer_settings"], **requested})
+        else:
+            settings = neural_settings({**{key: domain["optimizer_settings"][key] for key in ("interface_node_policy", "case_weights", "penalization", "min_stiffness_ratio")}, **requested})
+        output = domain if output_shape is None else build_design_domain(study_parameters(output_shape))
+        masks = {name: output[name] for name in ("allowed", "preserve", "forbidden")}
         np.savez_compressed(directory / "domain_masks.npz", **masks)
-        inputs = {"parameters": parameters, "settings": settings,
-                  "domain": {key: value for key, value in domain.items() if not isinstance(value, np.ndarray)},
+        inputs = {"parameters": parameters if output_shape is None else study_parameters(output_shape), "settings": settings,
+                  "domain": {key: value for key, value in output.items() if not isinstance(value, np.ndarray)},
+                  "optimization_grid": domain["grid"],
                   "mask_sha256": {name: hashlib.sha256(mask.tobytes()).hexdigest() for name, mask in masks.items()},
                   "provenance": provenance,
                   "scope": "Density iteration and grid study only; no CAD/manufacturing/CalculiX acceptance.",
@@ -77,18 +103,16 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
                 _save(status_path, {"status": "optimizing", "pid": os.getpid(), **entry})
                 print(json.dumps({"event": "iteration", **{key: entry[key] for key in
                                  ("iteration", "final_evaluation", "objective", "maximum_design_change", "elapsed_s")}}), flush=True)
-            result = optimize_topology(domain, settings, progress_callback=progress)
-        arrays = {**masks, "density": result["density"]}
-        if "design_density" in result:
-            arrays["design_density"] = result["design_density"]
+            result = generator(domain, settings, progress_callback=progress, **({} if output_shape is None else {"output_domain": output}))
+        arrays = {**masks, **{key: value for key, value in result.items() if isinstance(value, np.ndarray)}}
         np.savez_compressed(directory / "fields.npz", **arrays)
         report = {key: value for key, value in result.items() if not isinstance(value, np.ndarray)}
         if result["status"] == "ok":
             connectivity = []
             for threshold in (0.20, 0.25, 0.30, 0.35, 0.40, 0.50):
-                occupied = (result["density"] >= threshold) & domain["allowed"]
+                occupied = (result["density"] >= threshold) & output["allowed"]
                 components, count = label(occupied)
-                preserve_components = np.unique(components[domain["preserve"]])
+                preserve_components = np.unique(components[output["preserve"]])
                 connectivity.append({"threshold": threshold, "occupied_cells": int(occupied.sum()),
                                      "face_connected_components": count,
                                      "components_touching_preserves": len(preserve_components[preserve_components > 0])})
@@ -100,6 +124,7 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
                                             "artifacts": artifacts, "elapsed_s": perf_counter() - started})
         _save(status_path, {"status": result["status"], "pid": os.getpid(), "summary": result["summary"],
                             "diagnostics": result["diagnostics"], "elapsed_s": perf_counter() - started})
+        log_run(run_log, density_entry(directory, shape, max_iterations, linear_solver, result["status"], started, result, optimizer))
         print(json.dumps({"event": "finished", "status": result["status"],
                           "iterations": result["summary"].get("iterations"),
                           "stop_reason": result["summary"].get("stop_reason"),
@@ -109,13 +134,23 @@ def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s,
     except Exception as error:
         _save(status_path, {"status": "failed", "pid": os.getpid(), "error": str(error),
                             "elapsed_s": perf_counter() - started})
+        log_run(run_log, density_entry(directory, shape, max_iterations, linear_solver, "failed", started, None, optimizer))
         raise
 
 def run_main(overrides):
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("directory",))
     status = run_study(config["directory"], config["shape"], config["max_iterations"], config["change_tolerance"],
-                       config["max_runtime_s"], config["linear_solver"])
+                       config["max_runtime_s"], config["linear_solver"],
+                       {key: config[key] for key in OPTIMIZER_KINDS if config[key] is not None}, config["run_log"])
     return 0 if status == "ok" else 1
+
+def neural_main(overrides):
+    config = configure(NEURAL_CONFIG, NEURAL_CONFIG_KINDS, overrides, ("directory",))
+    optimizer = {key: config[key] for key in NEURAL_KINDS if key not in ("max_iterations", "change_tolerance", "max_runtime_s")}
+    statuses = [run_study(Path(config["directory"]) / f"f{round(100 * fraction):02d}", config["shape"], config["max_iterations"], config["change_tolerance"],
+                          config["max_runtime_s"], config["linear_solver"], {**optimizer, "volume_fraction": fraction}, config["run_log"], optimize_neural, config["output_shape"])
+                for fraction in config["volume_fractions"]]
+    return 0 if all(status == "ok" for status in statuses) else 1
 
 def verify_artifacts(directory, artifacts, required):
     directory = Path(directory).resolve()
@@ -136,6 +171,7 @@ def verify_frozen_reference(directory):
                      ("optimization.json", "fields.npz", "run_manifest.json"))
 
 def verify_comparable_settings(reference, studied):
+    reference, studied = _settings(reference), _settings(studied)
     permitted = {"max_iterations", "minimum_iterations", "change_tolerance", "max_runtime_s"}
     if {key: value for key, value in reference.items() if key not in permitted} != {
             key: value for key, value in studied.items() if key not in permitted}:
@@ -340,7 +376,7 @@ def compare(source, output, updates=3):
                     print(json.dumps({"backend": backend, "iteration": entry["iteration"],
                                       "elapsed_s": entry["elapsed_s"]}), flush=True)
                 started = perf_counter()
-                result = optimize_topology(domain, settings, progress_callback=progress)
+                result = generator(domain, settings, progress_callback=progress, **({} if output_shape is None else {"output_domain": output}))
                 result["wall_s"] = perf_counter() - started
             arrays = {key: value for key, value in result.items() if isinstance(value, np.ndarray)}
             np.savez_compressed(output / (backend + ".npz"), **arrays)
@@ -429,7 +465,7 @@ def plot_gpu_main(overrides):
 
 def main(argv=None):
     return command_line({"run": run_main, "summarize": summarize_main, "plot": plot_main, "benchmark": benchmark_main,
-                         "plot-gpu": plot_gpu_main}, argv)
+                         "plot-gpu": plot_gpu_main, "neural": neural_main}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

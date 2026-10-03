@@ -11,7 +11,7 @@ from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
 from OCP.gp import gp_Dir, gp_Lin, gp_Pnt
 from scipy.ndimage import generate_binary_structure, label
 
-from deep_frame.config import TOPOLOGY_CONFIG
+from deep_frame.config import IMPLICIT_CONFIG, TOPOLOGY_CONFIG
 from deep_frame.fea import prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, camera_mount_z, motor_positions, mount_positions
 
@@ -41,6 +41,94 @@ def _preserve_subtractions(regions):
                     raise ValueError(f"Undeclared preserve/forbidden overlap: {preserve['name']} / {forbidden['name']}")
                 result.append({"preserve": preserve["name"], "forbidden": forbidden["name"], "reason": forbidden["purpose"], "detection": "conservative positive AABB overlap; exact CSG subtraction governs geometry"})
     return result
+
+AXIS = {"x": 0, "y": 1, "z": 2}
+
+def _bore(region):
+    return region["role"] == "forbidden" and region["kind"] == "cylinder" and region.get("rasterize", True) is False
+
+def _coaxial(a, b):
+    axis = AXIS[a.get("axis", "z")]
+    return a["kind"] == b["kind"] == "cylinder" and a.get("axis", "z") == b.get("axis", "z") and all(abs(a["center_mm"][i] - b["center_mm"][i]) <= 1e-6 for i in range(3) if i != axis)
+
+def _footprint_gap(a, b, axis):
+    disks = [region for region in (a, b) if region["kind"] == "cylinder" and AXIS[region.get("axis", "z")] == axis]
+    plane = [i for i in range(3) if i != axis]
+    if len(disks) == 2:
+        return float(np.hypot(*(a["center_mm"][i] - b["center_mm"][i] for i in plane)) - a["radius_mm"] - b["radius_mm"])
+    if len(disks) == 1:
+        disk, other = disks[0], b if disks[0] is a else a
+        low, high = region_bounds(other)
+        offset = [max(low[i] - disk["center_mm"][i], disk["center_mm"][i] - high[i], 0.0) for i in plane]
+        return float(np.hypot(*offset) - disk["radius_mm"])
+    (alow, ahigh), (blow, bhigh) = region_bounds(a), region_bounds(b)
+    return float(max(max(blow[i] - ahigh[i], alow[i] - bhigh[i]) for i in plane))
+
+def _separation(a, b):
+    axis = next((AXIS[region.get("axis", "z")] for region in (a, b) if region["kind"] == "cylinder"), 2)
+    (alow, ahigh), (blow, bhigh) = region_bounds(a), region_bounds(b)
+    return max(float(max(blow[axis] - ahigh[axis], alow[axis] - bhigh[axis])), _footprint_gap(a, b, axis))
+
+def _flush_pairs(regions):
+    bores = [region for region in regions if _bore(region)]
+    for preserve in (region for region in regions if region["role"] == "preserve" and AXIS[region.get("axis", "z")] == 2):
+        plow, phigh = region_bounds(preserve)
+        for keepout in (region for region in regions if region["role"] == "forbidden" and not _bore(region)):
+            if any(_coaxial(keepout, bore) and bore["radius_mm"] >= keepout["radius_mm"] for bore in bores) or _footprint_gap(preserve, keepout, 2) >= -1e-6:
+                continue
+            klow, khigh = region_bounds(keepout)
+            for sign, face, plane in ((1, phigh[2], klow[2]), (-1, plow[2], khigh[2])):
+                if abs(face - plane) <= 1e-6:
+                    yield preserve, keepout, sign
+
+def _near_wall(preserve, keepout, reserve):
+    if _coaxial(preserve, keepout):
+        insets = [keepout["radius_mm"] - preserve["radius_mm"]]
+    else:
+        (plow, phigh), (klow, khigh) = region_bounds(preserve), region_bounds(keepout)
+        insets = [value for i in (0, 1) for value in (khigh[i] - phigh[i], plow[i] - klow[i])]
+    return any(-1e-6 < value < reserve-1e-6 for value in insets)
+
+def _extend_flush_contacts(regions, overlap, reserve):
+    extended, moved = [], set()
+    for preserve, keepout, sign in list(_flush_pairs(regions)):
+        if _near_wall(preserve, keepout, reserve):
+            continue
+        keepout["allow_preserve_subtraction"] = True
+        extended.append({"preserve": preserve["name"], "forbidden": keepout["name"], "direction": sign, "overlap_mm": overlap})
+        if (preserve["name"], sign) in moved:
+            continue
+        moved.add((preserve["name"], sign))
+        if preserve["kind"] == "box":
+            preserve["max_mm" if sign > 0 else "min_mm"][2] += sign * overlap
+        else:
+            preserve["center_mm"][2] += sign * overlap / 2
+            preserve["height_mm"] += overlap
+    return extended
+
+def prescribed_clearance(regions, minimum, margin, inflation):
+    required, violations = minimum + margin, []
+    preserves = [region for region in regions if region["role"] == "preserve"]
+    for preserve, keepout, sign in _flush_pairs(regions):
+        violations.append({"rule": "flush_contact", "preserve": preserve["name"], "forbidden": keepout["name"], "direction": sign, "near_wall": _near_wall(preserve, keepout, inflation + margin)})
+    for preserve in preserves:
+        plow, phigh = region_bounds(preserve)
+        for keepout in (region for region in regions if region["role"] == "forbidden" and not _bore(region)):
+            klow, khigh = region_bounds(keepout)
+            if _coaxial(preserve, keepout):
+                axis = AXIS[preserve.get("axis", "z")]
+                chords = [preserve["radius_mm"] - keepout["radius_mm"]] if min(phigh[axis], khigh[axis]) - max(plow[axis], klow[axis]) >= -1e-6 else []
+            elif np.all(np.minimum(phigh, khigh) - np.maximum(plow, klow) > 1e-6):
+                chords = [value for axis in range(3) for value, face in ((phigh[axis] - khigh[axis], khigh[axis]), (klow[axis] - plow[axis], klow[axis])) if plow[axis] + 1e-6 < face < phigh[axis] - 1e-6]
+            else:
+                chords = []
+            violations.extend({"rule": "rim_width", "preserve": preserve["name"], "forbidden": keepout["name"], "width_mm": float(value)} for value in chords if 1e-6 < value < required - 1e-6)
+    for a, b in combinations(preserves, 2):
+        gap = _separation(a, b)
+        if 1e-6 < gap < required + 2 * inflation:
+            violations.append({"rule": "preserve_gap", "preserve": a["name"], "other": b["name"], "gap_mm": gap})
+    return {"passed": not violations, "violations": violations, "required_width_mm": required, "inflation_mm": inflation,
+            "method": "Horizontal preserve faces coplanar with a keep-out face over a shared footprint are flush contacts (the inflated shell would be cut at its cap); every keep-out wall crossing a preserve, or coaxial keep-out cylinder, must leave a preserve rim of at least the minimum wall plus margin; distinct preserves either overlap or stay apart by more than that width plus both inflations. A flush contact whose preserve sits within one inflation plus margin of a keep-out side wall cannot be extended (the inflated shell would leave the keep-out as a sliver) and stays a violation; such a preserve has to be resized. Prescribed bores are excluded (their webs follow the C6 bore allowance)."}
 
 def _merge(defaults, changes):
     result = deepcopy(defaults)
@@ -150,23 +238,16 @@ def _component_regions(parameters, settings, grid):
         regions.append(_box(name + "_motor_leads", "forbidden", corridor_min, corridor_max, "Provisional accessible straight motor lead corridor"))
     for index, (x, y) in enumerate(mount_positions(parameters)["aio15"]):
         height = f["base_thickness_mm"] + f["aio_standoff_mm"]
-        regions.append(_cylinder(f"aio_contact_{index}", "preserve", [x, y, height / 2], settings["aio_contact_radius_mm"], height, "AIO mounting boss; no prescribed central plate", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
+        regions.append(_cylinder(f"aio_contact_{index}", "preserve", [x, y, height / 2], settings["aio_boss_radius_mm"], height, "AIO mounting boss; no prescribed central plate", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
         regions.append(_cylinder(f"aio_screw_{index}", "forbidden", [x, y, height / 2], (c["aio15"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2, height + 2, "AIO through screw and underside assembly access", rasterize=False))
     battery_z = placements["battery"]["position"][2]
-    contact_width, contact_length = settings["battery_contact_width_mm"], settings["battery_contact_length_mm"]
-    for sx, sy in product((-1, 1), repeat=2):
-        x = sx * (c["battery"]["width_mm"] / 2 - contact_width / 2)
-        y = sy * settings["battery_contact_y_mm"]
-        regions.append(_box(f"battery_contact_{sx}_{sy}", "preserve", [x - contact_width / 2, y - contact_length / 2, battery_z - depth], [x + contact_width / 2, y + contact_length / 2, battery_z], "Independent battery support pad; optimizer chooses supporting paths", attachment_area_min_mm2=12.0, minimum_wall_mm=2.0))
-    band_half = parameters["integration"]["battery_attachment_band_width_mm"] / 2
-    band_y = parameters["integration"]["battery_attachment_y_mm"]
+    rail_width, rail_length = settings["battery_contact_width_mm"], settings["battery_contact_length_mm"]
     for sign in (-1, 1):
-        x = sign * (c["battery"]["width_mm"] / 2 + 1)
-        regions.append(_box(f"battery_coupling_{sign}", "preserve", [x - contact_width / 2, band_y - max(band_half, 4), battery_z - depth], [x + contact_width / 2, band_y + max(band_half, 4), battery_z], "Local transverse band for the same battery mass and impact coupling as v0", attachment_area_min_mm2=12.0, minimum_wall_mm=2.0))
-    for sx, sy in product((-1, 1), repeat=2):
-        x, y = sx * (c["battery"]["width_mm"] / 2 + 1.5), sy * 12.0
-        regions.append(_box(f"strap_contact_{sx}_{sy}", "preserve", [x - 3, y - 8, battery_z - depth], [x + 3, y + 8, battery_z], "Local strap eyelet with two-millimeter rim; no prescribed deck or deck support", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
-        regions.append(_box(f"strap_access_{sx}_{sy}", "forbidden", [x - 1.0, y - 6.0, battery_z - depth - 1], [x + 1.0, y + 6.0, upper[2] + 1], "Battery strap insertion slot beside wide battery face", rasterize=False))
+        x, y = sign * (c["battery"]["width_mm"] / 2 - settings["battery_rail_edge_inset_mm"] - rail_width / 2), settings["battery_contact_y_mm"]
+        regions.append(_box(f"battery_rail_{sign}", "preserve", [x - rail_width / 2, y - rail_length / 2, battery_z - 3.0], [x + rail_width / 2, y + rail_length / 2, battery_z], "Longitudinal battery strap rail under the battery edge, ManaFly style; strap wraps battery and rail", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
+    aio = placements["aio15"]["position"]
+    aio_top = aio[2] + c["aio15"]["stack_height_mm"] + clearance
+    regions.append(_box("elrs_antenna_clearance", "forbidden", [-c["aio15"]["width_mm"] / 2 - clearance, -c["aio15"]["length_mm"] / 2 - clearance, aio_top], [c["aio15"]["width_mm"] / 2 + clearance, c["aio15"]["length_mm"] / 2 + clearance, aio_top + c["aio15"]["elrs_antenna_clearance_mm"]], "ELRS wire antenna lifted at least 3 mm above the AIO board"))
     battery_half = c["battery"]["width_mm"] / 2 + clearance
     regions.append(_box("battery_insertion", "forbidden", [-battery_half, -c["battery"]["length_mm"] / 2 - clearance, battery_z], [battery_half, c["battery"]["length_mm"] / 2 + clearance, max(battery_z + c["battery"]["height_mm"] + clearance, upper[2] + 1)], "Battery removal vertically above its contact pads"))
     camera_width = c["camera"]["width_mm"] + 2 * f["camera_side_clearance_mm"]
@@ -174,7 +255,7 @@ def _component_regions(parameters, settings, grid):
         x = sign * (camera_width / 2 + settings["camera_contact_width_mm"] / 2)
         width, length = settings["camera_contact_width_mm"], settings["camera_contact_length_mm"]
         regions.append(_box(f"camera_impact_contact_{sign}", "preserve", [x - width / 2, f["camera_y_mm"] - length / 2, f["cage_height_mm"] - depth], [x + width / 2, f["camera_y_mm"] + length / 2, f["cage_height_mm"]], "Two local protective impact contacts, without a predefined cage", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
-        regions.append(_cylinder(f"camera_mount_{sign}", "preserve", [x, f["camera_y_mm"], camera_mount_z(parameters)], 4.0, width, "Local camera screw lug; no prescribed connecting wall", axis="x", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
+        regions.append(_cylinder(f"camera_mount_{sign}", "preserve", [x, f["camera_y_mm"], camera_mount_z(parameters)], settings["camera_mount_radius_mm"], width, "Local camera screw lug; no prescribed connecting wall", axis="x", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
     lug_end = camera_width / 2 + settings["camera_contact_width_mm"]
     regions.append(_cylinder("camera_screw_axis", "forbidden", [0, f["camera_y_mm"], camera_mount_z(parameters)], f["camera_screw_diameter_mm"] / 2, 2 * lug_end, "Camera screw bore limited to exact mounting lugs", axis="x", rasterize=False))
     for sign in (-1, 1):
@@ -188,7 +269,7 @@ def _component_regions(parameters, settings, grid):
         width, length = c[name]["width_mm"], c[name]["length_mm"]
         regions.append(_box(name + "_contact", "preserve", [position[0] - width / 2, position[1] - length / 2 - depth, 0], [position[0] + width / 2, position[1] + length / 2 + depth, position[2]], "Local connector seat with exposed retention ends for tie or adhesive", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
         regions.append(_box(name + "_plug_access", "forbidden", [position[0] - width / 2 - clearance, position[1] - length / 2 - clearance, position[2]], [position[0] + width / 2 + clearance, position[1] + length / 2 + clearance, upper[2] + 1], "Top insertion and removal corridor for disconnected connector"))
-    regions.append(_cylinder("antenna_contact", "preserve", [0, -f["antenna_y_mm"], f["antenna_holder_height_mm"] / 2], f["antenna_bore_mm"] / 2 + 2, f["antenna_holder_height_mm"], "Local antenna retention eyelet, not a prescribed tail", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
+    regions.append(_cylinder("antenna_contact", "preserve", [0, -f["antenna_y_mm"], f["antenna_holder_height_mm"] / 2], settings["antenna_eyelet_radius_mm"], f["antenna_holder_height_mm"], "Local antenna retention eyelet, not a prescribed tail", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
     regions.append(_cylinder("antenna_bore", "forbidden", [0, -f["antenna_y_mm"], upper[2] / 2], f["antenna_bore_mm"] / 2, upper[2] + 2, "VTX antenna through bore continuing above every design cell", rasterize=False))
     antenna_access_height = upper[2] + 1 - f["antenna_holder_height_mm"]
     regions.append(_cylinder("antenna_insertion_access", "forbidden", [0, -f["antenna_y_mm"], f["antenna_holder_height_mm"] + antenna_access_height / 2], f["antenna_bore_mm"] / 2, antenna_access_height, "Conservative antenna insertion corridor above the exact retention eyelet"))
@@ -203,7 +284,7 @@ def _connection_cases(regions, model, force):
     cases = []
     for region in regions:
         name = region["name"]
-        if region["role"] != "preserve" or not name.startswith(("aio_contact_", "battery_contact_", "strap_contact_", "camera_mount_", "xt30_contact", "balancer_contact", "antenna_contact")):
+        if region["role"] != "preserve" or not name.startswith(("aio_contact_", "battery_rail_", "camera_mount_", "xt30_contact", "balancer_contact", "antenna_contact")):
             continue
         if region["kind"] == "box":
             minimum, maximum = region["min_mm"], region["max_mm"]
@@ -229,6 +310,8 @@ def build_design_domain(parameters):
         if region["role"] == "forbidden" and not region.get("rasterize", True):
             region["allow_preserve_subtraction"] = True
     regions.extend(deepcopy(settings["additional_regions"]))
+    flush = _extend_flush_contacts(regions, settings["flush_overlap_mm"], IMPLICIT_CONFIG["preserve_inflation_mm"] + settings["prescribed_wall_margin_mm"])
+    clearance = prescribed_clearance(regions, manufacturing["minimum_feature_mm"], settings["prescribed_wall_margin_mm"], IMPLICIT_CONFIG["preserve_inflation_mm"])
     subtractions = _preserve_subtractions(regions)
     masks = rasterize_regions(grid, regions)
     _, allowed_components = label(masks["allowed"])
@@ -241,11 +324,13 @@ def build_design_domain(parameters):
         {"kind": "box", "min_mm": [x - fixture_radius, y - fixture_radius, -tolerance], "max_mm": [x + fixture_radius, y + fixture_radius, tolerance]}
         for x, y in mount_positions(parameters)["aio15"]
     ]
-    next(case for case in model["load_cases"] if case["name"] == "arm_tip")["fixed_regions"] = aio_fixtures
-    model["fixture_model"] = "Arm-tip case: undersides of the four mandatory AIO mounting contacts fixed; other cases: four motor contact undersides fixed. Identical selectors must be used for v0 comparison."
+    for case in model["load_cases"]:
+        if case["name"] in ("arm_tip", "thrust_all") or case["name"].startswith("crash_"):
+            case["fixed_regions"] = deepcopy(aio_fixtures)
+    model["fixture_model"] = "Arm-tip, thrust and crash cases: undersides of the four mandatory AIO mounting contacts fixed; other cases: four motor contact undersides fixed. Identical selectors must be used for v0 comparison."
     auxiliary_cases = _connection_cases(regions, model, settings["connection_proof_force_n"])
     weights = {case["name"]: 1.0 for case in model["load_cases"] if case["analysis"] == "static"}
-    weights.update({case["name"]: 1.0 / (3 * len(auxiliary_cases)) for case in auxiliary_cases})
+    weights.update({case["name"]: len(weights) / (9 * len(auxiliary_cases)) for case in auxiliary_cases})
     weights.update(settings["optimizer"].get("case_weights", {}))
     settings["optimizer"]["case_weights"] = weights
     cell_volume = float(np.prod(grid["spacing_mm"]))
@@ -282,6 +367,8 @@ def build_design_domain(parameters):
             "free_fraction_of_allowed": counts["free_cells"] / counts["allowed_cells"],
             "allowed_face_connected_components": allowed_components,
             "declared_preserve_subtractions": subtractions,
+            "flush_contact_extensions": flush,
+            "prescribed_clearance": clearance,
             "component_placements": deepcopy(placements),
             "components": dimensions,
             "settings": deepcopy(settings),
@@ -301,6 +388,28 @@ def build_design_domain(parameters):
             ],
         },
     }
+
+def symmetric_domains(domain, axis=0):
+    grid = domain["grid"]
+    shape, origin, spacing = list(grid["shape"]), np.asarray(grid["origin_mm"], dtype=float), np.asarray(grid["spacing_mm"], dtype=float)
+    if shape[axis] % 2 or abs(origin[axis] + shape[axis] * spacing[axis] / 2) > 1e-9:
+        raise ValueError("Symmetric half domains need an even cell count centered on the mirror plane")
+    allowed = domain["allowed"] & np.flip(domain["allowed"], axis)
+    preserve = (domain["preserve"] | np.flip(domain["preserve"], axis)) & allowed
+    if label(allowed)[1] != 1 or not (allowed & ~preserve).any():
+        raise ValueError("The symmetrized design domain must be face-connected with free cells")
+    full = {**domain, "allowed": allowed, "preserve": preserve, "forbidden": ~allowed}
+    full["metadata"] = {**domain.get("metadata", {}), "symmetrization": {"axis": axis, "removed_allowed_cells": int(np.count_nonzero(domain["allowed"] & ~allowed)), "added_preserve_cells": int(np.count_nonzero(preserve & ~domain["preserve"]))}}
+    cut = [slice(None)] * 3
+    cut[axis] = slice(shape[axis] // 2, None)
+    half_grid = deepcopy(grid)
+    half_grid["shape"][axis] = shape[axis] // 2
+    half_grid["origin_mm"][axis] = 0.0
+    half = {**full, "grid": half_grid, "symmetry": {"axis": axis, "plane_mm": 0.0}, **{name: full[name][tuple(cut)].copy() for name in ("allowed", "preserve", "forbidden")}}
+    return full, half
+
+def mirror_field(half, axis=0):
+    return np.concatenate([np.flip(half, axis), half], axis=axis)
 
 def region_shape(region):
     if region["kind"] == "box":
@@ -568,13 +677,16 @@ def _wall_ray_screen(solid, minimum):
             unresolved.append(face_index)
     return {"method": "exact inward CAD normal rays, nine UV samples per face with projected largest-triangle fallback", "minimum_required_mm": minimum, "minimum_measured_mm": min(measurements) if measurements else None, "ray_count": len(measurements), "thin_samples": thin[:30], "thin_sample_count": len(thin), "unresolved_faces": unresolved, "passed": bool(measurements) and not thin and not unresolved, "limitations": "Finite surface sampling is a geometric screen, not a proof of global minimum thickness between samples"}
 
+def _trapped_voids(occupied):
+    background = np.pad(~occupied, 1, constant_values=True)
+    labels, _ = label(background, generate_binary_structure(3, 1))
+    return int(np.sum(background & (labels != labels[0, 0, 0])))
+
 def _support_accessibility(solid, occupied):
     cavities = max(0, len(solid.shells()) - 1)
     if occupied is None:
         return {"passed": False, "reason": "No occupancy field available"}
-    background = np.pad(~occupied, 1, constant_values=True)
-    labels, _ = label(background, generate_binary_structure(3, 1))
-    inaccessible = int(np.sum(background & (labels != labels[0, 0, 0])))
+    inaccessible = _trapped_voids(occupied)
     return {"closed_cad_cavities": cavities, "trapped_void_voxels": inaccessible, "passed": cavities == 0 and inaccessible == 0, "method": "closed-shell cavity count plus face-connected flood fill from padded exterior", "limitations": "Coarse accessibility screen; support-tool reach and removal through narrow exact passages need slicer/physical review"}
 
 def _validate_topology(solid, domain: dict, settings: dict) -> dict:
