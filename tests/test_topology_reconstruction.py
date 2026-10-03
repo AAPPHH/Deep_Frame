@@ -115,7 +115,7 @@ def waves():
         preserve |= np.all((centers >= pad["min_mm"]) & (centers <= pad["max_mm"]), axis=-1)
     density = (bar | stem | preserve).astype(np.float32)
     domain = {"grid": {"origin_mm": [0.0, 0.0, 0.0], "spacing_mm": [h]*3, "shape": list(shape)}, "regions": pads, "preserve": preserve}
-    config = {**SPLINE_RECONSTRUCTION_CONFIG, "density_sigma_cells": 0.0, "voxel_mm": 0.25, "preserve_round_mm": 0.0}
+    config = {**SPLINE_RECONSTRUCTION_CONFIG, "density_sigma_cells": 0.0, "voxel_mm": 0.25, "preserve_round_mm": 0.0, "transition_radius_mm": 1.0, "preserve_blend_mm": 1.0}
     mesh, graph, rods, report = reconstruct_splines(domain, density, config)
     return domain, density, config, mesh, graph, rods, report
 
