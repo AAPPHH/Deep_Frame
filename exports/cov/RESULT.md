@@ -2,6 +2,8 @@
 
 Stand: Optimierung, Rohkörper und 1:1-Vergleich fertig. **Rekonstruktion v3 steht noch aus**: `feature/recon-v3` (/c/clones/Deep_Frame-recon3) hat ihren Nachweis noch nicht committet (HEAD 216db36, Nachweis läuft; SIMP+MMA v3 liegt dort aktuell bei f1 -54 %, Armspitze -31 % gegen roh). Nach Regel wird gewartet; der 1:1-Körper ist **nicht** das Ergebnis, nur Vergleich.
 
+Stand 03.10. 22:20: v3 weiter nicht bereit. recon3 arbeitet (neuer Commit fa0e475 um 22:07, Knoten/Splines in Hülle und Keep-outs gesetzt), Nachweis (Glieder als Splines, SIMP+MMA und neural_v06_f1 innerhalb 10 % vom Rohkörper) aber noch nicht committet; letzte Nachweisdateien dort: `within_10_percent` false für beide. Polls 21:53 / 22:03 / 22:13. **Infrastruktur-Blocker:** Der Ray-Head wurde um 21:49 neu gestartet; sein Dashboard-Agent konnte Port 52365 nicht binden (liegt im Windows-Ausschlussbereich 52292-52391), daher scheitert jede Job-Einreichung mit "No available agent to submit job". Damit kann weder recon3 seinen Nachweis noch dieser Lauf v3/Evaluator rechnen. Abhilfe (nicht durch mich, kein `ray stop`): Head mit Agent-Port außerhalb der Ausschlussbereiche neu starten. Ein Neulauf von Evaluator/Datenblatt für raw und 1:1 (Statuszeile "evaluation: failed" wegen des cp1252-Drucks) scheiterte daran ebenfalls; datasheet.md und evaluation.json sind unverändert, Hinweis im manifest.
+
 ## Lauf
 
 - Genau ein Lauf, Start vom heutigen SIMP+MMA-Feld (`Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz`, 17,2 g), grob 68x64x24 (152 It., 5,1 s/It.) -> fein 102x96x24 (91 It., 13,2 s/It.), beide `converged`, 34 min gesamt, Ray-Typ `density_simp` (4 Kerne, 8 GB, 10 GPU-GB).
