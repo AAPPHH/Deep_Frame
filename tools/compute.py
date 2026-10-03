@@ -18,7 +18,7 @@ CONFIG = {
              "dashboard_port": 8265, "start_timeout_s": 7 * 24 * 3600},
 }
 JOB_TYPES = {
-    "density_neural": {"num_cpus": 4, "memory_gb": 4, "gpu_gb": 6},
+    "density_neural": {"num_cpus": 4, "memory_gb": 4, "gpu_gb": 2},
     "density_simp": {"num_cpus": 4, "memory_gb": 8, "gpu_gb": 10},
     "density_simp_1mm": {"num_cpus": 8, "memory_gb": 28, "gpu_gb": 14},
     "geometry": {"num_cpus": 4, "memory_gb": 4, "gpu_gb": 0},
@@ -29,7 +29,7 @@ JOB_TYPES = {
     "wall_check": {"num_cpus": 2, "memory_gb": 3, "gpu_gb": 0},
     "suite": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 0},
     "cpu": {"num_cpus": 2, "memory_gb": 4, "gpu_gb": 0},
-    "gpu": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 6},
+    "gpu": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 2},
 }
 
 def encode(data):
