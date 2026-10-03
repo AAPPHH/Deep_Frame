@@ -3,6 +3,7 @@ import base64
 import importlib.util
 import json
 import os
+import shlex
 import subprocess
 import sys
 import time
@@ -10,8 +11,8 @@ from pathlib import Path
 
 CONFIG = {
     "address": os.environ.get("RAY_ADDRESS", "http://127.0.0.1:8265"),
-    "ray_python": os.environ.get("RAY_PYTHON", "C:/clones/ray-venv/Scripts/python.exe"),
-    "forward_env": ("CALCULIX_PATH", "PYTHONPATH", "CUDA_PATH"),
+    "ray_python": os.environ.get("RAY_PYTHON", "C:/clones/ray-venv/Scripts/python.exe" if os.name == "nt" else "/home/john/ray-venv/bin/python"),
+    "forward_env": ("CALCULIX_PATH", "PYTHONPATH", "CUDA_PATH", "LD_LIBRARY_PATH"),
     "forward_prefix": "DEEP_FRAME_",
     "thread_env": ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"),
     "head": {"num_cpus": 24, "num_gpus": 1, "memory_gb": 40, "object_store_gb": 1, "gpu_gb": 14,
@@ -30,7 +31,9 @@ JOB_TYPES = {
     "suite": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 0},
     "cpu": {"num_cpus": 2, "memory_gb": 4, "gpu_gb": 0},
     "gpu": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 14},
+    "gpu_a100": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 80, "num_gpus": 1},
 }
+join = subprocess.list2cmdline if os.name == "nt" else shlex.join
 
 def encode(data):
     return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
@@ -40,10 +43,10 @@ def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=sys.ex
     env = {key: value for key, value in environ.items() if key in config["forward_env"] or key.startswith(config["forward_prefix"])}
     env.update({key: str(need["num_cpus"]) for key in config["thread_env"]})
     payload = {"command": list(command), "cwd": str(Path(cwd).resolve()), "env": env}
-    return {"entrypoint": subprocess.list2cmdline([python, str(Path(__file__).resolve()), "exec", encode(payload)]),
+    return {"entrypoint": join([python, str(Path(__file__).resolve()), "exec", encode(payload)]),
             "entrypoint_num_cpus": need["num_cpus"], "entrypoint_memory": int(need["memory_gb"] * 2**30),
             "entrypoint_resources": {"gpu_gb": need["gpu_gb"]} if need["gpu_gb"] else None,
-            "metadata": {"type": kind, "cwd": payload["cwd"], "command": subprocess.list2cmdline(command)[:500]}}
+            "metadata": {"type": kind, "cwd": payload["cwd"], "command": join(command)[:500]}, **({"entrypoint_num_gpus": need["num_gpus"]} if "num_gpus" in need else {})}
 
 def execute(token):
     payload = json.loads(base64.urlsafe_b64decode(token))
