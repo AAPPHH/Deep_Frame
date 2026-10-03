@@ -246,7 +246,7 @@ def compare(overrides):
     proposals, sections = [], []
     for candidate in candidates:
         header = "| Schnittstelle | Richtung | " + " | ".join(item["name"] for item in references) + f" | {candidate['name']} | " + " | ".join(f"/{item['name']}" for item in references) + " | " + " | ".join(f"/{item['name']} skaliert" for item in references) + " | Lücke |"
-        lines = [f"### {candidate['name']} (Arm {candidate['arm_mm']:.1f} mm)", "", header, "|" + "---|" * (3 + 3 * len(references))]
+        lines = [f"### {candidate['name']} (Arm {candidate['arm_mm']:.1f} mm)", "", header, "|" + "---|" * (4 + 3 * len(references))]
         for interface, row in candidate["interfaces"].items():
             for direction in DIRECTIONS:
                 own = row[direction]["stiffness"]
@@ -268,7 +268,7 @@ def compare(overrides):
     markdown = "\n\n".join([rule, *sections, "### Vorgeschlagene Bedingungen", "\n".join(proposal_lines)]) + "\n"
     output = Path(settings["output"])
     output.mkdir(parents=True, exist_ok=True)
-    (output / "interface_gaps.json").write_text(json.dumps({"threshold": settings["threshold"], "rule": rule, "proposals": proposals, "references": settings["references"], "candidates": settings["candidates"]}, indent=1), encoding="utf-8")
+    (output / "interface_gaps.json").write_text(json.dumps({"threshold": settings["threshold"], "rule": rule, "proposals": proposals, "references": [str(path) for path in settings["references"]], "candidates": [str(path) for path in settings["candidates"]]}, indent=1), encoding="utf-8")
     (output / "interface_gaps.md").write_text(markdown, encoding="utf-8")
     print(markdown)
     return 0
