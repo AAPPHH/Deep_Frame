@@ -11,7 +11,7 @@ import deep_frame.config as config
 from deep_frame.config import command_line
 from deep_frame.topology_geometry import _merge
 from deep_frame.topology_optimization import HexElasticity
-from deep_frame.topology_problem import PROBLEM, TopologyProblem, format_report, orthotropic_material, shadow_thickness
+from deep_frame.topology_problem import PROBLEM, TopologyProblem, cantilever_dual, format_report, orthotropic_material, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
 FORMULATION = {
@@ -105,6 +105,10 @@ def frame_problem(half, references=None):
         problem["shadow"].update(limit_mm=references["manafly_shadow_mm"], source=references["source"])
     return problem
 
+def frame_setup(cfg=FORMULATION, shape=None):
+    half = frame_domain(cfg, shape or cfg["shape"])
+    return half, frame_problem(half, json.loads(Path(cfg["output"]).read_text(encoding="utf-8")))
+
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
 
@@ -164,8 +168,31 @@ def references(cfg):
     print(json.dumps({key: result[key] for key in ("crash_compliance_n_mm", "manafly_shadow_mm", "reference_stl_shadow_mm", "loads")}, default=float), flush=True)
     print(result["reference_report_table"], flush=True)
 
+def modal_split(cfg):
+    density = np.load(cfg["reference_density"])["density"].ravel()
+    base = frame_domain(cfg, cfg["shape"])
+    rows = {}
+    for name, masses, material in (("battery_isotropic", ["battery"], "isotropic"), ("battery_orthotropic", ["battery"], "orthotropic"), ("three_isotropic", PROBLEM["modal"]["point_masses"], "isotropic"), ("three_orthotropic", PROBLEM["modal"]["point_masses"], "orthotropic")):
+        half = deepcopy(base)
+        half["point_masses"] = [item for item in half["point_masses"] if item["name"] in masses]
+        if material == "isotropic":
+            half["material"] = {key: value for key, value in half["material"].items() if key != "orthotropic"}
+        problem = deepcopy(PROBLEM)
+        problem.update(crash=None, shadow=None, monitor=[])
+        solver = TopologyProblem(half, problem, linear_solver=cfg["linear_solver"])
+        rows[name] = solver.modal.measure(density, solver.penalization, solver.min_stiffness_ratio, PROBLEM["modal"]["initial_iterations"])[2]
+        solver.close()
+    target = Path(cfg["output"]).with_name("formulation_modal_split.json")
+    target.write_text(json.dumps(rows, indent=1), encoding="utf-8")
+    print(json.dumps({name: row["f1_hz"] for name, row in rows.items()}), flush=True)
+
+def cantilever(cfg):
+    result = cantilever_dual()
+    Path(cfg["output"]).with_name("formulation_cantilever.json").write_text(json.dumps(result, indent=1, default=float), encoding="utf-8")
+    print(json.dumps(result, default=float), flush=True)
+
 def main(argv=None):
-    return command_line({"references": lambda overrides: references(configure(overrides))}, argv)
+    return command_line({"references": lambda overrides: references(configure(overrides)), "modal_split": lambda overrides: modal_split(configure(overrides)), "cantilever": lambda overrides: cantilever(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

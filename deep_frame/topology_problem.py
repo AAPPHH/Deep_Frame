@@ -214,3 +214,17 @@ def cantilever_domain(shape=(32, 6, 12), spacing=1.0, force_n=1.0, material=None
 def cantilever_problem(min_n_per_mm, volume_max=1.0):
     return {**deepcopy(PROBLEM), "volume_max": volume_max, "crash": None, "modal": None, "shadow": None, "monitor": [],
             "stiffness": {**PROBLEM["stiffness"], "name": "tip", "case": "tip", "min_n_per_mm": min_n_per_mm}}
+
+def cantilever_dual(volume_fraction=0.3, domain=None, problem=None):
+    from deep_frame.topology_optimization import optimize_topology
+    domain = domain or cantilever_domain()
+    width = (problem or PROBLEM)["width"]
+    settings = {"volume_fraction": volume_fraction, "filter_radius_mm": filter_radius(width, domain["grid"]["spacing_mm"]), "projection": "robust", "projection_eta": width["eta"], "robust_delta": width["delta"],
+                "beta_schedule": (problem or PROBLEM)["continuation"]["beta_schedule"], "beta_interval": 40, "max_iterations": 400, "move_limit": 0.1, "volume_target_relaxation": 1.0}
+    result = optimize_topology(domain, settings)
+    check = TopologyProblem(domain, cantilever_problem(1.0))
+    check.map.beta = settings["beta_schedule"][-1]
+    rows = {row["name"]: row for row in check.evaluate(result["design_density"].ravel())["rows"]}
+    check.close()
+    return {"status": result["status"], "converged": result["summary"].get("converged"), "volume_fraction_intermediate": rows["volume"]["value"], "stiffness_n_per_mm": rows["tip_stiffness"]["value"],
+            "statement": "min-compliance at volume V* (OC, same robust filter) gives stiffness k*; min-mass subject to k >= k* must return volume ~ V* with the stiffness constraint active"}

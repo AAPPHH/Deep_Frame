@@ -1,0 +1,474 @@
+{
+ "source": "docs/validation/formulation_reference.json",
+ "sha": "4ed6cfaa93b25dcee8eeb46276f5ec6a14d18710",
+ "reference_density": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1/density_half.npz",
+ "reference_density_sha256_16": "92f10f233a9c7e88",
+ "model": "half domain [51, 96, 24], 4/3 mm, orthotropic PA6-CF (print axis = grid Z), SIMP p=3, reference density used directly as the physical field (no filter/erosion)",
+ "crash_compliance_n_mm": {
+  "crash_front": 6.178513488330096,
+  "crash_side_left": 13.625958153203012,
+  "crash_side_right": 13.625958153203014,
+  "crash_arm_front_left": 141.08415092463872,
+  "crash_arm_front_right": 22.53933100179885,
+  "crash_arm_rear_left": 43.760701926829924,
+  "crash_arm_rear_right": 72.11050291682278,
+  "crash_below": 27.518096659417456,
+  "crash_back": 6.942827033044988
+ },
+ "crash_limit_n_mm": {
+  "crash_front": 9.267770232495144,
+  "crash_side_left": 20.438937229804516,
+  "crash_side_right": 20.43893722980452,
+  "crash_arm_front_left": 211.62622638695808,
+  "crash_arm_front_right": 33.80899650269828,
+  "crash_arm_rear_left": 65.64105289024488,
+  "crash_arm_rear_right": 108.16575437523417,
+  "crash_below": 41.277144989126185,
+  "crash_back": 10.414240549567483
+ },
+ "manafly_shadow_mm": 0.3137367868997963,
+ "manafly": {
+  "value_mm": 0.3137367868997963,
+  "stl": "C:/clones/Deep_Frame-neural/exports/manafly_ref/manafly3_repaired.stl",
+  "stl_sha256_16": "3d39cdc16bc84163",
+  "voxel_mm": 0.5,
+  "motors_mm": [
+   [
+    -56.6,
+    56.6
+   ],
+   [
+    56.6,
+    56.6
+   ],
+   [
+    -56.6,
+    -56.6
+   ],
+   [
+    56.6,
+    -56.6
+   ]
+  ],
+  "radius_mm": 38.1,
+  "hub_radius_mm": 7.88,
+  "exponent": 2.0,
+  "volume_mm3": 27073.625
+ },
+ "loads": {
+  "thrust_per_motor_n": 4.04,
+  "yaw_torque_per_motor_n_mm": 16.937096984441567,
+  "yaw_torque_unfactored_n_mm": 8.468548492220783,
+  "rotor_speed_rps": 740.0,
+  "crash_energy_j": 1.5625,
+  "crash_force_n": 31.25,
+  "twist": "diagonal differential thrust (front_left, rear_right full; front_right, rear_left idle) = mean + saddle; saddle part +-T SF / 2 per motor, self-equilibrated",
+  "yaw": "reaction torque of the full-thrust pair as tangential force couples on the two halves of each pad, other pair idle; inertia relief balances the net yaw moment"
+ },
+ "load_parameters": {
+  "thrust_n": 2.02,
+  "safety_factor": 2.0,
+  "thrust_source": "HQProp T2.5X2X3V2S estimate: GTS V3 1203 8000KV table, HQ T65R, 7.4 V, 100 %: 206 g = 2.02 N",
+  "electrical_power_w": 52.5,
+  "kv": 8000.0,
+  "voltage_v": 7.4,
+  "loaded_speed_fraction": 0.75,
+  "motor_efficiency": 0.75,
+  "torque_source": "ESTIMATE: same table row 7.1 A / 52.5 W; rpm not in the data sheet, assumed 75 % of KV x V under load, motor efficiency 75 %",
+  "crash_mass_g": 125.0,
+  "crash_velocity_m_s": 5.0,
+  "crash_stop_distance_mm": 50.0,
+  "crash_source": "ASSUMPTION: all-up mass 125 g (INTEGRATION_CONFIG), impact speed 5 m/s, 50 mm combined stopping distance (props, battery, frame); E = m v^2 / 2, F = E / d per direction",
+  "rotation": {
+   "front_left": 1.0,
+   "rear_right": 1.0,
+   "front_right": 0.0,
+   "rear_left": 0.0
+  }
+ },
+ "plumbing_old_model": {
+  "arm_tip": {
+   "recomputed": 1.1439088130493724,
+   "stored": 1.1439088130372808,
+   "relative": 1.0570433417456115e-11
+  },
+  "thrust_all": {
+   "recomputed": 2.812113660029972,
+   "stored": 2.8121136600355294,
+   "relative": -1.9761969838327786e-12
+  },
+  "crash_front": {
+   "recomputed": 5.096764349033742,
+   "stored": 5.096764349039568,
+   "relative": -1.1431966484565237e-12
+  },
+  "crash_side_left": {
+   "recomputed": 11.198034689221664,
+   "stored": 11.198034689209328,
+   "relative": 1.1017853296380054e-12
+  },
+  "crash_side_right": {
+   "recomputed": 11.198034689221668,
+   "stored": 11.198034689209326,
+   "relative": 1.1022294188478554e-12
+  },
+  "crash_arm_front_left": {
+   "recomputed": 117.58421942735427,
+   "stored": 117.58421942726588,
+   "relative": 7.51620987671231e-13
+  },
+  "crash_arm_front_right": {
+   "recomputed": 18.46011050605666,
+   "stored": 18.460110506056978,
+   "relative": -1.709743457922741e-14
+  },
+  "crash_arm_rear_left": {
+   "recomputed": 36.51202844861533,
+   "stored": 36.5120284484985,
+   "relative": 3.199884801574626e-12
+  },
+  "crash_arm_rear_right": {
+   "recomputed": 60.75476696351558,
+   "stored": 60.7547669634986,
+   "relative": 2.795541576006144e-13
+  },
+  "crash_below": {
+   "recomputed": 18.752671396621803,
+   "stored": 18.752671396677638,
+   "relative": -2.977396107439745e-12
+  },
+  "crash_back": {
+   "recomputed": 5.113135086422534,
+   "stored": 5.1131350864186125,
+   "relative": 7.669420654110581e-13
+  }
+ },
+ "reference_stl_shadow_mm": 0.24396595504371504,
+ "reference_report": {
+  "mass_g": 21.940227237874453,
+  "rows": [
+   {
+    "name": "arm_tip_stiffness",
+    "value": 5.188666439702559,
+    "limit": 10.0,
+    "unit": "N/mm",
+    "sense": ">=",
+    "field": "eroded",
+    "g": 0.9272774837638726,
+    "status": "violated",
+    "margin": -0.9272774837638726
+   },
+   {
+    "name": "crash_front",
+    "value": 6.1785134883328325,
+    "limit": 9.267770232495144,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.33333333333303805,
+    "status": "satisfied",
+    "margin": 0.33333333333303805
+   },
+   {
+    "name": "crash_side_left",
+    "value": 13.625958153208186,
+    "limit": 20.438937229804516,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.33333333333308013,
+    "status": "satisfied",
+    "margin": 0.33333333333308013
+   },
+   {
+    "name": "crash_side_right",
+    "value": 13.625958153208183,
+    "limit": 20.43893722980452,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.33333333333308035,
+    "status": "satisfied",
+    "margin": 0.33333333333308035
+   },
+   {
+    "name": "crash_arm_front_left",
+    "value": 141.08415092458762,
+    "limit": 211.62622638695808,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.33333333333357484,
+    "status": "satisfied",
+    "margin": 0.33333333333357484
+   },
+   {
+    "name": "crash_arm_front_right",
+    "value": 22.539331001779704,
+    "limit": 33.80899650269828,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.3333333333338997,
+    "status": "satisfied",
+    "margin": 0.3333333333338997
+   },
+   {
+    "name": "crash_arm_rear_left",
+    "value": 43.76070192686631,
+    "limit": 65.64105289024488,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.3333333333327789,
+    "status": "satisfied",
+    "margin": 0.3333333333327789
+   },
+   {
+    "name": "crash_arm_rear_right",
+    "value": 72.11050291679791,
+    "limit": 108.16575437523417,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.3333333333335633,
+    "status": "satisfied",
+    "margin": 0.3333333333335633
+   },
+   {
+    "name": "crash_below",
+    "value": 27.518096659388924,
+    "limit": 41.277144989126185,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.3333333333340246,
+    "status": "satisfied",
+    "margin": 0.3333333333340246
+   },
+   {
+    "name": "crash_back",
+    "value": 6.942827033061835,
+    "limit": 10.414240549567483,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.33333333333171566,
+    "status": "satisfied",
+    "margin": 0.33333333333171566
+   },
+   {
+    "name": "f1",
+    "value": 213.67259059900903,
+    "limit": 300.0,
+    "unit": "Hz",
+    "sense": ">=",
+    "field": "eroded",
+    "g": 0.4936318232799941,
+    "status": "violated",
+    "margin": -0.4936318232799941
+   },
+   {
+    "name": "thrust_all",
+    "value": 4.724187907949987,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "torsion_yaw",
+    "value": 0.1463632106919815,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "twist",
+    "value": 5.305139729409659,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "volume",
+    "value": 0.05550178908663601,
+    "limit": 0.1,
+    "unit": "-",
+    "sense": "<=",
+    "field": "intermediate",
+    "g": -0.44498210913364,
+    "status": "satisfied",
+    "margin": 0.44498210913364
+   },
+   {
+    "name": "shadow",
+    "value": 0.2798193928515203,
+    "limit": 0.3137367868997963,
+    "unit": "mm",
+    "sense": "<=",
+    "field": "intermediate",
+    "g": -0.10810780075690896,
+    "status": "satisfied",
+    "margin": 0.10810780075690896
+   }
+  ]
+ },
+ "reference_report_table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| arm_tip_stiffness | 5.189 | >= 10 | N/mm | violated | -92.7 % |\n| crash_front | 6.179 | <= 9.268 | N mm | satisfied | +33.3 % |\n| crash_side_left | 13.63 | <= 20.44 | N mm | satisfied | +33.3 % |\n| crash_side_right | 13.63 | <= 20.44 | N mm | satisfied | +33.3 % |\n| crash_arm_front_left | 141.1 | <= 211.6 | N mm | satisfied | +33.3 % |\n| crash_arm_front_right | 22.54 | <= 33.81 | N mm | satisfied | +33.3 % |\n| crash_arm_rear_left | 43.76 | <= 65.64 | N mm | satisfied | +33.3 % |\n| crash_arm_rear_right | 72.11 | <= 108.2 | N mm | satisfied | +33.3 % |\n| crash_below | 27.52 | <= 41.28 | N mm | satisfied | +33.3 % |\n| crash_back | 6.943 | <= 10.41 | N mm | satisfied | +33.3 % |\n| f1 | 213.7 | >= 300 | Hz | violated | -49.4 % |\n| thrust_all | 4.724 |  | N mm | monitored |  |\n| torsion_yaw | 0.1464 |  | N mm | monitored |  |\n| twist | 5.305 |  | N mm | monitored |  |\n| volume | 0.0555 | <= 0.1 | - | satisfied | +44.5 % |\n| shadow | 0.2798 | <= 0.3137 | mm | satisfied | +10.8 % |",
+ "filter_radius_mm": 2.272727272727273,
+ "runtime_s": 51.54743440000311,
+ "point_masses": [
+  {
+   "name": "aio15",
+   "mass_g": 1.8,
+   "attachment_region": {
+    "kind": "box",
+    "min_mm": [
+     -15.85,
+     -15.85,
+     0.0
+    ],
+    "max_mm": [
+     -9.65,
+     -9.65,
+     6.0
+    ]
+   }
+  },
+  {
+   "name": "aio15",
+   "mass_g": 1.8,
+   "attachment_region": {
+    "kind": "box",
+    "min_mm": [
+     -15.85,
+     9.65,
+     0.0
+    ],
+    "max_mm": [
+     -9.65,
+     15.85,
+     6.0
+    ]
+   }
+  },
+  {
+   "name": "aio15",
+   "mass_g": 1.8,
+   "attachment_region": {
+    "kind": "box",
+    "min_mm": [
+     9.65,
+     -15.85,
+     0.0
+    ],
+    "max_mm": [
+     15.85,
+     -9.65,
+     6.0
+    ]
+   }
+  },
+  {
+   "name": "aio15",
+   "mass_g": 1.8,
+   "attachment_region": {
+    "kind": "box",
+    "min_mm": [
+     9.65,
+     9.65,
+     0.0
+    ],
+    "max_mm": [
+     15.85,
+     15.85,
+     6.0
+    ]
+   }
+  },
+  {
+   "name": "camera",
+   "mass_g": 1.15,
+   "attachment_region": {
+    "kind": "box",
+    "min_mm": [
+     -16.0,
+     30.9,
+     9.37198934878104
+    ],
+    "max_mm": [
+     -10.0,
+     39.1,
+     17.571989348781038
+    ]
+   }
+  },
+  {
+   "name": "camera",
+   "mass_g": 1.15,
+   "attachment_region": {
+    "kind": "box",
+    "min_mm": [
+     10.0,
+     30.9,
+     9.37198934878104
+    ],
+    "max_mm": [
+     16.0,
+     39.1,
+     17.571989348781038
+    ]
+   }
+  },
+  {
+   "name": "battery",
+   "mass_g": 18.5,
+   "attachment_region": {
+    "kind": "box",
+    "min_mm": [
+     -15.0,
+     -25.0,
+     25.0
+    ],
+    "max_mm": [
+     -11.5,
+     25.0,
+     28.5
+    ]
+   }
+  },
+  {
+   "name": "battery",
+   "mass_g": 18.5,
+   "attachment_region": {
+    "kind": "box",
+    "min_mm": [
+     11.5,
+     -25.0,
+     25.0
+    ],
+    "max_mm": [
+     15.0,
+     25.0,
+     28.5
+    ]
+   }
+  }
+ ],
+ "monitored": {
+  "thrust_all": 4.724187907949987,
+  "torsion_yaw": 0.1463632106919815,
+  "twist": 5.305139729409659
+ }
+}
