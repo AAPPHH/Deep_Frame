@@ -1,4 +1,6 @@
 import json
+import shutil
+import subprocess
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -12,11 +14,14 @@ import trimesh
 from PIL import Image
 from scipy.ndimage import gaussian_filter
 
-from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, command_line, configure
-from deep_frame.topology_reconstruction import load_paths, reconstruct, reference_body, stored_domain
+from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, RUN_SETTINGS, STAGES, SPLINE_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_KINDS, command_line, configure
+from deep_frame.frame_run import FrameRun, _git
+from deep_frame.topology_reconstruction import body_weights, bumps, load_paths, reconstruct, reconstruct_splines, reference_body, stored_domain
 
 RUN_CONFIG = {**DESIGN_RECONSTRUCTION_CONFIG, "domain": None, "study": {}, "geometry": None, "panels": None, "labels": None, "fea_surface_targets_mm": [0.5, 0.6], "fea_volume_targets_mm": [1.5, 1.2, 1.0], "fea_feature_degs": [40.0, 60.0, 89.0]}
 RUN_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, "domain": "path", "study": "object", "geometry": "path", "panels": ["path"], "labels": ["text"], "fea_surface_targets_mm": ["float"], "fea_volume_targets_mm": ["float"], "fea_feature_degs": ["float"]}
+SPLINE_RUN_CONFIG = {**RUN_CONFIG, **SPLINE_RECONSTRUCTION_CONFIG, "compare_bodies": [], "compare_labels": []}
+SPLINE_RUN_KINDS = {**RUN_KINDS, **SPLINE_RECONSTRUCTION_KINDS, "compare_bodies": ["path"], "compare_labels": ["text"]}
 FEA_RELAXED = {"surface_deviation_mm": 0.7, "fea_remesh_targets_mm": [1.5], "tet_attempts": ["remesh_hxt", "remesh_delaunay"]}
 def _camera(direction, up):
     d = np.asarray(direction, float)
@@ -206,6 +211,30 @@ def build_main(overrides):
     render_views(mesh, config["output"])
     print(json.dumps({k: report[k] for k in ("members", "shells", "nodes", "continuity", "joint_sections", "load_paths", "volume_mm3", "target_volume_mm3", "global_scale", "mass_budget", "reference", "bodies", "watertight", "runtime_s")}, default=float), flush=True)
 
+def bump_summary(rows):
+    return {"count": len(rows), "classes": {kind: sum(1 for row in rows if row["class"] == kind) for kind in sorted({row["class"] for row in rows})}, "maximum_excess_mm": max([row["excess_mm"] for row in rows], default=0.0)}
+
+def splines_main(overrides):
+    import psutil
+    config = configure(SPLINE_RUN_CONFIG, SPLINE_RUN_KINDS, overrides, ("source", "output"))
+    config["output"].mkdir(parents=True, exist_ok=True)
+    domain = full_domain(config)
+    density = np.load(config["source"])["density"]
+    source = config["section_body"] or config["source"].with_name("geometry.stl")
+    body = trimesh.load_mesh(source, process=True) if Path(source).is_file() else None
+    mesh, graph, rods, report = reconstruct_splines(domain, density, config, body)
+    mesh.export(config["output"]/"geometry.stl")
+    report["load_paths"] = load_paths(mesh, domain, config)
+    report["mass_g"] = report["volume_mm3"]*domain["material"]["density_g_cm3"]/1000
+    report["section_body"] = str(source) if body is not None else None
+    bodies = {"recon_v3": mesh, **{label: trimesh.load_mesh(path, process=True) for label, path in zip(config["compare_labels"], config["compare_bodies"])}}
+    report["bumps_by_body"] = {"raw": report["bumps"], **{label: bumps(graph, domain, rods, graph.areas(body_weights(item, domain["grid"], config["body_subdivisions"])), config) for label, item in bodies.items()}}
+    report["bump_summary"] = {label: bump_summary(rows) for label, rows in report["bumps_by_body"].items()}
+    report["peak_rss_gb"] = psutil.Process().memory_info().peak_wset/2**30 if hasattr(psutil.Process().memory_info(), "peak_wset") else None
+    (config["output"]/"reconstruction.json").write_text(json.dumps({**report, "config": {k: str(v) if isinstance(v, Path) else v for k, v in config.items()}}, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value) if isinstance(value, np.floating) else str(value)), encoding="utf-8")
+    render_views(mesh, config["output"])
+    print(json.dumps({k: report[k] for k in ("members", "shells", "nodes", "control_points", "continuity", "joint_sections", "load_paths", "volume_mm3", "mass_g", "mass_budget", "bodies", "watertight", "bump_summary", "peak_rss_gb", "runtime_s")}, default=float), flush=True)
+
 def render_main(overrides):
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("geometry", "output"))
     config["output"].mkdir(parents=True, exist_ok=True)
@@ -231,8 +260,229 @@ def compose_main(overrides):
         x += image.width+40
     canvas.save(config["output"])
 
+RECON3_STUDY = {
+    "root": "exports/recon3",
+    "viewer": "C:/clones/Deep_Frame-neural/exports",
+    "manafly_renders": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/manafly/renders",
+    "manafly_stl": "C:/clones/Deep_Frame-neural/exports/manafly_ref/manafly3_repaired.stl",
+    "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
+    "steps": ["run", "evaluate", "compose", "figure", "table"],
+    "only": [],
+    "fallback": {"fea_settings": {"fea_memory_budget_mb": 16384.0}, "compute": "reconstruction"},
+    "cases": {
+        "simp_mma": {"label": "SIMP-MMA", "raw": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_raw_1", "recon": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_recon_1", "result": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/simp_mma"},
+        "neural_v06_f1": {"label": "Neural 6 % f1", "raw": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1_raw", "recon": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_recon11_1", "result": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1"},
+    },
+}
+RECON3_KINDS = {"fallback": "object", "root": "path", "viewer": "path", "manafly_renders": "path", "manafly_stl": "path", "python": "text", "steps": ["text"], "only": ["text"], "cases": "object"}
+BODIES = ("raw", "recon_1to1", "recon_v3")
+
+class SplineRun(FrameRun):
+    def __init__(self, request, case, stages):
+        self.case = case
+        super().__init__(request, stages)
+        self.grid = {**self.grid, "reconstruction": {**self.grid["reconstruction"], "compare_bodies": [str(Path(case["recon"])/"frame.stl")], "compare_labels": ["recon_1to1"]}}
+
+    def available(self, stage):
+        return stage == "optimization" or super().available(stage)
+
+    def optimization(self, domain):
+        self.manifest["stages"]["optimization"] = {"status": "ran", "source": self.case["result"], "method": "existing optimizer result; reconstruction v3 (member splines)", **_git(str(ROOT))}
+        self.save()
+        return Path(self.case["result"])
+
+def _stage(path, request):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(request, indent=1), encoding="utf-8")
+    return path
+
+def spline_run(cfg, name, case):
+    stages = {key: {**spec, "worktree": ROOT.as_posix()} for key, spec in STAGES.items()}
+    stages["reconstruction"] = {**stages["reconstruction"], "argv": ["splines"], "compute": "geometry"}
+    request = json.loads((Path(case["raw"])/"config.json").read_text(encoding="utf-8"))
+    manifest = SplineRun({**request, "name": f"recon3_{name}", "reconstruction": True}, case, stages).run()
+    run = ROOT/RUN_SETTINGS["root"]/manifest["name"]
+    target = cfg["viewer"]/f"recon3_{name}"/"geometry.stl"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(run/"frame.stl", target)
+    _stage(cfg["root"]/name/"run.json", {"run": str(run), "status": manifest["status"], "stages": {key: entry["status"] for key, entry in manifest["stages"].items()}})
+
+def evaluate_bodies(cfg, name, case):
+    jobs = []
+    for label in ("raw", "recon_1to1"):
+        run, out = Path(case["raw" if label == "raw" else "recon"]), cfg["root"]/name/label
+        spec = json.loads((run/"requests"/"evaluation_frame.json").read_text(encoding="utf-8"))
+        spec.update(name=f"recon3_{name}_{label}", stl=str(run/"frame.stl"), output=str(out/"evaluation"))
+        spec.pop("datasheet", None)
+        frame = _stage(out/"frame.json", spec)
+        views = {key: list(value) for key, value in RUN_SETTINGS["views"].items()}
+        render = _stage(out/"render.json", {"root": ROOT.as_posix(), "tool": "tools/neural_study.py", "action": "call", "patch": {}, "function": "render_views", "kwargs": {"mesh": str(run/"frame.stl"), "out": str(out/"renders"), "views": views}})
+        (out/"renders").mkdir(parents=True, exist_ok=True)
+        jobs.append(subprocess.Popen([cfg["python"], str(ROOT/"tools"/"evaluate_frame.py"), "run", str(frame)], cwd=ROOT, stdout=(out/"evaluation.log").open("w", encoding="utf-8"), stderr=subprocess.STDOUT))
+        jobs.append(subprocess.Popen([cfg["python"], RUN_SETTINGS["compute"], "render", "--cwd", str(ROOT), "--", cfg["python"], str(ROOT/"run.py"), "stage", str(render)], cwd=ROOT, stdout=(out/"render.log").open("w", encoding="utf-8"), stderr=subprocess.STDOUT))
+    return jobs
+
+def paths(cfg, name):
+    run = Path(json.loads((cfg["root"]/name/"run.json").read_text(encoding="utf-8"))["run"])
+    return {"raw": cfg["root"]/name/"raw", "recon_1to1": cfg["root"]/name/"recon_1to1", "recon_v3": run}
+
+def compose_grid(rows, labels, output):
+    from PIL import ImageDraw, ImageFont
+    images = [[Image.open(path).convert("RGB") for path in row] for row in rows]
+    images = [[image.crop(image.point(lambda v: 255-v).getbbox() or (0, 0, *image.size)) for image in row] for row in images]
+    cell = (max(image.width for row in images for image in row), max(image.height for row in images for image in row))
+    scale = min(700/cell[0], 420/cell[1])
+    width, height = round(cell[0]*scale), round(cell[1]*scale)
+    canvas = Image.new("RGB", (len(images[0])*(width+30)+30, len(images)*(height+80)+20), "white")
+    draw = ImageDraw.Draw(canvas)
+    try:
+        font = ImageFont.truetype("arial.ttf", 30)
+    except OSError:
+        font = ImageFont.load_default()
+    for r, row in enumerate(images):
+        for c, image in enumerate(row):
+            factor = min(width/image.width, height/image.height)
+            image = image.resize((max(round(image.width*factor), 1), max(round(image.height*factor), 1)), Image.LANCZOS)
+            x, y = 30+c*(width+30), 70+r*(height+80)
+            canvas.paste(image, (x+(width-image.width)//2, y+(height-image.height)//2))
+            draw.text((x, y-50), labels[r][c], fill="black", font=font)
+    canvas.save(output)
+
+def compose_case(cfg, name, case):
+    import trimesh as mesh_io
+    from tools.neural_study import render_views as shaded_views
+    views = list(RUN_SETTINGS["views"])
+    manafly = cfg["root"]/"manafly"
+    manafly.mkdir(parents=True, exist_ok=True)
+    missing = {key: (tuple(direction), tuple(up)) for key, (direction, up) in RUN_SETTINGS["views"].items() if not (cfg["manafly_renders"]/f"{key}.png").is_file()}
+    for key in set(views)-set(missing):
+        shutil.copy2(cfg["manafly_renders"]/f"{key}.png", manafly/f"{key}.png")
+    if missing:
+        shaded_views(mesh_io.load_mesh(cfg["manafly_stl"], process=True), manafly, missing)
+    found = paths(cfg, name)
+    rows = [[found["raw"]/"renders"/f"{key}.png" for key in views], [found["recon_1to1"]/"renders"/f"{key}.png" for key in views], [found["recon_v3"]/"renders"/f"{key}.png" for key in views], [manafly/f"{key}.png" for key in views]]
+    titles = [f"{case['label']} raw", f"{case['label']} recon 1:1", f"{case['label']} recon v3", "ManaFly"]
+    compose_grid(rows, [[f"{title} ({key})" for key in views] for title in titles], cfg["root"]/f"{name}_4views.png")
+
+def body_row(evaluation, reconstruction):
+    fallback = Path(evaluation).parent.parent/"evaluation_fallback"/"fea.json"
+    fallback = json.loads(fallback.read_text(encoding="utf-8")) if fallback.is_file() else {}
+    evaluation = json.loads(Path(evaluation).read_text(encoding="utf-8")) if Path(evaluation).is_file() else {}
+    fea, geometry, walls = evaluation.get("fea") or {}, evaluation.get("geometry") or {}, evaluation.get("walls") or {}
+    recon = json.loads(Path(reconstruction).read_text(encoding="utf-8")) if reconstruction and Path(reconstruction).is_file() else {}
+    return {"mass_g": (geometry.get("mass") or {}).get("frame_mass_g"), "fea_mass_g": fea.get("frame_mass_g"), "arm_tip_n_per_mm": fea.get("stiffness_n_per_mm"), "f1_hz": (fea.get("eigenfrequencies_hz") or [None])[0],
+            "fea_status": fea.get("status"), "fea_diagnostics": fea.get("diagnostics"), "fea_mesh": (fea.get("fea_surface") or {}).get("choice"), "bodies": (geometry.get("form") or {}).get("mesh_bodies"),
+            "wall_deep_fraction": walls.get("deep_fraction"), "wall_deep_components": walls.get("deep_components"), "wall_largest_deep_mm3": walls.get("largest_deep_mm3"),
+            "fallback_status": fallback.get("status"), "fallback_mass_g": fallback.get("frame_mass_g"), "fallback_arm_tip_n_per_mm": fallback.get("stiffness_n_per_mm"), "fallback_f1_hz": (fallback.get("eigenfrequencies_hz") or [None])[0],
+            "members": recon.get("members"), "shells": recon.get("shells"), "nodes": recon.get("nodes"), "missed": (evaluation.get("assessment") or {}).get("missed"), "line": evaluation.get("line")}
+
+def table_case(cfg, name, case):
+    found = paths(cfg, name)
+    v3 = json.loads((found["recon_v3"]/"reconstruction"/"reconstruction.json").read_text(encoding="utf-8"))
+    rows = {"raw": body_row(found["raw"]/"evaluation"/"evaluation.json", None), "recon_1to1": body_row(found["recon_1to1"]/"evaluation"/"evaluation.json", Path(case["recon"])/"reconstruction"/"reconstruction.json"),
+            "recon_v3": body_row(found["recon_v3"]/"evaluation"/"evaluation.json", found["recon_v3"]/"reconstruction"/"reconstruction.json")}
+    rows["raw"].update(members=v3["members"], shells=v3["shells"], nodes=v3["nodes"])
+    base = rows["raw"]
+    for row in rows.values():
+        row["relative_to_raw"] = {key: None if row[key] is None or not base[key] else row[key]/base[key]-1 for key in ("mass_g", "arm_tip_n_per_mm", "f1_hz", "fallback_arm_tip_n_per_mm", "fallback_f1_hz")}
+    record = {"case": name, "label": case["label"], "bodies": rows, "within_10_percent": {"standard": all(rows["recon_v3"]["relative_to_raw"][key] is not None and abs(rows["recon_v3"]["relative_to_raw"][key]) <= 0.10 for key in ("mass_g", "arm_tip_n_per_mm", "f1_hz")),
+                                    "fallback": all(rows["recon_v3"]["relative_to_raw"][key] is not None and abs(rows["recon_v3"]["relative_to_raw"][key]) <= 0.10 for key in ("mass_g", "fallback_arm_tip_n_per_mm", "fallback_f1_hz"))}, "fallback": cfg["fallback"],
+              "wall_rule_not_worse_than_1to1": all(rows["recon_v3"][key] is not None and rows["recon_1to1"][key] is not None and rows["recon_v3"][key] <= rows["recon_1to1"][key] for key in ("wall_deep_fraction", "wall_largest_deep_mm3")),
+              "bumps": v3["bump_summary"], "bump_rows": v3["bumps_by_body"], "splines": {key: v3[key] for key in ("control_points", "transition_radius_mm", "joint_sections", "mass_budget", "section_source", "continuity", "load_paths")}, "image": str(cfg["root"]/f"{name}_4views.png"),
+              "stl": str(cfg["viewer"]/f"recon3_{name}"/"geometry.stl")}
+    _stage(cfg["root"]/f"{name}_summary.json", record)
+    return record
+
+BUMP_STYLE = {"prescribed": ("#2a78d6", "s"), "load_point": ("#eb6834", "D"), "junction": ("#1baf7a", "o"), "grid_artefact": ("#eda100", "^"), "optimizer_feature": ("#e87ba4", "v")}
+
+def bump_figure(cfg, name, case):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import PolyCollection
+    found = paths(cfg, name)
+    record = json.loads((found["recon_v3"]/"reconstruction"/"reconstruction.json").read_text(encoding="utf-8"))
+    meshes = {"raw": Path(case["raw"])/"frame.stl", "recon_1to1": Path(case["recon"])/"frame.stl", "recon_v3": found["recon_v3"]/"frame.stl"}
+    titles = {"raw": "raw", "recon_1to1": "recon 1:1", "recon_v3": "recon v3"}
+    figure, axes = plt.subplots(2, 3, figsize=(18, 9.5), gridspec_kw={"height_ratios": [3, 1]})
+    for column, (label, path) in enumerate(meshes.items()):
+        mesh = trimesh.load_mesh(path, process=False)
+        for row, (i, j) in enumerate(((0, 1), (0, 2))):
+            ax = axes[row, column]
+            ax.add_collection(PolyCollection(mesh.triangles[:, :, [i, j]], facecolors="#d4d3cc", edgecolors="none"))
+            for kind, (color, marker) in BUMP_STYLE.items():
+                rows = [bump for bump in record["bumps_by_body"][label] if bump["class"] == kind]
+                if rows:
+                    points = np.array([bump["point_mm"] for bump in rows])
+                    ax.scatter(points[:, i], points[:, j], s=[40+120*bump["excess_mm"] for bump in rows], c=color, marker=marker, edgecolors="white", linewidths=1.0, label=f"{kind.replace('_', ' ')} ({len(rows)})", zorder=3)
+            ax.set_xlim(mesh.bounds[0][i]-3, mesh.bounds[1][i]+3)
+            ax.set_ylim(mesh.bounds[0][j]-3, mesh.bounds[1][j]+3)
+            ax.set_aspect("equal")
+            ax.tick_params(colors="#55554f", labelsize=8)
+            for spine in ax.spines.values():
+                spine.set_color("#c3c2b7")
+            ax.set_xlabel("x mm", color="#55554f", fontsize=9)
+            ax.set_ylabel(("y" if row == 0 else "z")+" mm", color="#55554f", fontsize=9)
+            if row == 0:
+                ax.set_title(f"{case['label']} {titles[label]}: section bumps > {record['config']['bump_minimum_mm']} mm", fontsize=11, color="#1a1a19", loc="left")
+                ax.legend(loc="lower left", fontsize=8, frameon=False)
+    figure.tight_layout()
+    figure.savefig(cfg["root"]/f"{name}_bumps.png", dpi=110)
+    plt.close(figure)
+
+
+def refea(cfg, name):
+    found = paths(cfg, name)
+    for label, folder in found.items():
+        output = folder/"evaluation"
+        if (json.loads((output/"evaluation.json").read_text(encoding="utf-8")).get("fea") or {}).get("status") == "ok":
+            continue
+        frame = str(output/"frame.json")
+        with (output/"fea_rerun.log").open("w", encoding="utf-8") as log:
+            subprocess.call([cfg["python"], RUN_SETTINGS["compute"], "fea_modal", "--cwd", str(ROOT), "--", cfg["python"], str(ROOT/"tools"/"evaluate_frame.py"), "fea", frame], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+            subprocess.call([cfg["python"], str(ROOT/"tools"/"evaluate_frame.py"), "report", frame], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+        if label == "recon_v3":
+            shutil.copy2(output/"evaluation.json", folder/"evaluation.json")
+
+def fallback_fea(cfg, name):
+    for label, folder in paths(cfg, name).items():
+        output = folder/"evaluation_fallback"
+        if (output/"fea.json").is_file() and json.loads((output/"fea.json").read_text(encoding="utf-8")).get("status") == "ok":
+            continue
+        spec = json.loads((folder/"evaluation"/"frame.json").read_text(encoding="utf-8"))
+        spec.update(output=str(output), fea_settings={**spec.get("fea_settings", {}), **cfg["fallback"]["fea_settings"]})
+        spec.pop("datasheet", None)
+        frame = _stage(output/"frame.json", spec)
+        with (output/"fea.log").open("w", encoding="utf-8") as log:
+            subprocess.call([cfg["python"], RUN_SETTINGS["compute"], cfg["fallback"]["compute"], "--cwd", str(ROOT), "--", cfg["python"], str(ROOT/"tools"/"evaluate_frame.py"), "fea", str(frame)], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+
+def study_main(overrides):
+    cfg = {key: Path(value) if RECON3_KINDS[key] == "path" else value for key, value in configure(RECON3_STUDY, RECON3_KINDS, overrides).items()}
+    cfg["root"] = cfg["root"] if cfg["root"].is_absolute() else ROOT/cfg["root"]
+    cases = {name: case for name, case in cfg["cases"].items() if not cfg["only"] or name in cfg["only"]}
+    if "run" in cfg["steps"] or "evaluate" in cfg["steps"]:
+        jobs = [job for name, case in cases.items() for job in (evaluate_bodies(cfg, name, case) if "evaluate" in cfg["steps"] else [])]
+        for name, case in cases.items():
+            if "run" in cfg["steps"]:
+                spline_run(cfg, name, case)
+        failed = [job.args for job in jobs if job.wait()]
+        if failed:
+            print(json.dumps({"failed": [str(args) for args in failed]}), flush=True)
+    for name, case in cases.items():
+        if "refea" in cfg["steps"]:
+            refea(cfg, name)
+        if "fallback" in cfg["steps"]:
+            fallback_fea(cfg, name)
+        if "compose" in cfg["steps"]:
+            compose_case(cfg, name, case)
+        if "figure" in cfg["steps"]:
+            bump_figure(cfg, name, case)
+        if "table" in cfg["steps"]:
+            record = table_case(cfg, name, case)
+            print(json.dumps({name: {body: {key: row[key] for key in ("mass_g", "arm_tip_n_per_mm", "f1_hz", "fallback_arm_tip_n_per_mm", "fallback_f1_hz", "bodies", "wall_deep_fraction", "wall_deep_components", "wall_largest_deep_mm3", "members", "nodes", "relative_to_raw")} for body, row in record["bodies"].items()}}, default=float), flush=True)
+
 def main(argv=None):
-    return command_line({"build": build_main, "fea": fea_main, "render": render_main, "compose": compose_main}, argv)
+    return command_line({"build": build_main, "splines": splines_main, "study": study_main, "fea": fea_main, "render": render_main, "compose": compose_main}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

@@ -566,7 +566,7 @@ def spline_member(graph, member, area, config):
     count = 3+sum(length >= limit for limit in config["spline_lengths_mm"])
     control, curve, t = fit_spline(path, count, max(int(np.ceil(length/config["spline_sample_mm"]))+1, 4))
     t = t[int(ends[0] is not None):len(t)-int(ends[1] is not None)]
-    reach = [graph.nodes[n-1]["radius"] if isinstance(n, int) else float(graph.radius[tuple(member["voxels"][-side])])+graph.h if ends[side] is not None else 0.0 for side, n in enumerate(member["nodes"])]
+    reach = [graph.nodes[n-1]["radius"] if isinstance(n, int) else 0.0 for n in member["nodes"]]
     keep = (t*length > reach[0]) & ((1-t)*length > reach[1])
     arc = max(float(np.linalg.norm(np.diff(curve, axis=0), axis=1).sum()), 1e-12)
     area = area*length/arc
@@ -584,10 +584,11 @@ def spline_member(graph, member, area, config):
     fallback = np.cross(tangent, np.where(np.abs(tangent[:, :1]) < 0.9, [[1.0, 0.0, 0.0]], [[0.0, 1.0, 0.0]]))
     axis = np.where(np.linalg.norm(axis, axis=1, keepdims=True) > 1e-3, axis, fallback)
     axis /= np.linalg.norm(axis, axis=1, keepdims=True)
-    return {"kind": "rod", "points": curve, "a": a, "b": b, "axis": axis, "nodes": [0 if ends[side] is not None and not isinstance(n, int) else "joined" for side, n in enumerate(member["nodes"])], "control": control, "profile": profile, "t": t, "keep": keep, "length": arc, "path_length": length, "aspect": aspect, "stretch": length/arc}
+    return {"kind": "rod", "points": curve, "a": a, "b": b, "axis": axis, "nodes": ["joined", "joined"], "control": control, "profile": profile, "t": t, "keep": keep, "length": arc, "path_length": length, "aspect": aspect, "stretch": length/arc}
 
 def bumps(graph, domain, rods, areas, config):
-    loads = [load["region"] for key in ("load_cases", "comparison_load_cases") for case in domain.get(key, []) for load in case.get("loads", [])]
+    loads = [(case["name"], load["region"]) for key in ("load_cases", "comparison_load_cases") for case in domain.get(key, []) for load in case.get("loads", [])]
+    preserves = [region for region in domain["regions"] if region["role"] == "preserve"]
     gap = distance_transform_edt(~graph.preserve)*graph.h
     pad, rows = config["bump_pad_mm"], []
     for number, (member, rod, area) in enumerate(zip(graph.members, rods, areas)):
@@ -610,9 +611,11 @@ def bumps(graph, domain, rods, areas, config):
             point = graph.centers(member["voxels"][i])
             extent = (high-low+1)*step
             near = [n for n in member["nodes"] if isinstance(n, int) and np.linalg.norm(point-graph.nodes[n-1]["center"]) < graph.nodes[n-1]["radius"]+pad]
-            kind = ("load_point" if any(region_contains(point[None], region, pad)[0] for region in loads) else "prescribed" if gap[tuple(member["voxels"][i])] <= fitted[i]+pad else
-                    "junction" if near or not rod["keep"][i] else "grid_artefact" if extent < rod["length"]/3 else "optimizer_feature")
-            rows.append({"member": number, "point_mm": np.round(point, 2).tolist(), "excess_mm": round(float(excess[i]), 3), "fitted_radius_mm": round(float(fitted[i]), 3), "extent_mm": round(float(extent), 2), "member_length_mm": round(rod["length"], 2), "class": kind})
+            cases = sorted({name for name, region in loads if region_contains(point[None], region, pad)[0]})
+            touching = [region["name"] for region in preserves if region_contains(point[None], region, float(fitted[i])+pad)[0]]
+            kind = ("prescribed" if touching or gap[tuple(member["voxels"][i])] <= fitted[i]+pad else "load_point" if cases else "junction" if near or not rod["keep"][i] else "grid_artefact" if extent < rod["length"]/3 else "optimizer_feature")
+            rows.append({"member": number, "point_mm": np.round(point, 2).tolist(), "excess_mm": round(float(excess[i]), 3), "fitted_radius_mm": round(float(fitted[i]), 3), "extent_mm": round(float(extent), 2), "member_length_mm": round(rod["length"], 2), "class": kind,
+                         "preserve_gap_mm": round(float(gap[tuple(member["voxels"][i])]), 2), "preserves": touching, "load_cases": cases})
     return rows
 
 def reconstruct_splines(domain, density, config, body=None):
