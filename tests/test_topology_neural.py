@@ -1,9 +1,11 @@
 import numpy as np
 import pytest
 
-from deep_frame.topology_neural import NeuralDensity, neural_settings, optimize_neural
-from deep_frame.topology_optimization import HexElasticity
+from deep_frame.topology_neural import NeuralAugmentedLagrangian, NeuralDensity, NeuralDesign, neural_al_settings, neural_settings, optimize_neural
+from deep_frame.topology_optimization import AugmentedLagrangian, HexElasticity
+from deep_frame.topology_problem import TopologyProblem
 from tests.test_topology_optimization import beam_domain
+from tests.test_topology_problem import tiny_domain, tiny_problem
 
 def holed_beam(shape=(12, 4, 4)):
     domain = beam_domain(shape)
@@ -81,3 +83,56 @@ def test_local_volume_penalty_gradient_and_blob_vs_strut():
         step = np.zeros_like(density)
         step[index] = 1e-6
         assert np.isclose((penalty(density + step)[0] - penalty(density - step)[0]) / 2e-6, gradient[index], rtol=1e-5, atol=1e-9)
+
+def test_augmented_lagrangian_vector_and_penalty_rule():
+    settings = {"penalty": 10.0, "multiplier_interval": 1, "penalty_growth": 2.0, "penalty_progress": 0.25, "penalty_max": 40.0}
+    scalar, vector = AugmentedLagrangian({"penalty": 10.0, "multiplier_interval": 1}), AugmentedLagrangian(settings, 2)
+    assert scalar.augment(0.3, 2.0) == pytest.approx((10 / 2 * 0.3 ** 2, 10 * 0.3 * 2.0, 0.0)) and scalar.multiplier == pytest.approx(3.0)
+    value, gradient, weights = vector.terms([0.3, -0.5], np.array([[1.0, 0.0], [0.0, 1.0]]))
+    assert value == pytest.approx(0.45) and gradient.tolist() == pytest.approx([3.0, 0.0]) and weights.tolist() == pytest.approx([3.0, 0.0])
+    vector.update([0.3, -0.5])
+    assert vector.multiplier.tolist() == pytest.approx([3.0, 0.0]) and vector.penalty.tolist() == [10.0, 10.0]
+    vector.update([0.2, -0.5])
+    assert vector.penalty.tolist() == [20.0, 10.0]
+    vector.update([0.01, -0.5])
+    vector.update([0.01, -0.5])
+    vector.update([0.01, -0.5])
+    assert vector.penalty.tolist() == [40.0, 10.0]
+
+def test_neural_al_lagrangian_gradient_matches_finite_differences():
+    problem = TopologyProblem(tiny_domain(), tiny_problem())
+    design = NeuralDesign(neural_al_settings({"frequencies": 8, "hidden": [6], "max_frequency_per_mm": 0.3})).attach(tiny_domain())
+    multipliers = AugmentedLagrangian({"penalty": 5.0, "multiplier_interval": 1}, 6)
+    multipliers.multiplier[:] = [0.4, 0.2, 0.1, 0.3, 0.0, 0.2]
+    def lagrangian():
+        x, cache = design.design()
+        result = problem.evaluate(x)
+        value, gradient, _ = multipliers.terms(result["constraints"], result["constraint_gradients"])
+        return result["objective"] + value, result["objective_gradient"] + gradient, cache
+    _, derivative, cache = lagrangian()
+    gradients = design.gradient(cache, derivative)
+    random = np.random.default_rng(5)
+    direction = [random.standard_normal(value.shape) for value in design.field.parameters]
+    step = 1e-6
+    def shifted(scale):
+        for value, delta in zip(design.field.parameters, direction):
+            value += scale * step * delta
+        result = lagrangian()[0]
+        for value, delta in zip(design.field.parameters, direction):
+            value -= scale * step * delta
+        return result
+    upper, lower = shifted(1.0), shifted(-1.0)
+    problem.close()
+    assert sum(np.sum(g * d) for g, d in zip(gradients, direction)) == pytest.approx((upper - lower) / (2 * step), rel=1e-4)
+
+def test_neural_al_fit_and_guarded_run():
+    domain = tiny_domain()
+    target = np.where(np.indices(tuple(domain["grid"]["shape"]))[2].ravel() >= 2, 0.9, 0.1)
+    optimizer = NeuralAugmentedLagrangian({"frequencies": 8, "hidden": [8], "max_frequency_per_mm": 0.3, "fit": {"iterations": 400, "learning_rate": 0.05}, "max_iterations": 6, "al": {"multiplier_interval": 2},
+                                           "level": {"minimum_iterations": 3, "maximum_iterations": 3}})
+    result = optimizer.run([(domain, lambda: TopologyProblem(domain, tiny_problem()))], start=target)
+    summary = result["summary"]
+    assert summary["fit"]["mean_abs_error"] < 0.1 and summary["iterations"] == 6 and summary["stop_reason"] == "guard" and not summary["converged"]
+    assert [entry["beta"] for entry in result["history"]] == [2.0] * 3 + [8.0] * 3 and len(summary["level_reports"]) == 1
+    assert result["density"].shape == tuple(domain["grid"]["shape"]) and np.all(result["density"][domain["preserve"]] == 1)
+    assert any(value > 0 for value in summary["multipliers"]) and len(summary["final"]["rows"]) > 6
