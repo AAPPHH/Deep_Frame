@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT))
 from deep_frame.config import command_line, configure
 from deep_frame.frame_evaluation import HEADER, LEGEND, append_datasheet, frame_spec, geometry, limits_markdown, mechanics, sigma, sigma_limits, slice_frame, summary, walls
 
-PARTS = {"geometry": (geometry, "cpu"), "walls": (walls, "wall_check"), "fea": (mechanics, "fea_modal"), "sigma": (sigma, "fea_static"), "slicer": (slice_frame, "cpu")}
+PARTS = {"geometry": (geometry, "cpu"), "walls": (walls, "wall_check"), "fea": (mechanics, "fea_modal"), "sigma": (sigma, "fea_modal"), "slicer": (slice_frame, "cpu")}
 
 GAP = Path("C:/clones/Deep_Frame-gap/exports")
 gap = lambda *names: str(next((path for path in (GAP / folder / name / "interface_stiffness.json" for folder in ("gap", "interface_stiffness") for name in names) if path.exists()), GAP / "gap" / names[0] / "interface_stiffness.json"))
