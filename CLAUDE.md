@@ -9,7 +9,8 @@
 
 - Als Orchestrator in Führungsrolle arbeiten; Ausführung delegieren.
 - Ein Commit pro logischem Schritt.
-- Am Ende jeder Aufgabe oder alle 15 Minuten eine kurze Bilanz im Chat.
+- Am Ende jeder Aufgabe oder alle 10 Minuten eine kurze Bilanz im Chat.
+- Rechenläufe nur über den lokalen Ray-Scheduler einreichen, mit deklariertem Bedarf (Kerne, RAM, GPU-GB); keine festen Slots, keine Direktstarts.
 
 # Projekt
 
@@ -19,4 +20,4 @@
 
 # Regel für diese Datei
 
-- Nichts weiter in diese CLAUDE.md schreiben.
+- Nichts weiter in diese CLAUDE.md schreiben. 
