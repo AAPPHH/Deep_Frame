@@ -1,0 +1,1664 @@
+{
+ "variant": "neural_r3_v05",
+ "method": "neural round 3",
+ "inertia_relief": [
+  {
+   "name": "arm_tip",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.0,
+     0.0,
+     -0.039939179893679344
+    ],
+    "angular_acceleration": [
+     -0.0016125938081454334,
+     -0.0018524283571507002,
+     -2.3554632129323053e-05
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "thrust_all",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.0,
+     0.0,
+     0.15975671957471738
+    ],
+    "angular_acceleration": [
+     -0.000225902622096332,
+     -2.388285385962734e-18,
+     -3.198838135516522e-20
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_front",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.0,
+     -0.33999093620169357,
+     0.0
+    ],
+    "angular_acceleration": [
+     0.002609120104014555,
+     -6.880362053180273e-20,
+     -1.7699112499076205e-18
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_side_left",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.3399909362016929,
+     0.0,
+     0.0
+    ],
+    "angular_acceleration": [
+     4.350015108202524e-20,
+     -0.0019382639722361598,
+     0.00021355047466605783
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_side_right",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     -0.3399909362016929,
+     0.0,
+     0.0
+    ],
+    "angular_acceleration": [
+     -4.350015108202524e-20,
+     0.0019382639722361598,
+     -0.00021355047466605783
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_arm_front_left",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.048986793858984065,
+     -0.31678126695476344,
+     -0.11333031206723103
+    ],
+    "angular_acceleration": [
+     -0.006805372714162529,
+     -0.005369983388522847,
+     0.007915783255655638
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_arm_front_right",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     -0.31678126695476344,
+     0.048986793858984065,
+     -0.11333031206723103
+    ],
+    "angular_acceleration": [
+     -0.0042310802733228,
+     0.007227939100123161,
+     0.00781520881891672
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_arm_rear_left",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.31678126695476344,
+     -0.048986793858984065,
+     -0.11333031206723103
+    ],
+    "angular_acceleration": [
+     0.004551587789089723,
+     -0.0068967544494355285,
+     0.00807947754066874
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_arm_rear_right",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     -0.048986793858984065,
+     0.31678126695476344,
+     -0.11333031206723103
+    ],
+    "angular_acceleration": [
+     0.007125880229929457,
+     0.00570135594539526,
+     0.007987921365694131
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_below",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.0,
+     0.0,
+     0.33999093620169357
+    ],
+    "angular_acceleration": [
+     0.012223633577644529,
+     -3.078031347311245e-18,
+     4.8521626657524207e-20
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_back",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.0,
+     0.0,
+     -0.3399909362016932
+    ],
+    "angular_acceleration": [
+     0.00048076127365038833,
+     1.8668719270047212e-18,
+     2.7186017436026535e-20
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  },
+  {
+   "name": "crash_hoop",
+   "inertia_relief": {
+    "mass_g": 90.13705362962962,
+    "center_of_mass_mm": [
+     -4.798724530882343e-15,
+     1.3534644723514087,
+     16.06987226822853
+    ],
+    "acceleration_n_per_g": [
+     0.0,
+     -0.3399909362016914,
+     0.0
+    ],
+    "angular_acceleration": [
+     -0.0012656787808467155,
+     -1.3336488870008004e-19,
+     -7.143910102884037e-18
+    ],
+    "support_nodes_mm": [
+     [
+      0.0,
+      -60.0,
+      0.0
+     ],
+     [
+      0.0,
+      -52.0,
+      10.666666666666666
+     ],
+     [
+      0.0,
+      -60.0,
+      10.666666666666666
+     ]
+    ]
+   }
+  }
+ ],
+ "volume_fraction_target": 0.05,
+ "volume_fraction_opt": 0.05000000000000001,
+ "iterations": 109,
+ "stop_reason": "objective_stall",
+ "optimize_runtime_s": 542.8416269384325,
+ "mass_g": 13.915081266801522,
+ "mesh_volume_mm3": 12766.129602570203,
+ "volume_fraction_mesh": 0.03354945587339667,
+ "watertight": true,
+ "bodies": 1,
+ "connectivity": {
+  "components_raw": 2,
+  "anchor_components": 1,
+  "dropped_count": 1,
+  "dropped_volume_mm3": 16.0,
+  "largest_dropped_mm3": 16.0
+ },
+ "member_width": {
+  "threshold": 0.5,
+  "method": "2 x Euclidean distance on the 3D skeleton minus one cell, skeleton cells within two cells of preserve/forbidden excluded",
+  "p05_mm": 0.6666666666666666,
+  "p10_mm": 0.6666666666666666,
+  "p25_mm": 1.2189514164974602,
+  "p50_mm": 2.0,
+  "p75_mm": 2.314757303333053,
+  "p90_mm": 3.104569499661587,
+  "fraction_below_2mm": 0.38898756660746003,
+  "skeleton_cells": 1689
+ },
+ "width_height_ratio": {
+  "p10": 0.3857928838888422,
+  "p50": 1.0,
+  "p90": 2.66227766016838
+ },
+ "chord": {
+  "box": {
+   "half_width_mm": 20.0,
+   "z_max_mm": 10.0,
+   "y_span_mm": [
+    -25.0,
+    25.0
+   ]
+  },
+  "spanning_components": 1,
+  "lower_chord": true,
+  "y_slice_coverage": 1.0,
+  "solid_volume_mm3": 1910.5185185185185
+ },
+ "total_runtime_s": 578.6339418124408,
+ "grid_opt_half": {
+  "origin_mm": [
+   0.0,
+   -64.0,
+   0.0
+  ],
+  "spacing_mm": [
+   1.3333333333333333,
+   1.3333333333333333,
+   1.3333333333333333
+  ],
+  "shape": [
+   51,
+   96,
+   24
+  ],
+  "axis_order": "xyz",
+  "order": "C"
+ },
+ "grid_render_full": {
+  "origin_mm": [
+   -68.0,
+   -64.0,
+   0.0
+  ],
+  "spacing_mm": [
+   0.6666666666666666,
+   0.6666666666666666,
+   0.6666666666666666
+  ],
+  "shape": [
+   204,
+   192,
+   48
+  ],
+  "axis_order": "xyz",
+  "order": "C"
+ },
+ "neural": {
+  "max_frequency_per_mm": 0.2,
+  "frequencies": 96,
+  "hidden": [
+   48,
+   48
+  ],
+  "learning_rate": 0.01,
+  "sharpness_final": 8.0,
+  "sharpness_iterations": 80,
+  "max_iterations": 110,
+  "max_width_penalty": 0.0
+ },
+ "round2": {
+  "pad": {
+   "top_mm": 9.333333333333334,
+   "thickness_mm": 2.6666666666666665,
+   "support_half_mm": 5.0,
+   "bore_margin_mm": 0.5
+  },
+  "hoop": {
+   "x_mm": 12.0,
+   "radius_mm": 1.6,
+   "path_yz_mm": [
+    [
+     24,
+     27.5
+    ],
+    [
+     34,
+     26
+    ],
+    [
+     42,
+     23.5
+    ],
+    [
+     46.5,
+     18
+    ],
+    [
+     47.5,
+     11
+    ],
+    [
+     45.5,
+     5
+    ],
+    [
+     41,
+     2
+    ],
+    [
+     33,
+     1.5
+    ]
+   ],
+   "load_y_min_mm": 44.0,
+   "load_z_mm": [
+    4.0,
+    22.0
+   ],
+   "case_weight": 1.0
+  },
+  "hoop_cells": 356,
+  "motors_mm": [
+   [
+    -54.463240360358064,
+    39.87487240669072
+   ],
+   [
+    54.463240360358064,
+    39.87487240669072
+   ],
+   [
+    -54.463240360358064,
+    -39.87487240669072
+   ],
+   [
+    54.463240360358064,
+    -39.87487240669072
+   ]
+  ],
+  "crash_directions": [
+   "front",
+   "side_left",
+   "side_right",
+   "arm_front_left",
+   "arm_front_right",
+   "arm_rear_left",
+   "arm_rear_right",
+   "below",
+   "back"
+  ],
+  "inertia_relief_cases": [
+   "arm_tip",
+   "thrust_all",
+   "crash_front",
+   "crash_side_left",
+   "crash_side_right",
+   "crash_arm_front_left",
+   "crash_arm_front_right",
+   "crash_arm_rear_left",
+   "crash_arm_rear_right",
+   "crash_below",
+   "crash_back",
+   "crash_hoop"
+  ],
+  "inertia_relief_masses": {
+   "point_masses": [
+    {
+     "name": "aio15",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       -15.85,
+       -15.85,
+       0.0
+      ],
+      "max_mm": [
+       -9.65,
+       -9.65,
+       6.0
+      ]
+     },
+     "mass_g": 1.8
+    },
+    {
+     "name": "aio15",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       -15.85,
+       9.65,
+       0.0
+      ],
+      "max_mm": [
+       -9.65,
+       15.85,
+       6.0
+      ]
+     },
+     "mass_g": 1.8
+    },
+    {
+     "name": "aio15",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       9.65,
+       -15.85,
+       0.0
+      ],
+      "max_mm": [
+       15.85,
+       -9.65,
+       6.0
+      ]
+     },
+     "mass_g": 1.8
+    },
+    {
+     "name": "aio15",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       9.65,
+       9.65,
+       0.0
+      ],
+      "max_mm": [
+       15.85,
+       15.85,
+       6.0
+      ]
+     },
+     "mass_g": 1.8
+    },
+    {
+     "name": "camera",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       -16.0,
+       30.9,
+       9.37198934878104
+      ],
+      "max_mm": [
+       -10.0,
+       39.1,
+       17.571989348781038
+      ]
+     },
+     "mass_g": 1.15
+    },
+    {
+     "name": "camera",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       10.0,
+       30.9,
+       9.37198934878104
+      ],
+      "max_mm": [
+       16.0,
+       39.1,
+       17.571989348781038
+      ]
+     },
+     "mass_g": 1.15
+    },
+    {
+     "name": "battery",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       -15.0,
+       -25.0,
+       25.0
+      ],
+      "max_mm": [
+       -11.5,
+       25.0,
+       28.5
+      ]
+     },
+     "mass_g": 18.5
+    },
+    {
+     "name": "battery",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       11.5,
+       -25.0,
+       25.0
+      ],
+      "max_mm": [
+       15.0,
+       25.0,
+       28.5
+      ]
+     },
+     "mass_g": 18.5
+    },
+    {
+     "name": "motor_front_left",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       -62.16324036035807,
+       32.17487240669072,
+       6.666666666666669
+      ],
+      "max_mm": [
+       -46.76324036035806,
+       47.57487240669072,
+       9.333333333333336
+      ]
+     },
+     "mass_g": 4.5
+    },
+    {
+     "name": "prop_front_left",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       -62.16324036035807,
+       32.17487240669072,
+       6.666666666666669
+      ],
+      "max_mm": [
+       -46.76324036035806,
+       47.57487240669072,
+       9.333333333333336
+      ]
+     },
+     "mass_g": 1.2
+    },
+    {
+     "name": "motor_front_right",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       46.76324036035806,
+       32.17487240669072,
+       6.666666666666669
+      ],
+      "max_mm": [
+       62.16324036035807,
+       47.57487240669072,
+       9.333333333333336
+      ]
+     },
+     "mass_g": 4.5
+    },
+    {
+     "name": "prop_front_right",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       46.76324036035806,
+       32.17487240669072,
+       6.666666666666669
+      ],
+      "max_mm": [
+       62.16324036035807,
+       47.57487240669072,
+       9.333333333333336
+      ]
+     },
+     "mass_g": 1.2
+    },
+    {
+     "name": "motor_rear_left",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       -62.16324036035807,
+       -47.57487240669072,
+       6.666666666666669
+      ],
+      "max_mm": [
+       -46.76324036035806,
+       -32.17487240669072,
+       9.333333333333336
+      ]
+     },
+     "mass_g": 4.5
+    },
+    {
+     "name": "prop_rear_left",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       -62.16324036035807,
+       -47.57487240669072,
+       6.666666666666669
+      ],
+      "max_mm": [
+       -46.76324036035806,
+       -32.17487240669072,
+       9.333333333333336
+      ]
+     },
+     "mass_g": 1.2
+    },
+    {
+     "name": "motor_rear_right",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       46.76324036035806,
+       -47.57487240669072,
+       6.666666666666669
+      ],
+      "max_mm": [
+       62.16324036035807,
+       -32.17487240669072,
+       9.333333333333336
+      ]
+     },
+     "mass_g": 4.5
+    },
+    {
+     "name": "prop_rear_right",
+     "region": {
+      "kind": "box",
+      "min_mm": [
+       46.76324036035806,
+       -47.57487240669072,
+       6.666666666666669
+      ],
+      "max_mm": [
+       62.16324036035807,
+       -32.17487240669072,
+       9.333333333333336
+      ]
+     },
+     "mass_g": 1.2
+    }
+   ],
+   "preserve_mass_g": 20.83705362962963
+  }
+ },
+ "render": {
+  "sigma_cells": 1.0,
+  "threshold": 0.5,
+  "taubin": 12,
+  "carve_bores": true,
+  "keep": "motor_pads",
+  "min_body_mm3": 1.0
+ },
+ "objective_final": 0.013370645629762585,
+ "static_surrogate_metrics": {
+  "arm_tip": {
+   "compliance_n_mm": 0.9441591437248753,
+   "relative_residual": 1.3113554172857203e-10,
+   "max_displacement_mm": 0.6216860303224498,
+   "max_von_mises_mpa": 5.389094343252278,
+   "loads": [
+    {
+     "node_count": 49,
+     "force_n": [
+      0.0,
+      0.0,
+      -3.6
+     ],
+     "mean_displacement_mm": [
+      -0.04977728964871544,
+      0.057055353252705714,
+      -0.46902180602738575
+     ],
+     "directional_displacement_mm": 0.46902180602738575,
+     "stiffness_n_per_mm": 7.675549310792171
+    }
+   ],
+   "stiffness_n_per_mm": 7.675549310792171
+  },
+  "thrust_all": {
+   "compliance_n_mm": 1.269823265517069,
+   "relative_residual": 3.33690579632421e-11,
+   "max_displacement_mm": 0.3105980147289831,
+   "max_von_mises_mpa": 3.7399856596234846,
+   "loads": [
+    {
+     "node_count": 49,
+     "force_n": [
+      0.0,
+      0.0,
+      3.6
+     ],
+     "mean_displacement_mm": [
+      0.018011844426983163,
+      -0.033819085931939386,
+      0.23362967867564552
+     ],
+     "directional_displacement_mm": 0.2336296786756455,
+     "stiffness_n_per_mm": 15.409001203986499
+    },
+    {
+     "node_count": 49,
+     "force_n": [
+      0.0,
+      0.0,
+      3.6
+     ],
+     "mean_displacement_mm": [
+      -0.018011844426983163,
+      -0.033819085931939386,
+      0.23362967867564552
+     ],
+     "directional_displacement_mm": 0.2336296786756455,
+     "stiffness_n_per_mm": 15.409001203986499
+    },
+    {
+     "node_count": 49,
+     "force_n": [
+      0.0,
+      0.0,
+      3.6
+     ],
+     "mean_displacement_mm": [
+      0.01656427711707244,
+      -0.015223301964493405,
+      0.11302132910592562
+     ],
+     "directional_displacement_mm": 0.1130213291059256,
+     "stiffness_n_per_mm": 31.85239483979184
+    },
+    {
+     "node_count": 49,
+     "force_n": [
+      0.0,
+      0.0,
+      3.6
+     ],
+     "mean_displacement_mm": [
+      -0.01656427711707244,
+      -0.015223301964493405,
+      0.11302132910592562
+     ],
+     "directional_displacement_mm": 0.1130213291059256,
+     "stiffness_n_per_mm": 31.85239483979184
+    }
+   ],
+   "stiffness_n_per_mm": null
+  },
+  "crash_front": {
+   "compliance_n_mm": 1.4089152376341532,
+   "relative_residual": 1.2183232105174726e-11,
+   "max_displacement_mm": 0.175287473426894,
+   "max_von_mises_mpa": 6.557726246889593,
+   "loads": [
+    {
+     "node_count": 228,
+     "force_n": [
+      0.0,
+      -30.64578125,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      1.7472655076870287e-19,
+      -0.05036220432503714,
+      -0.09701359750980365
+     ],
+     "directional_displacement_mm": 0.05036220432503714,
+     "stiffness_n_per_mm": 608.5075437169598
+    }
+   ],
+   "stiffness_n_per_mm": 608.5075437169598
+  },
+  "crash_side_left": {
+   "compliance_n_mm": 2.8116326775045173,
+   "relative_residual": 8.19912171398944e-12,
+   "max_displacement_mm": 0.28579653853905573,
+   "max_von_mises_mpa": 7.873739081759045,
+   "loads": [
+    {
+     "node_count": 49,
+     "force_n": [
+      15.322890625,
+      0.0,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      0.11835255126988428,
+      0.07320925324457683,
+      0.0999105797165421
+     ],
+     "directional_displacement_mm": 0.11835255126988428,
+     "stiffness_n_per_mm": 129.4681902552195
+    },
+    {
+     "node_count": 49,
+     "force_n": [
+      15.322890625,
+      0.0,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      0.048797070593609035,
+      -0.048533713751058784,
+      0.039334524168493305
+     ],
+     "directional_displacement_mm": 0.048797070593609035,
+     "stiffness_n_per_mm": 314.012510148649
+    }
+   ],
+   "stiffness_n_per_mm": null
+  },
+  "crash_side_right": {
+   "compliance_n_mm": 2.811632677504517,
+   "relative_residual": 8.316680689080991e-12,
+   "max_displacement_mm": 0.2857965385390569,
+   "max_von_mises_mpa": 7.8737390817591235,
+   "loads": [
+    {
+     "node_count": 49,
+     "force_n": [
+      -15.322890625,
+      0.0,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      -0.11835255126988437,
+      0.07320925324457675,
+      0.09991057971654364
+     ],
+     "directional_displacement_mm": 0.11835255126988437,
+     "stiffness_n_per_mm": 129.4681902552194
+    },
+    {
+     "node_count": 49,
+     "force_n": [
+      -15.322890625,
+      0.0,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      -0.04879707059360902,
+      -0.04853371375105887,
+      0.039334524168493444
+     ],
+     "directional_displacement_mm": 0.04879707059360902,
+     "stiffness_n_per_mm": 314.0125101486491
+    }
+   ],
+   "stiffness_n_per_mm": null
+  },
+  "crash_arm_front_left": {
+   "compliance_n_mm": 10.327919069912419,
+   "relative_residual": 2.6683585443240822e-11,
+   "max_displacement_mm": 0.8279903748501226,
+   "max_von_mises_mpa": 19.379382124210288,
+   "loads": [
+    {
+     "node_count": 49,
+     "force_n": [
+      4.415525265210859,
+      -28.553730048363544,
+      -10.215260416666665
+     ],
+     "mean_displacement_mm": [
+      -0.2586515401809961,
+      -0.47128562436710336,
+      0.12186373325181216
+     ],
+     "directional_displacement_mm": 0.36122460780089866,
+     "stiffness_n_per_mm": 84.83857574534753
+    }
+   ],
+   "stiffness_n_per_mm": 84.83857574534753
+  },
+  "crash_arm_front_right": {
+   "compliance_n_mm": 9.438226583405905,
+   "relative_residual": 4.3194090078930185e-11,
+   "max_displacement_mm": 1.6810685099736644,
+   "max_von_mises_mpa": 11.7265256950689,
+   "loads": [
+    {
+     "node_count": 49,
+     "force_n": [
+      -28.553730048363544,
+      4.415525265210859,
+      -10.215260416666665
+     ],
+     "mean_displacement_mm": [
+      -0.09184456381138276,
+      0.30838089917239214,
+      -1.2227333388407824
+     ],
+     "directional_displacement_mm": 0.537584859563108,
+     "stiffness_n_per_mm": 57.00640690458738
+    }
+   ],
+   "stiffness_n_per_mm": 57.00640690458738
+  },
+  "crash_arm_rear_left": {
+   "compliance_n_mm": 7.258201354850316,
+   "relative_residual": 3.329266755274992e-11,
+   "max_displacement_mm": 1.166097794838469,
+   "max_von_mises_mpa": 13.6949267833824,
+   "loads": [
+    {
+     "node_count": 49,
+     "force_n": [
+      28.553730048363544,
+      -4.415525265210859,
+      -10.215260416666665
+     ],
+     "mean_displacement_mm": [
+      0.06658240324068791,
+      -0.08233878118304959,
+      -0.1125267150633485
+     ],
+     "directional_displacement_mm": 0.11140961318877995,
+     "stiffness_n_per_mm": 275.0730423780551
+    }
+   ],
+   "stiffness_n_per_mm": 275.0730423780551
+  },
+  "crash_arm_rear_right": {
+   "compliance_n_mm": 14.90666124309181,
+   "relative_residual": 3.758607060955597e-11,
+   "max_displacement_mm": 1.3717642261527372,
+   "max_von_mises_mpa": 20.293338527073086,
+   "loads": [
+    {
+     "node_count": 49,
+     "force_n": [
+      -4.415525265210859,
+      28.553730048363544,
+      -10.215260416666665
+     ],
+     "mean_displacement_mm": [
+      0.140825663327913,
+      0.1839860674221318,
+      -0.3726539216819908
+     ],
+     "directional_displacement_mm": 0.275353596433138,
+     "stiffness_n_per_mm": 111.29609944078386
+    }
+   ],
+   "stiffness_n_per_mm": 111.29609944078386
+  },
+  "crash_below": {
+   "compliance_n_mm": 5.929863987367778,
+   "relative_residual": 4.489565567801426e-11,
+   "max_displacement_mm": 0.5659381553840637,
+   "max_von_mises_mpa": 10.112178388489907,
+   "loads": [
+    {
+     "node_count": 228,
+     "force_n": [
+      0.0,
+      0.0,
+      30.64578125
+     ],
+     "mean_displacement_mm": [
+      2.3586152524246062e-19,
+      -0.02848882839368642,
+      0.4635036178450072
+     ],
+     "directional_displacement_mm": 0.4635036178450072,
+     "stiffness_n_per_mm": 66.11767431823533
+    }
+   ],
+   "stiffness_n_per_mm": 66.11767431823533
+  },
+  "crash_back": {
+   "compliance_n_mm": 7.308806159187442,
+   "relative_residual": 1.6415092134867502e-11,
+   "max_displacement_mm": 0.7322291801294936,
+   "max_von_mises_mpa": 15.282273100664995,
+   "loads": [
+    {
+     "node_count": 18,
+     "force_n": [
+      0.0,
+      0.0,
+      -30.64578125
+     ],
+     "mean_displacement_mm": [
+      2.3129646346357427e-18,
+      -0.031052504807806223,
+      -0.030273479326608985
+     ],
+     "directional_displacement_mm": 0.030273479326608985,
+     "stiffness_n_per_mm": 1012.2979562201751
+    }
+   ],
+   "stiffness_n_per_mm": 1012.2979562201751
+  },
+  "crash_hoop": {
+   "compliance_n_mm": 1.0736765975065765,
+   "relative_residual": 1.8891991128984193e-11,
+   "max_displacement_mm": 0.20078226539321914,
+   "max_von_mises_mpa": 5.29489604470451,
+   "loads": [
+    {
+     "node_count": 150,
+     "force_n": [
+      0.0,
+      -15.322890625,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      0.009242580341106692,
+      -0.04363571962467488,
+      0.14048923769848143
+     ],
+     "directional_displacement_mm": 0.04363571962467488,
+     "stiffness_n_per_mm": 351.15475937597
+    },
+    {
+     "node_count": 150,
+     "force_n": [
+      0.0,
+      -15.322890625,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      -0.009242580341106692,
+      -0.04363571962467488,
+      0.14048923769848143
+     ],
+     "directional_displacement_mm": 0.04363571962467488,
+     "stiffness_n_per_mm": 351.15475937597
+    }
+   ],
+   "stiffness_n_per_mm": null
+  },
+  "battery_impact": {
+   "compliance_n_mm": 0.17197103361516033,
+   "relative_residual": 6.786590083866069e-12,
+   "max_displacement_mm": 0.052663997398497565,
+   "max_von_mises_mpa": 2.1021595860418443,
+   "loads": [
+    {
+     "node_count": 18,
+     "force_n": [
+      0.0,
+      0.0,
+      -3.6284604999999996
+     ],
+     "mean_displacement_mm": [
+      5.782411586589357e-19,
+      0.018570167513219354,
+      -0.04739504084863549
+     ],
+     "directional_displacement_mm": 0.04739504084863549,
+     "stiffness_n_per_mm": 76.55780931992727
+    }
+   ],
+   "stiffness_n_per_mm": 76.55780931992727
+  },
+  "connection_aio_contact_0": {
+   "compliance_n_mm": 3.932032808982823e-05,
+   "relative_residual": 2.2374444708257598e-11,
+   "max_displacement_mm": 0.0008546666941786682,
+   "max_von_mises_mpa": 0.03075903042320094,
+   "loads": [
+    {
+     "node_count": 80,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      -2.103665469761139e-05,
+      -4.98655519921819e-05,
+      -0.0007864065617965649
+     ],
+     "directional_displacement_mm": 0.000786406561796565,
+     "stiffness_n_per_mm": 63.58034435238407
+    }
+   ],
+   "stiffness_n_per_mm": 63.58034435238407
+  },
+  "connection_aio_contact_1": {
+   "compliance_n_mm": 5.929766109064501e-05,
+   "relative_residual": 2.430923658695837e-11,
+   "max_displacement_mm": 0.0012621131891352453,
+   "max_von_mises_mpa": 0.045943879381227785,
+   "loads": [
+    {
+     "node_count": 80,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      -6.272150737643266e-06,
+      -1.1315415972056484e-05,
+      -0.0011859532218128992
+     ],
+     "directional_displacement_mm": 0.0011859532218128992,
+     "stiffness_n_per_mm": 42.16017890112719
+    }
+   ],
+   "stiffness_n_per_mm": 42.16017890112719
+  },
+  "connection_aio_contact_2": {
+   "compliance_n_mm": 3.932032808982823e-05,
+   "relative_residual": 2.2473024931710633e-11,
+   "max_displacement_mm": 0.0008546666941786682,
+   "max_von_mises_mpa": 0.030759030423201057,
+   "loads": [
+    {
+     "node_count": 80,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      2.103665469761141e-05,
+      -4.98655519921819e-05,
+      -0.0007864065617965647
+     ],
+     "directional_displacement_mm": 0.0007864065617965647,
+     "stiffness_n_per_mm": 63.58034435238409
+    }
+   ],
+   "stiffness_n_per_mm": 63.58034435238409
+  },
+  "connection_aio_contact_3": {
+   "compliance_n_mm": 5.929766109064501e-05,
+   "relative_residual": 2.4244414261354468e-11,
+   "max_displacement_mm": 0.0012621131891352453,
+   "max_von_mises_mpa": 0.045943879381227876,
+   "loads": [
+    {
+     "node_count": 80,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      6.272150737643259e-06,
+      -1.1315415972056477e-05,
+      -0.001185953221812899
+     ],
+     "directional_displacement_mm": 0.001185953221812899,
+     "stiffness_n_per_mm": 42.160178901127196
+    }
+   ],
+   "stiffness_n_per_mm": 42.160178901127196
+  },
+  "connection_battery_rail_-1": {
+   "compliance_n_mm": 2.819473348539393e-05,
+   "relative_residual": 3.295344630052771e-11,
+   "max_displacement_mm": 0.000765445643237023,
+   "max_von_mises_mpa": 0.029523804956634186,
+   "loads": [
+    {
+     "node_count": 333,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      5.315890636375127e-05,
+      0.0001767059857933859,
+      -0.0005638946697078779
+     ],
+     "directional_displacement_mm": 0.0005638946697078779,
+     "stiffness_n_per_mm": 88.66904173061644
+    }
+   ],
+   "stiffness_n_per_mm": 88.66904173061644
+  },
+  "connection_battery_rail_1": {
+   "compliance_n_mm": 2.819473348539393e-05,
+   "relative_residual": 3.312439659032294e-11,
+   "max_displacement_mm": 0.0007654456432370228,
+   "max_von_mises_mpa": 0.029523804956634068,
+   "loads": [
+    {
+     "node_count": 333,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      -5.315890636375127e-05,
+      0.00017670598579338592,
+      -0.0005638946697078779
+     ],
+     "directional_displacement_mm": 0.0005638946697078779,
+     "stiffness_n_per_mm": 88.66904173061644
+    }
+   ],
+   "stiffness_n_per_mm": 88.66904173061644
+  },
+  "connection_camera_mount_-1": {
+   "compliance_n_mm": 2.9996914754835097e-05,
+   "relative_residual": 2.92144313275462e-11,
+   "max_displacement_mm": 0.0007162652708266076,
+   "max_von_mises_mpa": 0.028172205819878206,
+   "loads": [
+    {
+     "node_count": 175,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      7.574506148701627e-05,
+      8.213481315511626e-05,
+      -0.0005999382950967019
+     ],
+     "directional_displacement_mm": 0.0005999382950967019,
+     "stiffness_n_per_mm": 83.34190434024666
+    }
+   ],
+   "stiffness_n_per_mm": 83.34190434024666
+  },
+  "connection_camera_mount_1": {
+   "compliance_n_mm": 2.9996914754835104e-05,
+   "relative_residual": 2.916769958189131e-11,
+   "max_displacement_mm": 0.0007162652708266075,
+   "max_von_mises_mpa": 0.028172205819878164,
+   "loads": [
+    {
+     "node_count": 175,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      -7.574506148701626e-05,
+      8.213481315511629e-05,
+      -0.0005999382950967021
+     ],
+     "directional_displacement_mm": 0.0005999382950967021,
+     "stiffness_n_per_mm": 83.34190434024663
+    }
+   ],
+   "stiffness_n_per_mm": 83.34190434024663
+  },
+  "connection_xt30_contact": {
+   "compliance_n_mm": 0.00010945430055471507,
+   "relative_residual": 7.170122965174209e-11,
+   "max_displacement_mm": 0.0025626739148431814,
+   "max_von_mises_mpa": 0.07410003822827041,
+   "loads": [
+    {
+     "node_count": 280,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      -1.8641791890439663e-05,
+      0.00011741520103899426,
+      -0.002189086011094301
+     ],
+     "directional_displacement_mm": 0.002189086011094301,
+     "stiffness_n_per_mm": 22.84058266628159
+    }
+   ],
+   "stiffness_n_per_mm": 22.84058266628159
+  },
+  "connection_balancer_contact": {
+   "compliance_n_mm": 0.00011468904706683468,
+   "relative_residual": 6.399449543960989e-11,
+   "max_displacement_mm": 0.0026855577630266916,
+   "max_von_mises_mpa": 0.07390350194843374,
+   "loads": [
+    {
+     "node_count": 208,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      1.4689878302089066e-05,
+      0.00010906627309461584,
+      -0.002293780941336695
+     ],
+     "directional_displacement_mm": 0.002293780941336695,
+     "stiffness_n_per_mm": 21.798071079473978
+    }
+   ],
+   "stiffness_n_per_mm": 21.798071079473978
+  },
+  "connection_antenna_contact": {
+   "compliance_n_mm": 0.00014611742646586,
+   "relative_residual": 8.071265282751484e-11,
+   "max_displacement_mm": 0.003642630403636549,
+   "max_von_mises_mpa": 0.08921033350559077,
+   "loads": [
+    {
+     "node_count": 366,
+     "force_n": [
+      0.0,
+      0.0,
+      -0.05
+     ],
+     "mean_displacement_mm": [
+      2.77715720411246e-23,
+      -0.0002669401109718425,
+      -0.002922348529317198
+     ],
+     "directional_displacement_mm": 0.002922348529317198,
+     "stiffness_n_per_mm": 17.10952663530603
+    }
+   ],
+   "stiffness_n_per_mm": 17.10952663530603
+  },
+  "camera_side": {
+   "compliance_n_mm": 0.059938350128319856,
+   "relative_residual": 6.813987314003812e-12,
+   "max_displacement_mm": 0.027566128605938503,
+   "max_von_mises_mpa": 1.0840462718582031,
+   "loads": [
+    {
+     "node_count": 228,
+     "force_n": [
+      5.0,
+      0.0,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      0.011987670025663975,
+      -1.7879825300638143e-18,
+      -6.562276307149106e-20
+     ],
+     "directional_displacement_mm": 0.011987670025663975,
+     "stiffness_n_per_mm": 417.0952311246204
+    }
+   ],
+   "stiffness_n_per_mm": 417.0952311246204
+  }
+ },
+ "load_cases": [
+  "arm_tip",
+  "battery_impact",
+  "camera_side",
+  "thrust_all",
+  "crash_front",
+  "crash_side_left",
+  "crash_side_right",
+  "crash_arm_front_left",
+  "crash_arm_front_right",
+  "crash_arm_rear_left",
+  "crash_arm_rear_right",
+  "crash_below",
+  "crash_back",
+  "modes",
+  "connection_aio_contact_0",
+  "connection_aio_contact_1",
+  "connection_aio_contact_2",
+  "connection_aio_contact_3",
+  "connection_battery_rail_-1",
+  "connection_battery_rail_1",
+  "connection_camera_mount_-1",
+  "connection_camera_mount_1",
+  "connection_xt30_contact",
+  "connection_balancer_contact",
+  "connection_antenna_contact",
+  "crash_hoop"
+ ]
+}
