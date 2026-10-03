@@ -1,0 +1,614 @@
+{
+ "agreement": {
+  "optimizer": {
+   "arm_tip_n_per_mm": 10.016292228113457,
+   "f1_hz_eroded": 301.171055082861,
+   "f1_hz_intermediate": 332.35302897260647
+  },
+  "evaluation": {
+   "raw": {
+    "arm_tip_n_per_mm": 8.609766253843798,
+    "f1_hz": 332.6345,
+    "frame_mass_g": 14.55741230939513,
+    "deviation": {
+     "arm_tip": -0.14042381574310103,
+     "f1_vs_eroded": 0.10447034795054422,
+     "f1_vs_intermediate": 0.0008469037525056233
+    },
+    "within": {
+     "arm_tip": true,
+     "f1_vs_eroded": true,
+     "f1_vs_intermediate": true
+    }
+   },
+   "recon": {
+    "arm_tip_n_per_mm": 8.023667028606056,
+    "f1_hz": 278.0432,
+    "frame_mass_g": 16.393165178762846,
+    "deviation": {
+     "arm_tip": -0.19893840496332116,
+     "f1_vs_eroded": -0.07679308715938138,
+     "f1_vs_intermediate": -0.16341006170605066
+    },
+    "within": {
+     "arm_tip": false,
+     "f1_vs_eroded": true,
+     "f1_vs_intermediate": false
+    }
+   }
+  },
+  "tolerance": 0.15,
+  "optimizer_table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| arm_tip_stiffness | 10.02 | >= 10 | N/mm | active | +0.2 % |\n| crash_front | 4.698 | <= 9.268 | N mm | satisfied | +49.3 % |\n| crash_side_left | 13.4 | <= 20.44 | N mm | satisfied | +34.4 % |\n| crash_side_right | 13.4 | <= 20.44 | N mm | satisfied | +34.4 % |\n| crash_arm_front_left | 198.6 | <= 211.6 | N mm | satisfied | +6.2 % |\n| crash_arm_front_right | 33.72 | <= 33.81 | N mm | active | +0.3 % |\n| crash_arm_rear_left | 53.7 | <= 65.64 | N mm | satisfied | +18.2 % |\n| crash_arm_rear_right | 108 | <= 108.2 | N mm | active | +0.2 % |\n| crash_below | 7.562 | <= 41.28 | N mm | satisfied | +81.7 % |\n| crash_back | 7.143 | <= 10.41 | N mm | satisfied | +31.4 % |\n| f1 | 301.2 | >= 300 | Hz | active | +0.0 % |\n| volume | 0.04345 | <= 0.1 | - | satisfied | +56.5 % |\n| shadow | 0.2168 | <= 0.3137 | mm | satisfied | +30.9 % |\n| thrust_all | 2.766 |  | N mm | monitored |  |\n| torsion_yaw | 0.1297 |  | N mm | monitored |  |\n| twist | 8.486 |  | N mm | monitored |  |\n| f1_intermediate | 332.4 |  | Hz | monitored |  |",
+  "mass_g": 17.176432794360416,
+  "mass_by_field_g": {
+   "eroded": 15.425611239167255,
+   "intermediate": 17.176432794360416,
+   "dilated": 29.238480003327187
+  },
+  "manafly": {
+   "arm_tip_n_per_mm": 6.181565751870454,
+   "f1_hz": 345.2855,
+   "frame_mass_g": 29.33221773784856,
+   "line": "| ManaFly 3 BETA V4 | 29,3 g | SP z 20,9 mm; Ixx/Iyy/Izz 161/116/251 kg\u00b7mm\u00b2 (K) | 10,3 % (76 mm) | Bohrb. 24/24, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 16,1 %, \u00d6ffn. r=1 5,06 %/345,9 mm\u00b3/Motorzonen 4,St\u00fctze 30,23 cm\u00b3, 462 min | Strebe 1,2/2,5/3,6 mm, H/B 1,12, offen 71 %, H\u00f6he 32,4 mm, K\u00f6rper 1, Schlaufen 26, Sym. 0,04 mm, Rauh. 0,168/mm | 6,2 N/mm (A) | f1 345 Hz; 418/556/779 (A) | front 12,0/4,4 MPa; arm 9,8/2,1 MPa; back 2,7/0,7 MPa (SF 2,0, A) | wall_deep_fraction, wall_deep_component, wall_motor_zones, target:arm_tip_slope |",
+   "shadow_mm": 0.3137367868997963
+  }
+ },
+ "fine": {
+  "status": "converged",
+  "iterations": 123,
+  "seconds_per_iteration": 16.136359477235732,
+  "runtime_s": 1984.7722156999953,
+  "levels": [
+   {
+    "beta": 8.0,
+    "iterations": 17,
+    "reason": "converged",
+    "mass_g": 20.31483064277349,
+    "max_violation": -0.001136874943409083
+   },
+   {
+    "beta": 16.0,
+    "iterations": 11,
+    "reason": "converged",
+    "mass_g": 18.55268443232175,
+    "max_violation": -0.00014866192047136018
+   },
+   {
+    "beta": 32.0,
+    "iterations": 15,
+    "reason": "converged",
+    "mass_g": 17.569679274234662,
+    "max_violation": 0.005184638441230183
+   },
+   {
+    "beta": 64.0,
+    "iterations": 80,
+    "reason": "converged",
+    "mass_g": 17.176432794360416,
+    "max_violation": -0.00037323810121625556
+   }
+  ],
+  "start_level": 3,
+  "filter_radius_mm": 2.272727272727273,
+  "gray_fraction": 1.331752986456072e-05,
+  "mass_g": 17.176432794360416,
+  "mass_by_field_g": {
+   "eroded": 15.425611239167255,
+   "intermediate": 17.176432794360416,
+   "dilated": 29.238480003327187
+  },
+  "rows": [
+   {
+    "name": "arm_tip_stiffness",
+    "value": 10.016292228113457,
+    "limit": 10.0,
+    "unit": "N/mm",
+    "sense": ">=",
+    "field": "eroded",
+    "g": -0.0016265727618977044,
+    "status": "active",
+    "margin": 0.0016265727618977044
+   },
+   {
+    "name": "crash_front",
+    "value": 4.697754849959091,
+    "limit": 9.267770232495144,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.49310840341212003,
+    "status": "satisfied",
+    "margin": 0.49310840341212003
+   },
+   {
+    "name": "crash_side_left",
+    "value": 13.403476249939388,
+    "limit": 20.438937229804516,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.34421853253729173,
+    "status": "satisfied",
+    "margin": 0.34421853253729173
+   },
+   {
+    "name": "crash_side_right",
+    "value": 13.403476249939384,
+    "limit": 20.43893722980452,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.34421853253729195,
+    "status": "satisfied",
+    "margin": 0.34421853253729195
+   },
+   {
+    "name": "crash_arm_front_left",
+    "value": 198.60481932071048,
+    "limit": 211.62622638695808,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.061530214324372,
+    "status": "satisfied",
+    "margin": 0.061530214324372
+   },
+   {
+    "name": "crash_arm_front_right",
+    "value": 33.71780600446456,
+    "limit": 33.80899650269828,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.002697225817584914,
+    "status": "active",
+    "margin": 0.002697225817584914
+   },
+   {
+    "name": "crash_arm_rear_left",
+    "value": 53.7032412164417,
+    "limit": 65.64105289024488,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.18186502422140916,
+    "status": "satisfied",
+    "margin": 0.18186502422140916
+   },
+   {
+    "name": "crash_arm_rear_right",
+    "value": 107.96992867109869,
+    "limit": 108.16575437523417,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.0018104223953928633,
+    "status": "active",
+    "margin": 0.0018104223953928633
+   },
+   {
+    "name": "crash_below",
+    "value": 7.5624652491536475,
+    "limit": 41.277144989126185,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.8167880736144455,
+    "status": "satisfied",
+    "margin": 0.8167880736144455
+   },
+   {
+    "name": "crash_back",
+    "value": 7.143439866322494,
+    "limit": 10.414240549567483,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.31407001477230423,
+    "status": "satisfied",
+    "margin": 0.31407001477230423
+   },
+   {
+    "name": "f1",
+    "value": 301.171055082861,
+    "limit": 300.0,
+    "unit": "Hz",
+    "sense": ">=",
+    "field": "eroded",
+    "g": -0.0003732380236065591,
+    "status": "active",
+    "margin": 0.0003732380236065591
+   },
+   {
+    "name": "volume",
+    "value": 0.043450905949036396,
+    "limit": 0.1,
+    "unit": "-",
+    "sense": "<=",
+    "field": "intermediate",
+    "g": -0.565490940509636,
+    "status": "satisfied",
+    "margin": 0.565490940509636
+   },
+   {
+    "name": "shadow",
+    "value": 0.21680166559164454,
+    "limit": 0.3137367868997963,
+    "unit": "mm",
+    "sense": "<=",
+    "field": "intermediate",
+    "g": -0.30896957371821254,
+    "status": "satisfied",
+    "margin": 0.30896957371821254
+   },
+   {
+    "name": "thrust_all",
+    "value": 2.7656407887073433,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "torsion_yaw",
+    "value": 0.12967326644977104,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "twist",
+    "value": 8.486365686810373,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "f1_intermediate",
+    "value": 332.35302897260647,
+    "limit": null,
+    "unit": "Hz",
+    "sense": "",
+    "field": "intermediate",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   }
+  ],
+  "max_violation": -0.0003732380236065591
+ },
+ "coarse": {
+  "status": "converged",
+  "iterations": 163,
+  "seconds_per_iteration": 5.285719536196304,
+  "runtime_s": 861.5722843999974,
+  "levels": [
+   {
+    "beta": 1.0,
+    "iterations": 39,
+    "reason": "converged",
+    "mass_g": 21.866565530004692,
+    "max_violation": -0.0007962540976125254
+   },
+   {
+    "beta": 2.0,
+    "iterations": 10,
+    "reason": "converged",
+    "mass_g": 22.824277691778107,
+    "max_violation": -0.0006577412042628739
+   },
+   {
+    "beta": 4.0,
+    "iterations": 12,
+    "reason": "converged",
+    "mass_g": 23.619805444086037,
+    "max_violation": -0.0004946047526277475
+   },
+   {
+    "beta": 8.0,
+    "iterations": 10,
+    "reason": "converged",
+    "mass_g": 22.3246755727562,
+    "max_violation": 0.0008378149539047808
+   },
+   {
+    "beta": 16.0,
+    "iterations": 12,
+    "reason": "converged",
+    "mass_g": 20.299388570770123,
+    "max_violation": 0.003451230898279589
+   },
+   {
+    "beta": 32.0,
+    "iterations": 19,
+    "reason": "converged",
+    "mass_g": 19.292952369521796,
+    "max_violation": -0.0008604842717003791
+   },
+   {
+    "beta": 64.0,
+    "iterations": 61,
+    "reason": "converged",
+    "mass_g": 20.11453208030952,
+    "max_violation": -0.0005211864796399457
+   }
+  ],
+  "filter_radius_mm": 3.0,
+  "mass_g": 20.11453208030952,
+  "rows": [
+   {
+    "name": "arm_tip_stiffness",
+    "value": 11.422629414370064,
+    "limit": 10.0,
+    "unit": "N/mm",
+    "sense": ">=",
+    "field": "eroded",
+    "g": -0.12454482788177879,
+    "status": "satisfied",
+    "margin": 0.12454482788177879
+   },
+   {
+    "name": "crash_front",
+    "value": 3.3465665092840844,
+    "limit": 9.267770232495144,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.6389027322289264,
+    "status": "satisfied",
+    "margin": 0.6389027322289264
+   },
+   {
+    "name": "crash_side_left",
+    "value": 13.34145329229313,
+    "limit": 20.438937229804516,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.34725308159181956,
+    "status": "satisfied",
+    "margin": 0.34725308159181956
+   },
+   {
+    "name": "crash_side_right",
+    "value": 13.341453292293131,
+    "limit": 20.43893722980452,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.34725308159181956,
+    "status": "satisfied",
+    "margin": 0.34725308159181956
+   },
+   {
+    "name": "crash_arm_front_left",
+    "value": 165.5679568863742,
+    "limit": 211.62622638695808,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.21763970509196928,
+    "status": "satisfied",
+    "margin": 0.21763970509196928
+   },
+   {
+    "name": "crash_arm_front_right",
+    "value": 26.936728604293418,
+    "limit": 33.80899650269828,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.2032674320237925,
+    "status": "satisfied",
+    "margin": 0.2032674320237925
+   },
+   {
+    "name": "crash_arm_rear_left",
+    "value": 48.14526940605354,
+    "limit": 65.64105289024488,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.2665372158707625,
+    "status": "satisfied",
+    "margin": 0.2665372158707625
+   },
+   {
+    "name": "crash_arm_rear_right",
+    "value": 96.93692398386202,
+    "limit": 108.16575437523417,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.10381132601746201,
+    "status": "satisfied",
+    "margin": 0.10381132601746201
+   },
+   {
+    "name": "crash_below",
+    "value": 6.247345240209996,
+    "limit": 41.277144989126185,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.8486488045174694,
+    "status": "satisfied",
+    "margin": 0.8486488045174694
+   },
+   {
+    "name": "crash_back",
+    "value": 5.10335057718249,
+    "limit": 10.414240549567483,
+    "unit": "N mm",
+    "sense": "<=",
+    "field": "eroded",
+    "g": -0.5099642117067826,
+    "status": "satisfied",
+    "margin": 0.5099642117067826
+   },
+   {
+    "name": "f1",
+    "value": 300.13417230729436,
+    "limit": 300.0,
+    "unit": "Hz",
+    "sense": ">=",
+    "field": "eroded",
+    "g": -0.0005211864779508524,
+    "status": "active",
+    "margin": 0.0005211864779508524
+   },
+   {
+    "name": "volume",
+    "value": 0.05207652677216763,
+    "limit": 0.1,
+    "unit": "-",
+    "sense": "<=",
+    "field": "intermediate",
+    "g": -0.4792347322783237,
+    "status": "satisfied",
+    "margin": 0.4792347322783237
+   },
+   {
+    "name": "shadow",
+    "value": 0.27144206481918187,
+    "limit": 0.3137367868997963,
+    "unit": "mm",
+    "sense": "<=",
+    "field": "intermediate",
+    "g": -0.13480957237610403,
+    "status": "satisfied",
+    "margin": 0.13480957237610403
+   },
+   {
+    "name": "thrust_all",
+    "value": 2.8796554667052123,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "torsion_yaw",
+    "value": 0.11386702487183015,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "twist",
+    "value": 5.933972351065631,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "field": "eroded",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   },
+   {
+    "name": "f1_intermediate",
+    "value": 331.0214781819704,
+    "limit": null,
+    "unit": "Hz",
+    "sense": "",
+    "field": "intermediate",
+    "g": null,
+    "status": "monitored",
+    "margin": null
+   }
+  ]
+ },
+ "body": {
+  "prop_disc_share": 0.16507864488808227,
+  "prop_disc_top_share": 0.06671881984801073,
+  "mass_g": 14.561516465890135,
+  "mesh_volume_mm3": 13359.189418247828,
+  "volume_fraction_mesh": 0.035412331910093575,
+  "watertight": true,
+  "bodies": 1,
+  "connectivity": {
+   "components_raw": 1,
+   "anchor_components": 1,
+   "dropped_count": 0,
+   "dropped_volume_mm3": 0.0,
+   "largest_dropped_mm3": 0.0
+  },
+  "member_width": {
+   "threshold": 0.5,
+   "method": "2 x Euclidean distance on the 3D skeleton minus one cell, skeleton cells within two cells of preserve/forbidden excluded",
+   "p05_mm": 1.2189514164974602,
+   "p10_mm": 1.6427344100918364,
+   "p25_mm": 2.0,
+   "p50_mm": 2.314757303333053,
+   "p75_mm": 3.3333333333333335,
+   "p90_mm": 4.1407350339519855,
+   "fraction_below_2mm": 0.12301013024602026,
+   "skeleton_cells": 691
+  },
+  "width_height_ratio": {
+   "p10": 0.1875,
+   "p50": 0.8749999999999999,
+   "p90": 3.0
+  },
+  "chord": {
+   "box": {
+    "half_width_mm": 20.0,
+    "z_max_mm": 10.0,
+    "y_span_mm": [
+     -25.0,
+     25.0
+    ]
+   },
+   "spanning_components": 1,
+   "lower_chord": true,
+   "y_slice_coverage": 1.0,
+   "solid_volume_mm3": 1797.9259259259259
+  }
+ },
+ "total_runtime_s": 2903.113081100004,
+ "iterations": 286,
+ "runs": {
+  "raw": "C:\\clones\\Deep_Frame-mma\\exports\\runs\\simp_mma_raw_1",
+  "recon": "C:\\clones\\Deep_Frame-mma\\exports\\runs\\simp_mma_recon_1"
+ },
+ "mma": {
+  "package": "mmapy==0.3.1 (Deetman, Python port of Svanberg's MMA)",
+  "move": 0.1,
+  "scale": 100.0,
+  "asyinit": 0.5,
+  "asydecr": 0.7,
+  "asyincr": 1.2,
+  "raa0": 1e-05,
+  "c": 10000.0,
+  "d": 1.0,
+  "start_level": 3,
+  "level_window": 5,
+  "level_mass_change": 0.01,
+  "level_violation": 0.01,
+  "level_min_iterations": 10,
+  "level_max_iterations": 80,
+  "final_max_iterations": 300,
+  "stall_window": 40,
+  "stall_improvement": 0.001,
+  "checkpoint_interval": 10,
+  "objective": null
+ }
+}

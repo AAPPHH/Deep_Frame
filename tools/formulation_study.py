@@ -1,5 +1,6 @@
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 from copy import deepcopy
@@ -8,10 +9,11 @@ from time import perf_counter
 import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import deep_frame.config as config
-from deep_frame.config import command_line
+from deep_frame.config import RUN_SETTINGS, STAGES, command_line
+from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge
 from deep_frame.topology_optimization import HexElasticity
-from deep_frame.topology_problem import MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, format_report, orthotropic_material, shadow_thickness
+from deep_frame.topology_problem import MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
 FORMULATION = {
@@ -32,7 +34,9 @@ FORMULATION = {
               "crash_source": "ASSUMPTION: all-up mass 125 g (INTEGRATION_CONFIG), impact speed 5 m/s, 50 mm combined stopping distance (props, battery, frame); E = m v^2 / 2, F = E / d per direction",
               "rotation": {"front_left": 1.0, "rear_right": 1.0, "front_right": 0.0, "rear_left": 0.0}},
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7},
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
+            "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
+            "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
 }
 
 def configure(overrides):
@@ -227,9 +231,158 @@ def cantilever_mma(cfg):
     print(json.dumps({key: record[key] for key in ("status", "iterations", "volume_fraction_intermediate", "volume_deviation", "stiffness_n_per_mm", "stiffness_status", "mma_duality")}, default=float), flush=True)
     print(record["table"], flush=True)
 
+def checkpoint(path):
+    def save(x, history, levels):
+        np.savez_compressed(path, design=x, level=history[-1]["level"], iteration=len(history))
+    return save
+
+def optimize_stage(cfg, half, problem, design, out, start_level):
+    out.mkdir(parents=True, exist_ok=True)
+    tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["linear_solver"])
+    if cfg["mma"]["resume"] and (out / "checkpoint.npz").is_file():
+        saved = np.load(out / "checkpoint.npz")
+        design, start_level = saved["design"], int(saved["level"])
+    with (out / "iterations.jsonl").open("a") as log:
+        progress = lambda row: (log.write(json.dumps(row, default=float) + "\n"), log.flush())
+        result = MMAOptimizer(tp, {**cfg["mma"]["settings"], "start_level": start_level}).run(design, progress, checkpoint(out / "checkpoint.npz"))
+    report = tp.report(result["design"])
+    fields, _ = tp.map.fields(result["design"])
+    physical = fields["intermediate"][0]
+    free = tp.map.free
+    gray = float(np.mean((physical[free] > cfg["mma"]["gray"][0]) & (physical[free] < cfg["mma"]["gray"][1])))
+    np.savez_compressed(out / "design.npz", design=result["design"])
+    np.savez_compressed(out / "density_half.npz", density=physical.reshape(half["grid"]["shape"]).astype(np.float32))
+    record = {"status": result["status"], "iterations": result["iterations"], "runtime_s": result["runtime_s"], "seconds_per_iteration": result["seconds_per_iteration"], "levels": result["levels"],
+              "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
+              "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"]}
+    tp.close()
+    (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({key: record[key] for key in ("status", "iterations", "seconds_per_iteration", "mass_g", "max_violation", "gray_fraction")}, default=float), flush=True)
+    print(record["table"], flush=True)
+    return result["design"], record
+
+def export_body(cfg, physical, out):
+    from run import _update
+    from tools.neural_study import R2Domain, configure as study, finish, upsample
+    request = json.loads(Path(cfg["request"]).read_text(encoding="utf-8"))
+    for name, values in request["patch"].items():
+        _update(getattr(config, name), values)
+    settings = study(deepcopy(request["overrides"]))
+    fine_full, _ = R2Domain(settings).build(settings["fine_shape"], cfg["reference_fraction"])
+    density = upsample(physical, fine_full)
+    np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
+    return finish(out, density, fine_full, settings, None)
+
+def frame_mma(cfg):
+    started = perf_counter()
+    root = Path(cfg["mma"]["root"])
+    reference = np.load(cfg["reference_density"])["density"].ravel()
+    fine, problem = frame_setup(cfg, cfg["shape"])
+    design, stages, level = reference, {}, 0
+    if cfg["mma"]["coarse"]:
+        coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
+        start = prolongate(reference, fine["grid"], coarse)
+        result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
+        design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
+    design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
+    out = root / cfg["mma"]["variant"]
+    out.mkdir(parents=True, exist_ok=True)
+    physical = np.load(root / "fine" / "density_half.npz")["density"]
+    np.savez_compressed(out / "density_half.npz", density=physical)
+    body = export_body(cfg, physical, out)
+    info = {"variant": cfg["mma"]["variant"], "method": "SIMP-MMA (mmapy 0.3.1), shared formulation " + git_sha(), "stages": stages, "body": body, "total_runtime_s": perf_counter() - started,
+            "iterations": sum(stage["iterations"] for stage in stages.values()), "reference": cfg["reference_density"]}
+    (out / "info.json").write_text(json.dumps(info, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({"iterations": info["iterations"], "total_runtime_s": info["total_runtime_s"], "mass_g_body": body["mass_g"], "bodies": body["bodies"], "watertight": body["watertight"]}, default=float), flush=True)
+
+class ResultRun(FrameRun):
+    def __init__(self, request, result, stages):
+        self.result = Path(result)
+        super().__init__(request, stages)
+    def available(self, stage):
+        return stage == "optimization" or super().available(stage)
+    def optimization(self, domain):
+        self.manifest["stages"]["optimization"] = {"status": "ran", "source": str(self.result), "method": "SIMP-MMA on the shared formulation", **_git(str(ROOT))}
+        self.save()
+        return self.result
+
+def frame_runs(cfg):
+    root, method = Path(cfg["mma"]["root"]).resolve(), cfg["mma"]["method"]
+    stages = {name: {**spec, "worktree": ROOT.as_posix()} for name, spec in STAGES.items()}
+    request = json.loads((Path(RUN) / "config.json").read_text(encoding="utf-8"))
+    runs = {}
+    for suffix, rebuild in (("raw", False), ("recon", True)):
+        manifest = ResultRun({**request, "name": f"{method}_{suffix}", "reconstruction": rebuild}, root / cfg["mma"]["variant"], stages).run()
+        runs[suffix] = str((ROOT / RUN_SETTINGS["root"] / manifest["name"]).resolve())
+        target = Path(cfg["mma"]["viewer"]) / (f"{method}_final" + ("_recon" if rebuild else "")) / "geometry.stl"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(Path(runs[suffix]) / "frame.stl", target)
+        print(json.dumps({"run": manifest["name"], "status": manifest["status"], "stages": {name: entry["status"] for name, entry in manifest["stages"].items()}}), flush=True)
+    (root / "runs.json").write_text(json.dumps(runs, indent=1), encoding="utf-8")
+
+def manafly_check(cfg):
+    spec = json.loads(Path(cfg["manafly"]["frame"]).read_text(encoding="utf-8"))
+    out = Path(cfg["mma"]["root"]).resolve() / "manafly"
+    out.mkdir(parents=True, exist_ok=True)
+    frame = out / "frame.json"
+    frame.write_text(json.dumps({**spec, "output": str(out / "evaluation")}, indent=1), encoding="utf-8")
+    subprocess.check_call([cfg["mma"]["evaluation_python"], str(ROOT / "tools" / "evaluate_frame.py"), "run", str(frame)], cwd=ROOT)
+
+def compose(cfg):
+    import trimesh
+    from PIL import Image
+    from tools.neural_study import render_views
+    from tools.reconstruction_study import compose_main
+    root = Path(cfg["mma"]["root"]).resolve()
+    runs = json.loads((root / "runs.json").read_text(encoding="utf-8"))
+    manafly = root / "manafly" / "renders"
+    manafly.mkdir(parents=True, exist_ok=True)
+    views = {name: (tuple(direction), tuple(up)) for name, (direction, up) in RUN_SETTINGS["views"].items()}
+    source = Path(cfg["mma"]["manafly_renders"])
+    missing = {name: view for name, view in views.items() if not (source / f"{name}.png").is_file()}
+    for name in set(views) - set(missing):
+        shutil.copy2(source / f"{name}.png", manafly / f"{name}.png")
+    if missing:
+        render_views(trimesh.load_mesh(json.loads(Path(cfg["manafly"]["frame"]).read_text(encoding="utf-8"))["stl"], process=True), manafly, missing)
+    rows = []
+    for name in views:
+        output = root / f"compare_{name}.png"
+        compose_main({"panels": [str(Path(runs["raw"]) / "renders" / f"{name}.png"), str(Path(runs["recon"]) / "renders" / f"{name}.png"), str(manafly / f"{name}.png")],
+                      "labels": [f"SIMP-MMA raw ({name})", f"SIMP-MMA recon ({name})", f"ManaFly ({name})"], "output": str(output)})
+        rows.append(Image.open(output))
+    canvas = Image.new("RGB", (max(image.width for image in rows), sum(image.height for image in rows)), "white")
+    for index, image in enumerate(rows):
+        canvas.paste(image, (0, sum(row.height for row in rows[:index])))
+    canvas.save(root / f"{cfg['mma']['method']}_4views.png")
+
+def fea_values(path):
+    fea = (json.loads(Path(path).read_text(encoding="utf-8")) if Path(path).is_file() else {}).get("fea") or {}
+    return {"arm_tip_n_per_mm": fea.get("stiffness_n_per_mm"), "f1_hz": (fea.get("eigenfrequencies_hz") or [None])[0], "frame_mass_g": fea.get("frame_mass_g")}
+
+def agreement(cfg):
+    root = Path(cfg["mma"]["root"]).resolve()
+    runs, fine = json.loads((root / "runs.json").read_text(encoding="utf-8")), json.loads((root / "fine" / "result.json").read_text(encoding="utf-8"))
+    rows = {row["name"]: row for row in fine["rows"]}
+    optimizer = {"arm_tip_n_per_mm": rows["arm_tip_stiffness"]["value"], "f1_hz_eroded": rows["f1"]["value"], "f1_hz_intermediate": rows["f1_intermediate"]["value"]}
+    evaluation = {}
+    for suffix, path in runs.items():
+        found = fea_values(Path(path) / "evaluation.json")
+        ratio = lambda value, base: None if value is None else value / base - 1
+        found["deviation"] = {"arm_tip": ratio(found["arm_tip_n_per_mm"], optimizer["arm_tip_n_per_mm"]), "f1_vs_eroded": ratio(found["f1_hz"], optimizer["f1_hz_eroded"]), "f1_vs_intermediate": ratio(found["f1_hz"], optimizer["f1_hz_intermediate"])}
+        found["within"] = {key: value is not None and abs(value) <= cfg["mma"]["agreement"] for key, value in found["deviation"].items()}
+        evaluation[suffix] = found
+    manafly = root / "manafly" / "evaluation" / "evaluation.json"
+    record = {"optimizer": optimizer, "evaluation": evaluation, "tolerance": cfg["mma"]["agreement"], "optimizer_table": fine["table"], "mass_g": fine["mass_g"], "mass_by_field_g": fine["mass_by_field_g"],
+              "manafly": {**fea_values(manafly), "line": json.loads(manafly.read_text(encoding="utf-8")).get("line") if manafly.is_file() else None,
+                          "shadow_mm": json.loads(Path(cfg["output"]).read_text(encoding="utf-8"))["manafly_shadow_mm"]}}
+    (root / "agreement.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(json.dumps(record, indent=1, default=float), flush=True)
+
 def main(argv=None):
     return command_line({"references": lambda overrides: references(configure(overrides)), "modal_split": lambda overrides: modal_split(configure(overrides)), "cantilever": lambda overrides: cantilever(configure(overrides)),
-                         "cantilever_mma": lambda overrides: cantilever_mma(configure(overrides))}, argv)
+                         "cantilever_mma": lambda overrides: cantilever_mma(configure(overrides)), "frame_mma": lambda overrides: frame_mma(configure(overrides)),
+                         "frame_runs": lambda overrides: frame_runs(configure(overrides)), "manafly_check": lambda overrides: manafly_check(configure(overrides)), "compose": lambda overrides: compose(configure(overrides)),
+                         "agreement": lambda overrides: agreement(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())
