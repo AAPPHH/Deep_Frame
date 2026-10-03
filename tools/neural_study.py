@@ -1,5 +1,6 @@
 import json
 import shutil
+import statistics
 import sys
 from pathlib import Path
 from time import perf_counter
@@ -362,6 +363,20 @@ def finish(out, density, fine_full, cfg, viewer):
             "member_width": member_widths(solid, fine_full["grid"]["spacing_mm"], fine_full["preserve"] | fine_full["forbidden"]),
             "width_height_ratio": sections["width_height_ratio"], "chord": lower_chord(density, fine_full["grid"], cfg["chord"], cfg["render"]["sigma_cells"], cfg["render"]["threshold"])}
 
+def resources(summary, history):
+    try:
+        import resource
+        rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20
+    except ImportError:
+        rss = None
+    solvers = [solver for solver in summary["system"]["gpu_solver_details"] if solver.get("device_peak_used_bytes") is not None]
+    gpu = {"peak_used_gb": max(solver["device_peak_used_bytes"] for solver in solvers) / 2**30, "device_total_gb": solvers[0]["device_total_bytes"] / 2**30,
+           "details": [{key: solver[key] for key in ("shape", "nnz", "device_min_free_bytes", "device_peak_used_bytes")} for solver in solvers]} if solvers else None
+    elapsed = [entry["elapsed_s"] for entry in history if not entry["final_evaluation"]]
+    steps = np.diff(elapsed).tolist()
+    return {"gpu_memory": gpu, "host_peak_rss_gb": rss, "seconds_per_iteration": {"first_s": elapsed[0] if elapsed else None, "mean_s": statistics.mean(steps) if steps else None, "median_s": statistics.median(steps) if steps else None},
+            "warm_start": summary.get("warm_start")}
+
 def run_variant(cfg, variant):
     neural, render_cfg = {**cfg["neural"], **variant.get("neural", {})}, {**cfg["render"], **variant.get("render", {})}
     cfg = {**cfg, "render": render_cfg}
@@ -399,7 +414,7 @@ def run_variant(cfg, variant):
             **finish(out, density, fine_full, cfg, viewer), "total_runtime_s": perf_counter() - started,
             "grid_opt_half": half["grid"], "grid_render_full": fine_full["grid"], "neural": {k: settings[k] for k in ("max_frequency_per_mm", "frequencies", "hidden", "learning_rate", "sharpness_final", "sharpness_iterations", "max_iterations", "max_width_penalty")},
             "round2": half["metadata"]["round2"], "render": render_cfg, "objective_final": summary["objective_final"],
-            "static_surrogate_metrics": summary["static_surrogate_metrics"], "load_cases": [case["name"] for case in half["load_cases"]]}
+            "static_surrogate_metrics": summary["static_surrogate_metrics"], "load_cases": [case["name"] for case in half["load_cases"]], **resources(summary, result["history"])}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=str))
     print(json.dumps({k: info[k] for k in ("variant", "iterations", "optimize_runtime_s", "total_runtime_s", "mass_g", "bodies", "connectivity")}), flush=True)
 

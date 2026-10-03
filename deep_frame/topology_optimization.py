@@ -110,7 +110,13 @@ class CudaDirectSolver:
         for name, array in (("rhs", self.rhs_device), ("solution", self.solution_device)):
             self._create(name, "cudssMatrixCreateDn", array.shape[0], array.shape[1], array.shape[0],
                          array.data.ptr, 1, 0)
+        self.device_min_free = None
         self.analysis_s = self._execute(3)
+        self._sample_memory()
+    def _sample_memory(self):
+        available, self.device_total = self.cp.cuda.runtime.memGetInfo()
+        self.device_min_free = available if self.device_min_free is None else min(self.device_min_free, available)
+        return available
     def _call(self, name, *arguments):
         status = getattr(self.library, name)(*arguments)
         if status:
@@ -144,12 +150,13 @@ class CudaDirectSolver:
         self.values_device.set(np.asarray(matrix.data, dtype=np.float64))
         self.rhs_device.set(np.asarray(rhs, dtype=np.float64, order="F"))
         factor_s = self._execute(4)
+        self._sample_memory()
         solve_s = self._execute(1008)
         solution = self.cp.asnumpy(self.solution_device)
-        available, total = self.cp.cuda.runtime.memGetInfo()
+        available = self._sample_memory()
         self.timings.append({"factor_s": factor_s, "solve_s": solve_s,
                              "transfer_factor_solve_s": perf_counter() - started,
-                             "device_free_bytes_after_solve": available, "device_total_bytes": total})
+                             "device_free_bytes_after_solve": available, "device_total_bytes": self.device_total})
         return solution
     def same_structure(self, matrix):
         matrix = matrix.tocsr()
@@ -164,6 +171,7 @@ class CudaDirectSolver:
                 "device_name": name.decode() if isinstance(name, bytes) else name,
                 "precision": "float64", "numeric_factorization": "GPU Cholesky, hybrid execution disabled",
                 "analysis_s": self.analysis_s, "shape": list(self.shape), "nnz": len(self.indices),
+                "device_total_bytes": self.device_total, "device_min_free_bytes": self.device_min_free, "device_peak_used_bytes": self.device_total - self.device_min_free,
                 "solves": self.timings}
     def close(self):
         if getattr(self, "closed", True):
