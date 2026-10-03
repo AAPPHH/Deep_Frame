@@ -703,6 +703,26 @@ PRINT_MATERIAL = {
                     "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS", "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"},
 }
 
+LOAD_COVARIANCE_LIMITS = {
+    "groups": {"stack_fixed": {"support": "center_fixtures", "interfaces": ["motor_front_left", "motor_front_right", "motor_rear_left", "motor_rear_right", "battery", "camera"]},
+               "motor_pads_fixed": {"support": "motor_fixtures", "interfaces": ["stack"]}},
+    "selectors": {"motor": "motor_fixtures box nearest to the motor axis", "battery": "deck", "camera": "camera", "stack": "center_fixtures"},
+    "unit_force_n": 1.0,
+    "unit_moment_nmm": 1.0,
+    "solver_timeout_s": 7200.0,
+    "definition": ("F = interface flexibility (42 x 42, LOAD_COVARIANCE order): unit force split equally over the selector nodes, unit moment as minimum-norm couple field about the selector node centroid "
+                   "(Sigma's reference point is taken at that centroid); F_ij = a_i . u_j (work-conjugate). Support per group as the evaluator arm-tip/crash fixtures: stack mount undersides fixed for motor pads, battery, camera; "
+                   "four motor seat undersides fixed for the stack; F is block-diagonal across the two groups (stack <-> rest coupling zero by construction). "
+                   "Mean compliance tr(Sigma F) = sum_k l_k^T F l_k, worst-case compliance lambda_max(Sigma^1/2 F Sigma^1/2) = lambda_max(L^T F L), L = LoadCovariance().directions; both in N mm"),
+    "arm_mm": 66.25,
+    "scaling": "force DOFs of a reference scaled to our arm like the arm-tip slope rule (k * arm_ref / arm_ours): F_scaled = S F S, S = sqrt(arm_ours / arm_ref) on force DOFs, 1 on moment DOFs",
+    "mean_compliance_n_mm": None,
+    "worst_case_compliance_n_mm": None,
+    "source": None,
+    "references": {},
+    "evidence": "exports/cov/limits.md",
+}
+
 EVALUATION_CONFIG = {
     "name": None,
     "stl": None,
@@ -720,7 +740,8 @@ EVALUATION_CONFIG = {
     "connectors": [],
     "selectors": None,
     "domain_grid": [102, 96, 24],
-    "parts": ["geometry", "walls", "fea", "slicer"],
+    "parts": ["geometry", "walls", "fea", "sigma", "slicer"],
+    "sigma_mesh": None,
     "python": sys.executable,
     "compute": "C:/clones/Deep_Frame-int/tools/compute.py",
     "voxel_mm": 0.4,
@@ -752,14 +773,15 @@ EVALUATION_CONFIG = {
                "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed"},
     "targets": {"airflow": ["geometry.airflow.prop_ring_share", None, 0.15], "overhang": ["geometry.printability.overhang_share", None, 0.25],
                 "support": ["scaled.support_per_volume", None, 1.5], "strut_min": ["geometry.form.strut_width_mm.p10", 1.19, None], "symmetry": ["scaled.symmetry_per_wheelbase", None, 0.0025],
-                "arm_tip_slope": ["scaled.arm_tip_slope", None, 0.007], "f1": ["fea.eigenfrequencies_hz.0", 330.0, None]},
+                "arm_tip_slope": ["scaled.arm_tip_slope", None, 0.007], "f1": ["fea.eigenfrequencies_hz.0", 330.0, None],
+                "sigma_mean": ["sigma.mean_compliance_n_mm", None, LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"]], "sigma_worst": ["sigma.worst_case_compliance_n_mm", None, LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"]]},
     "warnings": {"strut_max": ["geometry.form.strut_width_mm.p90", None, 6.5], "section_ratio": ["geometry.form.section_ratio.p50", 1.0, 1.4], "top_view_material": ["geometry.airflow.bbox_share", None, 0.45],
                  "loops": ["geometry.form.loops.loops", 20, None], "roughness": ["geometry.form.roughness.curvature_neighbour_rms_per_mm", None, 0.18], "height": ["scaled.height_per_wheelbase", None, 0.4],
                  "cog_offset": ["scaled.cog_offset_per_wheelbase", None, 0.01], "inertia_z": ["scaled.izz_per_mass_arm2", None, 0.45], "print_time": ["scaled.print_min_per_g", None, 16.0]},
 }
 
 EVALUATION_KINDS = {"name": "text", "stl": "path", "output": "path", "print_axis": ["float", "float", "float"], "prop_diameter_mm": "float", "motors": "object", "motor_up": "object", "ours": "flag", "domain": "path", "datasheet": "path", "components": "list",
-                    "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "slicer")], "python": "text", "compute": "text", "targets": "object", "warnings": "object",
+                    "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "sigma", "slicer")], "sigma_mesh": "path", "python": "text", "compute": "text", "targets": "object", "warnings": "object",
                     **{key: "float" for key in ("voxel_mm", "loop_closing_mm", "overhang_deg", "bed_tolerance_mm", "fit_tolerance_mm3", "hub_radius_mm", "section_voxel_mm", "hole_tolerance_mm", "screw_head_radius_mm", "tool_skip_mm", "connector_radius_mm", "curvature_radius_mm")},
                     "surface_samples": "int", "seed": "int", "loads": "object", "fea_settings": "object", "fea_surface": "object", "slicer": "object"}
 

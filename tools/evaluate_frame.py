@@ -6,10 +6,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from deep_frame.config import command_line
-from deep_frame.frame_evaluation import HEADER, LEGEND, append_datasheet, frame_spec, geometry, mechanics, slice_frame, summary, walls
+from deep_frame.config import command_line, configure
+from deep_frame.frame_evaluation import HEADER, LEGEND, append_datasheet, frame_spec, geometry, limits_markdown, mechanics, sigma, sigma_limits, slice_frame, summary, walls
 
-PARTS = {"geometry": (geometry, "cpu"), "walls": (walls, "wall_check"), "fea": (mechanics, "fea_modal"), "slicer": (slice_frame, "cpu")}
+PARTS = {"geometry": (geometry, "cpu"), "walls": (walls, "wall_check"), "fea": (mechanics, "fea_modal"), "sigma": (sigma, "fea_static"), "slicer": (slice_frame, "cpu")}
+
+GAP = "C:/clones/Deep_Frame-gap/exports/interface_stiffness/{}/interface_stiffness.json"
+LIMITS = {"references": {name: GAP.format(name) for name in ("manafly3", "aether4")}, "candidates": {name: GAP.format(name) for name in ("simp_mma_raw_1", "simp_mma_recon_1")},
+          "evaluations": {name: str(ROOT / "exports" / "cov" / "eval" / name / "sigma.json") for name in ("manafly3", "aether4", "simp_mma_raw_1", "simp_mma_recon_1")}, "output": str(ROOT / "exports" / "cov")}
+LIMITS_KINDS = {"references": "object", "candidates": "object", "evaluations": "object", "output": "path"}
 
 def spec_of(overrides):
     spec = frame_spec(overrides)
@@ -46,8 +51,18 @@ def run(overrides):
     report(overrides)
     return 1 if failed else 0
 
+def limits(overrides):
+    settings = configure(LIMITS, LIMITS_KINDS, overrides)
+    result = sigma_limits(settings)
+    output = Path(settings["output"])
+    output.mkdir(parents=True, exist_ok=True)
+    markdown = limits_markdown(result)
+    (output / "limits.json").write_text(json.dumps(result, indent=1, default=str), encoding="utf-8")
+    (output / "limits.md").write_text(markdown, encoding="utf-8")
+    return 0
+
 def main(argv=None):
-    return command_line({"run": run, "report": report, **{name: part(name) for name in PARTS}}, argv)
+    return command_line({"run": run, "report": report, "limits": limits, **{name: part(name) for name in PARTS}}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

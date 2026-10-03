@@ -9,7 +9,7 @@ import numpy as np
 import trimesh
 from scipy import ndimage
 
-from deep_frame.config import COMPONENT_DEFAULTS, EVALUATION_CONFIG, EVALUATION_KINDS, FEA_CONFIG, FRAME_DEFAULTS, IMPLICIT_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG, configure
+from deep_frame.config import COMPONENT_DEFAULTS, EVALUATION_CONFIG, LOAD_COVARIANCE_LIMITS, EVALUATION_KINDS, FEA_CONFIG, FRAME_DEFAULTS, IMPLICIT_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG, configure
 from deep_frame.fea import MESH_KEYS, clean_slivers, evaluate, print_axes, robust_surface
 from deep_frame.topology_geometry import region_contains
 
@@ -286,6 +286,235 @@ def mechanics(spec, config=None):
                                    "crash_front": "centre mount undersides fixed", "crash_arm": "centre mount undersides fixed", "crash_back": "four motor seat undersides fixed"}}
     return result
 
+DOFS = ("Fx", "Fy", "Fz", "Mx", "My", "Mz")
+
+def unit_loads(points, dof, config=LOAD_COVARIANCE_LIMITS):
+    points, axis = np.asarray(points, dtype=float), DOFS.index(dof) % 3
+    if dof[0] == "F":
+        loads = np.zeros_like(points)
+        loads[:, axis] = config["unit_force_n"] / len(points)
+        return loads
+    r = points - points.mean(axis=0)
+    if np.linalg.matrix_rank(r, tol=1e-8) < 2:
+        raise ValueError("A moment needs at least three non-collinear interface nodes")
+    rows = np.zeros((6, 3 * len(points)))
+    for index, (x, y, z) in enumerate(r):
+        rows[:3, 3 * index:3 * index + 3] = np.eye(3)
+        rows[3:, 3 * index:3 * index + 3] = [[0, -z, y], [z, 0, -x], [-y, x, 0]]
+    target = np.zeros(6)
+    target[3 + axis] = config["unit_moment_nmm"]
+    loads = rows.T @ np.linalg.solve(rows @ rows.T, target)
+    if not np.allclose(rows @ loads, target, atol=1e-9 * max(config["unit_moment_nmm"], 1.0)):
+        raise ValueError("Couple field does not reproduce the requested moment")
+    return loads.reshape(-1, 3)
+
+def interface_groups(spec, config=LOAD_COVARIANCE_LIMITS):
+    selectors, motors = spec["selectors"], spec["motors"]
+    regions = {"battery": [selectors["deck"]], "camera": [selectors["camera"]], "stack": selectors["center_fixtures"]}
+    for region in selectors["motor_fixtures"]:
+        center = (np.add(region["min_mm"], region["max_mm"]) / 2)[:2]
+        regions["motor_" + min(MOTORS, key=lambda name: np.hypot(*(center - motors[name][:2])))] = [region]
+    if sum(name.startswith("motor_") for name in regions) != 4:
+        raise ValueError("motor_fixtures do not map one-to-one onto the four motors")
+    return [{"name": name, "support": selectors[group["support"]], "interfaces": {interface: regions[interface] for interface in group["interfaces"]}} for name, group in config["groups"].items()]
+
+def printed_displacements(content, count):
+    found = []
+    for part in re.split(r"displacements \(vx,vy,vz\)", content, flags=re.IGNORECASE)[1:]:
+        rows = []
+        for line in part.splitlines()[1:]:
+            fields = line.split()
+            if len(fields) != 4:
+                if rows:
+                    break
+                continue
+            rows.append([float(value.replace("D", "E")) for value in fields])
+        found.append({int(row[0]): np.array(row[1:]) for row in rows})
+    if len(found) != count:
+        raise RuntimeError(f"Expected {count} displacement blocks, found {len(found)}")
+    return found
+
+def interface_flexibility(nodes, elements, material, groups, directory, threads, timeout, labels):
+    from deep_frame.fea import _model_lines, _run, _select, _set_lines, resolve_solver
+    directory.mkdir(parents=True, exist_ok=True)
+    model, _ = _model_lines(nodes, elements, material, [])
+    solver, select = resolve_solver({}), lambda regions: sorted({node for region in regions for node in _select(nodes, region)})
+    flexibility, runs, centroids = np.zeros((len(labels), len(labels))), [], {}
+    for group in groups:
+        fixed = select(group["support"])
+        lines, fields, chosen = [*_set_lines("NSET", "FIXED", fixed), "*BOUNDARY", "FIXED,1,3"], [], {}
+        for interface, regions in group["interfaces"].items():
+            chosen[interface] = select(regions)
+            if set(chosen[interface]) & set(fixed):
+                raise ValueError(f"{interface} overlaps the support")
+            points = np.array([nodes[node] for node in chosen[interface]])
+            centroids[interface] = points.mean(axis=0).tolist()
+            fields += [(labels.index((interface, dof)), dict(zip(chosen[interface], unit_loads(points, dof)))) for dof in DOFS]
+        lines.extend(_set_lines("NSET", "INTERFACES", sorted({node for values in chosen.values() for node in values})))
+        for _, loads in fields:
+            lines += ["*STEP", "*STATIC", "*CLOAD,OP=NEW", *(f"{node},{axis + 1},{value:.12g}" for node, load in loads.items() for axis, value in enumerate(load) if value), "*NODE PRINT,NSET=INTERFACES,GLOBAL=YES", "U", "*END STEP"]
+        (directory / f"{group['name']}.inp").write_text("\n".join(model + lines) + "\n", encoding="ascii")
+        started = perf_counter()
+        log = _run([solver, "-i", group["name"]], directory, timeout, threads, directory / f"{group['name']}.log")
+        if "Job finished" not in log:
+            raise RuntimeError(f"CalculiX did not finish {group['name']}")
+        responses = printed_displacements((directory / f"{group['name']}.dat").read_text(encoding="utf-8", errors="replace"), len(fields))
+        for row, loads in fields:
+            for (column, _), response in zip(fields, responses):
+                flexibility[row, column] = sum(float(np.dot(load, response[node])) for node, load in loads.items())
+        block = [row for row, _ in fields]
+        part = flexibility[np.ix_(block, block)]
+        runs.append({"group": group["name"], "steps": len(fields), "fixed_nodes": len(fixed), "interface_nodes": {name: len(values) for name, values in chosen.items()}, "runtime_s": perf_counter() - started,
+                     "reused_factorisation": "Reusing csc" in log, "reciprocity_error": float(np.abs(part - part.T).max() / np.abs(np.diag(part)).max())})
+    return flexibility, runs, centroids
+
+class InterfaceCompliance:
+    def __init__(self, covariance=None, config=LOAD_COVARIANCE_LIMITS):
+        from deep_frame.topology_problem import LoadCovariance
+        self.model, self.config = covariance or LoadCovariance(), config
+        self.labels = [tuple(label) for label in self.model.labels]
+
+    def scaling(self, arm_mm):
+        return np.array([math.sqrt(self.config["arm_mm"] / arm_mm) if dof[0] == "F" else 1.0 for _, dof in self.labels])
+
+    def measure(self, flexibility, arm_mm=None):
+        flexibility = np.asarray(flexibility, dtype=float)
+        if arm_mm:
+            scale = self.scaling(arm_mm)
+            flexibility = flexibility * np.outer(scale, scale)
+        flexibility = (flexibility + flexibility.T) / 2
+        sigma, directions = self.model.sigma, self.model.directions
+        values, vectors = np.linalg.eigh(directions.T @ flexibility @ directions)
+        product = np.diag(sigma @ flexibility)
+        worst = directions @ vectors[:, -1]
+        share = np.abs(worst) / np.abs(worst).max()
+        groups = {}
+        for name, group in self.config["groups"].items():
+            index = [i for i, (interface, _) in enumerate(self.labels) if interface in group["interfaces"]]
+            values_g, vectors_g = np.linalg.eigh(sigma[np.ix_(index, index)])
+            root = vectors_g * np.sqrt(np.clip(values_g, 0, None))
+            groups[name] = {"mean_compliance_n_mm": float(np.sum(product[index])), "worst_case_compliance_n_mm": float(np.linalg.eigvalsh(root.T @ flexibility[np.ix_(index, index)] @ root)[-1])}
+        return {"mean_compliance_n_mm": float(product.sum()), "worst_case_compliance_n_mm": float(values[-1]), "top_eigenvalues_n_mm": values[::-1][:3].tolist(),
+                "mean_by_interface_n_mm": {name: float(sum(product[i] for i, (interface, _) in enumerate(self.labels) if interface == name)) for name in dict.fromkeys(name for name, _ in self.labels)},
+                "worst_case_load": {f"{interface} {dof}": float(worst[i]) for i, (interface, dof) in enumerate(self.labels) if share[i] >= 0.2}, "groups": groups, "scaled_to_arm_mm": self.config["arm_mm"] if arm_mm else None}
+
+    def gap_flexibility(self, record, coupled=False):
+        names = {"battery": "battery_rails"}
+        flexibility = np.zeros((len(self.labels), len(self.labels)))
+        for i, (interface, dof) in enumerate(self.labels):
+            row = record["interfaces"][names.get(interface, interface)][dof]
+            if row["stiffness"] is None or row["conjugate"] <= 0:
+                raise ValueError(f"{record['name']}: {interface} {dof} has no positive compliance")
+            flexibility[i, i] = row["conjugate"]
+            if coupled:
+                for axis, value in enumerate(row["mean_displacement_mm"]):
+                    j = self.labels.index((interface, DOFS[axis]))
+                    if j != i:
+                        flexibility[j, i] = value
+        return (flexibility + flexibility.T) / 2 if coupled else flexibility
+
+def sigma_mesh(spec):
+    from deep_frame.fea import _mesh_settings, _read_mesh, _volume_mesh
+    candidates = [Path(spec["sigma_mesh"])] if spec["sigma_mesh"] else []
+    record = Path(spec["output"]) / "fea.json"
+    if record.exists():
+        evaluation = json.loads(record.read_text(encoding="utf-8"))
+        if evaluation.get("status") == "ok":
+            candidates.append(Path(evaluation["artifacts"]["directory"]) / "mesh.inp")
+    for path in candidates:
+        if path.exists():
+            nodes, elements = _read_mesh(path)
+            return nodes, elements, {"source": "evaluation tet mesh", "path": str(path)}
+    options = {**FEA_CONFIG["settings"], **{key: IMPLICIT_CONFIG[key] for key in MESH_KEYS}, **spec["fea_settings"]}
+    mesh, _, chosen = robust_surface(load_frame(spec), options, spec["fea_surface"])
+    options.update(chosen)
+    if not chosen and np.degrees(mesh.face_angles.min()) < options["fea_direct_minimum_angle_deg"]:
+        mesh, _ = clean_slivers(mesh, options)
+    directory = Path(spec["output"]) / "sigma" / "mesh"
+    directory.mkdir(parents=True, exist_ok=True)
+    nodes, elements = _volume_mesh(mesh, directory, _mesh_settings(options), {})
+    return nodes, elements, {"source": "evaluation mesh pipeline", "path": str(directory / "mesh.inp"), "surface_choice": chosen}
+
+def peak_memory(function, *args):
+    import threading
+    import psutil
+    own, peak, done = psutil.Process(), [0], threading.Event()
+    def sample():
+        while not done.wait(0.5):
+            try:
+                peak[0] = max(peak[0], own.memory_info().rss + sum(child.memory_info().rss for child in own.children(recursive=True)))
+            except psutil.Error:
+                pass
+    threading.Thread(target=sample, daemon=True).start()
+    try:
+        return function(*args), peak[0] / 2**30
+    finally:
+        done.set()
+
+def sigma(spec, config=LOAD_COVARIANCE_LIMITS):
+    measure = InterfaceCompliance(config=config)
+    nodes, elements, mesh = sigma_mesh(spec)
+    settings = spec["fea_settings"]
+    (flexibility, runs, centroids), peak_gb = peak_memory(interface_flexibility, nodes, elements, load_model(spec, spec)[0], interface_groups(spec, config), Path(spec["output"]) / "sigma", settings["threads"], config["solver_timeout_s"], measure.labels)
+    motors = np.array([spec["motors"][name][:2] for name in MOTORS], dtype=float)
+    arm = float(np.linalg.norm(motors - motors.mean(axis=0), axis=1).mean())
+    return {**measure.measure(flexibility), "scaled": measure.measure(flexibility, arm), "diagonal": measure.measure(np.diag(np.diag(flexibility))), "arm_mm": arm,
+            "stiffness": {f"{interface} {dof}": 1 / flexibility[i, i] for i, (interface, dof) in enumerate(measure.labels) if flexibility[i, i] > 0}, "labels": measure.labels, "flexibility": flexibility.tolist(),
+            "centroids_mm": centroids, "runs": runs, "peak_memory_gb": peak_gb, "mesh": {**mesh, "nodes": len(nodes), "elements": len(elements)}, "definition": config["definition"]}
+
+def sigma_limits(settings, config=LOAD_COVARIANCE_LIMITS):
+    measure, read = InterfaceCompliance(config=config), lambda path: json.loads(Path(path).read_text(encoding="utf-8"))
+    rows, keys = {}, ("mean_compliance_n_mm", "worst_case_compliance_n_mm")
+    for role in ("references", "candidates"):
+        for name, path in settings[role].items():
+            if not Path(path).exists():
+                rows[name] = {"role": role, "status": "pending", "gap": str(path)}
+                continue
+            record = read(path)
+            diagonal, coupled = measure.gap_flexibility(record), measure.gap_flexibility(record, coupled=True)
+            rows[name] = {"role": role, "status": "ok", "gap": str(path), "arm_mm": record["arm_mm"], "raw": measure.measure(diagonal), "scaled": measure.measure(diagonal, record["arm_mm"]),
+                          "coupled": measure.measure(coupled), "coupled_scaled": measure.measure(coupled, record["arm_mm"])}
+    for name, path in settings["evaluations"].items():
+        if Path(path).exists():
+            evaluation = read(path)
+            rows.setdefault(name, {"role": "evaluator only", "status": "ok", "arm_mm": evaluation["arm_mm"]})["evaluator"] = {"full": {key: evaluation[key] for key in (*keys, "top_eigenvalues_n_mm", "mean_by_interface_n_mm", "groups")},
+                "scaled": {key: evaluation["scaled"][key] for key in keys}, "diagonal": {key: evaluation["diagonal"][key] for key in keys}, "peak_memory_gb": evaluation["peak_memory_gb"], "runs": evaluation["runs"], "path": str(path)}
+    references = [name for name, row in rows.items() if row["role"] == "references" and row["status"] == "ok"]
+    limits = {}
+    for variant in ("scaled", "raw"):
+        for key in keys:
+            source = min(references, key=lambda name: rows[name][variant][key])
+            limits.setdefault(variant, {})[key] = {"value": rows[source][variant][key], "source": source}
+    for row in rows.values():
+        if "evaluator" in row and "raw" in row:
+            row["deviation"] = {variant: {key: row["evaluator"][variant][key] / row[gap][key] - 1 for key in keys} for variant, gap in (("full", "raw"), ("diagonal", "raw"), ("scaled", "scaled"))}
+    return {"limits": limits, "rows": rows, "definition": config["definition"], "scaling": config["scaling"], "arm_mm": config["arm_mm"], "settings": settings}
+
+def limits_markdown(result):
+    rows, number = result["rows"], lambda value, digits=3: "–" if value is None else f"{value:.{digits}g}"
+    lines = ["| Rahmen | Rolle | Arm mm | tr roh | λmax roh | tr skaliert | λmax skaliert | tr gekoppelt | λmax gekoppelt | Top-3 λ roh | tr-Anteil Motoren/Akku/Stack | Evaluator tr / λmax (voll) | Abw. voll/diag tr | Abw. voll/diag λmax |",
+             "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for name, row in rows.items():
+        if row["status"] != "ok":
+            lines.append(f"| {name} | {row['role']} | – | ausstehend | | | | | | | | | | |")
+            continue
+        raw, evaluation = row.get("raw"), row.get("evaluator")
+        shares = "–"
+        if raw:
+            parts = raw["mean_by_interface_n_mm"]
+            shares = " / ".join(f"{100 * value / raw['mean_compliance_n_mm']:.1f} %" for value in (sum(v for k, v in parts.items() if k.startswith("motor_")), parts["battery"], parts["stack"]))
+        cells = [name, row["role"], number(row.get("arm_mm"), 4)]
+        cells += [number(row[variant][key]) if variant in row else "–" for variant, key in (("raw", "mean_compliance_n_mm"), ("raw", "worst_case_compliance_n_mm"), ("scaled", "mean_compliance_n_mm"), ("scaled", "worst_case_compliance_n_mm"), ("coupled", "mean_compliance_n_mm"), ("coupled", "worst_case_compliance_n_mm"))]
+        cells.append(", ".join(number(value) for value in raw["top_eigenvalues_n_mm"]) if raw else "–")
+        cells.append(shares)
+        cells.append(f"{number(evaluation['full']['mean_compliance_n_mm'])} / {number(evaluation['full']['worst_case_compliance_n_mm'])}" if evaluation else "ausstehend")
+        deviation = row.get("deviation")
+        cells += [f"{100 * deviation['full'][key]:+.1f} % / {100 * deviation['diagonal'][key]:+.1f} %" if deviation else "–" for key in ("mean_compliance_n_mm", "worst_case_compliance_n_mm")]
+        lines.append("| " + " | ".join(cells) + " |")
+    limit = result["limits"]
+    summary = [f"- {variant}: tr(ΣF) ≤ {number(limit[variant]['mean_compliance_n_mm']['value'], 4)} N mm ({limit[variant]['mean_compliance_n_mm']['source']}), λmax ≤ {number(limit[variant]['worst_case_compliance_n_mm']['value'], 4)} N mm ({limit[variant]['worst_case_compliance_n_mm']['source']})" for variant in ("scaled", "raw")]
+    return "\n".join(lines) + "\n\nGrenzen (strengere Referenz):\n" + "\n".join(summary) + "\n"
+
 def slice_frame(spec, config=None):
     config = config or spec
     slicer = config["slicer"]
@@ -405,7 +634,8 @@ def report_line(result):
     except (KeyError, TypeError):
         cells += ["–"] * (7 - len(cells))
     cases = f.get("load_cases") or {}
-    cells.append(f"{number(f.get('stiffness_n_per_mm'))} N/mm (A)" if f.get("stiffness_n_per_mm") else "–")
+    sigma_part = result.get("sigma") or {}
+    cells.append((f"{number(f.get('stiffness_n_per_mm'))} N/mm" if f.get("stiffness_n_per_mm") else "–") + (f"; Σ tr {number(sigma_part['mean_compliance_n_mm'], 3)}/λmax {number(sigma_part['worst_case_compliance_n_mm'], 3)} N·mm" if sigma_part else "") + " (A)")
     modes = (cases.get("modes") or {}).get("eigenfrequencies_hz") or []
     cells.append(f"f1 {number(modes[0], 0)} Hz; {'/'.join(number(v, 0) for v in modes[1:4])} (A)" if modes else "–")
     crash = [f"{name.split('_')[1]} {number(c['von_mises_p999_mpa'])}/{number(c['print_normal_p999_mpa'])} MPa" for name, c in a["crash"].items() if c]
@@ -413,7 +643,7 @@ def report_line(result):
     cells.append((", ".join(a["missed"]) or "keine") + (f"; Warnung: {', '.join(a['warnings'])}" if a.get("warnings") else ""))
     return "| " + " | ".join(cells) + " |"
 
-HEADER = ("| Frame | 1 Masse | 2 Schwerpunkt, Trägheit | 3 Luftstrom (Material im Propkreis) | 4 Montage | 5 Druckbarkeit | 6 Form | 7 Steifigkeit Armspitze | 8 Resonanz | 9 Crash p99,9 v. Mises/σ_Druckachse | Verfehlt |\n"
+HEADER = ("| Frame | 1 Masse | 2 Schwerpunkt, Trägheit | 3 Luftstrom (Material im Propkreis) | 4 Montage | 5 Druckbarkeit | 6 Form | 7 Steifigkeit Armspitze; Lastmodell Σ | 8 Resonanz | 9 Crash p99,9 v. Mises/σ_Druckachse | Verfehlt |\n"
           "|---|---|---|---|---|---|---|---|---|---|---|")
 LEGEND = ("(A) beruht auf Materialannahmen: ν = 0,30 und G13/G23 = E_z/(2(1+ν)) sind nicht im Bambu-PA6-CF-Datenblatt; E_xy, E_z, Festigkeiten und Dichte stammen aus dem Datenblatt. "
           "(K) Komponentenmassen und -maße aus unserer Hardware-Konfiguration, bei Referenzen auf deren Aufnahmen gesetzt. Crash: Spannung als 99,9-%-Wert der Integrationspunkte; Grenze σ_xy 102 MPa und σ_z 48 MPa geteilt durch SF.")

@@ -58,3 +58,38 @@ def test_datasheet_line_is_replaced_not_duplicated(tmp_path):
     append_datasheet(sheet, {"name": "probe", "line": "| probe | new |", "assessment": {"good": False}}, "evaluation.json")
     text = sheet.read_text(encoding="utf-8")
     assert "| probe | new |" in text and "old" not in text and text.count("| probe |") == 1 and "erfüllt): nein" in text
+
+def test_sigma_measure_matches_trace_and_symmetric_root_form():
+    from deep_frame.frame_evaluation import InterfaceCompliance
+    measure = InterfaceCompliance()
+    sigma = measure.model.sigma
+    rng = np.random.default_rng(0)
+    root = rng.normal(size=(42, 42))
+    flexibility = root @ root.T * 1e-3
+    result = measure.measure(flexibility)
+    values, vectors = np.linalg.eigh(sigma)
+    half = vectors @ np.diag(np.sqrt(np.clip(values, 0, None))) @ vectors.T
+    assert result["mean_compliance_n_mm"] == pytest.approx(np.trace(sigma @ flexibility), rel=1e-10)
+    assert result["worst_case_compliance_n_mm"] == pytest.approx(np.linalg.eigvalsh(half @ flexibility @ half)[-1], rel=1e-6)
+    assert sum(result["mean_by_interface_n_mm"].values()) == pytest.approx(result["mean_compliance_n_mm"], rel=1e-10)
+    identity = measure.measure(np.eye(42))
+    assert identity["mean_compliance_n_mm"] == pytest.approx(np.trace(sigma), rel=1e-10)
+    assert identity["worst_case_compliance_n_mm"] == pytest.approx(measure.model.eigenvalues[0], rel=1e-10)
+    scaled = measure.measure(np.eye(42), arm_mm=measure.config["arm_mm"] * 2)
+    forces = np.array([dof[0] == "F" for _, dof in measure.labels])
+    assert scaled["mean_compliance_n_mm"] == pytest.approx(np.trace(sigma[np.ix_(~forces, ~forces)]) + np.trace(sigma[np.ix_(forces, forces)]) / 2, rel=1e-10)
+
+def test_unit_couple_has_zero_resultant_and_gap_record_maps_to_sigma_order():
+    from deep_frame.frame_evaluation import DOFS, InterfaceCompliance, unit_loads
+    points = np.random.default_rng(1).uniform(-3, 3, size=(30, 3))
+    couple = unit_loads(points, "My")
+    assert np.allclose(couple.sum(axis=0), 0, atol=1e-12)
+    assert np.allclose(np.cross(points - points.mean(axis=0), couple).sum(axis=0), [0, 1, 0], atol=1e-12)
+    assert np.allclose(unit_loads(points, "Fz").sum(axis=0), [0, 0, 1])
+    measure = InterfaceCompliance()
+    names = {"battery": "battery_rails"}
+    record = {"name": "test", "interfaces": {names.get(name, name): {dof: {"stiffness": 1 / (i + 1), "conjugate": i + 1.0, "mean_displacement_mm": [0.5, 0.0, 0.0]} for dof in DOFS}
+                                             for i, name in enumerate(dict.fromkeys(name for name, _ in measure.labels))}}
+    diagonal, coupled = measure.gap_flexibility(record), measure.gap_flexibility(record, coupled=True)
+    assert np.allclose(np.diag(diagonal), np.repeat(np.arange(1, 8), 6))
+    assert coupled[0, 1] == pytest.approx(0.25) and coupled[1, 0] == pytest.approx(0.25) and coupled[6, 0] == 0
