@@ -180,7 +180,7 @@ def run(overrides):
     from deep_frame.frame_evaluation import frame_spec, load_model
     settings = settings_of(overrides)
     spec = frame_spec(json.loads(Path(settings["frame"]).read_text(encoding="utf-8-sig")))
-    settings["output"] = settings["output"] or str(ROOT / "exports" / "interface_stiffness" / Path(spec["output"]).name)
+    settings["output"] = settings["output"] or str(ROOT / "exports" / "interface_stiffness" / re.sub(r"[^a-z0-9]+", "_", spec["name"].lower()).strip("_"))
     material = load_model(spec, spec)[0]
     nodes, elements, mesh = frame_mesh(spec, settings)
     groups = interfaces(spec)
