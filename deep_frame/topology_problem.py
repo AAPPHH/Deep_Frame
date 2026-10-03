@@ -12,9 +12,11 @@ ARM_TIP = {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0,
 COVARIANCE = {
     "support": "stiffness_arm_tip", "interfaces": ["motor_front_left", "motor_front_right", "motor_rear_left", "motor_rear_right", "battery", "camera"],
     "sigma": None, "labels": None, "model": None, "prefix": "sigma_", "ks": 50.0, "ks_cutoff": 1e-9,
-    "limits": {"mean_n_mm": LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"], "worst_n_mm": LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"], "source": LOAD_COVARIANCE_LIMITS["source"], "calibration": 1.0},
+    "limits": {"mean_n_mm": LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"], "worst_n_mm": LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"], "source": LOAD_COVARIANCE_LIMITS["source"],
+               "calibration": {"mean_n_mm": 0.5952, "worst_n_mm": 0.3928},
+               "calibration_source": "optimizer physical_report on the SIMP-MMA 17.2 g fine field (0.8551 / 0.1967 N mm, docs/validation/formulation_covariance_frame.json) / evaluator diagonal measure on simp_mma_raw_1 (1.4366 / 0.5007 N mm, same measure as the gap-finder limits); per key because the worst-case modes differ (optimizer: alternating pad Mx, evaluator diagonal: alternating pad Mz + battery Fz)"},
     "definition": {
-        "limits": "read from config LOAD_COVARIANCE_LIMITS (evaluator on the references); the optimizer uses limit x calibration (optimizer measure / evaluator measure on the same design), 1.0 until calibrated",
+        "limits": "read from config LOAD_COVARIANCE_LIMITS (evaluator on the references); the optimizer uses limit x calibration per key (optimizer measure / evaluator measure on the same design)",
         "support": "stack mount undersides fixed in all translations (fixed regions of stiffness_arm_tip = evaluator arm_tip / gap finder group 'stack fixed'); the stack wrench is reacted by the fixture, so its 6 rows are dropped from Sigma (36 x 36 block of motors, battery, camera)",
         "interfaces": "motor pads: thrust_all pad patches (pad top); battery: deck band of crash_back (deck top); camera: camera patch of crash_front; reference points as LOAD_COVARIANCE reference_points (pad top on the motor axis, deck top at the band centre on x = 0, midpoint of the camera side-screw axes)",
         "wrench": "unit wrench (F, M about the reference point) -> minimum-norm nodal forces over the patch nodes: f = B^T (B B^T)^-1 w with B_i = [I; skew(r_i - r_ref)]",
@@ -556,7 +558,8 @@ class InterfaceCovariance:
         return -self.factor * derivative * total
     def measure(self, solutions):
         calibration, s = self.settings["limits"].get("calibration", 1.0), self.settings["ks"]
-        limits = {key: self.settings["limits"][key] and self.settings["limits"][key] * calibration for key in ("mean_n_mm", "worst_n_mm")}
+        factor = lambda key: calibration[key] if isinstance(calibration, dict) else calibration
+        limits = {key: self.settings["limits"][key] and self.settings["limits"][key] * factor(key) for key in ("mean_n_mm", "worst_n_mm")}
         flexibility, stacked = self.matrix(solutions)
         mean = float(np.trace(flexibility))
         values, vectors = np.linalg.eigh(flexibility)
