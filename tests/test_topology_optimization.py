@@ -597,3 +597,66 @@ def test_inertia_relief_is_balanced_support_free_and_matches_on_half_domain():
             reactions = system.support_reactions(density.ravel() if label == "full" else half_density.ravel(), name)
             assert sum(entry["support_dofs"] for entry in reactions) == (6 if label == "full" else 3 * len(reactions))
             assert all(entry["max_reaction_n"] < 1e-9 * entry["nodal_force_sum_n"] for entry in reactions)
+
+def modal_settings(**changes):
+    return {"f1_min_hz": 5000.0, "case": "modes", "modes": 4, "tracked": 2, "initial_iterations": 80, "warm_iterations": 2, "penalty": 10.0, "ks": 40.0, "mass_cutoff": 0.1, "multiplier_interval": 10 ** 6, **changes}
+
+def test_modal_constraint_matches_eigsh_and_finite_difference():
+    from deep_frame.topology_optimization import ModalConstraint
+    domain = beam_domain((8, 3, 3))
+    system = HexElasticity(domain)
+    density = np.random.default_rng(1).uniform(0.3, 1.0, system.nelem)
+    value, gradient, info = ModalConstraint(system, modal_settings())(density)
+    reference = system.elastic_frequencies(density, "modes", number=2)
+    assert sorted(frequency for _, frequency in info["frequencies_hz"]) == pytest.approx(reference, rel=1e-6)
+    for element in (5, 40):
+        step = np.zeros(system.nelem)
+        step[element] = 1e-5
+        difference = (ModalConstraint(system, modal_settings())(density + step)[0] - ModalConstraint(system, modal_settings())(density - step)[0]) / 2e-5
+        assert gradient[element] == pytest.approx(difference, rel=1e-3)
+
+def test_modal_constraint_on_half_domain_matches_full_and_adds_point_masses():
+    from deep_frame.topology_geometry import mirror_field, symmetric_domains
+    from deep_frame.topology_optimization import ModalConstraint
+    shape = (8, 4, 4)
+    box = lambda low, high: {"kind": "box", "min_mm": low, "max_mm": high}
+    preserve = np.zeros(shape, dtype=bool)
+    preserve[[0, -1]] = True
+    fixtures = [box([-8.01, -0.01, -0.01], [-7.99, 8.01, 8.01]), box([7.99, -0.01, -0.01], [8.01, 8.01, 8.01])]
+    domain = {"grid": {"shape": list(shape), "spacing_mm": [2.0, 2.0, 2.0], "origin_mm": [-8.0, 0.0, 0.0], "order": "C", "axis_order": "xyz"},
+              "allowed": np.ones(shape, dtype=bool), "preserve": preserve, "forbidden": np.zeros(shape, dtype=bool),
+              "material": {"young_modulus_mpa": 4430.0, "poisson_ratio": 0.3, "density_g_cm3": 1.09}, "point_masses": [],
+              "load_cases": [{"name": "push", "analysis": "static", "fixed_regions": fixtures, "loads": [{"region": box([-2.01, 1.99, 7.99], [2.01, 6.01, 8.01]), "force_n": [0.0, 0.0, -1.0]}]},
+                             {"name": "modes", "analysis": "modal", "fixed_regions": fixtures}]}
+    full, half = symmetric_domains(domain)
+    half_density = np.random.default_rng(4).uniform(0.3, 1.0, half["grid"]["shape"])
+    reference = ModalConstraint(HexElasticity(full), modal_settings())(mirror_field(half_density).ravel())[2]
+    symmetric = ModalConstraint(HexElasticity(half), modal_settings())(half_density.ravel())[2]
+    assert symmetric["f1_hz"] == pytest.approx(reference["f1_hz"], rel=1e-6)
+    full["point_masses"] = half["point_masses"] = [{"name": "battery", "mass_g": 5.0, "attachment_region": box([-4.01, -0.01, 7.99], [4.01, 8.01, 8.01])}]
+    loaded = ModalConstraint(HexElasticity(full), modal_settings())
+    assert loaded.lumped.sum() == pytest.approx(3 * 5e-6)
+    assert loaded(mirror_field(half_density).ravel())[2]["f1_hz"] < reference["f1_hz"]
+    assert ModalConstraint(HexElasticity(half), modal_settings())(half_density.ravel())[2]["f1_hz"] == pytest.approx(loaded(mirror_field(half_density).ravel())[2]["f1_hz"], rel=1e-3)
+
+def test_cuda_modal_constraint_matches_cpu_with_warm_substitution(cuda_solver):
+    from deep_frame.topology_optimization import ModalConstraint
+    domain = beam_domain((8, 3, 3))
+    density = np.random.default_rng(1).uniform(0.3, 1.0, 72)
+    cpu = ModalConstraint(HexElasticity(domain), modal_settings())(density)
+    system = HexElasticity(domain, linear_solver="cuda_cudss")
+    constraint = ModalConstraint(system, modal_settings())
+    first = constraint(density)
+    warm = constraint(density)
+    system.close()
+    assert first[2]["f1_hz"] == pytest.approx(cpu[2]["f1_hz"], rel=1e-8) and warm[2]["f1_hz"] == pytest.approx(cpu[2]["f1_hz"], rel=1e-8)
+    assert np.allclose(warm[1], cpu[1], rtol=1e-5, atol=1e-9 * np.abs(cpu[1]).max())
+
+@pytest.mark.parametrize("method", ["simp", "neural"])
+def test_optimizers_carry_prop_disc_weights_and_the_f1_constraint(method):
+    from deep_frame.topology_neural import optimize_neural
+    discs = {"mode": "soft", "motors_mm": [[16.0, 5.0]], "radius_mm": 6.0, "plane_mm": 10.0, "weight": 3.0, "length_mm": 4.0}
+    common = {"volume_fraction": 0.5, "max_iterations": 3, "minimum_iterations": 3, "prop_discs": discs, "modal": modal_settings()}
+    result = optimize_topology(beam_domain(), common) if method == "simp" else optimize_neural(beam_domain(), {**common, "frequencies": 8, "hidden": [6], "mirror_axis": None})
+    assert result["status"] == "ok" and result["summary"]["modal"]["final"]["f1_hz"] > 0
+    assert all(entry["f1_hz"] > 0 and entry["modal_penalty"] > 0 for entry in result["history"][:-1])

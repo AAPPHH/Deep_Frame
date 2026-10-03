@@ -1093,6 +1093,24 @@ def test_round3_domain_turns_flight_and_crash_cases_into_inertia_relief():
     assert sum(item["mass_g"] for item in masses["point_masses"]) == pytest.approx(37.0 + 7.2 + 2.3 + 4 * (4.5 + 1.2))
     assert masses["preserve_mass_g"] == pytest.approx(0.05 * full["metadata"]["allowed_volume_mm3"] * 1.09 / 1000)
 
+def test_round4_hard_prop_keep_out_keeps_corridor_pads_and_connectivity():
+    cfg = neural_study.configure({"prop_discs": {"mode": "hard"}})
+    full, half = neural_study.R2Domain(cfg).build([68, 64, 16])
+    soft, _ = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
+    discs, centers = full["metadata"]["round4"]["prop_discs"], neural_study.grid_centers(full["grid"])
+    blocked = neural_study.R2Domain(cfg).keep_out(centers, discs)
+    x, y = discs["motors_mm"][1]
+    corridor = (np.hypot(centers[..., 0] - x * 0.75, centers[..., 1] - y * 0.75) < 1.0) & (centers[..., 2] < 5)
+    assert blocked.any() and not np.any(full["allowed"] & blocked & ~full["preserve"]) and full["allowed"][corridor].all()
+    assert np.array_equal(full["preserve"], soft["preserve"]) and full["metadata"]["round4"]["unblocked_cells"] == soft["metadata"]["round4"]["allowed_cells"]
+
+def test_frame_request_accepts_round4_optimizer_options_and_reconstruction_switch():
+    from deep_frame.frame_run import validate_request
+    request = validate_request({"reconstruction": False, "overrides": {"optimizer": {"volume_fraction": 0.05, "prop_discs": "soft", "f1_min_hz": 300}}})
+    assert request["reconstruction"] is False and request["overrides"]["optimizer"] == {"volume_fraction": 0.05, "prop_discs": "soft", "f1_min_hz": 300.0}
+    with pytest.raises(ValueError):
+        validate_request({"overrides": {"optimizer": {"prop_discs": "corridor"}}})
+
 def test_lower_chord_detects_a_continuous_low_member():
     grid = {"origin_mm": [-30.0, -30.0, 0.0], "spacing_mm": [1.0, 1.0, 1.0], "shape": [60, 60, 20]}
     density = np.zeros(grid["shape"])

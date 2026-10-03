@@ -3,7 +3,7 @@ from time import perf_counter
 
 import numpy as np
 
-from deep_frame.topology_optimization import HexElasticity, _case_scaling, _history_entry, validate_masks
+from deep_frame.topology_optimization import HexElasticity, ModalConstraint, _case_scaling, _history_entry, validate_masks, volume_weights
 
 NEURAL_SETTINGS = {
     "volume_fraction": 0.12,
@@ -104,17 +104,6 @@ class Adam:
 def _sigmoid(value):
     return 0.5 * (1 + np.tanh(0.5 * value))
 
-def volume_weights(points, discs):
-    weights = np.ones(len(points))
-    if not discs or discs.get("mode") != "soft":
-        return weights
-    points = np.asarray(points, dtype=float)
-    inside = np.zeros(len(points), dtype=bool)
-    for x, y in discs["motors_mm"]:
-        inside |= np.hypot(points[:, 0] - x, points[:, 1] - y) <= discs["radius_mm"]
-    weights[inside] += discs["weight"] * np.exp(-np.abs(points[inside, 2] - discs["plane_mm"]) / discs["length_mm"])
-    return weights
-
 def volume_shift(logits, sharpness, budget, weights=None):
     lower, upper = -60.0 / sharpness - np.max(logits), 60.0 / sharpness - np.min(logits)
     weights = np.ones(len(logits)) if weights is None else weights
@@ -197,6 +186,8 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
         system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
         optimizer = Adam(mapping.field.parameters, settings["learning_rate"])
         penalty = LocalVolumePenalty(domain, settings)
+        modal = ModalConstraint(system, settings["modal"]) if settings["modal"] else None
+        modal_log = []
         scales = None
         converged, stop_reason = False, "max_iterations"
         for iteration in range(1, settings["max_iterations"] + 1):
@@ -207,13 +198,18 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
                 scales, normalization, weights = _case_scaling(solutions, settings)
             width_penalty, width_gradient = penalty(physical)
             objective_gradient = sum(scales[name] * result["derivative"] for name, result in solutions.items()) + width_gradient
+            modal_penalty, modal_info = 0.0, {}
+            if modal is not None:
+                modal_penalty, modal_gradient, modal_info = modal(physical, settings["penalization"], settings["min_stiffness_ratio"])
+                objective_gradient = objective_gradient + modal_gradient
+                modal_log.append({"iteration": iteration, **modal_info})
             gradients = mapping.gradient(cache, objective_gradient)
             previous = [value.copy() for value in mapping.field.parameters]
             optimizer.step(mapping.field.parameters, gradients)
             change = float(max(np.max(np.abs(value - old)) for value, old in zip(mapping.field.parameters, previous)))
             history.append(_history_entry(iteration, physical, solutions, scales, change, perf_counter() - started))
-            history[-1].update(volume_fraction=float(np.sum(physical[mapping.allowed]) / allowed_count), sharpness=sharpness, width_penalty=width_penalty)
-            history[-1]["objective"] += width_penalty
+            history[-1].update(volume_fraction=float(np.sum(physical[mapping.allowed]) / allowed_count), sharpness=sharpness, width_penalty=width_penalty, modal_penalty=modal_penalty, f1_hz=modal_info.get("f1_hz"))
+            history[-1]["objective"] += width_penalty + modal_penalty
             density = physical.reshape(tuple(domain["grid"]["shape"]))
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
@@ -253,6 +249,8 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
             "gray_fraction_free": float(np.mean((physical[mapping.free] > 0.1) & (physical[mapping.free] < 0.9))),
             "sharpness_final": sharpness,
             "parameter_count": int(sum(value.size for value in mapping.field.parameters)),
+            "modal": None if modal is None else {"settings": settings["modal"], "final": modal(physical, settings["penalization"], settings["min_stiffness_ratio"], settings["modal"]["initial_iterations"])[2], "history": modal_log,
+                                                 "model": "voxel surrogate: motor-contact undersides fixed (domain 'modes' case = evaluator fixture), symmetric and antisymmetric half-domain parts, SIMP stiffness, density mass with low-density cutoff, point masses lumped on their attachment nodes"},
             "system": system.diagnostics(),
             "elapsed_s": perf_counter() - started,
         }

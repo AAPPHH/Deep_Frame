@@ -7,7 +7,8 @@ from pathlib import Path
 from time import perf_counter
 
 import numpy as np
-from scipy.sparse import coo_matrix
+from scipy.linalg import eigh
+from scipy.sparse import coo_matrix, diags
 from scipy.sparse.linalg import eigsh, splu
 from scipy.spatial import cKDTree
 
@@ -151,6 +152,12 @@ class CudaDirectSolver:
                              "transfer_factor_solve_s": perf_counter() - started,
                              "device_free_bytes_after_solve": available, "device_total_bytes": total})
         return solution
+    def substitute(self, rhs):
+        if self.closed or rhs.shape != self.rhs_device.shape or not np.all(np.isfinite(rhs)):
+            raise ValueError("cuDSS substitution requires an open solver and a finite RHS of unchanged shape")
+        self.rhs_device.set(np.asarray(rhs, dtype=np.float64, order="F"))
+        self._execute(1008)
+        return self.cp.asnumpy(self.solution_device)
     def same_structure(self, matrix):
         matrix = matrix.tocsr()
         matrix.sort_indices()
@@ -623,6 +630,98 @@ class HexElasticity:
     def diagnostics(self):
         return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups)})
 
+def volume_weights(points, discs):
+    weights = np.ones(len(points))
+    if not discs or discs.get("mode") != "soft":
+        return weights
+    points = np.asarray(points, dtype=float)
+    inside = np.zeros(len(points), dtype=bool)
+    for x, y in discs["motors_mm"]:
+        inside |= np.hypot(points[:, 0] - x, points[:, 1] - y) <= discs["radius_mm"]
+    weights[inside] += discs["weight"] * np.exp(-np.abs(points[inside, 2] - discs["plane_mm"]) / discs["length_mm"])
+    return weights
+
+class ModalConstraint:
+    def __init__(self, system, settings):
+        self.system, self.settings = system, settings
+        self.target = (2 * np.pi * settings["f1_min_hz"]) ** 2
+        self.multiplier, self.calls = 0.0, 0
+        case = next(case for case in system.cases if case["name"] == settings["case"])
+        self.parts = []
+        for sign in (1.0,) if system.symmetry is None else (1.0, -1.0):
+            fixed = case["fixed"] if system.symmetry is None else np.union1d(case["fixed"], system._plane_dofs(sign))
+            self.parts.append({"sign": sign, "free": np.setdiff1d(system.active_dofs, fixed, assume_unique=True), "vectors": None, "key": f"modal{sign:+.0f}"})
+        self.lumped = np.zeros(len(system.points))
+        for item in system.domain.get("point_masses", []):
+            direct, mirror = system._select_both(item["attachment_region"], case["name"], "mass")
+            share = np.full(len(direct), item["mass_g"] * 1e-6 / (len(direct) + len(mirror)))
+            if system.symmetry is not None:
+                share[np.isin(direct, system.plane_nodes)] /= 2
+            np.add.at(self.lumped, direct, share)
+        self.lumped = np.repeat(self.lumped, 3)
+    def interpolation(self, density):
+        cutoff = self.settings["mass_cutoff"]
+        low = density < cutoff
+        return np.where(low, density ** 6 / cutoff ** 5, density), np.where(low, 6 * density ** 5 / cutoff ** 5, 1.0)
+    def matrices(self, density, penalization, min_stiffness_ratio):
+        system = self.system
+        stiffness = system.matrix(system.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization))
+        mass, _ = self.interpolation(density)
+        values = (system.density * 1e-9 * mass[system.active_elements, None] * system.me.ravel()[None, :]).ravel()
+        return stiffness, (coo_matrix((values, (system.rows, system.columns)), shape=(system.ndof, system.ndof)) + diags(self.lumped)).tocsc()
+    def eigenpairs(self, part, stiffness, mass, iterations):
+        free = part["free"]
+        reduced, reduced_mass = stiffness[free, :][:, free].tocsc(), mass[free, :][:, free].tocsc()
+        vectors = part["vectors"] if part["vectors"] is not None else np.random.default_rng(0).standard_normal((len(free), self.settings["modes"]))
+        if self.system.linear_solver == "cpu_superlu":
+            substitute = splu(reduced, permc_spec="MMD_AT_PLUS_A", options={"SymmetricMode": True}).solve
+            solved = substitute(reduced_mass @ vectors)
+        else:
+            solved = self.system._linear_solve(part["key"], reduced, reduced_mass @ vectors)
+            substitute = self.system.gpu_solvers[part["key"]].substitute if part["key"] in self.system.gpu_solvers else lambda rhs: self.system._linear_solve(part["key"], reduced, rhs)
+        for index in range(iterations):
+            if index:
+                solved = substitute(reduced_mass @ vectors)
+            projected_stiffness, projected_mass = solved.T @ (reduced @ solved), solved.T @ (reduced_mass @ solved)
+            values, rotation = eigh((projected_stiffness + projected_stiffness.T) / 2, (projected_mass + projected_mass.T) / 2)
+            vectors = solved @ rotation
+        part["vectors"] = vectors
+        return values, vectors
+    def __call__(self, physical_density, penalization=3.0, min_stiffness_ratio=1e-6, iterations=None):
+        system, settings = self.system, self.settings
+        density = np.asarray(physical_density, dtype=float).ravel()
+        stiffness, mass = self.matrices(density, penalization, min_stiffness_ratio)
+        modes = []
+        for part in self.parts:
+            count = iterations or (settings["initial_iterations"] if part["vectors"] is None else settings["warm_iterations"])
+            values, vectors = self.eigenpairs(part, stiffness, mass, count)
+            modes += [(part, values[index], vectors[:, index]) for index in range(settings["tracked"])]
+        ratios = np.array([value / self.target for _, value, _ in modes])
+        lowest = ratios.min()
+        exponents = np.exp(-settings["ks"] * (ratios - lowest))
+        aggregate = lowest - np.log(exponents.sum()) / settings["ks"]
+        weights = exponents / exponents.sum()
+        stiffness_slope = system.young * (1 - min_stiffness_ratio) * penalization * density ** (penalization - 1)
+        mass_slope = system.density * 1e-9 * self.interpolation(density)[1]
+        sensitivity = np.zeros(system.nelem)
+        for weight, (part, value, vector) in zip(weights, modes):
+            full = np.zeros(system.ndof)
+            full[part["free"]] = vector
+            element = full[system.dofs]
+            strain = np.einsum("ei,ij,ej->e", element, system.ke, element, optimize=True)
+            kinetic = np.einsum("ei,ij,ej->e", element, system.me, element, optimize=True)
+            sensitivity += weight * (stiffness_slope * strain - value * mass_slope * kinetic) / self.target
+        sensitivity[~system.active_elements] = 0
+        violation = 1 - aggregate
+        penalty, multiplier = settings["penalty"], self.multiplier
+        active = max(0.0, violation + multiplier / penalty)
+        self.calls += 1
+        if self.calls % settings["multiplier_interval"] == 0:
+            self.multiplier = max(0.0, multiplier + penalty * violation)
+        frequencies = [[part["sign"], float(np.sqrt(max(value, 0)) / (2 * np.pi))] for part, value, _ in modes]
+        return penalty / 2 * active ** 2 - multiplier ** 2 / (2 * penalty), -penalty * active * sensitivity, {"f1_hz": float(np.sqrt(max(lowest * self.target, 0)) / (2 * np.pi)), "frequencies_hz": frequencies,
+                                                                                                            "aggregate_ratio": float(aggregate), "violation": float(violation), "multiplier": multiplier}
+
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,
     "filter_radius_mm": 6.0,
@@ -650,6 +749,8 @@ DEFAULT_SETTINGS = {
     "volume_target_relaxation": 0.2,
     "objective_window": 10,
     "gpu_solver_residency": "resident",
+    "prop_discs": None,
+    "modal": None,
 }
 
 def _settings(settings):
@@ -741,6 +842,8 @@ class DensityMap:
         self.sums[self.forbidden] = 1
         if np.any(self.sums <= 0):
             raise ValueError("Density filter contains an empty allowed-cell neighborhood")
+        self.weights = np.ones(self.n)
+        self.weights[self.free] = volume_weights((coordinates + 0.5 * spacing + np.asarray(domain["grid"].get("origin_mm", [0.0, 0.0, 0.0])))[self.free], settings["prop_discs"])
     def filtered(self, design):
         design = np.asarray(design, dtype=float).ravel()
         if design.size != self.n or not np.all(np.isfinite(design)) or np.any(design < 0) or np.any(design > 1):
@@ -753,8 +856,8 @@ class DensityMap:
         return {name: self.project(filtered, eta) for name, eta in self.thresholds.items()}, filtered
     def volume(self, design):
         if self.robust:
-            return float(np.sum(self.project(self.filtered(design), self.thresholds["dilated"])[0]))
-        return np.sum(self.physical(design)[0])
+            return float(np.sum(self.weights * self.project(self.filtered(design), self.thresholds["dilated"])[0]))
+        return np.sum(self.weights * self.physical(design)[0])
     def project(self, filtered, eta):
         beta = self.beta
         if beta and self.robust:
@@ -879,6 +982,8 @@ def optimize_topology(domain, settings, *, progress_callback=None):
             raise ValueError("The volume budget must exceed the preserve-cell volume")
         design = mapping.initial(target)
         system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
+        modal = ModalConstraint(system, settings["modal"]) if settings["modal"] else None
+        modal_log = []
         scales = None
         converged = False
         stop_reason = "max_iterations"
@@ -900,13 +1005,19 @@ def optimize_topology(domain, settings, *, progress_callback=None):
             if scales is None:
                 scales, normalization, weights = _case_scaling(solutions, settings)
             physical_gradient = sum(scales[name] * result["derivative"] for name, result in solutions.items())
+            modal_penalty, modal_info = 0.0, {}
+            if modal is not None:
+                modal_penalty, modal_gradient, modal_info = modal(fields[stiffness_name][0], settings["penalization"], settings["min_stiffness_ratio"])
+                physical_gradient = physical_gradient + modal_gradient
+                modal_log.append({"iteration": iteration, **modal_info})
             gradient = mapping.pullback(physical_gradient, fields[stiffness_name][1])
-            volume_gradient = mapping.pullback(np.ones(mapping.n), fields[volume_name][1])
+            volume_gradient = mapping.pullback(mapping.weights, fields[volume_name][1])
             late = settings["move_limit_late"] is not None and mapping.beta >= settings["move_limit_late_beta"]
             move_limit = settings["move_limit_late"] if late else settings["move_limit"]
             candidate = _oc_update(design, gradient, volume_gradient, mapping, volume_target, settings, move_limit)
             change = float(np.max(np.abs(candidate - design)))
             history.append(_history_entry(iteration, physical, solutions, scales, change, perf_counter() - started))
+            history[-1].update(modal_penalty=modal_penalty, f1_hz=modal_info.get("f1_hz"))
             if staged:
                 recent = [entry["objective"] for entry in history[-min(level_iterations + 1, settings["objective_window"]):]]
                 stall = (max(recent) - min(recent)) / min(recent) if len(recent) == settings["objective_window"] else None
@@ -959,6 +1070,7 @@ def optimize_topology(domain, settings, *, progress_callback=None):
             "stress_assessment": "Hex8 Gauss-point SIMP stresses are surrogate diagnostics only; exact-solid CalculiX governs candidate stress constraints",
             "manufacturing_assessment": "density filtering regularizes lengths; reconstructed-solid feature, connection, forbidden and manufacturing checks remain mandatory",
             "gray_fraction_free": float(np.mean((physical[mapping.free] > 0.1) & (physical[mapping.free] < 0.9))),
+            "modal": None if modal is None else {"settings": settings["modal"], "final": modal(fields[stiffness_name][0], settings["penalization"], settings["min_stiffness_ratio"], settings["modal"]["initial_iterations"])[2], "history": modal_log},
             "element_model": "three displacement DOFs/node, fully integrated trilinear 8-node 3D elasticity, 2x2x2 Gauss integration",
             "units": {"length": "mm", "force": "N", "stress": "MPa", "density": "g/cm3", "internal_modal_mass": "tonne"},
             "system": system.diagnostics(),

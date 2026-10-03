@@ -6,15 +6,15 @@ from time import perf_counter
 import numpy as np
 import trimesh
 from PIL import Image
-from scipy.ndimage import gaussian_filter, label
+from scipy.ndimage import gaussian_filter, label, zoom
 from skimage.measure import marching_cubes
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import deep_frame.topology_neural as topology_neural
 from deep_frame.config import CRASH_DIRECTIONS, command_line
 from deep_frame.frame import motor_positions, prop_plane_z
-from deep_frame.topology_geometry import _merge, build_design_domain, grid_centers, region_contains, symmetric_domains
+from deep_frame.topology_geometry import _merge, build_design_domain, grid_centers, mirror_field, region_contains, symmetric_domains
 from deep_frame.topology_neural import member_widths, neural_settings, optimize_neural
-from deep_frame.topology_optimization import HexElasticity
+from deep_frame.topology_optimization import HexElasticity, _settings, optimize_topology
 from tools.multi_crash_study import cross_sections, stitch
 from tools.topology_study import study_parameters
 
@@ -191,6 +191,11 @@ def time_solve(cfg):
         times.append(perf_counter() - start)
     system.close()
     print(json.dumps({"shape": cfg["shape"], "half": half["grid"]["shape"], "cases": len(half["load_cases"]), "domain_s": built - started, "solve_s": times}), flush=True)
+
+def upsample(half_density, fine):
+    coarse = mirror_field(np.asarray(half_density, dtype=np.float32))
+    density = np.clip(zoom(coarse, np.asarray(fine["grid"]["shape"]) / np.asarray(coarse.shape), order=1), 0, 1)
+    return np.where(fine["preserve"], 1.0, np.where(fine["allowed"], density, 0.0))
 
 def carve(field, grid, regions):
     spacing = np.asarray(grid["spacing_mm"], dtype=float)
@@ -395,7 +400,10 @@ def run_variant(cfg, variant):
     _, half = builder.build(cfg["shape"], neural["volume_fraction"])
     discs = half["metadata"]["round4"]["prop_discs"]
     neural["volume_fraction"] *= half["metadata"]["round4"]["unblocked_cells"] / half["metadata"]["round4"]["allowed_cells"]
-    settings = base_settings(half, {**neural, "prop_discs": discs if discs["mode"] == "soft" else None, "modal": cfg["modal"] if cfg["modal"]["f1_min_hz"] else None})
+    extra = {"prop_discs": discs if discs["mode"] == "soft" else None, "modal": cfg["modal"] if cfg["modal"]["f1_min_hz"] else None}
+    simp = cfg["method"] == "simp"
+    keys = ("interface_node_policy", "case_weights", "penalization", "min_stiffness_ratio")
+    settings = _settings({**{key: half["optimizer_settings"][key] for key in keys}, "linear_solver": "cuda_cudss", **cfg["simp"], "volume_fraction": neural["volume_fraction"], **extra}) if simp else base_settings(half, {**neural, **extra})
     holder = {}
     original = topology_neural.NeuralDensity
     class Capture(original):
@@ -405,7 +413,8 @@ def run_variant(cfg, variant):
     topology_neural.NeuralDensity = Capture
     try:
         with (out / "iterations.jsonl").open("w") as log:
-            result = optimize_neural(half, settings, progress_callback=lambda e: (log.write(json.dumps({k: e.get(k) for k in ("iteration", "objective", "volume_fraction", "sharpness", "elapsed_s", "f1_hz", "modal_penalty")}) + "\n"), log.flush()))
+            progress = lambda e: (log.write(json.dumps({k: e.get(k) for k in ("iteration", "objective", "volume_fraction", "sharpness", "projection_beta", "elapsed_s", "f1_hz", "modal_penalty")}) + "\n"), log.flush())
+            result = optimize_topology(half, settings, progress_callback=progress) if simp else optimize_neural(half, settings, progress_callback=progress)
     finally:
         topology_neural.NeuralDensity = original
     optimized = perf_counter() - started
@@ -415,14 +424,14 @@ def run_variant(cfg, variant):
     summary = result["summary"]
     np.savez_compressed(out / "density_half.npz", density=result["density"])
     fine_full, _ = builder.build(cfg["fine_shape"], neural["volume_fraction"])
-    density = holder["mapping"].sample(fine_full, render_cfg.get("sample_sharpness", summary["sharpness_final"]), settings["volume_fraction"])
+    density = upsample(result["density"], fine_full) if simp else holder["mapping"].sample(fine_full, render_cfg.get("sample_sharpness", summary["sharpness_final"]), settings["volume_fraction"])
     np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
     viewer = Path(cfg["viewer_root"]) / (cfg["viewer_prefix"] + variant["name"]) if cfg["viewer_root"] else None
-    info = {"variant": variant["name"], "method": "neural round 4" if cfg["inertia_relief"] else "neural round 2",
+    info = {"variant": variant["name"], "method": ("SIMP" if simp else "neural") + (" round 4" if cfg["inertia_relief"] else " round 2"),
             "inertia_relief": [{key: value for key, value in case.items() if key in ("name", "inertia_relief")} for case in summary["system"]["cases"] if "inertia_relief" in case] or None, "volume_fraction_target": settings["volume_fraction"], "volume_fraction_opt": summary["volume_fraction"],
             "iterations": summary["iterations"], "stop_reason": summary["stop_reason"], "optimize_runtime_s": optimized,
             **finish(out, density, fine_full, cfg, viewer), "total_runtime_s": perf_counter() - started,
-            "grid_opt_half": half["grid"], "grid_render_full": fine_full["grid"], "neural": {k: settings[k] for k in ("max_frequency_per_mm", "frequencies", "hidden", "learning_rate", "sharpness_final", "sharpness_iterations", "max_iterations", "max_width_penalty")},
+            "grid_opt_half": half["grid"], "grid_render_full": fine_full["grid"], "optimizer": {k: settings[k] for k in (("filter_radius_mm", "projection", "beta_schedule", "max_iterations", "move_limit") if simp else ("max_frequency_per_mm", "frequencies", "hidden", "learning_rate", "sharpness_final", "sharpness_iterations", "max_iterations", "max_width_penalty"))},
             "round2": half["metadata"]["round2"], "round4": {**half["metadata"]["round4"], "modal": cfg["modal"], "volume_weighted": settings["prop_discs"] is not None, "summary_modal": summary.get("modal")}, "render": render_cfg, "objective_final": summary["objective_final"],
             "static_surrogate_metrics": summary["static_surrogate_metrics"], "load_cases": [case["name"] for case in half["load_cases"]]}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=str))

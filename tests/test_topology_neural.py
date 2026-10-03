@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from deep_frame.topology_neural import NeuralDensity, neural_settings, optimize_neural
 from deep_frame.topology_optimization import HexElasticity
@@ -10,11 +11,14 @@ def holed_beam(shape=(12, 4, 4)):
     domain["forbidden"] = ~domain["allowed"]
     return domain
 
-def test_network_sensitivities_match_finite_differences():
+@pytest.mark.parametrize("discs", [None, {"mode": "soft", "motors_mm": [[6.0, 3.0]], "radius_mm": 4.0, "plane_mm": 6.0, "weight": 3.0, "length_mm": 2.0}])
+def test_network_sensitivities_match_finite_differences(discs):
     domain = beam_domain((6, 3, 3))
-    settings = neural_settings({"frequencies": 8, "hidden": [6], "mirror_axis": None, "max_frequency_per_mm": 0.2, "volume_fraction": 0.5})
+    settings = neural_settings({"frequencies": 8, "hidden": [6], "mirror_axis": None, "max_frequency_per_mm": 0.2, "volume_fraction": 0.5, "prop_discs": discs})
     mapping = NeuralDensity(domain, settings)
     system = HexElasticity(domain)
+    assert np.dot(mapping.weights, mapping.physical(2.0)[0][mapping.free]) == pytest.approx(mapping.budget, rel=1e-9)
+    assert (mapping.weights.max() > 2.0) == (discs is not None)
     def objective():
         physical, cache = mapping.physical(2.0)
         solutions = system.solve(physical)
