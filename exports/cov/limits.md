@@ -4,10 +4,13 @@
 | aether4 | references | 95.34 | 0.528 | 0.242 | 0.39 | 0.168 | 0.537 | 0.244 | 0.242, 0.0845, 0.064 | 64.6 % / 35.3 % / 0.1 % | 0.391 / 0.143 | -26.0 % / -0.0 % | -40.9 % / +0.0 % |
 | simp_mma_raw_1 | candidates | 66.25 | 1.44 | 0.501 | 1.44 | 0.501 | 1.41 | 0.48 | 0.501, 0.3, 0.186 | 79.8 % / 20.2 % / 0.1 % | 1.16 / 0.287 | -19.0 % / -0.0 % | -42.6 % / -0.0 % |
 | simp_mma_recon_1 | candidates | 66.25 | 1.45 | 0.52 | 1.45 | 0.52 | 1.4 | 0.491 | 0.52, 0.311, 0.182 | 81.8 % / 18.2 % / 0.1 % | 1.19 / 0.3 | -17.6 % / +0.0 % | -42.2 % / +0.0 % |
+| simp_mma_cov_raw_1 | evaluator only | 66.25 | – | – | – | – | – | – | – | – | 0.186 / 0.0474 | – | – |
+| simp_mma_cov_recon_1 | evaluator only | 66.25 | – | – | – | – | – | – | – | – | 0.255 / 0.0694 | – | – |
 
-Grenzen (strengere Referenz):
+Grenzen (massgeblich evaluator_full = Referenz x Reserve aus LOAD_COVARIANCE_LIMITS; scaled/raw = strengere Gap-Referenz, nur Vergleich):
 - scaled: tr(ΣF) ≤ 0.3901 N mm (aether4), λmax ≤ 0.1682 N mm (aether4)
 - raw: tr(ΣF) ≤ 0.5278 N mm (aether4), λmax ≤ 0.2416 N mm (aether4)
+- evaluator_full: tr(ΣF) ≤ 0.6872 N mm (manafly3 x 0.8), λmax ≤ 0.2287 N mm (manafly3 x 0.8)
 
 - Definition: F = interface flexibility (42 x 42, LOAD_COVARIANCE order): unit force split equally over the selector nodes, unit moment as minimum-norm couple field about the selector node centroid (Sigma's reference point is taken at that centroid); F_ij = a_i . u_j (work-conjugate). Support per group as the evaluator arm-tip/crash fixtures: stack mount undersides fixed for motor pads, battery, camera; four motor seat undersides fixed for the stack; F is block-diagonal across the two groups (stack <-> rest coupling zero by construction). Mean compliance tr(Sigma F) = sum_k l_k^T F l_k, worst-case compliance lambda_max(Sigma^1/2 F Sigma^1/2), both in N mm. The limits and the evaluator targets use limit_group (36 x 36: motors, battery, camera with the stack fixed, as the optimizer's COVARIANCE support); the stack block is reported under groups and all_dofs (about 0.1 % of tr for ManaFly and Aether4)
 - Skalierung auf Arm 66.25 mm: force DOFs of a reference scaled to our arm like the arm-tip slope rule (k * arm_ref / arm_ours): F_scaled = S F S, S = sqrt(arm_ours / arm_ref) on force DOFs, 1 on moment DOFs

@@ -113,3 +113,16 @@ Spur Σ = 1761 (zentriert 1685). Eigenwerte (Rang 29): 543,4 ×2 (Kreiselmomente
 | 20.36 | 1.2% | motor_rear_right/Mz +0.71, motor_front_left/Mz -0.71, motor_front_left/Fz -0.04, motor_rear_right/Fz +0.04 |
 | 7.567 | 0.4% | battery/Fz +0.99, motor_front_left/Mz +0.07, motor_rear_right/Mz +0.07, motor_front_right/Mz -0.07 |
 | 2.158 | 0.1% | motor_front_left/Mx -0.48, motor_front_right/Mx -0.48, motor_rear_left/Mx -0.48, motor_rear_right/Mx -0.48 |
+
+## Grenzen und Kalibrierung
+
+- Maß: voll gekoppelte Evaluator-Flexibilität (42 × 42, `frame_evaluation.sigma`), Gruppe `stack_fixed` (36 × 36), unskaliert. Nutzerentscheidung 03.10.: **ManaFly 3 mit 20 % Reserve** (`LOAD_COVARIANCE_LIMITS["reference"]`, `["reserve"]`); Aether4 nur Vergleichsspalte. Erzeugt von `tools/evaluate_frame.py limits` als Variante `evaluator_full` (`exports/cov/limits.md`).
+- Grenzen: tr(ΣF) ≤ 0,8 × 0,8590 = **0,687 N mm**, λmax(Σ^½ F Σ^½) ≤ 0,8 × 0,2858 = **0,229 N mm**. Die Neun-Kriterien-Zeile des Evaluators vergleicht damit dasselbe volle Maß (vorher Grenze aus dem diagonalen Gap-Maß).
+- Optimierer: Grenze × Kalibrierfaktor je Schlüssel (`topology_problem.COVARIANCE["limits"]["calibration"]`) = Optimierer-Maß (erodiertes Voxelfeld) / Evaluator-Maß (Rohkörper) am selben Entwurf. Iteration: Lauf → Evaluator → Faktor neu; weiterer Lauf, solange sich ein Faktor um mehr als 10 % ändert.
+
+| Iteration | Entwurf | Optimierer tr / λmax N mm | Evaluator tr / λmax N mm | Faktor tr / λmax | Evaluator-Grenze | Optimierer-Grenze |
+|---|---|---|---|---|---|---|
+| 0 | SIMP+MMA 17,2 g (Feld) / 14,6 g roh | 0,8551 / 0,1967 | diag. 1,437 / 0,501 (voll 1,163 / 0,287) | 0,5952 / 0,3928 (voll 0,735 / 0,685) | 0,390 / 0,168 (Aether4 skaliert, diag.) | 0,232 / 0,066 |
+| 1 | Lastmodell 29,4 g (Feld) / 26,6 g roh (baff3e1) | 0,2322 / 0,05851 | voll 0,1862 / 0,04739 | **1,247 / 1,235** | **0,687 / 0,229** | **0,857 / 0,283** |
+
+Faktor 0 → 1 gegen das volle Maß: +70 % / +80 % (> 10 %, nächster Lauf mit Faktor 1 nötig, danach erneut kalibrieren). Der 26,6-g-Rahmen liegt im Evaluator bei 27 % / 21 % der neuen Grenzen, war also etwa 3,7× / 4,8× steifer als nötig.

@@ -13,8 +13,9 @@ COVARIANCE = {
     "support": "stiffness_arm_tip", "interfaces": ["motor_front_left", "motor_front_right", "motor_rear_left", "motor_rear_right", "battery", "camera"],
     "sigma": None, "labels": None, "model": None, "prefix": "sigma_", "ks": 50.0, "ks_cutoff": 1e-9,
     "limits": {"mean_n_mm": LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"], "worst_n_mm": LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"], "source": LOAD_COVARIANCE_LIMITS["source"],
-               "calibration": {"mean_n_mm": 0.5952, "worst_n_mm": 0.3928},
-               "calibration_source": "optimizer physical_report on the SIMP-MMA 17.2 g fine field (0.8551 / 0.1967 N mm, docs/validation/formulation_covariance_frame.json) / evaluator diagonal measure on simp_mma_raw_1 (1.4366 / 0.5007 N mm, same measure as the gap-finder limits); per key because the worst-case modes differ (optimizer: alternating pad Mx, evaluator diagonal: alternating pad Mz + battery Fz)"},
+               "calibration": {"mean_n_mm": 1.247, "worst_n_mm": 1.235},
+               "calibration_source": "iteration 1 on the 26.6 g load-model frame (baff3e1): optimizer measure of its fine eroded field (exports/runs/simp_mma_cov_opt/fine/result.json: tr 0.23219, lambda_max 0.058508 N mm) / evaluator full-coupled measure of its raw body (simp_mma_cov_raw_1: 0.18621 / 0.047386 N mm); "
+                                     "iteration 0 was optimizer / evaluator diagonal on the 17.2 g SIMP-MMA design (0.5952 / 0.3928, as full 0.735 / 0.685) and did not transfer; per key because the worst-case modes differ"},
     "definition": {
         "limits": "read from config LOAD_COVARIANCE_LIMITS (evaluator on the references); the optimizer uses limit x calibration per key (optimizer measure / evaluator measure on the same design)",
         "support": "stack mount undersides fixed in all translations (fixed regions of stiffness_arm_tip = evaluator arm_tip / gap finder group 'stack fixed'); the stack wrench is reacted by the fixture, so its 6 rows are dropped from Sigma (36 x 36 block of motors, battery, camera)",

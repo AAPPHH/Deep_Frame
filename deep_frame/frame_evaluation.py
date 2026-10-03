@@ -486,6 +486,8 @@ def sigma_limits(settings, config=LOAD_COVARIANCE_LIMITS):
         for key in keys:
             source = min(references, key=lambda name: rows[name][variant][key])
             limits.setdefault(variant, {})[key] = {"value": rows[source][variant][key], "source": source}
+    if "evaluator" in rows.get(config["reference"], {}):
+        limits["evaluator_full"] = {key: {"value": config["reserve"] * rows[config["reference"]]["evaluator"]["full"][key], "source": f"{config['reference']} x {config['reserve']}"} for key in keys}
     for row in rows.values():
         if "evaluator" in row and "raw" in row:
             row["deviation"] = {variant: {key: row["evaluator"][variant][key] / row[gap][key] - 1 for key in keys} for variant, gap in (("full", "raw"), ("diagonal", "raw"), ("scaled", "scaled"))}
@@ -513,10 +515,10 @@ def limits_markdown(result):
         cells += [f"{100 * deviation['full'][key]:+.1f} % / {100 * deviation['diagonal'][key]:+.1f} %" if deviation else "–" for key in ("mean_compliance_n_mm", "worst_case_compliance_n_mm")]
         lines.append("| " + " | ".join(cells) + " |")
     limit = result["limits"]
-    summary = [f"- {variant}: tr(ΣF) ≤ {number(limit[variant]['mean_compliance_n_mm']['value'], 4)} N mm ({limit[variant]['mean_compliance_n_mm']['source']}), λmax ≤ {number(limit[variant]['worst_case_compliance_n_mm']['value'], 4)} N mm ({limit[variant]['worst_case_compliance_n_mm']['source']})" for variant in ("scaled", "raw")]
+    summary = [f"- {variant}: tr(ΣF) ≤ {number(limit[variant]['mean_compliance_n_mm']['value'], 4)} N mm ({limit[variant]['mean_compliance_n_mm']['source']}), λmax ≤ {number(limit[variant]['worst_case_compliance_n_mm']['value'], 4)} N mm ({limit[variant]['worst_case_compliance_n_mm']['source']})" for variant in limit]
     notes = [f"Definition: {result['definition']}", f"Skalierung auf Arm {result['arm_mm']} mm: {result['scaling']}",
              "roh/skaliert/gekoppelt: Gap-Finder-Flexibilitaeten (diagonal; gekoppelt = zusaetzlich F-F und F-M innerhalb einer Schnittstelle aus mean_displacement); Evaluator voll = 42 x 42 inkl. Kopplung zwischen Schnittstellen; Abw. = Evaluator voll bzw. diagonal gegen Gap roh."]
-    return "\n".join(lines) + "\n\nGrenzen (strengere Referenz):\n" + "\n".join(summary) + "\n\n" + "\n".join(f"- {note}" for note in notes) + "\n"
+    return "\n".join(lines) + "\n\nGrenzen (massgeblich evaluator_full = Referenz x Reserve aus LOAD_COVARIANCE_LIMITS; scaled/raw = strengere Gap-Referenz, nur Vergleich):\n" + "\n".join(summary) + "\n\n" + "\n".join(f"- {note}" for note in notes) + "\n"
 
 def slice_frame(spec, config=None):
     config = config or spec

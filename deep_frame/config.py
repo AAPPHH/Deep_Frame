@@ -718,10 +718,14 @@ LOAD_COVARIANCE_LIMITS = {
                    "as the optimizer's COVARIANCE support); the stack block is reported under groups and all_dofs (about 0.1 % of tr for ManaFly and Aether4)"),
     "arm_mm": 66.25,
     "scaling": "force DOFs of a reference scaled to our arm like the arm-tip slope rule (k * arm_ref / arm_ours): F_scaled = S F S, S = sqrt(arm_ours / arm_ref) on force DOFs, 1 on moment DOFs",
-    "mean_compliance_n_mm": 0.3901,
-    "worst_case_compliance_n_mm": 0.1682,
-    "source": "stricter reference = BM Aether 4 (86.2 g, arm 95.3 mm) scaled to arm 66.25 mm, gap-finder flexibilities (diagonal), limit_group stack_fixed",
-    "references": {"aether4": {"raw": [0.5278, 0.2416], "scaled": [0.3901, 0.1682]}, "manafly3": {"raw": [1.249, 0.579], "scaled": [1.078, 0.480]}, "simp_mma_raw_1": [1.44, 0.501], "simp_mma_recon_1": [1.45, 0.520]},
+    "reference": "manafly3",
+    "reserve": 0.8,
+    "mean_compliance_n_mm": 0.687,
+    "worst_case_compliance_n_mm": 0.229,
+    "source": "user decision 03.10.: ManaFly 3 x 0.8 (20 % reserve), evaluator full-coupled 42 x 42 measure, limit_group stack_fixed, unscaled (ManaFly arm 80.0 mm, ours 66.25 mm): 0.8 x 0.8590 / 0.2858 N mm; Aether4 comparison only",
+    "references": {"manafly3": {"full": [0.8590, 0.2858], "diagonal": [1.248, 0.579]}, "aether4": {"full": [0.3907, 0.1428], "diagonal": [0.5278, 0.2416], "full_scaled": [0.2957, 0.1071]},
+                   "simp_mma_raw_1": {"full": [1.163, 0.2872], "diagonal": [1.437, 0.5007]}, "simp_mma_recon_1": {"full": [1.191, 0.3002], "diagonal": [1.446, 0.5197]},
+                   "simp_mma_cov_raw_1": {"full": [0.1862, 0.04739], "diagonal": [0.2317, 0.08596]}},
     "evidence": "exports/cov/limits.md",
 }
 
