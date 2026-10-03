@@ -1,0 +1,743 @@
+{
+ "name": "simp_mma_raw_1",
+ "frame": "C:\\clones\\Deep_Frame-mma\\exports\\runs\\simp_mma_raw_1\\evaluation\\frame.json",
+ "stl": "C:\\clones\\Deep_Frame-mma\\exports\\runs\\simp_mma_raw_1\\frame.stl",
+ "arm_mm": 66.25,
+ "mesh": {
+  "source": "evaluation tet mesh",
+  "path": "C:\\clones\\Deep_Frame-mma\\exports\\runs\\simp_mma_raw_1\\evaluation\\fea\\evaluation_te1o6t0v\\mesh.inp",
+  "evaluation": "C:\\clones\\Deep_Frame-mma\\exports\\runs\\simp_mma_raw_1\\evaluation\\fea.json",
+  "nodes": 399307,
+  "elements": 234248
+ },
+ "material": {
+  "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+  "young_modulus_mpa": 4430.0,
+  "poisson_ratio": 0.3,
+  "density_g_cm3": 1.09,
+  "orthotropic": {
+   "e_xy_mpa": 4430.0,
+   "e_z_mpa": 2170.0,
+   "nu_xy": 0.3,
+   "nu_xz": 0.3,
+   "g_xy_mpa": 1703.8,
+   "g_z_mpa": 834.6
+  },
+  "strength_xy_mpa": 102.0,
+  "strength_z_mpa": 48.0,
+  "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+  "measured": [
+   "E_xy 4430 +/- 310 MPa",
+   "E_z 2170 +/- 230 MPa",
+   "tensile strength XY 102 +/- 7 MPa",
+   "tensile strength Z 48 +/- 6 MPa",
+   "density 1.09 g/cm3"
+  ],
+  "assumptions": {
+   "nu_xy": "0.30 not in the TDS",
+   "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+   "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+   "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+   "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+  },
+  "print_axis": [
+   0.0,
+   0.0,
+   1.0
+  ]
+ },
+ "model": {
+  "load": "F: force_n split equally over the selector nodes; M: minimum-norm nodal force field over the selector nodes with zero resultant force and resultant moment moment_nmm about the global axis through the node centroid (distributed linear traction couple)",
+  "stiffness": "work-conjugate: k = P^2 / sum_i f_i.u_i, i.e. load over the load-weighted mean displacement along F (= mean nodal displacement along F) or the load-weighted mean rotation about the moment axis; units N/mm and N*mm/rad",
+  "support": "fixture as in the frame evaluation (no inertia relief there): stack mount undersides (center_fixtures) fixed in all translations for motor pads, battery rails and camera; the four motor seat undersides (motor_fixtures) fixed for the stack",
+  "point_masses": "none (the battery rigid-body patch of the evaluation sits on the rail selector and would make the rail stiffness a rigid-patch artefact)"
+ },
+ "selectors": {
+  "stack fixed": {
+   "label": "stack fixed",
+   "support": [
+    {
+     "kind": "box",
+     "min_mm": [
+      -15.95,
+      -15.95,
+      -0.01
+     ],
+     "max_mm": [
+      -9.55,
+      -9.55,
+      0.51
+     ]
+    },
+    {
+     "kind": "box",
+     "min_mm": [
+      -15.95,
+      9.55,
+      -0.01
+     ],
+     "max_mm": [
+      -9.55,
+      15.95,
+      0.51
+     ]
+    },
+    {
+     "kind": "box",
+     "min_mm": [
+      9.55,
+      -15.95,
+      -0.01
+     ],
+     "max_mm": [
+      15.95,
+      -9.55,
+      0.51
+     ]
+    },
+    {
+     "kind": "box",
+     "min_mm": [
+      9.55,
+      9.55,
+      -0.01
+     ],
+     "max_mm": [
+      15.95,
+      15.95,
+      0.51
+     ]
+    }
+   ],
+   "interfaces": {
+    "motor_front_left": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     }
+    ],
+    "motor_front_right": [
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     }
+    ],
+    "motor_rear_left": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ],
+    "motor_rear_right": [
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ],
+    "battery_rails": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -20.1,
+       -2.0,
+       27.5
+      ],
+      "max_mm": [
+       20.1,
+       2.0,
+       28.51
+      ]
+     }
+    ],
+    "camera": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -12.01,
+       26.5,
+       19.5
+      ],
+      "max_mm": [
+       12.01,
+       43.5,
+       26.01
+      ]
+     }
+    ]
+   }
+  },
+  "motor pads fixed": {
+   "label": "motor pads fixed",
+   "support": [
+    {
+     "kind": "box",
+     "min_mm": [
+      -63.05466183516625,
+      29.536448843603857,
+      6.656666666666668
+     ],
+     "max_mm": [
+      -43.85466183516625,
+      48.73644884360386,
+      7.166666666666668
+     ]
+    },
+    {
+     "kind": "box",
+     "min_mm": [
+      43.85466183516625,
+      29.536448843603857,
+      6.656666666666668
+     ],
+     "max_mm": [
+      63.05466183516625,
+      48.73644884360386,
+      7.166666666666668
+     ]
+    },
+    {
+     "kind": "box",
+     "min_mm": [
+      -63.05466183516625,
+      -48.73644884360386,
+      6.656666666666668
+     ],
+     "max_mm": [
+      -43.85466183516625,
+      -29.536448843603857,
+      7.166666666666668
+     ]
+    },
+    {
+     "kind": "box",
+     "min_mm": [
+      43.85466183516625,
+      -48.73644884360386,
+      6.656666666666668
+     ],
+     "max_mm": [
+      63.05466183516625,
+      -29.536448843603857,
+      7.166666666666668
+     ]
+    }
+   ],
+   "interfaces": {
+    "stack": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "runs": [
+  {
+   "group": "group_0",
+   "steps": 36,
+   "fixed_nodes": 2533,
+   "runtime_s": 921.0394947000023,
+   "reused_factorisation": true
+  },
+  {
+   "group": "group_1",
+   "steps": 6,
+   "fixed_nodes": 11539,
+   "runtime_s": 143.62731940000958,
+   "reused_factorisation": true
+  }
+ ],
+ "interfaces": {
+  "motor_front_left": {
+   "nodes": 2901,
+   "support": "stack fixed",
+   "Fx": {
+    "stiffness": 44.48014646731245,
+    "conjugate": 0.02248194035815236,
+    "mean_displacement_mm": [
+     0.022481940358152333,
+     0.07080985504998281,
+     0.004450235894519132
+    ]
+   },
+   "Fy": {
+    "stiffness": 3.5889865166406008,
+    "conjugate": 0.27863019138228196,
+    "mean_displacement_mm": [
+     0.07080985467782135,
+     0.27863019138228245,
+     0.029578917645639368
+    ]
+   },
+   "Fz": {
+    "stiffness": 8.466052669697811,
+    "conjugate": 0.11811880211651155,
+    "mean_displacement_mm": [
+     0.004450235906790069,
+     0.02957891751120304,
+     0.1181188021165113
+    ]
+   },
+   "Mx": {
+    "stiffness": 1502.6070873119095,
+    "conjugate": 0.0006655099715980649,
+    "mean_displacement_mm": [
+     0.00013306792479384679,
+     0.00044752480436159977,
+     -0.0005168376407618052
+    ]
+   },
+   "My": {
+    "stiffness": 2952.8519846784325,
+    "conjugate": 0.0003386556472145354,
+    "mean_displacement_mm": [
+     0.00022287528825315402,
+     0.0009427974051016884,
+     0.004441481029644934
+    ]
+   },
+   "Mz": {
+    "stiffness": 2306.7585076151863,
+    "conjugate": 0.00043350875121897243,
+    "mean_displacement_mm": [
+     -0.0022820020468626717,
+     -0.01009569616580489,
+     -0.0011706071033436734
+    ]
+   }
+  },
+  "motor_front_right": {
+   "nodes": 2781,
+   "support": "stack fixed",
+   "Fx": {
+    "stiffness": 41.875669434054664,
+    "conjugate": 0.0238802152542251,
+    "mean_displacement_mm": [
+     0.023880215254225103,
+     -0.07567003692556644,
+     -0.004875500783531112
+    ]
+   },
+   "Fy": {
+    "stiffness": 3.3463080296496406,
+    "conjugate": 0.2988368049622438,
+    "mean_displacement_mm": [
+     -0.07567003689137364,
+     0.29883680496224413,
+     0.03347213558432221
+    ]
+   },
+   "Fz": {
+    "stiffness": 7.935522654744642,
+    "conjugate": 0.12601564427544049,
+    "mean_displacement_mm": [
+     -0.0048755007909097306,
+     0.03347213552319308,
+     0.12601564427544046
+    ]
+   },
+   "Mx": {
+    "stiffness": 1448.4473778707759,
+    "conjugate": 0.0006903944287365168,
+    "mean_displacement_mm": [
+     -0.00019103779407641142,
+     0.0006730009216828477,
+     -0.0004727251183020489
+    ]
+   },
+   "My": {
+    "stiffness": 2828.773852432225,
+    "conjugate": 0.00035351005494489566,
+    "mean_displacement_mm": [
+     0.0002323083757777772,
+     -0.0010055967980582524,
+     -0.004725270466379
+    ]
+   },
+   "Mz": {
+    "stiffness": 2215.0785996693958,
+    "conjugate": 0.0004514512487950774,
+    "mean_displacement_mm": [
+     -0.002422386369433653,
+     0.010702393570298459,
+     0.0012959809139158561
+    ]
+   }
+  },
+  "motor_rear_left": {
+   "nodes": 2928,
+   "support": "stack fixed",
+   "Fx": {
+    "stiffness": 32.19531606219957,
+    "conjugate": 0.031060418790983604,
+    "mean_displacement_mm": [
+     0.031060418790983566,
+     -0.051312307250682976,
+     0.023506734170081922
+    ]
+   },
+   "Fy": {
+    "stiffness": 10.325512552700255,
+    "conjugate": 0.0968474925478142,
+    "mean_displacement_mm": [
+     -0.05131230730532787,
+     0.09684749254781436,
+     -0.01786196840163935
+    ]
+   },
+   "Fz": {
+    "stiffness": 7.431359567982444,
+    "conjugate": 0.13456487885587431,
+    "mean_displacement_mm": [
+     0.023506734156420787,
+     -0.017861968383196706,
+     0.13456487885587431
+    ]
+   },
+   "Mx": {
+    "stiffness": 2310.116390341379,
+    "conjugate": 0.0004328786221252793,
+    "mean_displacement_mm": [
+     4.711419423573435e-05,
+     -0.00041732697286202156,
+     -0.0018912625268487024
+    ]
+   },
+   "My": {
+    "stiffness": 2919.9601146529817,
+    "conjugate": 0.000342470431353424,
+    "mean_displacement_mm": [
+     0.000888411165744536,
+     -0.001016886972404372,
+     0.004407306761953559
+    ]
+   },
+   "Mz": {
+    "stiffness": 5087.40629603792,
+    "conjugate": 0.00019656381696480616,
+    "mean_displacement_mm": [
+     0.001992686120116117,
+     -0.003854563640027334,
+     0.0009942335735997258
+    ]
+   }
+  },
+  "motor_rear_right": {
+   "nodes": 2929,
+   "support": "stack fixed",
+   "Fx": {
+    "stiffness": 32.6242492086241,
+    "conjugate": 0.030652046384431544,
+    "mean_displacement_mm": [
+     0.03065204638443162,
+     0.0507971789074769,
+     -0.022719913639467418
+    ]
+   },
+   "Fy": {
+    "stiffness": 10.413702593088294,
+    "conjugate": 0.09602732467736429,
+    "mean_displacement_mm": [
+     0.050797178880163905,
+     0.09602732467736437,
+     -0.017300652661659276
+    ]
+   },
+   "Fz": {
+    "stiffness": 7.873558395724667,
+    "conjugate": 0.12700737706384432,
+    "mean_displacement_mm": [
+     -0.0227199137521338,
+     -0.01730065263059066,
+     0.12700737706384455
+    ]
+   },
+   "Mx": {
+    "stiffness": 2403.385542976407,
+    "conjugate": 0.0004160797267514463,
+    "mean_displacement_mm": [
+     -6.492356593816634e-05,
+     -0.00041876749090815875,
+     -0.0016352827053946742
+    ]
+   },
+   "My": {
+    "stiffness": 2995.6901102787706,
+    "conjugate": 0.00033381289892730017,
+    "mean_displacement_mm": [
+     0.0008688905545920098,
+     0.000992637440525776,
+     -0.004261067060088765
+    ]
+   },
+   "Mz": {
+    "stiffness": 5249.486914536464,
+    "conjugate": 0.00019049480764127236,
+    "mean_displacement_mm": [
+     0.0019391272205189504,
+     0.00377295182792762,
+     -0.0009414838510413111
+    ]
+   }
+  },
+  "battery_rails": {
+   "nodes": 541,
+   "support": "stack fixed",
+   "Fx": {
+    "stiffness": 50.14103003470499,
+    "conjugate": 0.019943746654343807,
+    "mean_displacement_mm": [
+     0.019943746654343814,
+     0.0003320460366487987,
+     0.0001299191724565619
+    ]
+   },
+   "Fy": {
+    "stiffness": 89.83443884877921,
+    "conjugate": 0.01113158842883549,
+    "mean_displacement_mm": [
+     0.00033204602421441776,
+     0.01113158842883549,
+     0.0005350576502772635
+    ]
+   },
+   "Fz": {
+    "stiffness": 229.68810544747072,
+    "conjugate": 0.004353730020332717,
+    "mean_displacement_mm": [
+     0.0001299191707948243,
+     0.0005350576491682073,
+     0.004353730020332717
+    ]
+   },
+   "Mx": {
+    "stiffness": 21494.09765500113,
+    "conjugate": 4.65244001423491e-05,
+    "mean_displacement_mm": [
+     -4.269119415896493e-05,
+     2.5431415343992592e-05,
+     -9.845299775970444e-07
+    ]
+   },
+   "My": {
+    "stiffness": 49490.89203370975,
+    "conjugate": 2.02057380440601e-05,
+    "mean_displacement_mm": [
+     1.1755622293900189e-05,
+     2.957793922772641e-06,
+     -1.5177112014787446e-05
+    ]
+   },
+   "Mz": {
+    "stiffness": 40479.885308057004,
+    "conjugate": 2.4703627305015184e-05,
+    "mean_displacement_mm": [
+     1.920457841219962e-05,
+     1.8927114048059117e-05,
+     -2.3874091312384443e-07
+    ]
+   }
+  },
+  "camera": {
+   "nodes": 7193,
+   "support": "stack fixed",
+   "Fx": {
+    "stiffness": 88.82821323205667,
+    "conjugate": 0.01125768450827193,
+    "mean_displacement_mm": [
+     0.011257684508271932,
+     -0.00010581244854719855,
+     0.00029295250590852164
+    ]
+   },
+   "Fy": {
+    "stiffness": 113.36674325784257,
+    "conjugate": 0.008820929059641318,
+    "mean_displacement_mm": [
+     -0.00010581244833866247,
+     0.008820929059641278,
+     -0.008213569400389278
+    ]
+   },
+   "Fz": {
+    "stiffness": 92.69080058529438,
+    "conjugate": 0.010788557156541081,
+    "mean_displacement_mm": [
+     0.000292952506687057,
+     -0.008213569404281962,
+     0.01078855715654106
+    ]
+   },
+   "Mx": {
+    "stiffness": 29312.907636457516,
+    "conjugate": 3.4114664174640395e-05,
+    "mean_displacement_mm": [
+     -1.1968562350896709e-05,
+     -0.0003574602428750175,
+     0.000323531213268456
+    ]
+   },
+   "My": {
+    "stiffness": 27299.766056525772,
+    "conjugate": 3.663035052862509e-05,
+    "mean_displacement_mm": [
+     -0.00015658890331016255,
+     3.455996659252059e-05,
+     -5.6214735979424466e-05
+    ]
+   },
+   "Mz": {
+    "stiffness": 42316.64633095102,
+    "conjugate": 2.363136228185893e-05,
+    "mean_displacement_mm": [
+     -0.00013560197022938948,
+     3.7891635256499504e-05,
+     -3.333470874461274e-05
+    ]
+   }
+  },
+  "stack": {
+   "nodes": 2533,
+   "support": "motor pads fixed",
+   "Fx": {
+    "stiffness": 308.68624432651734,
+    "conjugate": 0.0032395353482037106,
+    "mean_displacement_mm": [
+     0.0032395353482037124,
+     9.092359384129491e-05,
+     -1.2352885980655338e-05
+    ]
+   },
+   "Fy": {
+    "stiffness": 208.35470735876294,
+    "conjugate": 0.004799507592972759,
+    "mean_displacement_mm": [
+     9.092359636174484e-05,
+     0.0047995075929727635,
+     -0.0006207259480356493
+    ]
+   },
+   "Fz": {
+    "stiffness": 113.29254995171554,
+    "conjugate": 0.008826705731543625,
+    "mean_displacement_mm": [
+     -1.2352886199368266e-05,
+     -0.0006207259458296281,
+     0.00882670573154362
+    ]
+   },
+   "Mx": {
+    "stiffness": 21369.919133080803,
+    "conjugate": 4.6794748907214725e-05,
+    "mean_displacement_mm": [
+     1.303270631662058e-06,
+     -3.4215194078957654e-05,
+     -0.00016033433714962504
+    ]
+   },
+   "My": {
+    "stiffness": 24394.61991517869,
+    "conjugate": 4.09926452421497e-05,
+    "mean_displacement_mm": [
+     4.2337157500987e-05,
+     -3.9921591904737464e-06,
+     2.002420844846948e-07
+    ]
+   },
+   "Mz": {
+    "stiffness": 104131.2911261854,
+    "conjugate": 9.603261317371055e-06,
+    "mean_displacement_mm": [
+     1.8122978369522303e-05,
+     1.0952419660481933e-06,
+     -1.673652546387668e-07
+    ]
+   }
+  }
+ }
+}

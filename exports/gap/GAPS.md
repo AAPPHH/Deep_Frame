@@ -21,7 +21,7 @@ Reine Messung. Es wurde keine Bedingung eingebaut; alle Grenzen unten sind Vorsc
 | SIMP+MMA Rekonstruktion | 66.2 mm | 132.5 mm | 16.4 g |
 
 - Aether 4 ist mit rund 191 mm Achsabstand der größere Rahmen und mit 86 g fast dreimal so schwer wie ManaFly (29 g). Der Kandidat hat 133 mm und 16 g. Aether 4 ist eine massive Plattenkonstruktion und liegt fast überall höher; die schwächere Referenz ist deshalb fast immer ManaFly.
-- Skalierung wie bei der bestehenden Armspitzen-Grenze (`scaled.arm_tip_slope`, gleiche Neigung (F/k)/L): Kräfte k_skaliert = k_ref · L_ref / L_Kandidat, also ManaFly × 1,208 und Aether 4 × 1,439. Für den kleineren Kandidaten wird die Grenze damit strenger.
+- Skalierung wie bei der bestehenden Armspitzen-Grenze (`scaled.arm_tip_slope`, gleiche Neigung (F/k)/L): Kräfte k_skaliert = k_ref · L_ref / L_Kandidat, also ManaFly × 1,208 und Aether 4 × 1,439. Für den kleineren Kandidaten wird die Grenze damit strenger. Physikalisch begründet ist das für die Motorsitze (Kragarm); für Stack, Akkuschienen und Kamera wird es nur der Einheitlichkeit halber genauso angewandt.
 - Momente bleiben unskaliert, denn die Verdrehung unter gleichem Moment ist schon ein Winkel wie die Armneigung. Bei geometrischer Ähnlichkeit mit gleichen Querschnitten würde k_M ~ EI/L ebenfalls mit L_ref/L wachsen; das ist hier bewusst nicht angesetzt.
 - Die Tabellen zeigen Verhältnisse unskaliert und in Klammern skaliert (nur bei Kräften verschieden). Entschieden wird auf der Rekonstruktion, unskaliert: Lücke = unter 70 % beider Referenzen. Fälle, die erst skaliert unter 70 % fallen, sind eigens markiert.
 - Kein Massenbezug: der Kandidat ist gut halb so schwer wie ManaFly. Für die Bedingung zählt die absolute Steifigkeit.
@@ -109,40 +109,47 @@ Rekon./Referenz unskaliert, in Klammern skaliert. roh/beide = Rohfeld durch die 
 
 ## Vorgeschlagene Bedingungen (nicht eingebaut)
 
-Grenze = schwächere Referenz nach Skalierung (Kräfte × L_ref/L_Kandidat, Momente unskaliert). Abdeckung: ob bestehende oder gerade geplante Bedingungen (Armspitze senkrecht, Armspitze seitlich, Verwindung, Crash-Nachgiebigkeiten, f1) die Richtung schon erfassen.
+Alle Richtungen, in denen die Rekonstruktion unskaliert unter 70 % beider Referenzen liegt. Grenze = schwächere Referenz nach Skalierung (Kräfte × L_ref/L_Kandidat, Momente unskaliert). roh auch = das Rohfeld liegt ebenfalls unter 70 % beider Referenzen. Abdeckung: ob bestehende oder gerade geplante Bedingungen (Armspitze senkrecht, Armspitze seitlich, Verwindung, Crash-Nachgiebigkeiten, f1) die Richtung schon erfassen. motor_front_right My liegt mit 69,8 % (in den Schnittstellentabellen gerundet 70 %) knapp unter der Schwelle.
 
-| # | Schnittstelle | Richtung | Lücke | Rekon. | roh | Grenze | Quelle unskaliert | Rekon./Grenze | Abdeckung |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | motor_front_left | Fx | nur skaliert | 46.07 | 44.48 | ≥ 78.4 | ManaFly 64.89 | 59 % | nur Crash Arm (schräg 2:2:1, Grenze 1,5 × Referenz-Nachgiebigkeit, locker); Armspitze seitlich (geplant) wirkt quer zum Arm, in x nur mit Anteil 0,59 |
-| 2 | motor_front_left | Fy | R, roh | 3.03 | 3.589 | ≥ 66.23 | ManaFly 54.81 | 5 % | teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm |
-| 3 | motor_front_left | Mx | R, roh | 1414 | 1503 | ≥ 2917 | ManaFly 2917 | 48 % | indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes |
-| 4 | motor_front_left | My | R, roh | 3198 | 2953 | ≥ 4710 | ManaFly 4710 | 68 % | indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx |
-| 5 | motor_front_left | Mz | R, roh | 1980 | 2307 | ≥ 2.147e+04 | ManaFly 2.147e+04 | 9 % | indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes |
-| 6 | motor_front_right | Fx | R, roh | 43.71 | 41.88 | ≥ 78.59 | ManaFly 65.05 | 56 % | nur Crash Arm (schräg 2:2:1, Grenze 1,5 × Referenz-Nachgiebigkeit, locker); Armspitze seitlich (geplant) wirkt quer zum Arm, in x nur mit Anteil 0,59 |
-| 7 | motor_front_right | Fy | R, roh | 2.854 | 3.346 | ≥ 67.54 | ManaFly 55.9 | 4 % | teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm |
-| 8 | motor_front_right | Mx | R, roh | 1390 | 1448 | ≥ 2928 | ManaFly 2928 | 47 % | indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes |
-| 9 | motor_front_right | My | R, roh | 3306 | 2829 | ≥ 4733 | ManaFly 4733 | 70 % | indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx |
-| 10 | motor_front_right | Mz | R, roh | 1941 | 2215 | ≥ 2.156e+04 | ManaFly 2.156e+04 | 9 % | indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes |
-| 11 | motor_rear_left | Fy | R | 9.412 | 10.33 | ≥ 17.78 | ManaFly 14.72 | 53 % | teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm |
-| 12 | motor_rear_left | Mx | R, roh | 2305 | 2310 | ≥ 5673 | ManaFly 5673 | 41 % | indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes |
-| 13 | motor_rear_left | My | R, roh | 2755 | 2920 | ≥ 8700 | ManaFly 8700 | 32 % | indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx |
-| 14 | motor_rear_left | Mz | R, roh | 4454 | 5087 | ≥ 1.387e+04 | ManaFly 1.387e+04 | 32 % | indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes |
-| 15 | motor_rear_right | Fy | R | 9.846 | 10.41 | ≥ 17.51 | ManaFly 14.5 | 56 % | teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm |
-| 16 | motor_rear_right | Mx | R, roh | 2321 | 2403 | ≥ 5612 | ManaFly 5612 | 41 % | indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes |
-| 17 | motor_rear_right | My | R, roh | 2770 | 2996 | ≥ 8593 | ManaFly 8593 | 32 % | indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx |
-| 18 | motor_rear_right | Mz | R, roh | 4508 | 5249 | ≥ 1.382e+04 | ManaFly 1.382e+04 | 33 % | indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes |
-| 19 | stack | Fx | nur skaliert | 351.6 | 308.7 | ≥ 524 | ManaFly 433.7 | 67 % | indirekt: Crash seitlich (anderer Lastangriff) |
-| 20 | stack | Fy | R, roh | 218.8 | 208.4 | ≥ 825.8 | ManaFly 683.5 | 26 % | indirekt: Crash front/hinten greifen an Kamera bzw. Akkudeck an, nicht am Stack; f1 hat keine Masse am Stack |
-| 21 | stack | Mx | nur roh | 3.834e+04 | 2.137e+04 | ≥ 3.434e+04 | ManaFly 3.434e+04 | 112 % | teilweise: Verwindung (geplant), über die Motorsitze gekoppelt |
-| 22 | stack | Mz | R, roh | 1.716e+05 | 1.041e+05 | ≥ 4.051e+05 | ManaFly 4.051e+05 | 42 % | nein: Gier-Torsion (torsion_yaw) wird nur überwacht, nicht begrenzt |
-| 23 | battery_rails | Fz | nur skaliert | 213.6 | 229.7 | ≥ 354.1 | Aether 4 246.1 | 60 % | Crash- und f1-Fälle |
-| 24 | battery_rails | Mz | R, roh | 4.334e+04 | 4.048e+04 | ≥ 1.307e+05 | Aether 4 1.307e+05 | 33 % | nein: torsion_yaw nur Monitor; Crash hinten belastet das Akkudeck längs |
+| # | Schnittstelle | Richtung | Rekon. | roh | Grenze | Quelle unskaliert | Rekon./Grenze | Rekon./schwächere Ref. unskaliert | roh auch | Abdeckung |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | motor_front_left | Fy | 3.03 | 3.589 | ≥ 66.23 | ManaFly 54.81 | 4.6 % | 5.5 % | ja | teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm |
+| 2 | motor_front_left | Mx | 1414 | 1503 | ≥ 2917 | ManaFly 2917 | 48.5 % | 48.5 % | ja | indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes |
+| 3 | motor_front_left | My | 3198 | 2953 | ≥ 4710 | ManaFly 4710 | 67.9 % | 67.9 % | ja | indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx |
+| 4 | motor_front_left | Mz | 1980 | 2307 | ≥ 2.147e+04 | ManaFly 2.147e+04 | 9.2 % | 9.2 % | ja | indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes |
+| 5 | motor_front_right | Fx | 43.71 | 41.88 | ≥ 78.59 | ManaFly 65.05 | 55.6 % | 67.2 % | ja | nur Crash Arm (schräg 2:2:1, Grenze 1,5 × Referenz-Nachgiebigkeit, locker); Armspitze seitlich (geplant) wirkt quer zum Arm, in x nur mit Anteil 0,59 |
+| 6 | motor_front_right | Fy | 2.854 | 3.346 | ≥ 67.54 | ManaFly 55.9 | 4.2 % | 5.1 % | ja | teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm |
+| 7 | motor_front_right | Mx | 1390 | 1448 | ≥ 2928 | ManaFly 2928 | 47.5 % | 47.5 % | ja | indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes |
+| 8 | motor_front_right | My | 3306 | 2829 | ≥ 4733 | ManaFly 4733 | 69.8 % | 69.8 % | ja | indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx |
+| 9 | motor_front_right | Mz | 1941 | 2215 | ≥ 2.156e+04 | ManaFly 2.156e+04 | 9.0 % | 9.0 % | ja | indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes |
+| 10 | motor_rear_left | Fy | 9.412 | 10.33 | ≥ 17.78 | ManaFly 14.72 | 52.9 % | 64.0 % | nein | nur Crash Arm; Armspitze seitlich (geplant) greift wie die senkrechte nur vorne links an |
+| 11 | motor_rear_left | Mx | 2305 | 2310 | ≥ 5673 | ManaFly 5673 | 40.6 % | 40.6 % | ja | indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes |
+| 12 | motor_rear_left | My | 2755 | 2920 | ≥ 8700 | ManaFly 8700 | 31.7 % | 31.7 % | ja | indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx |
+| 13 | motor_rear_left | Mz | 4454 | 5087 | ≥ 1.387e+04 | ManaFly 1.387e+04 | 32.1 % | 32.1 % | ja | indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes |
+| 14 | motor_rear_right | Fy | 9.846 | 10.41 | ≥ 17.51 | ManaFly 14.5 | 56.2 % | 67.9 % | nein | nur Crash Arm; Armspitze seitlich (geplant) greift wie die senkrechte nur vorne links an |
+| 15 | motor_rear_right | Mx | 2321 | 2403 | ≥ 5612 | ManaFly 5612 | 41.4 % | 41.4 % | ja | indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes |
+| 16 | motor_rear_right | My | 2770 | 2996 | ≥ 8593 | ManaFly 8593 | 32.2 % | 32.2 % | ja | indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx |
+| 17 | motor_rear_right | Mz | 4508 | 5249 | ≥ 1.382e+04 | ManaFly 1.382e+04 | 32.6 % | 32.6 % | ja | indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes |
+| 18 | stack | Fy | 218.8 | 208.4 | ≥ 825.8 | ManaFly 683.5 | 26.5 % | 32.0 % | ja | indirekt: Crash front/hinten greifen an Kamera bzw. Akkudeck an, nicht am Stack; f1 hat keine Masse am Stack |
+| 19 | stack | Mz | 1.716e+05 | 1.041e+05 | ≥ 4.051e+05 | ManaFly 4.051e+05 | 42.4 % | 42.4 % | ja | nein: Gier-Torsion (torsion_yaw) wird nur überwacht, nicht begrenzt |
+| 20 | battery_rails | Mz | 4.334e+04 | 4.048e+04 | ≥ 1.307e+05 | Aether 4 1.307e+05 | 33.2 % | 33.2 % | ja | nein: torsion_yaw nur Monitor; Crash hinten belastet das Akkudeck längs |
 
-Zählung: 20 Richtungen sind auf der Rekonstruktion unskaliert unter 70 % beider Referenzen (R). Dazu kommen 3 nur skaliert (motor_front_left Fx 59 %, stack Fx 67 %, battery_rails Fz 60 %) und 1 nur im Rohfeld (stack Mx, Rekonstruktion 112 % von ManaFly); diese 4 sind Hinweise, keine Vorschläge. Ausnahme: motor_front_left Fx sollte wegen der Spiegelsymmetrie zusammen mit motor_front_right Fx (R, 67 %) behandelt werden.
+## Hinweise, keine Vorschläge
+
+Nur skaliert unter 70 % beider Referenzen oder nur im Rohfeld.
+
+| # | Schnittstelle | Richtung | Rekon. | roh | Grenze | Quelle unskaliert | Rekon./Grenze | Rekon./schwächere Ref. unskaliert | roh auch | Abdeckung |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | motor_front_left | Fx | 46.07 | 44.48 | ≥ 78.4 | ManaFly 64.89 | 58.8 % | 71.0 % | nur skaliert | nur Crash Arm (schräg 2:2:1, Grenze 1,5 × Referenz-Nachgiebigkeit, locker); Armspitze seitlich (geplant) wirkt quer zum Arm, in x nur mit Anteil 0,59 |
+| 2 | stack | Fx | 351.6 | 308.7 | ≥ 524 | ManaFly 433.7 | 67.1 % | 81.1 % | nur skaliert | indirekt: Crash seitlich (anderer Lastangriff) |
+| 3 | stack | Mx | 3.834e+04 | 2.137e+04 | ≥ 3.434e+04 | ManaFly 3.434e+04 | 111.7 % | 111.7 % | nur roh | teilweise: Verwindung (geplant), über die Motorsitze gekoppelt |
+| 4 | battery_rails | Fz | 213.6 | 229.7 | ≥ 354.1 | Aether 4 246.1 | 60.3 % | 86.8 % | nur skaliert | Crash- und f1-Fälle |
+
+Zählung: 20 Vorschläge, 4 Hinweise. Ausnahme bei den Hinweisen: motor_front_left Fx sollte wegen der Spiegelsymmetrie zusammen mit motor_front_right Fx (R, 67 %) behandelt werden.
 
 ## Einordnung
 
-- Größte Lücken: Motorsitze vorne Fy (5 % von ManaFly) und Mz (9 %); Motorsitze hinten Mx, My, Mz (32–41 %) und Fy (64–68 %); Stack Fy (32 %) und Mz (42 %); Akkuschienen Mz (31 % von Aether 4). Kamera, Motorsitze Fz und Akkuschienen Fx, Fy, Mx, My liegen auf oder über mindestens einer Referenz.
+- Größte Lücken: Motorsitze vorne Fy (5 % von ManaFly) und Mz (9 %); Motorsitze hinten Mx, My, Mz (32–41 %) und Fy (64–68 %); Stack Fy (32 %) und Mz (42 %); Akkuschienen Mz (33 % von Aether 4, 31 % von ManaFly). Kamera, Motorsitze Fz und Akkuschienen Fx, Fy, Mx, My liegen auf oder über mindestens einer Referenz.
 - Motor Fy ist die Längsrichtung, beim Armwinkel 36° gegen x also überwiegend quer zum Arm. Die geplante Bedingung Armspitze seitlich greift genau dort und dürfte die Fy-Lücke vorne großteils schließen, wenn ihre Grenze aus denselben Referenzen kommt. Motor Fx ist nur über den Crash-Fall Arm erfasst.
 - Die Verdrehung der Motorsitze (Mx, My, Mz an allen vier Sitzen, 12 der 20 Lücken) erfasst keine Bedingung direkt. Armspitze senkrecht, seitlich und Verwindung begrenzen Verschiebungen, nicht die Verdrehung des Sitzes. Ob die neuen Bedingungen sie mitziehen, zeigt erst die Nachmessung.
 - Gier-Torsion (Stack Mz, Akkuschienen Mz) ist nicht begrenzt; `torsion_yaw` läuft nur als Monitor. Naheliegender Kandidat für eine harte Bedingung: eine Bedingung auf die Gier-Torsion deckt beide Zeilen ab.

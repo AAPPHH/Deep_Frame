@@ -10,7 +10,8 @@
   "reference": "mf",
   "reference_value": 64.89227384519641,
   "limit": 78.4040575261129,
-  "coverage": "nur Crash Arm (schräg 2:2:1, Grenze 1,5 × Referenz-Nachgiebigkeit, locker); Armspitze seitlich (geplant) wirkt quer zum Arm, in x nur mit Anteil 0,59"
+  "coverage": "nur Crash Arm (schräg 2:2:1, Grenze 1,5 × Referenz-Nachgiebigkeit, locker); Armspitze seitlich (geplant) wirkt quer zum Arm, in x nur mit Anteil 0,59",
+  "proposal": false
  },
  {
   "interface": "motor_front_left",
@@ -23,7 +24,8 @@
   "reference": "mf",
   "reference_value": 54.81341330278565,
   "limit": 66.22658993343832,
-  "coverage": "teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm"
+  "coverage": "teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm",
+  "proposal": true
  },
  {
   "interface": "motor_front_left",
@@ -36,7 +38,8 @@
   "reference": "mf",
   "reference_value": 2916.596248522131,
   "limit": 2916.596248522131,
-  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes"
+  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes",
+  "proposal": true
  },
  {
   "interface": "motor_front_left",
@@ -49,7 +52,8 @@
   "reference": "mf",
   "reference_value": 4710.252259892143,
   "limit": 4710.252259892143,
-  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx"
+  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx",
+  "proposal": true
  },
  {
   "interface": "motor_front_left",
@@ -62,7 +66,8 @@
   "reference": "mf",
   "reference_value": 21474.741368525556,
   "limit": 21474.741368525556,
-  "coverage": "indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes"
+  "coverage": "indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes",
+  "proposal": true
  },
  {
   "interface": "motor_front_right",
@@ -75,7 +80,8 @@
   "reference": "mf",
   "reference_value": 65.04950116792182,
   "limit": 78.59402251462673,
-  "coverage": "nur Crash Arm (schräg 2:2:1, Grenze 1,5 × Referenz-Nachgiebigkeit, locker); Armspitze seitlich (geplant) wirkt quer zum Arm, in x nur mit Anteil 0,59"
+  "coverage": "nur Crash Arm (schräg 2:2:1, Grenze 1,5 × Referenz-Nachgiebigkeit, locker); Armspitze seitlich (geplant) wirkt quer zum Arm, in x nur mit Anteil 0,59",
+  "proposal": true
  },
  {
   "interface": "motor_front_right",
@@ -88,7 +94,8 @@
   "reference": "mf",
   "reference_value": 55.90341375631611,
   "limit": 67.54354884392374,
-  "coverage": "teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm"
+  "coverage": "teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm",
+  "proposal": true
  },
  {
   "interface": "motor_front_right",
@@ -101,7 +108,8 @@
   "reference": "mf",
   "reference_value": 2928.0071867382926,
   "limit": 2928.0071867382926,
-  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes"
+  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes",
+  "proposal": true
  },
  {
   "interface": "motor_front_right",
@@ -114,7 +122,8 @@
   "reference": "mf",
   "reference_value": 4733.401526924097,
   "limit": 4733.401526924097,
-  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx"
+  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx",
+  "proposal": true
  },
  {
   "interface": "motor_front_right",
@@ -127,7 +136,8 @@
   "reference": "mf",
   "reference_value": 21556.0329140986,
   "limit": 21556.0329140986,
-  "coverage": "indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes"
+  "coverage": "indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes",
+  "proposal": true
  },
  {
   "interface": "motor_rear_left",
@@ -140,7 +150,8 @@
   "reference": "mf",
   "reference_value": 14.717219497966882,
   "limit": 17.781619532946007,
-  "coverage": "teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm"
+  "coverage": "nur Crash Arm; Armspitze seitlich (geplant) greift wie die senkrechte nur vorne links an",
+  "proposal": true
  },
  {
   "interface": "motor_rear_left",
@@ -153,7 +164,8 @@
   "reference": "mf",
   "reference_value": 5673.141845843016,
   "limit": 5673.141845843016,
-  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes"
+  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes",
+  "proposal": true
  },
  {
   "interface": "motor_rear_left",
@@ -166,7 +178,8 @@
   "reference": "mf",
   "reference_value": 8699.802427348264,
   "limit": 8699.802427348264,
-  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx"
+  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx",
+  "proposal": true
  },
  {
   "interface": "motor_rear_left",
@@ -179,7 +192,8 @@
   "reference": "mf",
   "reference_value": 13871.655911445345,
   "limit": 13871.655911445345,
-  "coverage": "indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes"
+  "coverage": "indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes",
+  "proposal": true
  },
  {
   "interface": "motor_rear_right",
@@ -192,7 +206,8 @@
   "reference": "mf",
   "reference_value": 14.495441945823439,
   "limit": 17.513663751372757,
-  "coverage": "teilweise: Armspitze seitlich (geplant; quer zum Arm = (0,59; 0,81), also überwiegend Fy) + Crash Arm"
+  "coverage": "nur Crash Arm; Armspitze seitlich (geplant) greift wie die senkrechte nur vorne links an",
+  "proposal": true
  },
  {
   "interface": "motor_rear_right",
@@ -205,7 +220,8 @@
   "reference": "mf",
   "reference_value": 5612.127689894278,
   "limit": 5612.127689894278,
-  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes"
+  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant) begrenzen die Armbiegung, nicht die Kippsteifigkeit des Sitzes",
+  "proposal": true
  },
  {
   "interface": "motor_rear_right",
@@ -218,7 +234,8 @@
   "reference": "mf",
   "reference_value": 8593.440499576463,
   "limit": 8593.440499576463,
-  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx"
+  "coverage": "indirekt: Armspitze senkrecht und Verwindung (geplant), wie Mx",
+  "proposal": true
  },
  {
   "interface": "motor_rear_right",
@@ -231,7 +248,8 @@
   "reference": "mf",
   "reference_value": 13817.039000127947,
   "limit": 13817.039000127947,
-  "coverage": "indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes"
+  "coverage": "indirekt: Armspitze seitlich (geplant) begrenzt die Biegung in der Ebene, nicht die Drehung des Sitzes",
+  "proposal": true
  },
  {
   "interface": "stack",
@@ -244,7 +262,8 @@
   "reference": "mf",
   "reference_value": 433.72373897260076,
   "limit": 524.0331239119586,
-  "coverage": "indirekt: Crash seitlich (anderer Lastangriff)"
+  "coverage": "indirekt: Crash seitlich (anderer Lastangriff)",
+  "proposal": false
  },
  {
   "interface": "stack",
@@ -257,7 +276,8 @@
   "reference": "mf",
   "reference_value": 683.4696409667771,
   "limit": 825.7807882575473,
-  "coverage": "indirekt: Crash front/hinten greifen an Kamera bzw. Akkudeck an, nicht am Stack; f1 hat keine Masse am Stack"
+  "coverage": "indirekt: Crash front/hinten greifen an Kamera bzw. Akkudeck an, nicht am Stack; f1 hat keine Masse am Stack",
+  "proposal": true
  },
  {
   "interface": "stack",
@@ -270,7 +290,8 @@
   "reference": "mf",
   "reference_value": 34338.543087112106,
   "limit": 34338.543087112106,
-  "coverage": "teilweise: Verwindung (geplant), über die Motorsitze gekoppelt"
+  "coverage": "teilweise: Verwindung (geplant), über die Motorsitze gekoppelt",
+  "proposal": false
  },
  {
   "interface": "stack",
@@ -283,7 +304,8 @@
   "reference": "mf",
   "reference_value": 405073.0571942246,
   "limit": 405073.0571942246,
-  "coverage": "nein: Gier-Torsion (torsion_yaw) wird nur überwacht, nicht begrenzt"
+  "coverage": "nein: Gier-Torsion (torsion_yaw) wird nur überwacht, nicht begrenzt",
+  "proposal": true
  },
  {
   "interface": "battery_rails",
@@ -296,7 +318,8 @@
   "reference": "ae",
   "reference_value": 246.09489404916746,
   "limit": 354.14971416878376,
-  "coverage": "Crash- und f1-Fälle"
+  "coverage": "Crash- und f1-Fälle",
+  "proposal": false
  },
  {
   "interface": "battery_rails",
@@ -309,6 +332,7 @@
   "reference": "ae",
   "reference_value": 130656.76616635932,
   "limit": 130656.76616635932,
-  "coverage": "nein: torsion_yaw nur Monitor; Crash hinten belastet das Akkudeck längs"
+  "coverage": "nein: torsion_yaw nur Monitor; Crash hinten belastet das Akkudeck längs",
+  "proposal": true
  }
 ]
