@@ -15,6 +15,7 @@ from deep_frame.frame import motor_positions, prop_plane_z
 from deep_frame.topology_geometry import _merge, build_design_domain, grid_centers, mirror_field, region_contains, symmetric_domains
 from deep_frame.topology_neural import member_widths, neural_settings, optimize_neural
 from deep_frame.topology_optimization import HexElasticity, ModalConstraint, _settings, optimize_topology
+from deep_frame.topology_reconstruction import hoop_paths
 from tools.multi_crash_study import cross_sections, stitch
 from tools.topology_study import study_parameters
 
@@ -81,7 +82,7 @@ class R2Domain:
     def __init__(self, cfg):
         self.pad, self.hoop, self.crash, self.relief, self.discs = cfg["pad"], cfg["hoop"], cfg["crash_directions"], cfg["inertia_relief"], cfg["prop_discs"]
     def hoop_paths(self):
-        return [np.array([[sign * self.hoop["x_mm"], y, z] for y, z in self.hoop["path_yz_mm"]], dtype=float) for sign in (-1, 1)]
+        return hoop_paths(self.hoop)
     def masses(self, domain, fraction):
         components, regions = domain["metadata"]["components"], {region["name"]: region for region in domain["regions"]}
         items = []

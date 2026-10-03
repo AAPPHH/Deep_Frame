@@ -744,6 +744,7 @@ EVALUATION_CONFIG = {
                           "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
                           "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"}},
     "fea_settings": {"threads": 4, "mesh_threads": 4, "mesh_timeout_s": 900.0, "solver_timeout_s": 900.0, "fea_memory_budget_mb": 9728.0, "mesh_minimum_sicn": 0.005, "fea_remesh_targets_mm": [2.0, 1.5], "num_modes": 6},
+    "fea_surface": {"targets_mm": [0.5, 0.6], "taubin": 10, "feature_degs": [40.0, 60.0, 89.0]},
     "slicer": {"executable": "C:/clones/prusaslicer/PrusaSlicer-2.9.6/prusa-slicer-console.exe", "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
                "options": ["--nozzle-diameter", "0.4", "--layer-height", "0.2", "--first-layer-height", "0.2", "--perimeters", "2", "--fill-density", "15%", "--filament-diameter", "1.75", "--filament-density", "1.09",
                            "--bed-shape", "0x0,256x0,256x256,0x256", "--max-print-height", "256", "--center", "128,128"],
@@ -760,7 +761,7 @@ EVALUATION_CONFIG = {
 EVALUATION_KINDS = {"name": "text", "stl": "path", "output": "path", "print_axis": ["float", "float", "float"], "prop_diameter_mm": "float", "motors": "object", "motor_up": "object", "ours": "flag", "domain": "path", "datasheet": "path", "components": "list",
                     "mount_patterns": "list", "keep_outs": "list", "connectors": "list", "selectors": "object", "domain_grid": ["int", "int", "int"], "parts": [("geometry", "walls", "fea", "slicer")], "python": "text", "compute": "text", "targets": "object", "warnings": "object",
                     **{key: "float" for key in ("voxel_mm", "loop_closing_mm", "overhang_deg", "bed_tolerance_mm", "fit_tolerance_mm3", "hub_radius_mm", "section_voxel_mm", "hole_tolerance_mm", "screw_head_radius_mm", "tool_skip_mm", "connector_radius_mm", "curvature_radius_mm")},
-                    "surface_samples": "int", "seed": "int", "loads": "object", "fea_settings": "object", "slicer": "object"}
+                    "surface_samples": "int", "seed": "int", "loads": "object", "fea_settings": "object", "fea_surface": "object", "slicer": "object"}
 
 INTEGRATION_CONFIG = {
     "model_version": "frame-v0-linear-fixtures-v1",
@@ -999,8 +1000,10 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "prune_passes": 3,
     "path_sigma_samples": 4.0,
     "section_sigma_samples": 6.0,
-    "minimum_radius_mm": 0.5,
-    "maximum_aspect": 4.0,
+    "minimum_radius_mm": 1.0,
+    "maximum_aspect": 2.0,
+    "joint_blend_factor": 0.5,
+    "anchor_reach_mm": 3.0,
     "volume_match": True,
     "shell_aspect": 2.2,
     "shell_sigma_mm": 1.0,
@@ -1013,20 +1016,23 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "fea_surface_mm": 0.5,
     "fea_surface_taubin": 10,
     "boolean_offset_mm": 0.3,
-    "closing_radius_mm": 0.0,
+    "closing_radius_mm": 0.5,
     "reference_subdivisions": 2,
     "preserve_blend_mm": 2.5,
     "preserve_round_mm": 0.8,
-    "preserve_flush_mm": 0.02,
+    "preserve_flush_mm": -0.3,
     "member_smooth_mm": 0.5,
     "root_preserves": "motor_contact",
     "root_distance_mm": 3.0,
     "root_taper_mm": 6.0,
     "root_taper_slope": 0.5,
     "root_slope_floor_mm": 1.0,
-    "minimum_scale": 0.9,
+    "minimum_scale": 0.7,
     "maximum_scale": 1.15,
     "calibration_tolerance": 0.03,
+    "load_path_voxel_mm": 0.3,
+    "load_path_core_mm": [0.5, 0.9],
+    "load_path_mounts": ["motor_contact", "aio_contact", "battery_rail", "camera_mount"],
 }
 
 DESIGN_RECONSTRUCTION_KINDS = {
@@ -1036,6 +1042,8 @@ DESIGN_RECONSTRUCTION_KINDS = {
     "fine_shape": ["int", "int", "int"],
     "volume_match": "flag",
     "root_preserves": "text",
+    "load_path_core_mm": ["float"],
+    "load_path_mounts": ["text"],
 }
 
 MATERIALS = {

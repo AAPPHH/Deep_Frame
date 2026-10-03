@@ -10,7 +10,7 @@ import trimesh
 from scipy import ndimage
 
 from deep_frame.config import COMPONENT_DEFAULTS, EVALUATION_CONFIG, EVALUATION_KINDS, FEA_CONFIG, FRAME_DEFAULTS, IMPLICIT_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG, configure
-from deep_frame.fea import MESH_KEYS, clean_slivers, evaluate, print_axes
+from deep_frame.fea import MESH_KEYS, clean_slivers, evaluate, print_axes, robust_surface
 from deep_frame.topology_geometry import region_contains
 
 MOTORS = ("front_left", "front_right", "rear_left", "rear_right")
@@ -32,7 +32,7 @@ def load_frame(spec):
 
 def frame_spec(overrides):
     spec = configure(EVALUATION_CONFIG, EVALUATION_KINDS, overrides, ("name", "stl", "output"))
-    spec.update({key: {**EVALUATION_CONFIG[key], **spec[key]} for key in ("loads", "fea_settings", "slicer")})
+    spec.update({key: {**EVALUATION_CONFIG[key], **spec[key]} for key in ("loads", "fea_settings", "fea_surface", "slicer")})
     if spec["ours"] or spec["domain"]:
         spec = {**spec, **ours(spec)}
     missing = [key for key in ("motors", "selectors") if not spec[key]]
@@ -275,10 +275,12 @@ def mechanics(spec, config=None):
     material, masses, cases = load_model(spec, config)
     settings = {**FEA_CONFIG["settings"], **{key: IMPLICIT_CONFIG[key] for key in MESH_KEYS}, **config["fea_settings"], "stiffness_load_case": "arm_tip", "work_dir": str(Path(spec["output"]) / "fea")}
     sliver = None
-    if np.degrees(mesh.face_angles.min()) < settings["fea_direct_minimum_angle_deg"]:
+    mesh, trials, chosen = robust_surface(mesh, settings, config["fea_surface"])
+    settings.update(chosen)
+    if not chosen and np.degrees(mesh.face_angles.min()) < settings["fea_direct_minimum_angle_deg"]:
         mesh, sliver = clean_slivers(mesh, settings)
     result = evaluate(mesh, material, masses, cases, settings)
-    result["sliver_cleanup"] = sliver
+    result.update(sliver_cleanup=sliver, fea_surface={"trials": trials, "choice": chosen, "volume_mm3": float(mesh.volume)})
     result["model"] = {"material": material, "point_masses": masses, "load_cases": cases, "loads": config["loads"],
                        "support": {"arm_tip": "centre mount undersides fixed (all translations)", "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
                                    "crash_front": "centre mount undersides fixed", "crash_arm": "centre mount undersides fixed", "crash_back": "four motor seat undersides fixed"}}

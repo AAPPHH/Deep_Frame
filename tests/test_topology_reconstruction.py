@@ -4,7 +4,7 @@ from scipy.ndimage import label
 
 from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG
 from deep_frame.topology_implicit import TWENTY_SIX, ImplicitField
-from deep_frame.topology_reconstruction import DesignGraph, reconstruct, sweep_values
+from deep_frame.topology_reconstruction import DesignGraph, Reconstruction, hoop_paths, load_paths, reconstruct, sections, sweep_values, tube
 
 H = 0.5
 RADIUS = 1.5
@@ -70,3 +70,28 @@ def test_preserve_is_rounded_but_keeps_exact_mating_plane(truss):
     assert np.any(np.abs(mesh.vertices[:, 2]-top) < 1e-6)
     assert not mesh.contains([HUB+2.5-0.1])[0] and mesh.contains([[HUB[0], HUB[1], top-0.05]])[0]
     assert report["mass_budget"]["node_spheres_mm3"] <= report["mass_budget"]["assigned_nodes_mm3"]+1e-6
+
+def test_sections_keep_two_millimetre_minimum_and_oval_limit():
+    a, b = sections([0.4, 3.0, 9.0], [0.3, 2.0, 1.5], 0.8, DESIGN_RECONSTRUCTION_CONFIG)
+    assert np.all(2*b >= 2.0) and np.all(a >= b) and np.all(a <= DESIGN_RECONSTRUCTION_CONFIG["maximum_aspect"]*b+1e-12)
+
+def test_hoop_becomes_one_continuous_tube():
+    hoop = {"x_mm": 6.0, "radius_mm": 1.6, "path_yz_mm": [[4.0, 10.0], [10.0, 9.0], [13.0, 5.0], [10.0, 2.0]]}
+    domain = {"grid": {"origin_mm": [-10.0, 0.0, 0.0], "spacing_mm": [0.5]*3, "shape": [40, 32, 28]}, "regions": [{"name": "box", "role": "allowed", "kind": "box", "min_mm": [-10.0, 0.0, 0.0], "max_mm": [10.0, 16.0, 14.0]}], "metadata": {"round2": {"hoop": hoop}}}
+    builder = Reconstruction(domain, {**DESIGN_RECONSTRUCTION_CONFIG, "voxel_mm": 0.2})
+    path = hoop_paths(hoop)[1]
+    builder.add_member(tube(path, hoop["radius_mm"]), 0.5)
+    mesh = builder.field.extract()[0]
+    length = float(np.linalg.norm(np.diff(path, axis=0), axis=1).sum())
+    assert mesh.body_count == 1 and mesh.volume == pytest.approx(np.pi*1.6**2*length+4/3*np.pi*1.6**3, rel=0.1)
+
+def test_detached_member_fails_continuity_and_load_path(truss):
+    domain, density, config = truss
+    graph = DesignGraph(density > 0.5, [0, 0, 0], H, domain["preserve"], config)
+    assert graph.continuity()["passed"]
+    graph.graph.remove_edges_from([(u, v) for u, v, data in graph.graph.edges(data=True) if data.get("anchor") == 1])
+    assert not graph.continuity()["passed"] and graph.continuity()["members_off_main"] == 1
+    mesh = reconstruct(domain, density, config)[0]
+    far = {"name": "far_mount", "role": "preserve", "kind": "box", "min_mm": [30.0, 20.0, 1.0], "max_mm": [32.0, 22.0, 3.0]}
+    result = load_paths(mesh, dict(domain, regions=domain["regions"]+[far]), {**config, "load_path_mounts": ["hub", "far"]})
+    assert result["r0.5"]["carried"] == 1 and result["r0.5"]["missing"] == ["far_mount"] and not result["passed"]

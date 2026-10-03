@@ -1,0 +1,177 @@
+{
+ "field": "C:/clones/Deep_Frame-nr3/exports/r3/neural_r3_v07/density_fine.npz",
+ "domain": "exports/r4recon/r3_v07/r3_domain.json (copy of the stored R3 design domain, crash_directions [])",
+ "raw": "reference_body: density smoothed sigma 1 cell, PCHIP x2, marching cubes at 0.5, largest body, exact forbidden/envelope booleans",
+ "study_fea": {
+  "raw": {
+   "mass_g": 29.771500924342067,
+   "arm_tip_n_per_mm": 36.960728939031966,
+   "f1_hz": 477.8681,
+   "crash_front_mm": 0.10714129132266517,
+   "crash_arm_mm": 0.13223016220863076,
+   "surface_choice": {
+    "fea_remesh_targets_mm": [
+     1.5
+    ],
+    "fea_remesh_feature_deg": 40.0
+   }
+  },
+  "recon": {
+   "mass_g": 30.21785906878918,
+   "arm_tip_n_per_mm": 36.98095617385365,
+   "f1_hz": 482.0939,
+   "crash_front_mm": 0.10736948933344365,
+   "crash_arm_mm": 0.14122594857176105,
+   "surface_choice": {
+    "fea_remesh_targets_mm": [
+     1.5
+    ],
+    "fea_remesh_feature_deg": 40.0
+   }
+  },
+  "deviation": {
+   "mass_g": 0.014992799509216503,
+   "arm_tip_n_per_mm": 0.0005472628760934128,
+   "f1_hz": 0.008843025931214,
+   "crash_front_mm": 0.0021298792273394263,
+   "crash_arm_mm": 0.06803127374930429
+  },
+  "settings": "tools/reconstruction_study.py fea, identical config for both"
+ },
+ "evaluator": {
+  "raw": {
+   "mass_g": 29.771500924342067,
+   "arm_tip_n_per_mm": 23.33639961635462,
+   "f1_hz": 386.2788,
+   "crash_front_mm": 0.1836495944349264,
+   "crash_arm_mm": 0.19794748901460937,
+   "top_view_open_share": 0.5092725525325992,
+   "prop_ring_material_share": 0.18057460639705444,
+   "wall_rule": {
+    "deep_fraction": 0.06560717514533666,
+    "largest_deep_mm3": 330.3010000000001,
+    "deep_components": 85,
+    "motor_zones_hit": 4,
+    "passed": false
+   },
+   "line": "| R3 neural_r3_v07 raw (threshold body) | 29,8 g | SP z 20,4 mm; Ixx/Iyy/Izz 97/112/178 kg\u00b7mm\u00b2 (K) | 18,1 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok | \u00dcberh. 13,3 %, \u00d6ffn. r=1 6,56 %/330,3 mm\u00b3/Motorzonen 4,St\u00fctze 22,58 cm\u00b3, 415 min | Strebe 1,2/2,1/3,6 mm, H/B 0,97, offen 51 %, H\u00f6he 29,0 mm, K\u00f6rper 1, Schlaufen 14, Sym. 0,02 mm, Rauh. 0,188/mm | 23,3 N/mm (A) | f1 386 Hz; 462/527/790 (A) | front 4,2/1,8 MPa; arm 4,4/1,2 MPa; back 2,4/1,0 MPa (SF 2,0, A) | wall_deep_fraction, wall_deep_component, wall_motor_zones, target:airflow; Warnung: section_ratio, top_view_material, loops, roughness |"
+  },
+  "recon": {
+   "mass_g": 30.218338848455435,
+   "arm_tip_n_per_mm": 24.20583377586034,
+   "f1_hz": 379.0883,
+   "crash_front_mm": 0.19457916328341476,
+   "crash_arm_mm": 0.19820303636625475,
+   "top_view_open_share": 0.5342665912518855,
+   "prop_ring_material_share": 0.17225654536892537,
+   "wall_rule": {
+    "deep_fraction": 0.03492245720454667,
+    "largest_deep_mm3": 222.22600000000006,
+    "deep_components": 31,
+    "motor_zones_hit": 2,
+    "passed": false
+   },
+   "line": "| R3 neural_r3_v07 recon r4 | 30,2 g | SP z 20,3 mm; Ixx/Iyy/Izz 97/113/179 kg\u00b7mm\u00b2 (K) | 17,2 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok | \u00dcberh. 14,6 %, \u00d6ffn. r=1 3,49 %/222,2 mm\u00b3/Motorzonen 2,St\u00fctze 22,22 cm\u00b3, 394 min | Strebe 1,6/2,8/4,0 mm, H/B 0,93, offen 53 %, H\u00f6he 29,0 mm, K\u00f6rper 1, Schlaufen 17, Sym. 0,28 mm, Rauh. 0,150/mm | 24,2 N/mm (A) | f1 379 Hz; 449/512/747 (A) | front 4,3/1,9 MPa; arm 4,2/1,0 MPa; back 2,2/0,8 MPa (SF 2,0, A) | wall_deep_fraction, wall_deep_component, wall_motor_zones, target:airflow; Warnung: section_ratio, top_view_material, loops |"
+  },
+  "deviation": {
+   "mass_g": 0.015008914909896864,
+   "arm_tip_n_per_mm": 0.03725656801387678,
+   "f1_hz": -0.01861479325295612
+  }
+ },
+ "proof_15_percent": true,
+ "reconstruction": {
+  "members": 197,
+  "shells": 26,
+  "nodes": 123,
+  "continuity": {
+   "anchors": 14,
+   "anchor_components": 1,
+   "anchors_in_main": 14,
+   "members_off_main": 0,
+   "dangling_ends": 0,
+   "passed": true
+  },
+  "load_paths": {
+   "voxel_mm": 0.3,
+   "mounts": 14,
+   "method": "material eroded by r (EDT > r) labelled with 26-connectivity; a mount is carried when the largest core component reaches into the mount region padded by r + h; r = 0.9 mm stands for the 2 mm minimum section",
+   "r0.5": {
+    "components": 1,
+    "carried": 14,
+    "missing": []
+   },
+   "r0.9": {
+    "components": 11,
+    "carried": 14,
+    "missing": []
+   },
+   "passed": true
+  },
+  "global_scale": 0.71875,
+  "volume_mm3": 27745.88298504565,
+  "bodies": 1,
+  "watertight": true,
+  "runtime_s": {
+   "skeleton_s": 0.8232121000037296,
+   "calibration_s": 31.409364999999525,
+   "field_extract_s": 31.24565679999796,
+   "booleans_s": 5.1946279000039794,
+   "total_s": 70.3429363000032
+  },
+  "joint_sections": {
+   "count": 344,
+   "worst": [
+    {
+     "node": 96,
+     "center_mm": [
+      24.0,
+      -25.33,
+      2.33
+     ],
+     "ratio": 0.5223110247353466
+    },
+    {
+     "node": 96,
+     "center_mm": [
+      24.0,
+      -25.33,
+      2.33
+     ],
+     "ratio": 0.5223110247353466
+    },
+    {
+     "node": 29,
+     "center_mm": [
+      -24.0,
+      -25.33,
+      2.33
+     ],
+     "ratio": 0.5314657606851844
+    },
+    {
+     "node": 29,
+     "center_mm": [
+      -24.0,
+      -25.33,
+      2.33
+     ],
+     "ratio": 0.5314657606851844
+    },
+    {
+     "node": 67,
+     "center_mm": [
+      6.78,
+      25.0,
+      18.56
+     ],
+     "ratio": 0.9487749110398128
+    }
+   ],
+   "minimum_ratio": 0.5223110247353466,
+   "p05_ratio": 1.0664402244238085,
+   "below_one": 5,
+   "method": "section area of the final field on the plane through each member at the node body radius (disk 1.5 a) over the incident member section pi a b; below_one counts ratios < 0.95 (sampling at h/2)"
+  }
+ }
+}
