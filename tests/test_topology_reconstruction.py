@@ -95,3 +95,23 @@ def test_detached_member_fails_continuity_and_load_path(truss):
     far = {"name": "far_mount", "role": "preserve", "kind": "box", "min_mm": [30.0, 20.0, 1.0], "max_mm": [32.0, 22.0, 3.0]}
     result = load_paths(mesh, dict(domain, regions=domain["regions"]+[far]), {**config, "load_path_mounts": ["hub", "far"]})
     assert result["r0.5"]["carried"] == 1 and result["r0.5"]["missing"] == ["far_mount"] and not result["passed"]
+
+def test_field_thickness_keeps_rod_radius_and_ignores_mass_target(truss):
+    domain, density, config = truss
+    config = {**config, "calibration_steps": DESIGN_RECONSTRUCTION_CONFIG["calibration_steps"]}
+    target = 0.5*float(density.sum())*H**3
+    mesh, graph, report = reconstruct(domain, density, config, target)
+    assert report["thickness"] == "field" and not report["volume_match"] and report["global_scale"] == 1.0 and report["calibration"] == []
+    middle, axis = (ENDS[0]+HUB)/2, (HUB-ENDS[0])/np.linalg.norm(HUB-ENDS[0])
+    grid = np.arange(-2.5, 2.5, 0.05)+0.025
+    u, v = np.meshgrid(grid, grid, indexing="ij")
+    across = np.cross(axis, [0.0, 0.0, 1.0])
+    area = np.count_nonzero(mesh.contains(middle+u.reshape(-1, 1)*across+v.reshape(-1, 1)*np.array([0.0, 0.0, 1.0])))*0.05**2
+    length = float(np.linalg.norm(HUB-ENDS[0]))
+    centers = (np.argwhere(density > 0.5)+0.5)*H
+    along = (centers-ENDS[0])@axis
+    slab = (np.abs(along-length/2) < length/4) & (np.linalg.norm(centers-ENDS[0]-along[:, None]*axis, axis=1) < 2*RADIUS)
+    field = np.sqrt(np.count_nonzero(slab)*H**3/(length/2)/np.pi)
+    assert field == pytest.approx(RADIUS, rel=0.1) and np.sqrt(area/np.pi) == pytest.approx(field, rel=0.03)
+    calibrated = reconstruct(domain, density, {**config, "calibrate_volume": True, "volume_match": True}, target)[2]
+    assert calibrated["thickness"] == "calibrated" and calibrated["global_scale"] < 1.0

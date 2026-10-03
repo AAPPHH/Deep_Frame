@@ -648,11 +648,12 @@ def volume_weights(points, discs):
     if not discs or discs.get("mode") != "soft":
         return weights
     points = np.asarray(points, dtype=float)
-    inside = np.zeros(len(points), dtype=bool)
+    share, hub, power = np.zeros(len(points)), discs.get("hub_radius_mm", 0.0), discs.get("radial_power")
     for x, y in discs["motors_mm"]:
-        inside |= np.hypot(points[:, 0] - x, points[:, 1] - y) <= discs["radius_mm"]
-    weights[inside] += discs["weight"] * np.exp(-np.abs(points[inside, 2] - discs["plane_mm"]) / discs["length_mm"])
-    return weights
+        radial = np.hypot(points[:, 0] - x, points[:, 1] - y)
+        profile = np.ones(len(points)) if power is None else np.clip((radial - hub) / (discs["radius_mm"] - hub), 0.0, 1.0) ** power
+        share = np.maximum(share, np.where(radial <= discs["radius_mm"], profile, 0.0))
+    return weights + discs["weight"] * share * np.exp(-np.abs(points[:, 2] - discs["plane_mm"]) / discs["length_mm"])
 
 class AugmentedLagrangian:
     def __init__(self, settings, count=None):

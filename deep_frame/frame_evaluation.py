@@ -115,10 +115,12 @@ def top_view(solid, lower, h, spec, hub):
     centres = np.asarray([xyz[:2] for xyz in spec["motors"].values()])
     spacing = min(np.linalg.norm(a - b) for index, a in enumerate(centres) for b in centres[index + 1:])
     disc, ring = distance <= radius, (distance <= radius) & (distance > hub)
+    radial = np.where(disc, np.clip((distance - hub) / (radius - hub), 0.0, 1.0) ** 2, 0.0)
     return {"projected_area_mm2": float(area), "bbox_share": float(area / np.prod(points.max(0) - points.min(0) + h)), "hull_share": float(area / ConvexHull(points).volume),
             "prop_disc_share": float((silhouette & disc).sum() * h * h / (len(centres) * math.pi * radius ** 2)), "prop_ring_share": float((silhouette & ring).sum() * h * h / (len(centres) * math.pi * (radius ** 2 - hub ** 2))),
+            "prop_radial_share": float((radial * silhouette).sum() * h * h / (len(centres) * 2 * math.pi * ((radius - hub) ** 2 / 4 + hub * (radius - hub) / 3))),
             "prop_diameter_mm": spec["prop_diameter_mm"], "hub_radius_mm": hub, "discs_overlap": bool(spacing < 2 * radius),
-            "method": "top-view silhouette of the winding-number voxel grid; prop share = material inside the four prop discs / disc area, ring share excludes the motor hub radius"}
+            "method": "top-view silhouette of the winding-number voxel grid; prop share = material inside the four prop discs / disc area, ring share excludes the motor hub radius, radial share weights the disc by ((r - hub) / (R - hub))^2 like the optimizer"}
 
 def strut_form(solid, h):
     from skimage.morphology import skeletonize

@@ -468,7 +468,7 @@ def reconstruct(domain, density, config=DESIGN_RECONSTRUCTION_CONFIG, target=Non
     times["skeleton_s"] = perf_counter()-started
     target = target or config["target_volume_mm3"] or float(solid.sum()*np.prod(spacing))
     low, high = config["minimum_scale"], config["maximum_scale"]
-    trials = [[1.0, _volume(graph, domain, config, 1.0, density)]] if config["calibration_steps"] else []
+    trials = [[1.0, _volume(graph, domain, config, 1.0, density)]] if config["calibrate_volume"] and config["calibration_steps"] else []
     if trials and abs(trials[0][1]/target-1) > config["calibration_tolerance"]:
         low, high = (low, 1.0) if trials[0][1] > target else (1.0, high)
         for _ in range(config["calibration_steps"]):
@@ -489,7 +489,7 @@ def reconstruct(domain, density, config=DESIGN_RECONSTRUCTION_CONFIG, target=Non
     rods = [m for m in graph.members if m["kind"] == "rod"]
     budget = {"target_mm3": target, "assigned_members_mm3": float(sum(m["target_volume"] for m in graph.members)), "built_members_mm3": float(sum(np.sum(np.pi*m["a"]*m["b"]*scale**2*m["length"]/max(len(m["a"]), 1)) for m in rods)),
               "assigned_nodes_mm3": float(sum(n["volume"] for n in graph.nodes)), "node_spheres_mm3": extraction["node_spheres_mm3"], "preserves_mm3": float(np.count_nonzero(domain["preserve"])*np.prod(spacing)), "result_mm3": float(mesh.volume), "relative_to_target": float(mesh.volume/target-1)}
-    report = {**graph.report(), "fragments_dropped": fragments, "target_volume_mm3": target, "global_scale": scale, "calibration": trials, "mass_budget": budget, "extraction_debris": debris, "solid_volume_mm3": float(solid.sum()*np.prod(spacing)), "volume_mm3": float(mesh.volume),
+    report = {**graph.report(), "fragments_dropped": fragments, "target_volume_mm3": target, "global_scale": scale, "thickness": "calibrated" if config["calibrate_volume"] else "field", "volume_match": config["volume_match"], "calibration": trials, "mass_budget": budget, "extraction_debris": debris, "solid_volume_mm3": float(solid.sum()*np.prod(spacing)), "volume_mm3": float(mesh.volume),
               "watertight": bool(mesh.is_watertight), "bodies": len(mesh.split(only_watertight=False)), "exact_booleans": {key: booleans[key] for key in ("status", "components", "passed", "preserve_added_mm3", "forbidden_removed_mm3", "envelope_removed_mm3", "maximum_cylinder_oversize_mm")},
               "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "joint_sections": extraction["joint_sections"], "voxel_mm": config["voxel_mm"], "transition_radius_mm": config["transition_radius_mm"], "preserve_blend_mm": config["preserve_blend_mm"], "runtime_s": {**times, "total_s": perf_counter()-started}}
     return mesh, graph, report
