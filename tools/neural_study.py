@@ -369,9 +369,11 @@ def resources(summary, history):
         rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20
     except ImportError:
         rss = None
-    solvers = [solver for solver in summary["system"]["gpu_solver_details"] if solver.get("device_peak_used_bytes") is not None]
-    gpu = {"peak_used_gb": max(solver["device_peak_used_bytes"] for solver in solvers) / 2**30, "device_total_gb": solvers[0]["device_total_bytes"] / 2**30,
-           "details": [{key: solver[key] for key in ("shape", "nnz", "device_min_free_bytes", "device_peak_used_bytes")} for solver in solvers]} if solvers else None
+    solvers = [solver for solver in summary["system"]["gpu_solver_details"] if solver.get("device_used_after_phase_max_bytes") is not None]
+    estimates = [solver["cudss_memory_estimates"]["peak_device_bytes"] for solver in solvers if solver.get("cudss_memory_estimates")]
+    gpu = {"device_used_after_phase_max_gb": max(solver["device_used_after_phase_max_bytes"] for solver in solvers) / 2**30,
+           "cudss_peak_device_estimate_gb": max(estimates) / 2**30 if estimates else None, "device_total_gb": solvers[0]["device_total_bytes"] / 2**30,
+           "details": [{key: solver.get(key) for key in ("shape", "nnz", "device_min_free_bytes", "device_used_after_phase_max_bytes", "cudss_memory_estimates")} for solver in solvers]} if solvers else None
     elapsed = [entry["elapsed_s"] for entry in history if not entry["final_evaluation"]]
     steps = np.diff(elapsed).tolist()
     return {"gpu_memory": gpu, "host_peak_rss_gb": rss, "seconds_per_iteration": {"first_s": elapsed[0] if elapsed else None, "mean_s": statistics.mean(steps) if steps else None, "median_s": statistics.median(steps) if steps else None},
