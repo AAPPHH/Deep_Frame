@@ -664,12 +664,12 @@ class AugmentedLagrangian:
         active = np.maximum(0.0, np.asarray(violation, dtype=float) + multiplier / penalty)
         weights = penalty * active
         return float(np.sum(penalty / 2 * active ** 2 - multiplier ** 2 / (2 * penalty))), weights * slope if self.count is None else weights @ np.asarray(slope), weights
-    def update(self, violation):
+    def update(self, violation, grow=True):
         violation = np.asarray(violation, dtype=float)
         infeasibility = np.abs(np.maximum(violation, -self.multiplier / self.penalty))
         self.multiplier = np.maximum(0.0, self.multiplier + self.penalty * violation)
         growth = self.settings.get("penalty_growth", 1.0)
-        if self.progress is not None and growth > 1:
+        if self.progress is not None and growth > 1 and grow:
             stalled = infeasibility > self.settings["penalty_progress"] * self.progress
             self.penalty = np.where(stalled, np.minimum(self.penalty * growth, self.settings["penalty_max"]), self.penalty)
         self.progress = infeasibility

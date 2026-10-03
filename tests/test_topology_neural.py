@@ -101,16 +101,17 @@ def test_augmented_lagrangian_vector_and_penalty_rule():
 
 def test_neural_al_lagrangian_gradient_matches_finite_differences():
     problem = TopologyProblem(tiny_domain(), tiny_problem())
-    design = NeuralDesign(neural_al_settings({"frequencies": 8, "hidden": [6], "max_frequency_per_mm": 0.3})).attach(tiny_domain())
+    design = NeuralDesign(neural_al_settings({"frequencies": 8, "hidden": [6], "max_frequency_per_mm": 0.3, "logit_bound": 0.05})).attach(tiny_domain())
     multipliers = AugmentedLagrangian({"penalty": 5.0, "multiplier_interval": 1}, 6)
     multipliers.multiplier[:] = [0.4, 0.2, 0.1, 0.3, 0.0, 0.2]
     def lagrangian():
         x, cache = design.design()
         result = problem.evaluate(x)
         value, gradient, _ = multipliers.terms(result["constraints"], result["constraint_gradients"])
-        return result["objective"] + value, result["objective_gradient"] + gradient, cache
+        return result["objective"] + value + cache[3], result["objective_gradient"] + gradient, cache
     _, derivative, cache = lagrangian()
     gradients = design.gradient(cache, derivative)
+    assert cache[3] > 0
     random = np.random.default_rng(5)
     direction = [random.standard_normal(value.shape) for value in design.field.parameters]
     step = 1e-6

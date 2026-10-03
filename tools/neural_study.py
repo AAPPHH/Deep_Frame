@@ -43,6 +43,7 @@ STUDY = {
     "calibration": {"inputs": [], "output": "exports/r4/modal_calibration.json", "linear_solver": "cpu_superlu"},
     "simp": {"filter_radius_mm": 4.0, "projection": "single", "beta_schedule": [1.0, 2.0, 4.0, 8.0], "beta_interval": 35, "max_iterations": 140, "minimum_iterations": 20, "move_limit": 0.1, "max_runtime_s": 1500.0},
     "variants": [{"name": "neural_r3_v05", "neural": {"volume_fraction": 0.05}}],
+    "al": {"settings": {}, "cantilever": {"reference": "docs/validation/formulation_cantilever.json", "output": "docs/validation/neural_al_cantilever.json", "settings": {"volume_fraction": 0.5, "max_frequency_per_mm": 0.15}}},
 }
 VARIANT_KEYS = ("prop_discs", "modal", "stiffness", "method", "simp")
 
@@ -486,6 +487,48 @@ def calibrate(cfg):
     Path(cfg["calibration"]["output"]).write_text(json.dumps(rows, indent=1))
     print(json.dumps({path: {key: row.get(key) for key in ("f1_hz", "stiffness_n_per_mm", "compliance_stiffness_n_per_mm")} for path, row in rows.items()}), flush=True)
 
+def directional_check(problem, design, multipliers, seed=7, step=1e-6):
+    def lagrangian():
+        x, cache = design.design()
+        result = problem.evaluate(x)
+        value, gradient, _ = multipliers.terms(result["constraints"], result["constraint_gradients"])
+        return result["objective"] + value + cache[3], design.gradient(cache, result["objective_gradient"] + gradient)
+    _, gradients = lagrangian()
+    random = np.random.default_rng(seed)
+    direction = [random.standard_normal(value.shape) for value in design.field.parameters]
+    def shifted(scale):
+        for value, delta in zip(design.field.parameters, direction):
+            value += scale * step * delta
+        result = lagrangian()[0]
+        for value, delta in zip(design.field.parameters, direction):
+            value -= scale * step * delta
+        return result
+    analytic, numeric = float(sum(np.sum(g * d) for g, d in zip(gradients, direction))), (shifted(1.0) - shifted(-1.0)) / (2 * step)
+    return {"analytic": analytic, "finite_difference": numeric, "relative_error": abs(analytic - numeric) / max(abs(numeric), 1e-30), "step": step, "variable": "all network parameters, random direction"}
+
+def al_cantilever(cfg):
+    from deep_frame.topology_neural import NeuralAugmentedLagrangian
+    from deep_frame.topology_problem import TopologyProblem, cantilever_domain, cantilever_problem
+    spec = cfg["al"]["cantilever"]
+    reference = json.loads(Path(spec["reference"]).read_text(encoding="utf-8"))
+    domain, problem = cantilever_domain(), cantilever_problem(reference["stiffness_n_per_mm"])
+    optimizer = NeuralAugmentedLagrangian({**cfg["al"]["settings"], **spec["settings"]})
+    result = optimizer.run([(domain, lambda: TopologyProblem(domain, problem))])
+    check = TopologyProblem(domain, problem)
+    while check.advance():
+        pass
+    optimizer.design.attach(domain)
+    fd = directional_check(check, optimizer.design, optimizer.multipliers)
+    check.close()
+    rows = {row["name"]: row for row in result["summary"]["final"]["rows"]}
+    summary = {key: result["summary"][key] for key in ("stop_reason", "converged", "iterations", "elapsed_s", "seconds_per_iteration", "al_rule", "multipliers", "penalties", "level_reports")}
+    out = {"reference": reference, "stiffness_limit_n_per_mm": reference["stiffness_n_per_mm"], "stiffness_n_per_mm": rows["tip_stiffness"]["value"], "stiffness_status": rows["tip_stiffness"]["status"], "stiffness_margin": rows["tip_stiffness"]["margin"],
+           "volume_fraction_intermediate": rows["volume"]["value"], "volume_ratio_to_reference": rows["volume"]["value"] / reference["volume_fraction_intermediate"], "mass_g": result["summary"]["final"]["mass_g"],
+           "mass_by_field_g": result["summary"]["final"].get("mass_by_field_g"), "rows": result["summary"]["final"]["rows"], "finite_difference": fd, **summary,
+           "history": [{key: entry[key] for key in ("iteration", "beta", "mass_g", "max_violation")} for entry in result["history"]]}
+    Path(spec["output"]).write_text(json.dumps(out, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({key: out[key] for key in ("stiffness_n_per_mm", "stiffness_status", "volume_fraction_intermediate", "volume_ratio_to_reference", "stop_reason", "iterations", "finite_difference")}, default=float), flush=True)
+
 def run_main(overrides):
     cfg = configure(overrides)
     for variant in cfg["variants"]:
@@ -497,7 +540,7 @@ def render_main(overrides):
         rerender(cfg, variant)
 
 def main(argv=None):
-    return command_line({"run": run_main, "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "calibrate": lambda overrides: calibrate(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
+    return command_line({"run": run_main, "al_cantilever": lambda overrides: al_cantilever(configure(overrides)), "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "calibrate": lambda overrides: calibrate(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
                          "compare": lambda overrides: stitch(**{key: [Path(path) for path in value] if key == "inputs" else Path(value) if key == "output" else value for key, value in configure(overrides)["compare"].items()})}, argv)
 
 if __name__ == "__main__":
