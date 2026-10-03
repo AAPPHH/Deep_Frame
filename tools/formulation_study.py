@@ -1,8 +1,11 @@
 import hashlib
+import io
 import json
 import shutil
 import subprocess
 import sys
+import tarfile
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
 from time import perf_counter
@@ -36,7 +39,14 @@ FORMULATION = {
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
-            "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+            "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
+            "bodies": ["raw", "recon"], "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
+            "figures": [{"output": "{method}_4views.png", "panels": ["raw", "recon", "manafly"], "labels": ["SIMP-MMA raw", "SIMP-MMA recon", "ManaFly"]}]},
+    "v3": {"worktree": "C:/clones/Deep_Frame-recon3", "ref": "HEAD", "copy": "C:/Users/jfham/AppData/Local/Temp/claude/c--clones-Deep-Frame/2bec171b-ba58-44fe-ab0f-61ff45688b18/scratchpad/recon3_copy",
+           "argv": ["splines"], "compute": "geometry", "compare": "recon"},
+    "comparison": {"output": "exports/cov/comparison.json", "old": {"raw": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_raw_1", "recon": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_recon_1"},
+                   "old_fine": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/result.json", "gap": {}, "manafly_sigma": "exports/cov/eval/manafly3/sigma.json", "aether4_sigma": "exports/cov/eval/aether4/sigma.json",
+                   "twist": {"motor_front_left": 1.0, "motor_rear_right": 1.0, "motor_front_right": -1.0, "motor_rear_left": -1.0}, "twist_dof": "Fz"},
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
                    "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "cuda_cudss"},
 }
@@ -409,18 +419,53 @@ class ResultRun(FrameRun):
         self.save()
         return self.result
 
-def frame_runs(cfg):
+class V3Run(ResultRun):
+    def __init__(self, request, result, stages, compare, sha):
+        self.sha = sha
+        super().__init__(request, result, stages)
+        self.grid = {**self.grid, "compute": {**self.grid["compute"], "reconstruction": stages["reconstruction"]["compute"]},
+                     "reconstruction": {**self.grid["reconstruction"], **({"compare_bodies": [str(compare)], "compare_labels": ["recon_1to1"]} if compare else {})}}
+    def reconstruction(self, density):
+        mesh = super().reconstruction(density)
+        self.manifest["stages"]["reconstruction"].update(sha=self.sha, branch="feature/recon-v3 (git archive copy)", method="reconstruction v3 (member splines)")
+        self.save()
+        return mesh
+
+def v3_source(cfg):
+    spec = cfg["v3"]
+    sha = subprocess.check_output(["git", "-C", spec["worktree"], "rev-parse", spec["ref"]], text=True).strip()
+    target = Path(spec["copy"]) / sha[:10]
+    if not (target / "run.py").is_file():
+        target.mkdir(parents=True, exist_ok=True)
+        tarfile.open(fileobj=io.BytesIO(subprocess.run(["git", "-C", spec["worktree"], "archive", sha], check=True, capture_output=True).stdout)).extractall(target)
+    return target, sha
+
+def body_run(cfg, suffix, request, stages, runs):
     root, method = Path(cfg["mma"]["root"]).resolve(), cfg["mma"]["method"]
+    named = {**request, "name": f"{method}_{suffix}", "reconstruction": suffix != "raw"}
+    if suffix == "v3":
+        source, sha = v3_source(cfg)
+        stages = {**stages, "reconstruction": {**stages["reconstruction"], "worktree": source.as_posix(), "argv": cfg["v3"]["argv"], "compute": cfg["v3"]["compute"]}}
+        compare = runs.get(cfg["v3"]["compare"])
+        run = V3Run(named, root / cfg["mma"]["variant"], stages, compare and Path(compare) / "frame.stl", sha)
+    else:
+        run = ResultRun(named, root / cfg["mma"]["variant"], stages)
+    manifest = run.run()
+    path = (ROOT / RUN_SETTINGS["root"] / manifest["name"]).resolve()
+    target = Path(cfg["mma"]["viewer"]) / cfg["mma"]["viewer_names"][suffix].format(method=method) / "geometry.stl"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(path / "frame.stl", target)
+    print(json.dumps({"run": manifest["name"], "status": manifest["status"], "stages": {name: entry["status"] for name, entry in manifest["stages"].items()}}), flush=True)
+    return suffix, str(path)
+
+def frame_runs(cfg):
+    root = Path(cfg["mma"]["root"]).resolve()
     stages = {name: {**spec, "worktree": ROOT.as_posix()} for name, spec in STAGES.items()}
     request = json.loads((Path(RUN) / "config.json").read_text(encoding="utf-8"))
-    runs = {}
-    for suffix, rebuild in (("raw", False), ("recon", True)):
-        manifest = ResultRun({**request, "name": f"{method}_{suffix}", "reconstruction": rebuild}, root / cfg["mma"]["variant"], stages).run()
-        runs[suffix] = str((ROOT / RUN_SETTINGS["root"] / manifest["name"]).resolve())
-        target = Path(cfg["mma"]["viewer"]) / (f"{method}_final" + ("_recon" if rebuild else "")) / "geometry.stl"
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(Path(runs[suffix]) / "frame.stl", target)
-        print(json.dumps({"run": manifest["name"], "status": manifest["status"], "stages": {name: entry["status"] for name, entry in manifest["stages"].items()}}), flush=True)
+    runs = json.loads((root / "runs.json").read_text(encoding="utf-8")) if (root / "runs.json").is_file() else {}
+    todo = [suffix for suffix in cfg["mma"]["bodies"] if suffix not in runs]
+    with ThreadPoolExecutor(max(len(todo), 1)) as pool:
+        runs.update(pool.map(lambda suffix: body_run(cfg, suffix, request, stages, runs), todo))
     (root / "runs.json").write_text(json.dumps(runs, indent=1), encoding="utf-8")
 
 def manafly_check(cfg):
@@ -447,16 +492,20 @@ def compose(cfg):
         shutil.copy2(source / f"{name}.png", manafly / f"{name}.png")
     if missing:
         render_views(trimesh.load_mesh(json.loads(Path(cfg["manafly"]["frame"]).read_text(encoding="utf-8"))["stl"], process=True), manafly, missing)
-    rows = []
-    for name in views:
-        output = root / f"compare_{name}.png"
-        compose_main({"panels": [str(Path(runs["raw"]) / "renders" / f"{name}.png"), str(Path(runs["recon"]) / "renders" / f"{name}.png"), str(manafly / f"{name}.png")],
-                      "labels": [f"SIMP-MMA raw ({name})", f"SIMP-MMA recon ({name})", f"ManaFly ({name})"], "output": str(output)})
-        rows.append(Image.open(output))
-    canvas = Image.new("RGB", (max(image.width for image in rows), sum(image.height for image in rows)), "white")
-    for index, image in enumerate(rows):
-        canvas.paste(image, (0, sum(row.height for row in rows[:index])))
-    canvas.save(root / f"{cfg['mma']['method']}_4views.png")
+    folders = {**{suffix: Path(path) / "renders" for suffix, path in runs.items()}, "manafly": manafly}
+    for figure in cfg["mma"]["figures"]:
+        output = Path(figure["output"].format(method=cfg["mma"]["method"]))
+        output = output if output.is_absolute() else root / output
+        output.parent.mkdir(parents=True, exist_ok=True)
+        rows = []
+        for name in views:
+            row = output.with_name(f"{output.stem}_{name}.png")
+            compose_main({"panels": [str(folders[panel] / f"{name}.png") for panel in figure["panels"]], "labels": [f"{label} ({name})" for label in figure["labels"]], "output": str(row)})
+            rows.append(Image.open(row))
+        canvas = Image.new("RGB", (max(image.width for image in rows), sum(image.height for image in rows)), "white")
+        for index, image in enumerate(rows):
+            canvas.paste(image, (0, sum(previous.height for previous in rows[:index])))
+        canvas.save(output)
 
 def fea_values(path):
     fea = (json.loads(Path(path).read_text(encoding="utf-8")) if Path(path).is_file() else {}).get("fea") or {}
@@ -481,12 +530,62 @@ def agreement(cfg):
     (root / "agreement.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
     print(json.dumps(record, indent=1, default=float), flush=True)
 
+def read(path):
+    return json.loads(Path(path).read_text(encoding="utf-8")) if path and Path(path).is_file() else {}
+
+def twist(sigma, spec):
+    labels = ["/".join(label) for label in sigma["labels"]]
+    w = np.zeros(len(labels))
+    for name, sign in spec["twist"].items():
+        w[labels.index(f"{name}/{spec['twist_dof']}")] = sign
+    compliance = float(w @ np.asarray(sigma["flexibility"]) @ w)
+    return {"compliance_n_mm": compliance, "stiffness_n_per_mm": float(w @ w / compliance)}
+
+def body_summary(run, sigma_path, spec):
+    evaluation = read(Path(run) / "evaluation.json") if run else {}
+    sigma = evaluation.get("sigma") or read(sigma_path)
+    fea, geometry = evaluation.get("fea") or {}, evaluation.get("geometry") or {}
+    stiffness = sigma.get("stiffness") or {}
+    return {"run": run, "mass_g": (geometry.get("mass") or {}).get("frame_mass_g"), "arm_tip_n_per_mm": fea.get("stiffness_n_per_mm"), "f1_hz": (fea.get("eigenfrequencies_hz") or [None])[0],
+            "sigma_full": [sigma.get("mean_compliance_n_mm"), sigma.get("worst_case_compliance_n_mm")], "sigma_diagonal": [(sigma.get("diagonal") or {}).get("mean_compliance_n_mm"), (sigma.get("diagonal") or {}).get("worst_case_compliance_n_mm")],
+            "worst_load": sigma.get("worst_case_load"), "stiffness": {label: stiffness.get(label) for label in stiffness}, "twist": twist(sigma, spec) if sigma.get("flexibility") else None,
+            "missed": (evaluation.get("assessment") or {}).get("missed"), "warnings": (evaluation.get("assessment") or {}).get("warnings"), "line": evaluation.get("line"),
+            "datasheet": str(Path(run) / "datasheet.md") if run else None, "sigma_peak_memory_gb": sigma.get("peak_memory_gb")}
+
+def stiffness_table(bodies):
+    names = [name for name in bodies if bodies[name]["stiffness"]]
+    labels = list(bodies[names[0]]["stiffness"]) if names else []
+    lines = ["| interface/dof | " + " | ".join(names) + " | " + " | ".join(f"{name}/{names[0]}" for name in names[1:]) + " |", "|---" * (2 * len(names)) + "|"]
+    for label in labels:
+        values = [bodies[name]["stiffness"].get(label) for name in names]
+        lines.append(f"| {label} | " + " | ".join(f"{value:.4g}" for value in values) + " | " + " | ".join(f"{value / values[0]:.2f}" for value in values[1:]) + " |")
+    return "\n".join(lines)
+
+def cov_compare(cfg):
+    spec, root = cfg["comparison"], Path(cfg["mma"]["root"]).resolve()
+    runs, fine, old_fine = read(root / "runs.json"), read(root / "fine" / "result.json"), read(spec["old_fine"])
+    bodies = {"old_raw": body_summary(spec["old"]["raw"], "exports/cov/eval/simp_mma_raw_1/sigma.json", spec), "old_recon_1to1": body_summary(spec["old"]["recon"], "exports/cov/eval/simp_mma_recon_1/sigma.json", spec),
+              **{f"new_{suffix}": body_summary(path, None, spec) for suffix, path in runs.items()},
+              "manafly3": body_summary(None, spec["manafly_sigma"], spec), "aether4": body_summary(None, spec["aether4_sigma"], spec)}
+    rows = {row["name"]: row for row in fine.get("rows", [])}
+    old_rows = {row["name"]: row for row in old_fine.get("rows", [])}
+    record = {"optimizer": {"new": {"mass_g": fine.get("mass_g"), "status": fine.get("status"), "iterations": fine.get("iterations"), "table": fine.get("table"), "load_worst_info": (rows.get("load_worst") or {}).get("info")},
+                            "old": {"mass_g": old_fine.get("mass_g"), "table": old_fine.get("table")},
+                            "monitored": {name: [(old_rows.get(name) or {}).get("value"), (rows.get(name) or {}).get("value")] for name in ("thrust_all", "torsion_yaw", "twist", "f1_intermediate", "arm_tip_stiffness")}},
+              "limits": {"evaluator_diagonal": [config.LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"], config.LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"]],
+                         "evaluator_full_aether4_scaled": [read(spec["aether4_sigma"]).get("scaled", {}).get("mean_compliance_n_mm"), read(spec["aether4_sigma"]).get("scaled", {}).get("worst_case_compliance_n_mm")]},
+              "bodies": bodies, "stiffness_table": stiffness_table(bodies)}
+    Path(spec["output"]).parent.mkdir(parents=True, exist_ok=True)
+    Path(spec["output"]).write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({name: {key: body[key] for key in ("mass_g", "arm_tip_n_per_mm", "f1_hz", "sigma_full", "sigma_diagonal", "twist", "missed")} for name, body in bodies.items()}, indent=1, default=float), flush=True)
+
 def main(argv=None):
     return command_line({"references": lambda overrides: references(configure(overrides)), "modal_split": lambda overrides: modal_split(configure(overrides)), "cantilever": lambda overrides: cantilever(configure(overrides)),
                          "cantilever_mma": lambda overrides: cantilever_mma(configure(overrides)), "frame_mma": lambda overrides: frame_mma(configure(overrides)),
                          "frame_runs": lambda overrides: frame_runs(configure(overrides)), "manafly_check": lambda overrides: manafly_check(configure(overrides)), "compose": lambda overrides: compose(configure(overrides)),
                          "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),
-                         "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides))}, argv)
+                         "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
+                         "cov_compare": lambda overrides: cov_compare(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())
