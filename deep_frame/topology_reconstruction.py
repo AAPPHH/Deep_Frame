@@ -554,11 +554,56 @@ def fit_profile(t, values, keep, degree):
         return np.array([float(np.mean(values))]), (0.0, 1.0)
     return np.polyfit(t[keep], values[keep], min(degree, int(keep.sum())-1)), (float(t[keep].min()), float(t[keep].max()))
 
+def clearance(domain, points, eps=0.05):
+    forbidden = [r for r in domain["regions"] if r["role"] == "forbidden"]
+    def value(x):
+        axes = [x[:, 0], x[:, 1], x[:, 2]]
+        return np.minimum.reduce([primitive_distance(axes, _envelope(domain))]+[-primitive_distance(axes, r) for r in forbidden])
+    points = np.atleast_2d(np.asarray(points, dtype=float))
+    slope = np.stack([value(points+e)-value(points-e) for e in np.eye(3)*eps], axis=1)/(2*eps)
+    return value(points), slope/np.maximum(np.linalg.norm(slope, axis=1, keepdims=True), 1e-9)
+
+def seat_nodes(graph, domain, config):
+    moved = []
+    for node in graph.nodes:
+        start = np.asarray(node["center"], dtype=float).copy()
+        for _ in range(config["clearance_iterations"]):
+            c, n = clearance(domain, node["center"])
+            deficit = float(node["radius"]+config["clearance_margin_mm"]-c[0])
+            if deficit <= config["clearance_tolerance_mm"]:
+                break
+            node["center"] = np.asarray(node["center"], dtype=float)+min(deficit, node["radius"])*n[0]
+        moved.append(float(np.linalg.norm(node["center"]-start)))
+    return {"moved": sum(m > 0 for m in moved), "maximum_shift_mm": max(moved, default=0.0)}
+
+def frame_axes(curve, major):
+    tangent = np.gradient(curve, axis=0)
+    tangent /= np.maximum(np.linalg.norm(tangent, axis=1, keepdims=True), 1e-12)
+    axis = major-(tangent@major)[:, None]*tangent
+    fallback = np.cross(tangent, np.where(np.abs(tangent[:, :1]) < 0.9, [[1.0, 0.0, 0.0]], [[0.0, 1.0, 0.0]]))
+    axis = np.where(np.linalg.norm(axis, axis=1, keepdims=True) > 1e-3, axis, fallback)
+    axis /= np.linalg.norm(axis, axis=1, keepdims=True)
+    return axis, np.cross(tangent, axis)
+
+def seat_curve(domain, control, curve, a, b, major, count, config):
+    shift = 0.0
+    for _ in range(config["clearance_iterations"]):
+        axis, side = frame_axes(curve, major)
+        c, n = clearance(domain, curve)
+        need = np.sqrt((a*np.einsum("ij,ij->i", axis, n))**2+(b*np.einsum("ij,ij->i", side, n))**2)+config["clearance_margin_mm"]
+        deficit = np.minimum(np.maximum(need-c, 0.0), a)
+        deficit[[0, -1]] = 0.0
+        if deficit.max() <= config["clearance_tolerance_mm"]:
+            break
+        shift = max(shift, float(deficit.max()))
+        control, curve, _ = fit_spline(curve+deficit[:, None]*n, count, len(curve))
+    return control, curve, shift
+
 def profile_values(profile, t):
     coefficients, (low, high) = profile
     return np.polyval(coefficients, np.clip(t, low, high))
 
-def spline_member(graph, member, area, config):
+def spline_member(graph, member, area, config, domain=None):
     ends = [graph.nodes[n-1]["center"] if isinstance(n, int) else member["anchors"][side] for side, n in enumerate(member["nodes"])]
     inner = graph.centers(member["voxels"])
     path = np.concatenate([[ends[0]]]*(ends[0] is not None)+[inner]+[[ends[1]]]*(ends[1] is not None))
@@ -576,15 +621,10 @@ def spline_member(graph, member, area, config):
     fitted = np.maximum(profile_values(profile, np.linspace(0, 1, len(curve))), 0.0)
     b = np.sqrt(fitted/(np.pi*aspect))
     a, b = np.maximum(aspect*b, config["minimum_radius_mm"]), np.maximum(b, config["minimum_radius_mm"])
-    tangent = np.gradient(curve, axis=0)
-    tangent /= np.maximum(np.linalg.norm(tangent, axis=1, keepdims=True), 1e-12)
     major = np.mean(member["axis"], axis=0)
     major = major if np.linalg.norm(major) > 1e-6 else np.array([0.0, 0.0, 1.0])
-    axis = major-(tangent@major)[:, None]*tangent
-    fallback = np.cross(tangent, np.where(np.abs(tangent[:, :1]) < 0.9, [[1.0, 0.0, 0.0]], [[0.0, 1.0, 0.0]]))
-    axis = np.where(np.linalg.norm(axis, axis=1, keepdims=True) > 1e-3, axis, fallback)
-    axis /= np.linalg.norm(axis, axis=1, keepdims=True)
-    return {"kind": "rod", "points": curve, "a": a, "b": b, "axis": axis, "nodes": ["joined", "joined"], "control": control, "profile": profile, "t": t, "keep": keep, "length": arc, "path_length": length, "aspect": aspect, "stretch": length/arc}
+    control, curve, shift = seat_curve(domain, control, curve, a, b, major, count, config) if domain is not None else (control, curve, 0.0)
+    return {"kind": "rod", "points": curve, "a": a, "b": b, "axis": frame_axes(curve, major)[0], "nodes": ["joined", "joined"], "control": control, "profile": profile, "t": t, "keep": keep, "length": arc, "path_length": length, "aspect": aspect, "stretch": length/arc, "seat_shift_mm": shift}
 
 def bumps(graph, domain, rods, areas, config):
     loads = [(case["name"], load["region"]) for key in ("load_cases", "comparison_load_cases") for case in domain.get(key, []) for load in case.get("loads", [])]
@@ -626,7 +666,8 @@ def reconstruct_splines(domain, density, config, body=None):
     weights = None if body is None else body_weights(body, grid, config["body_subdivisions"])
     graph = DesignGraph(solid, grid["origin_mm"], spacing[0], domain["preserve"], config, weights)
     areas = graph.areas()
-    rods = [spline_member(graph, member, area, config) if member["kind"] == "rod" else None for member, area in zip(graph.members, areas)]
+    seating = seat_nodes(graph, domain, config)
+    rods = [spline_member(graph, member, area, config, domain) if member["kind"] == "rod" else None for member, area in zip(graph.members, areas)]
     rods = [None if rod is not None and member["nodes"][0] == member["nodes"][1] and rod["length"] < config["loop_factor"]*float(np.mean(rod["b"])) else rod for member, rod in zip(graph.members, rods)]
     times["skeleton_s"] = perf_counter()-started
     builder, k = Reconstruction(domain, config), config["transition_radius_mm"]
@@ -647,7 +688,7 @@ def reconstruct_splines(domain, density, config, body=None):
     members = [{"member": number, "length_mm": round(rod["length"], 2), "control_points": len(rod["control"]), "aspect": round(rod["aspect"], 3), "radius_mm": [round(float(np.sqrt(rod["a"]*rod["b"]).min()), 3), round(float(np.sqrt(rod["a"]*rod["b"]).max()), 3)]} for number, rod in enumerate(rods) if rod is not None]
     budget = {"measured_members_mm3": float(sum(m["target_volume"] for m in graph.members)), "built_rods_mm3": float(sum(np.sum(np.pi*rod["a"]*rod["b"])*rod["length"]/len(rod["a"]) for rod in built)),
               "node_bodies_mm3": float(sum(4/3*np.pi*r**3 for r in radii)), "preserves_mm3": float(np.count_nonzero(domain["preserve"])*np.prod(spacing)), "section_source_mm3": float(graph.weights.sum()*np.prod(spacing)), "result_mm3": final["volume_mm3"]}
-    report = {**graph.report(), **final, "method": "spline", "fragments_dropped": fragments, "splines": members, "control_points": {str(n): sum(1 for m in members if m["control_points"] == n) for n in (3, 4, 5)}, "mass_budget": budget,
+    report = {**graph.report(), **final, "method": "spline", "fragments_dropped": fragments, "splines": members, "control_points": {str(n): sum(1 for m in members if m["control_points"] == n) for n in (3, 4, 5)}, "mass_budget": budget, "seating": {"nodes": seating, "members_shifted": sum(1 for rod in built if rod["seat_shift_mm"] > 0), "maximum_member_shift_mm": max([rod["seat_shift_mm"] for rod in built], default=0.0)},
               "joint_sections": sections_report, "bumps": bumps(graph, domain, rods, areas, config), "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "voxel_mm": config["voxel_mm"], "transition_radius_mm": k,
               "section_source": "raw body occupancy" if body is not None else "thresholded density", "runtime_s": {**times, "total_s": perf_counter()-started}}
     return mesh, graph, rods, report

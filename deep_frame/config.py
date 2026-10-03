@@ -1068,6 +1068,9 @@ SPLINE_RECONSTRUCTION_CONFIG = {
     "bump_minimum_mm": 0.3,
     "bump_pad_mm": 1.5,
     "loop_factor": 6.0,
+    "clearance_iterations": 4,
+    "clearance_margin_mm": 0.1,
+    "clearance_tolerance_mm": 0.05,
 }
 
 SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if isinstance(value, float) else "int" for key, value in SPLINE_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},

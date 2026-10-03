@@ -4,7 +4,7 @@ from scipy.ndimage import label
 
 from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_CONFIG
 from deep_frame.topology_implicit import TWENTY_SIX, ImplicitField
-from deep_frame.topology_reconstruction import DesignGraph, Reconstruction, hoop_paths, load_paths, reconstruct, reconstruct_splines, sections, sweep_values, tube
+from deep_frame.topology_reconstruction import DesignGraph, Reconstruction, clearance, hoop_paths, load_paths, reconstruct, reconstruct_splines, sections, sweep_values, tube
 
 H = 0.5
 RADIUS = 1.5
@@ -147,3 +147,21 @@ def test_spline_cross_section_is_monotone_and_smooth(waves):
 def test_spline_node_transition_has_no_necking(waves):
     domain, density, config, mesh, graph, rods, report = waves
     assert report["joint_sections"]["count"] == 3 and report["joint_sections"]["below_one"] == 0 and report["joint_sections"]["minimum_ratio"] >= 0.98
+
+def test_spline_members_on_the_envelope_floor_are_seated_not_clipped():
+    h, shape = 0.25, (176, 64, 40)
+    centers = (np.stack(np.meshgrid(*[np.arange(n) for n in shape], indexing="ij"), axis=-1)+0.5)*h
+    start, stop, radius = np.array([6.0, 8.0, 0.75]), np.array([38.0, 8.0, 0.75]), 2.0
+    pads = [{"name": f"pad_{i}", "role": "preserve", "kind": "box", "min_mm": (end+[-2.5, -2.5, -0.75]).tolist(), "max_mm": (end+[2.5, 2.5, 4.25]).tolist()} for i, end in enumerate((start, stop))]
+    preserve = np.zeros(shape, dtype=bool)
+    for pad in pads:
+        preserve |= np.all((centers >= pad["min_mm"]) & (centers <= pad["max_mm"]), axis=-1)
+    density = ((_segment_distance(centers, start, stop) <= radius) | preserve).astype(np.float32)
+    domain = {"grid": {"origin_mm": [0.0, 0.0, 0.0], "spacing_mm": [h]*3, "shape": list(shape)}, "regions": pads, "preserve": preserve}
+    config = {**SPLINE_RECONSTRUCTION_CONFIG, "density_sigma_cells": 0.0, "voxel_mm": 0.25, "preserve_round_mm": 0.0}
+    mesh, graph, rods, report = reconstruct_splines(domain, density, config)
+    rod = max((rod for rod in rods if rod is not None), key=lambda rod: rod["length"])
+    inner = slice(len(rod["points"])//4, 3*len(rod["points"])//4)
+    assert np.all(clearance(domain, rod["points"][inner])[0] >= rod["b"][inner]-config["clearance_tolerance_mm"])
+    assert report["seating"]["members_shifted"] >= 1 and report["bodies"] == 1
+    assert mesh.volume >= 0.95*float(density.sum())*h**3
