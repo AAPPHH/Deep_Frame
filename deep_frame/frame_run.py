@@ -11,7 +11,7 @@ from time import perf_counter
 import numpy as np
 
 from deep_frame.config import (COMPONENT_DEFAULTS, COMPONENT_LIBRARY, DURABILITY, FRAME_COMPONENT_KINDS, FRAME_DEFAULTS, FRAME_LAYOUT_KINDS, FRAME_PRINT_KINDS, FRAME_REQUEST,
-                               FRAME_REQUEST_KINDS, LAYOUT_OVERRIDES, LAYOUT_RULES, LIBRARY_FIELDS, MATERIALS, MOUNTING_TYPES, RUN_GRIDS, RUN_SETTINGS, STAGES, STYLES, component_spec,
+                               FRAME_REQUEST_KINDS, IMPLICIT_CONFIG, LAYOUT_OVERRIDES, LAYOUT_RULES, LIBRARY_FIELDS, MATERIALS, MOUNTING_TYPES, RUN_GRIDS, RUN_SETTINGS, STAGES, STYLES, component_spec,
                                configure, prop_spec)
 from deep_frame.frame import camera_mount_z, motor_positions, prop_plane_z
 
@@ -266,6 +266,8 @@ class FrameRun:
         overrides = {"root": str(out), "viewer_root": "", "shape": self.grid["shape"], "fine_shape": self.grid["fine_shape"], "neural": neural,
                      "pad": {**LAYOUT_RULES["pad"], "support_half_mm": 5.0, "bore_margin_mm": 0.5}, "variants": [{"name": variant, "neural": {"volume_fraction": options.get("volume_fraction", self.layout.durability["volume_fraction"])}}]}
         overrides.update({key: value for key, value in (("prop_discs", {"mode": options.get("prop_discs")}), ("modal", {"f1_min_hz": options.get("f1_min_hz")}), ("method", options.get("method"))) if value not in (None, {"mode": None}, {"f1_min_hz": None})})
+        if options.get("arm_tip_stiffness_min_n_per_mm"):
+            overrides["stiffness"] = {"min_n_per_mm": options["arm_tip_stiffness_min_n_per_mm"], **({"calibration": options["stiffness_calibration"]} if options.get("stiffness_calibration") else {})}
         if self.layout.style["hoops"]:
             overrides["hoop"] = self.layout.hoop()
         source = (Path(self.stages["optimization"]["worktree"]) / self.stages["optimization"]["tool"]).read_text(encoding="utf-8")
@@ -462,6 +464,10 @@ def datasheet(manifest_path):
         ("9 Masse", measured(f"{_number(mass)} g = {m['volume_mm3'] / 1000:.2f} cm³ × {material['density_g_cm3']} g/cm³ ({request['material']}); Komponenten {layout['checks']['component_mass_g']:.1f} g") if m else missing, "gemessen (STL)"),
         ("10 Druckbarkeit", measured(f"{'wasserdicht' if m['watertight'] else 'NICHT wasserdicht'}, {m['bodies']} Körper, Überhang > 45°: {m['overhang_mm2']:.0f} mm² = {100 * m['overhang_fraction']:.0f} % der Oberfläche; Wandregel: {({True: 'bestanden', False: 'nicht bestanden', None: 'nicht geprüft'})[manifest.get('wall_rule_passed')]}; Düse {request['print']['nozzle_mm']} mm, Schicht {request['print']['layer_mm']} mm") if m else missing, "gemessen (STL, Normalen) + Wandregel (int)"),
     ]
+    trials = [trial for trial in ((evaluation.get("fea") or {}).get("fea_surface") or {}).get("trials", []) if trial.get("passed")]
+    limit = IMPLICIT_CONFIG["surface_deviation_mm"]
+    surface = (f"Ersatzoberfläche weicht {_number(trials[-1]['deviation_mm'], 2)} mm vom STL ab (Grenze {_number(limit, 2)} mm): " + ("innerhalb" if trials[-1]["deviation_mm"] <= limit else "WARNUNG, überschritten; betrifft nur das FEA-Rechenmodell, nicht die Druckgeometrie (Nutzerentscheid: Warnung statt Abbruch)")) if trials else "FEA direkt auf dem STL, keine Ersatzoberfläche" if (evaluation.get("fea") or {}).get("status") else "keine FEA"
+    rows.append(("11 FEA-Oberfläche", surface, "evaluation.json fea.fea_surface"))
     renders = [path for path in ("iso", "top", "side", "front") if (run_dir / "renders" / f"{path}.png").is_file() or manifest["stages"].get("renders", {}).get("status") == "running"]
     stages = ", ".join(f"{name}: {entry['status']}" for name, entry in manifest["stages"].items() if name != "datasheet")
     line = evaluation.get("line") or f"Neun-Kriterien-Bewertung: {evaluation.get('status', 'pending')} ({evaluation.get('reason', 'siehe evaluation.json')})"

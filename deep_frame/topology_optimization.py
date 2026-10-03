@@ -641,11 +641,36 @@ def volume_weights(points, discs):
     weights[inside] += discs["weight"] * np.exp(-np.abs(points[inside, 2] - discs["plane_mm"]) / discs["length_mm"])
     return weights
 
-class ModalConstraint:
+class AugmentedLagrangian:
+    def __init__(self, settings):
+        self.settings, self.multiplier, self.calls = settings, 0.0, 0
+    def augment(self, violation, slope):
+        penalty, multiplier = self.settings["penalty"], self.multiplier
+        active = max(0.0, violation + multiplier / penalty)
+        self.calls += 1
+        if self.calls % self.settings["multiplier_interval"] == 0:
+            self.multiplier = max(0.0, multiplier + penalty * violation)
+        return penalty / 2 * active ** 2 - multiplier ** 2 / (2 * penalty), penalty * active * slope, multiplier
+
+class StiffnessConstraint(AugmentedLagrangian):
     def __init__(self, system, settings):
-        self.system, self.settings = system, settings
+        super().__init__(settings)
+        case = next(case for case in system.cases if case["name"] == settings["case"])
+        self.case, self.force = settings["case"], float(np.linalg.norm(case["load_regions"][0][2]))
+        if len(case["load_regions"]) != 1 or "inertia_relief" in case:
+            raise ValueError("The stiffness constraint needs a fixtured case with one load patch")
+        self.target = settings["min_n_per_mm"] * settings["calibration"]
+    def __call__(self, solution):
+        limit = self.force ** 2 / self.target
+        violation = solution["compliance_n_mm"] / limit - 1
+        penalty, gradient, multiplier = self.augment(violation, solution["derivative"] / limit)
+        return penalty, gradient, {"stiffness_n_per_mm": self.force ** 2 / solution["compliance_n_mm"], "target_n_per_mm": self.target, "violation": float(violation), "multiplier": multiplier}
+
+class ModalConstraint(AugmentedLagrangian):
+    def __init__(self, system, settings):
+        super().__init__(settings)
+        self.system = system
         self.target = (2 * np.pi * settings["f1_min_hz"]) ** 2
-        self.multiplier, self.calls = 0.0, 0
         case = next(case for case in system.cases if case["name"] == settings["case"])
         self.parts = []
         for sign in (1.0,) if system.symmetry is None else (1.0, -1.0):
@@ -713,14 +738,9 @@ class ModalConstraint:
             sensitivity += weight * (stiffness_slope * strain - value * mass_slope * kinetic) / self.target
         sensitivity[~system.active_elements] = 0
         violation = 1 - aggregate
-        penalty, multiplier = settings["penalty"], self.multiplier
-        active = max(0.0, violation + multiplier / penalty)
-        self.calls += 1
-        if self.calls % settings["multiplier_interval"] == 0:
-            self.multiplier = max(0.0, multiplier + penalty * violation)
+        penalty, gradient, multiplier = self.augment(violation, -sensitivity)
         frequencies = [[part["sign"], float(np.sqrt(max(value, 0)) / (2 * np.pi))] for part, value, _ in modes]
-        return penalty / 2 * active ** 2 - multiplier ** 2 / (2 * penalty), -penalty * active * sensitivity, {"f1_hz": float(np.sqrt(max(lowest * self.target, 0)) / (2 * np.pi)), "frequencies_hz": frequencies,
-                                                                                                            "aggregate_ratio": float(aggregate), "violation": float(violation), "multiplier": multiplier}
+        return penalty, gradient, {"f1_hz": float(np.sqrt(max(lowest * self.target, 0)) / (2 * np.pi)), "frequencies_hz": frequencies, "aggregate_ratio": float(aggregate), "violation": float(violation), "multiplier": multiplier}
 
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,

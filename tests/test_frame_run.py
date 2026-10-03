@@ -96,7 +96,11 @@ def test_datasheet_has_ten_fields_and_the_criteria_line(tmp_path):
     (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     assert datasheet(tmp_path / "manifest.json") == 0
     text = (tmp_path / "datasheet.md").read_text(encoding="utf-8")
-    assert all(f"| {index} " in text for index in range(1, 11)) and "| test | 1 | 2 |" in text and "torsion pending" in text and "15,7 g" in text
+    assert all(f"| {index} " in text for index in range(1, 12)) and "| test | 1 | 2 |" in text and "torsion pending" in text and "15,7 g" in text and "keine FEA" in text
+    surface = {"status": "ok", "fea_surface": {"trials": [{"deviation_mm": 0.41, "passed": True}]}}
+    (tmp_path / "evaluation.json").write_text(json.dumps({"line": "x", "fea": surface}), encoding="utf-8")
+    datasheet(tmp_path / "manifest.json")
+    assert "0,41 mm vom STL ab (Grenze 0,20 mm): WARNUNG" in (tmp_path / "datasheet.md").read_text(encoding="utf-8")
 
 def test_stage_shim_patches_the_stage_worktree_config(tmp_path):
     (tmp_path / "deep_frame").mkdir()

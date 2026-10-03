@@ -1111,6 +1111,18 @@ def test_frame_request_accepts_round4_optimizer_options_and_reconstruction_switc
     with pytest.raises(ValueError):
         validate_request({"overrides": {"optimizer": {"prop_discs": "corridor"}}})
 
+def test_round4_stiffness_case_keeps_the_evaluator_support_and_request_options():
+    from deep_frame.frame_run import validate_request
+    cfg = neural_study.configure({"stiffness": {"min_n_per_mm": 10.0}})
+    _, half = neural_study.R2Domain(cfg).build([68, 64, 16], 0.08)
+    cases = {case["name"]: case for case in half["load_cases"]}
+    case = cases["stiffness_arm_tip"]
+    assert "inertia_relief" not in case and case["fixed_regions"] and "inertia_relief" in cases["arm_tip"] and case["loads"][0]["region"] == cases["arm_tip"]["loads"][0]["region"]
+    _, plain = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16], 0.08)
+    assert "stiffness_arm_tip" not in {case["name"] for case in plain["load_cases"]}
+    request = validate_request({"overrides": {"optimizer": {"volume_fraction": 0.08, "f1_min_hz": 300, "arm_tip_stiffness_min_n_per_mm": 10, "stiffness_calibration": 1.2}}})
+    assert request["overrides"]["optimizer"]["arm_tip_stiffness_min_n_per_mm"] == 10.0 and request["overrides"]["optimizer"]["stiffness_calibration"] == 1.2
+
 def test_lower_chord_detects_a_continuous_low_member():
     grid = {"origin_mm": [-30.0, -30.0, 0.0], "spacing_mm": [1.0, 1.0, 1.0], "shape": [60, 60, 20]}
     density = np.zeros(grid["shape"])

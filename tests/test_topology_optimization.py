@@ -660,3 +660,52 @@ def test_optimizers_carry_prop_disc_weights_and_the_f1_constraint(method):
     result = optimize_topology(beam_domain(), common) if method == "simp" else optimize_neural(beam_domain(), {**common, "frequencies": 8, "hidden": [6], "mirror_axis": None})
     assert result["status"] == "ok" and result["summary"]["modal"]["final"]["f1_hz"] > 0
     assert all(entry["f1_hz"] > 0 and entry["modal_penalty"] > 0 for entry in result["history"][:-1])
+
+def stiffness_settings(**changes):
+    return {"min_n_per_mm": 10.0, "case": "push", "calibration": 1.0, "penalty": 10.0, "multiplier_interval": 10 ** 6, **changes}
+
+def test_stiffness_constraint_matches_pad_stiffness_on_half_domain_and_finite_difference():
+    from deep_frame.topology_geometry import mirror_field, symmetric_domains
+    from deep_frame.topology_optimization import StiffnessConstraint
+    shape = (8, 4, 4)
+    box = lambda low, high: {"kind": "box", "min_mm": low, "max_mm": high}
+    preserve = np.zeros(shape, dtype=bool)
+    preserve[[0, -1]] = True
+    fixtures = [box([-8.01, -0.01, -0.01], [8.01, 0.01, 8.01])]
+    domain = {"grid": {"shape": list(shape), "spacing_mm": [2.0, 2.0, 2.0], "origin_mm": [-8.0, 0.0, 0.0], "order": "C", "axis_order": "xyz"},
+              "allowed": np.ones(shape, dtype=bool), "preserve": preserve, "forbidden": np.zeros(shape, dtype=bool),
+              "material": {"young_modulus_mpa": 4430.0, "poisson_ratio": 0.3, "density_g_cm3": 1.09}, "point_masses": [],
+              "load_cases": [{"name": "push", "analysis": "static", "fixed_regions": fixtures, "loads": [{"region": box([3.99, 5.99, 7.99], [8.01, 8.01, 8.01]), "force_n": [0.0, 0.0, 3.6]}]}]}
+    full, half = symmetric_domains(domain)
+    half_density = np.random.default_rng(4).uniform(0.3, 1.0, half["grid"]["shape"])
+    values = []
+    for model, density in ((full, mirror_field(half_density).ravel()), (half, half_density.ravel())):
+        system = HexElasticity(model)
+        solution = system.solve(density, metrics=True)["push"]
+        constraint = StiffnessConstraint(system, stiffness_settings())
+        assert constraint.force ** 2 / solution["compliance_n_mm"] == pytest.approx(solution["stiffness_n_per_mm"], rel=1e-9)
+        values.append(solution["stiffness_n_per_mm"])
+    assert values[0] == pytest.approx(values[1], rel=1e-8)
+    density = half_density.ravel()
+    target = 2 * values[1]
+    _, gradient, info = StiffnessConstraint(system, stiffness_settings(min_n_per_mm=target))(system.solve(density)["push"])
+    assert info["violation"] == pytest.approx(1.0, rel=1e-8) and info["stiffness_n_per_mm"] == pytest.approx(values[1], rel=1e-9)
+    for element in (3, 40):
+        step = np.zeros(system.nelem)
+        step[element] = 1e-6
+        penalty = lambda value: StiffnessConstraint(system, stiffness_settings(min_n_per_mm=target))(system.solve(value)["push"])[0]
+        assert gradient[element] == pytest.approx((penalty(density + step) - penalty(density - step)) / 2e-6, rel=1e-4)
+    assert StiffnessConstraint(system, stiffness_settings(min_n_per_mm=values[1] / 2))(system.solve(density)["push"])[0] == 0.0
+
+def test_neural_stiffness_constraint_stays_out_of_the_objective_and_blocks_infeasible_stall():
+    from deep_frame.topology_neural import optimize_neural
+    domain = beam_domain()
+    domain["load_cases"].append({**deepcopy(domain["load_cases"][0]), "name": "push"})
+    settings = {"volume_fraction": 0.5, "max_iterations": 6, "minimum_iterations": 2, "sharpness_iterations": 2, "objective_window": 2, "change_tolerance": 1.0, "frequencies": 8, "hidden": [6], "mirror_axis": None}
+    free = optimize_neural(domain, settings)
+    assert free["status"] == "ok" and free["summary"]["stop_reason"] == "objective_stall"
+    result = optimize_neural(domain, {**settings, "stiffness": stiffness_settings(min_n_per_mm=1e6), "feasibility_tolerance": 0.0})
+    summary = result["summary"]
+    assert result["status"] == "ok" and "push" not in summary["normalization_compliances_n_mm"] and "push" not in summary["static_surrogate_metrics"]
+    assert summary["stop_reason"] == "max_iterations" and summary["stiffness"]["active"] and summary["stiffness"]["case_stiffness_n_per_mm"] == pytest.approx(summary["stiffness"]["compliance_stiffness_n_per_mm"], rel=1e-9)
+    assert all(entry["stiffness_penalty"] > 0 and entry["stiffness_n_per_mm"] > 0 for entry in result["history"][:-1])

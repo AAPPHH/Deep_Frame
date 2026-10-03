@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 import shutil
 import sys
 from pathlib import Path
@@ -14,7 +15,7 @@ from deep_frame.config import CRASH_DIRECTIONS, command_line
 from deep_frame.frame import motor_positions, prop_plane_z
 from deep_frame.topology_geometry import _merge, build_design_domain, grid_centers, mirror_field, region_contains, symmetric_domains
 from deep_frame.topology_neural import member_widths, neural_settings, optimize_neural
-from deep_frame.topology_optimization import HexElasticity, ModalConstraint, _settings, optimize_topology
+from deep_frame.topology_optimization import HexElasticity, ModalConstraint, StiffnessConstraint, _settings, optimize_topology
 from deep_frame.topology_reconstruction import hoop_paths
 from tools.multi_crash_study import cross_sections, stitch
 from tools.topology_study import study_parameters
@@ -37,12 +38,13 @@ STUDY = {
     "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads", "min_body_mm3": 1.0, "sample_sharpness": 32.0, "flatten": ["battery_rail_"]},
     "prop_discs": {"mode": None, "weight": 3.0, "length_mm": 10.0, "corridor_half_width_mm": 4.0, "hub_margin_mm": 2.0},
     "modal": {"f1_min_hz": None, "case": "modes", "modes": 4, "tracked": 2, "initial_iterations": 30, "warm_iterations": 2, "penalty": 10.0, "ks": 40.0, "mass_cutoff": 0.1, "multiplier_interval": 5, "start_iteration": 1},
+    "stiffness": {"min_n_per_mm": None, "case": "stiffness_arm_tip", "source_case": "arm_tip", "calibration": 1.0, "penalty": 10.0, "multiplier_interval": 5, "feasibility_tolerance": 0.02},
     "method": "neural",
     "calibration": {"inputs": [], "output": "exports/r4/modal_calibration.json", "linear_solver": "cpu_superlu"},
     "simp": {"filter_radius_mm": 4.0, "projection": "single", "beta_schedule": [1.0, 2.0, 4.0, 8.0], "beta_interval": 35, "max_iterations": 140, "minimum_iterations": 20, "move_limit": 0.1, "max_runtime_s": 1500.0},
     "variants": [{"name": "neural_r3_v05", "neural": {"volume_fraction": 0.05}}],
 }
-VARIANT_KEYS = ("prop_discs", "modal", "method", "simp")
+VARIANT_KEYS = ("prop_discs", "modal", "stiffness", "method", "simp")
 
 def configure(overrides):
     unknown = sorted(set(overrides) - set(STUDY))
@@ -80,7 +82,7 @@ def lower_chord(density, grid, cfg, sigma=1.0, threshold=0.5):
 
 class R2Domain:
     def __init__(self, cfg):
-        self.pad, self.hoop, self.crash, self.relief, self.discs = cfg["pad"], cfg["hoop"], cfg["crash_directions"], cfg["inertia_relief"], cfg["prop_discs"]
+        self.pad, self.hoop, self.crash, self.relief, self.discs, self.stiffness = cfg["pad"], cfg["hoop"], cfg["crash_directions"], cfg["inertia_relief"], cfg["prop_discs"], cfg["stiffness"]
     def hoop_paths(self):
         return hoop_paths(self.hoop)
     def masses(self, domain, fraction):
@@ -156,6 +158,9 @@ class R2Domain:
         loads = [{"region": {"kind": "box", "min_mm": [sign * self.hoop["x_mm"] - r, self.hoop["load_y_min_mm"], self.hoop["load_z_mm"][0]], "max_mm": [sign * self.hoop["x_mm"] + r, y_max, self.hoop["load_z_mm"][1]]}, "force_n": [0.0, -force / 2, 0.0]} for sign in (-1, 1)]
         domain["load_cases"].append({"name": "crash_hoop", "analysis": "static", "fixed_regions": [dict(box) for box in front["fixed_regions"]], "loads": loads, "purpose": "Frontal crash on the camera hoop fronts"})
         domain["optimizer_settings"]["case_weights"]["crash_hoop"] = self.hoop["case_weight"]
+        if self.stiffness["min_n_per_mm"]:
+            source = next(case for case in domain["load_cases"] if case["name"] == self.stiffness["source_case"])
+            domain["load_cases"].append({**deepcopy(source), "name": self.stiffness["case"], "purpose": "arm-tip stiffness constraint, evaluator support (centre mount undersides fixed)"})
         if self.relief:
             relief = self.masses(domain, fraction)
             for case in domain["load_cases"]:
@@ -414,6 +419,10 @@ def run_variant(cfg, variant):
     neural["volume_fraction"] *= half["metadata"]["round4"]["unblocked_cells"] / half["metadata"]["round4"]["allowed_cells"]
     extra = {"prop_discs": discs if discs["mode"] == "soft" else None, "modal": cfg["modal"] if cfg["modal"]["f1_min_hz"] else None}
     simp = cfg["method"] == "simp"
+    if cfg["stiffness"]["min_n_per_mm"]:
+        if simp:
+            raise ValueError("The arm-tip stiffness constraint is implemented for the neural method only")
+        extra.update(stiffness=cfg["stiffness"], feasibility_tolerance=cfg["stiffness"]["feasibility_tolerance"])
     keys = ("interface_node_policy", "case_weights", "penalization", "min_stiffness_ratio")
     settings = _settings({**{key: half["optimizer_settings"][key] for key in keys}, "linear_solver": "cuda_cudss", **cfg["simp"], "volume_fraction": neural["volume_fraction"], **extra}) if simp else base_settings(half, {**neural, **extra})
     holder = {}
@@ -425,7 +434,7 @@ def run_variant(cfg, variant):
     topology_neural.NeuralDensity = Capture
     try:
         with (out / "iterations.jsonl").open("w") as log:
-            progress = lambda e: (log.write(json.dumps({k: e.get(k) for k in ("iteration", "objective", "volume_fraction", "sharpness", "projection_beta", "elapsed_s", "f1_hz", "modal_penalty")}) + "\n"), log.flush())
+            progress = lambda e: (log.write(json.dumps({k: e.get(k) for k in ("iteration", "objective", "volume_fraction", "sharpness", "projection_beta", "elapsed_s", "f1_hz", "modal_penalty", "stiffness_n_per_mm", "stiffness_penalty")}) + "\n"), log.flush())
             result = optimize_topology(half, settings, progress_callback=progress) if simp else optimize_neural(half, settings, progress_callback=progress)
     finally:
         topology_neural.NeuralDensity = original
@@ -444,7 +453,7 @@ def run_variant(cfg, variant):
             "iterations": summary["iterations"], "stop_reason": summary["stop_reason"], "optimize_runtime_s": optimized,
             **finish(out, density, fine_full, cfg, viewer), "total_runtime_s": perf_counter() - started,
             "grid_opt_half": half["grid"], "grid_render_full": fine_full["grid"], "optimizer": {k: settings[k] for k in (("filter_radius_mm", "projection", "beta_schedule", "max_iterations", "move_limit") if simp else ("max_frequency_per_mm", "frequencies", "hidden", "learning_rate", "sharpness_final", "sharpness_iterations", "max_iterations", "max_width_penalty"))},
-            "round2": half["metadata"]["round2"], "round4": {**half["metadata"]["round4"], "modal": cfg["modal"], "volume_weighted": settings["prop_discs"] is not None, "summary_modal": summary.get("modal")}, "render": render_cfg, "objective_final": summary["objective_final"],
+            "round2": half["metadata"]["round2"], "round4": {**half["metadata"]["round4"], "modal": cfg["modal"], "stiffness": cfg["stiffness"], "summary_stiffness": summary.get("stiffness"), "volume_weighted": settings["prop_discs"] is not None, "summary_modal": summary.get("modal")}, "render": render_cfg, "objective_final": summary["objective_final"],
             "static_surrogate_metrics": summary["static_surrogate_metrics"], "load_cases": [case["name"] for case in half["load_cases"]]}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=str))
     print(json.dumps({k: info[k] for k in ("variant", "iterations", "optimize_runtime_s", "total_runtime_s", "mass_g", "bodies", "connectivity")}), flush=True)
@@ -466,12 +475,16 @@ def calibrate(cfg):
     rows = {}
     for path in cfg["calibration"]["inputs"]:
         started = perf_counter()
-        info = ModalConstraint(system, settings)(np.load(path)["density"].ravel(), half["optimizer_settings"]["penalization"], half["optimizer_settings"]["min_stiffness_ratio"], settings["initial_iterations"])[2]
+        density = np.load(path)["density"].ravel()
+        info = ModalConstraint(system, settings)(density, half["optimizer_settings"]["penalization"], half["optimizer_settings"]["min_stiffness_ratio"], settings["initial_iterations"])[2]
+        if cfg["stiffness"]["min_n_per_mm"]:
+            solution = system.solve(density, half["optimizer_settings"]["penalization"], half["optimizer_settings"]["min_stiffness_ratio"], metrics=True)[cfg["stiffness"]["case"]]
+            info.update(stiffness_n_per_mm=solution["stiffness_n_per_mm"], compliance_stiffness_n_per_mm=StiffnessConstraint(system, cfg["stiffness"]).force ** 2 / solution["compliance_n_mm"])
         rows[path] = {**info, "runtime_s": perf_counter() - started}
     system.close()
     Path(cfg["calibration"]["output"]).parent.mkdir(parents=True, exist_ok=True)
     Path(cfg["calibration"]["output"]).write_text(json.dumps(rows, indent=1))
-    print(json.dumps({path: row["f1_hz"] for path, row in rows.items()}), flush=True)
+    print(json.dumps({path: {key: row.get(key) for key in ("f1_hz", "stiffness_n_per_mm", "compliance_stiffness_n_per_mm")} for path, row in rows.items()}), flush=True)
 
 def run_main(overrides):
     cfg = configure(overrides)

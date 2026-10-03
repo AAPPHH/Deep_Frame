@@ -1076,7 +1076,8 @@ LAYOUT_RULES = {
 
 LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float"},
                     "antennas": {"angle_deg": "float", "y_mm": "float"}, "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"},
-                    "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp")}}
+                    "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
+                                  "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float"}}
 
 STYLES = {
     "freestyle": {"crash_directions": ["front", "side_left", "side_right", "arm_front_left", "arm_front_right", "arm_rear_left", "arm_rear_right", "below", "back"],

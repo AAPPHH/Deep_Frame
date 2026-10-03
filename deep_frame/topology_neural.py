@@ -3,7 +3,7 @@ from time import perf_counter
 
 import numpy as np
 
-from deep_frame.topology_optimization import HexElasticity, ModalConstraint, _case_scaling, _history_entry, validate_masks, volume_weights
+from deep_frame.topology_optimization import HexElasticity, ModalConstraint, StiffnessConstraint, _case_scaling, _history_entry, validate_masks, volume_weights
 
 NEURAL_SETTINGS = {
     "volume_fraction": 0.12,
@@ -31,6 +31,8 @@ NEURAL_SETTINGS = {
     "max_local_fraction": 0.3,
     "prop_discs": None,
     "modal": None,
+    "stiffness": None,
+    "feasibility_tolerance": None,
 }
 
 def neural_settings(settings):
@@ -187,17 +189,21 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
         optimizer = Adam(mapping.field.parameters, settings["learning_rate"])
         penalty = LocalVolumePenalty(domain, settings)
         modal = ModalConstraint(system, settings["modal"]) if settings["modal"] else None
-        modal_log = []
+        stiffness = StiffnessConstraint(system, settings["stiffness"]) if settings["stiffness"] else None
+        modal_log, stiffness_log = [], []
         scales = None
         converged, stop_reason = False, "max_iterations"
         for iteration in range(1, settings["max_iterations"] + 1):
             sharpness = 1 + (settings["sharpness_final"] - 1) * min(1.0, (iteration - 1) / max(settings["sharpness_iterations"], 1))
             physical, cache = mapping.physical(sharpness)
             solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"])
+            stiffness_penalty, stiffness_gradient, stiffness_info = stiffness(solutions.pop(stiffness.case)) if stiffness is not None else (0.0, 0.0, {})
             if scales is None:
                 scales, normalization, weights = _case_scaling(solutions, settings)
             width_penalty, width_gradient = penalty(physical)
-            objective_gradient = sum(scales[name] * result["derivative"] for name, result in solutions.items()) + width_gradient
+            objective_gradient = sum(scales[name] * result["derivative"] for name, result in solutions.items()) + width_gradient + stiffness_gradient
+            if stiffness is not None:
+                stiffness_log.append({"iteration": iteration, **stiffness_info})
             modal_penalty, modal_info = 0.0, {}
             if modal is not None:
                 modal_penalty, modal_gradient, modal_info = modal(physical, settings["penalization"], settings["min_stiffness_ratio"])
@@ -208,14 +214,17 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
             optimizer.step(mapping.field.parameters, gradients)
             change = float(max(np.max(np.abs(value - old)) for value, old in zip(mapping.field.parameters, previous)))
             history.append(_history_entry(iteration, physical, solutions, scales, change, perf_counter() - started))
-            history[-1].update(volume_fraction=float(np.sum(physical[mapping.allowed]) / allowed_count), sharpness=sharpness, width_penalty=width_penalty, modal_penalty=modal_penalty, f1_hz=modal_info.get("f1_hz"))
-            history[-1]["objective"] += width_penalty + modal_penalty
+            history[-1].update(volume_fraction=float(np.sum(physical[mapping.allowed]) / allowed_count), sharpness=sharpness, width_penalty=width_penalty, modal_penalty=modal_penalty, f1_hz=modal_info.get("f1_hz"),
+                               stiffness_penalty=stiffness_penalty, stiffness_n_per_mm=stiffness_info.get("stiffness_n_per_mm"))
+            history[-1]["objective"] += width_penalty + modal_penalty + stiffness_penalty
             density = physical.reshape(tuple(domain["grid"]["shape"]))
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
             recent = [entry["objective"] for entry in history[-settings["objective_window"]:]]
             stall = (max(recent) - min(recent)) / min(recent) if len(recent) == settings["objective_window"] else None
-            if iteration >= max(settings["minimum_iterations"], settings["sharpness_iterations"]) and stall is not None and stall < settings["change_tolerance"]:
+            violations = [info["violation"] for info in (modal_info, stiffness_info) if info]
+            feasible = settings["feasibility_tolerance"] is None or max(violations, default=0.0) <= settings["feasibility_tolerance"]
+            if iteration >= max(settings["minimum_iterations"], settings["sharpness_iterations"]) and stall is not None and stall < settings["change_tolerance"] and feasible:
                 converged, stop_reason = True, "objective_stall"
                 break
             if settings["max_runtime_s"] is not None and perf_counter() - started >= settings["max_runtime_s"]:
@@ -224,6 +233,7 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
         physical, _ = mapping.physical(sharpness)
         density = physical.reshape(tuple(domain["grid"]["shape"]))
         solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"], metrics=True)
+        constrained = solutions.pop(stiffness.case) if stiffness is not None else None
         final_entry = _history_entry(iteration + 1, physical, solutions, scales, None, perf_counter() - started, final=True)
         final_entry["width_penalty"] = penalty(physical)[0]
         history.append(final_entry)
@@ -251,6 +261,9 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
             "parameter_count": int(sum(value.size for value in mapping.field.parameters)),
             "modal": None if modal is None else {"settings": settings["modal"], "final": modal(physical, settings["penalization"], settings["min_stiffness_ratio"], settings["modal"]["initial_iterations"])[2], "history": modal_log,
                                                  "model": "voxel surrogate: motor-contact undersides fixed (domain 'modes' case = evaluator fixture), symmetric and antisymmetric half-domain parts, SIMP stiffness, density mass with low-density cutoff, point masses lumped on their attachment nodes"},
+            "stiffness": None if stiffness is None else {"settings": settings["stiffness"], "case_stiffness_n_per_mm": constrained.get("stiffness_n_per_mm"), "compliance_stiffness_n_per_mm": stiffness.force ** 2 / constrained["compliance_n_mm"],
+                                                         "active": bool(stiffness_log and stiffness_log[-1]["violation"] > -(settings["feasibility_tolerance"] or 0.0)), "history": stiffness_log,
+                                                         "model": "voxel surrogate of the evaluator arm_tip case: centre mount undersides fixed, uniform pad load, stiffness = |F| / mean pad displacement along F = |F|^2 / compliance; excluded from the compliance objective"},
             "system": system.diagnostics(),
             "elapsed_s": perf_counter() - started,
         }
