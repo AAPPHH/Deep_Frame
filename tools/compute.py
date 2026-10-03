@@ -33,7 +33,7 @@ JOB_TYPES = {
     "suite": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 0},
     "cpu": {"num_cpus": 2, "memory_gb": 4, "gpu_gb": 0},
     "gpu": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 14},
-    "gpu_a100": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 80, "num_gpus": 1},
+    "gpu_a100": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 80},
 }
 join = subprocess.list2cmdline if os.name == "nt" else shlex.join
 
@@ -48,7 +48,8 @@ def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=sys.ex
     return {"entrypoint": join([python, str(Path(__file__).resolve()), "exec", encode(payload)]),
             "entrypoint_num_cpus": need["num_cpus"], "entrypoint_memory": int(need["memory_gb"] * 2**30),
             "entrypoint_resources": {"gpu_gb": need["gpu_gb"]} if need["gpu_gb"] else None,
-            "metadata": {"type": kind, "cwd": payload["cwd"], "command": join(command)[:500]}, **({"entrypoint_num_gpus": need["num_gpus"]} if "num_gpus" in need else {})}
+            "entrypoint_num_gpus": need.get("num_gpus", 1 if need["gpu_gb"] else 0) or None,
+            "metadata": {"type": kind, "cwd": payload["cwd"], "command": join(command)[:500]}}
 
 def execute(token):
     payload = json.loads(base64.urlsafe_b64decode(token))

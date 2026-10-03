@@ -1064,7 +1064,8 @@ def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
                            tmp_path, {"CALCULIX_PATH": "ccx", "HOME": "x", "DEEP_FRAME_SEED": "1"})
     need = compute.JOB_TYPES["fea_modal"]
     assert (spec["entrypoint_num_cpus"], spec["entrypoint_memory"], spec["entrypoint_resources"]) == (need["num_cpus"], need["memory_gb"] * 2**30, None)
-    assert compute.request("density_neural", ["x"], tmp_path)["entrypoint_resources"] == {"gpu_gb": compute.JOB_TYPES["density_neural"]["gpu_gb"]}
+    gpu = compute.request("density_neural", ["x"], tmp_path)
+    assert (gpu["entrypoint_resources"], gpu["entrypoint_num_gpus"], spec["entrypoint_num_gpus"]) == ({"gpu_gb": compute.JOB_TYPES["density_neural"]["gpu_gb"]}, 1, None)
     token = spec["entrypoint"].split()[-1]
     assert compute.main(["exec", token]) == 3
     assert (tmp_path / "out.txt").read_text() == str(need["num_cpus"]) + "ccx"
@@ -1072,8 +1073,9 @@ def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
         compute.main(["unknown", "--", "x"])
 
 def test_compute_dgx_head_fits_four_a100_jobs():
-    head, need = compute.CONFIG["heads"]["dgx"], compute.JOB_TYPES["gpu_a100"]
-    assert all(head[key] >= 4 * need[key] for key in ("num_cpus", "memory_gb", "gpu_gb", "num_gpus"))
+    head, need = compute.CONFIG["heads"]["dgx"], compute.request("gpu_a100", ["x"], ".")
+    assert all(have >= 4 * want for have, want in ((head["num_cpus"], need["entrypoint_num_cpus"]), (head["memory_gb"] * 2**30, need["entrypoint_memory"]),
+                                                   (head["gpu_gb"], need["entrypoint_resources"]["gpu_gb"]), (head["num_gpus"], need["entrypoint_num_gpus"])))
 
 def test_round2_domain_lifts_pads_and_adds_camera_hoops():
     full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
