@@ -478,6 +478,31 @@ def _prepare_surface(source, settings, refine, target, record=None):
         raise ValueError(f"Prepared FEA surface changed topology or is not one closed, oriented, fold- and self-intersection-free body: {report}")
     return surface, report
 
+def uniform_surface(mesh, target, taubin):
+    import pymeshlab
+    import trimesh
+    meshes = pymeshlab.MeshSet()
+    meshes.add_mesh(pymeshlab.Mesh(np.asarray(mesh.vertices, dtype=np.float64), np.asarray(mesh.faces, dtype=np.int32)))
+    meshes.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(target), iterations=6, featuredeg=40)
+    if taubin:
+        meshes.apply_coord_taubin_smoothing(stepsmoothnum=taubin)
+    return trimesh.Trimesh(meshes.current_mesh().vertex_matrix(), meshes.current_mesh().face_matrix())
+
+def robust_surface(mesh, settings, plan):
+    settings, trials = _mesh_settings(settings), []
+    for volume in settings["fea_remesh_targets_mm"]:
+        for feature in plan["feature_degs"]:
+            for target in plan["targets_mm"]:
+                surface = uniform_surface(mesh, target, plan["taubin"])
+                row = {"surface_mm": target, "taubin": plan["taubin"], "volume_mm": volume, "feature_deg": feature}
+                try:
+                    _prepare_surface(surface, {**settings, "fea_remesh_feature_deg": feature}, False, volume)
+                    trials.append({**row, "passed": True})
+                    return surface, trials, {"fea_remesh_targets_mm": [volume], "fea_remesh_feature_deg": feature}
+                except ValueError as error:
+                    trials.append({**row, "passed": False, "diagnostic": str(error)[-300:]})
+    return mesh, trials, {}
+
 def _collapse_short_edges(mesh, threshold):
     import trimesh
     from scipy.sparse import coo_matrix

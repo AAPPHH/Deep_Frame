@@ -160,33 +160,8 @@ def _count(mesh, region):
     vertices = mesh.vertices
     return int(np.all((vertices >= np.asarray(region["min_mm"])) & (vertices <= np.asarray(region["max_mm"])), axis=1).sum())
 
-def fea_surface(mesh, target, taubin):
-    import pymeshlab
-    meshes = pymeshlab.MeshSet()
-    meshes.add_mesh(pymeshlab.Mesh(mesh.vertices, mesh.faces))
-    meshes.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(target), iterations=6, featuredeg=40)
-    if taubin:
-        meshes.apply_coord_taubin_smoothing(stepsmoothnum=taubin)
-    return trimesh.Trimesh(meshes.current_mesh().vertex_matrix(), meshes.current_mesh().face_matrix())
-
-def robust_surface(mesh, config, settings):
-    from deep_frame.fea import _prepare_surface
-    trials = []
-    for volume_target in config["fea_volume_targets_mm"]:
-        for feature in config["fea_feature_degs"]:
-            for target in config["fea_surface_targets_mm"]:
-                surface = fea_surface(mesh, target, config["fea_surface_taubin"])
-                row = {"surface_mm": target, "taubin": config["fea_surface_taubin"], "volume_mm": volume_target, "feature_deg": feature}
-                try:
-                    _prepare_surface(surface, {**settings, "fea_remesh_feature_deg": feature}, False, volume_target)
-                    trials.append({**row, "passed": True})
-                    return surface, trials, {"fea_remesh_targets_mm": [volume_target], "fea_remesh_feature_deg": feature}
-                except ValueError as error:
-                    trials.append({**row, "passed": False, "diagnostic": str(error)[-300:]})
-    return fea_surface(mesh, config["fea_surface_targets_mm"][0], config["fea_surface_taubin"]), trials, {}
-
 def fea_main(overrides):
-    from deep_frame.fea import MESH_KEYS, evaluate
+    from deep_frame.fea import MESH_KEYS, evaluate, robust_surface
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("geometry", "output"))
     config["output"].mkdir(parents=True, exist_ok=True)
     mesh = trimesh.load_mesh(config["geometry"], process=True)
@@ -194,7 +169,7 @@ def fea_main(overrides):
     settings = {**domain["fea_settings"], **{key: IMPLICIT_CONFIG[key] for key in MESH_KEYS}, "work_dir": str(config["output"]/"fea"), "mesh_timeout_s": 900.0, "solver_timeout_s": 1800.0, "threads": 8, "mesh_threads": 4, "fea_memory_budget_mb": 6000.0, "mesh_minimum_sicn": 0.005, **FEA_RELAXED}
     surface_trials, chosen = [], {}
     if config["fea_surface_mm"] > 0:
-        mesh, surface_trials, chosen = robust_surface(mesh, config, {**IMPLICIT_CONFIG, **settings})
+        mesh, surface_trials, chosen = robust_surface(mesh, {**settings, "fea_remesh_targets_mm": config["fea_volume_targets_mm"]}, {"targets_mm": config["fea_surface_targets_mm"], "taubin": config["fea_surface_taubin"], "feature_degs": config["fea_feature_degs"]})
         settings.update(chosen)
     cases, masses = fea_cases(domain, config["selector_half_band_mm"])
     preflight = {case["name"]: {"fixed": [_count(mesh, r) for r in case["fixed_regions"]], "loads": [_count(mesh, l["region"]) for l in case.get("loads", [])]} for case in cases}
