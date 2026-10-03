@@ -569,13 +569,14 @@ def test_symmetric_half_domain_matches_full_compliance_and_sensitivities():
         assert symmetric[name]["max_von_mises_mpa"] == pytest.approx(reference[name]["max_von_mises_mpa"], rel=1e-8)
     assert HexElasticity(half).diagnostics()["factorization_groups"] == 2
 
-def test_inertia_relief_is_balanced_support_free_and_matches_on_half_domain():
+@pytest.mark.parametrize("policy", ["allowed_adjacent", "preserve_adjacent"])
+def test_inertia_relief_is_balanced_support_free_and_matches_on_half_domain(policy):
     from deep_frame.topology_geometry import mirror_field, symmetric_domains
     shape = (8, 4, 4)
     box = lambda low, high: {"kind": "box", "min_mm": low, "max_mm": high}
     preserve = np.zeros(shape, dtype=bool)
     preserve[[0, -1]] = True
-    relief = {"point_masses": [{"region": box([-8.01, -0.01, -0.01], [-5.99, 8.01, 0.01]), "mass_g": 3.0}, {"region": box([-2.01, 1.99, 7.99], [2.01, 6.01, 8.01]), "mass_g": 5.0}], "preserve_mass_g": 2.0}
+    relief = {"point_masses": [{"region": box([-8.01, -0.01, -0.01], [-5.99, 8.01, 0.01]), "mass_g": 3.0}, {"region": box([3.99, 1.99, 7.99], [8.01, 6.01, 8.01]), "mass_g": 5.0}], "preserve_mass_g": 2.0}
     loads = {"thrust": [{"region": box([5.99, -0.01, 7.99], [8.01, 8.01, 8.01]), "force_n": [0.0, 0.0, 2.0]}, {"region": box([-8.01, -0.01, 7.99], [-5.99, 8.01, 8.01]), "force_n": [0.0, 0.0, 2.0]}],
              "crash": [{"region": box([1.99, 7.99, 3.99], [6.01, 8.01, 8.01]), "force_n": [0.4, -3.0, 0.5]}]}
     domain = {"grid": {"shape": list(shape), "spacing_mm": [2.0, 2.0, 2.0], "origin_mm": [-8.0, 0.0, 0.0], "order": "C", "axis_order": "xyz"},
@@ -585,7 +586,7 @@ def test_inertia_relief_is_balanced_support_free_and_matches_on_half_domain():
     full, half = symmetric_domains(domain)
     half_density = np.random.default_rng(5).uniform(0.2, 1.0, half["grid"]["shape"])
     density = mirror_field(half_density)
-    systems = {"full": HexElasticity(full), "half": HexElasticity(half)}
+    systems = {"full": HexElasticity(full, interface_node_policy=policy), "half": HexElasticity(half, interface_node_policy=policy)}
     results = {"full": systems["full"].solve(density.ravel()), "half": systems["half"].solve(half_density.ravel())}
     for name in loads:
         assert results["half"][name]["compliance_n_mm"] == pytest.approx(results["full"][name]["compliance_n_mm"], rel=1e-8)

@@ -424,7 +424,8 @@ class HexElasticity:
             return 3 * self.plane_nodes + self.axis
         return (3 * self.plane_nodes[:, None] + np.asarray([index for index in range(3) if index != self.axis])).ravel()
     def _relief_support(self, loaded):
-        candidates = np.setdiff1d(np.intersect1d(self.interface_nodes, self.plane_nodes) if self.symmetry is not None else self.interface_nodes, loaded)
+        nodes = self.interface_nodes if self.symmetry is None or np.intersect1d(self.interface_nodes, self.plane_nodes).size else self.active_nodes
+        candidates = np.setdiff1d(np.intersect1d(nodes, self.plane_nodes) if self.symmetry is not None else nodes, loaded)
         points = self.points[candidates]
         a = int(np.argmin(points[:, 1] + 1e-3 * points[:, 2]))
         b = int(np.argmax(np.linalg.norm(points - points[a], axis=1)))
