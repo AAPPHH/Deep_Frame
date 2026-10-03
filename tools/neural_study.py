@@ -134,6 +134,8 @@ class R2Domain:
         unblocked = int(np.count_nonzero(allowed))
         if discs["mode"] == "hard":
             allowed &= ~(self.keep_out(centers, discs) & ~preserve)
+            labels, _ = label(allowed)
+            allowed &= np.isin(labels, np.unique(labels[preserve & allowed]))
         domain.update(allowed=allowed, preserve=preserve, forbidden=~allowed)
         if label(allowed)[1] != 1:
             raise ValueError("Round-2 domain is not face-connected")
