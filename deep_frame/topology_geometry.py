@@ -222,7 +222,7 @@ def _component_regions(parameters, settings, grid):
             regions.append(_cylinder(name + "_envelope", "forbidden", [position[0], position[1], (minimum[2] + maximum[2] + clearance) / 2], c["motor"]["diameter_mm"] / 2 + clearance, maximum[2] - minimum[2] + clearance, "Motor hardware envelope; lower mating face permits contact"))
         else:
             expanded_min, expanded_max = minimum - clearance, maximum + clearance
-            if name in ("aio15", "battery", "xt30", "balancer"):
+            if name in ("aio15", "battery"):
                 expanded_min[2] = minimum[2]
             regions.append(_box(name + "_envelope", "forbidden", expanded_min, expanded_max, "Component envelope with clearance, excluding intentional lower support contact"))
     depth = settings["contact_depth_mm"]
@@ -264,17 +264,7 @@ def _component_regions(parameters, settings, grid):
         regions.append(_cylinder(f"camera_tool_access_{sign}", "forbidden", [(end + sign * lug_end) / 2, f["camera_y_mm"], camera_mount_z(parameters)], settings["camera_tool_radius_mm"], length, "Conservative outboard screwdriver corridor; no subvoxel cut through free material", axis="x"))
     camera_box = components["camera"]["shape"].bounding_box()
     regions.append(_box("camera_front_access", "forbidden", [camera_box.min.X - clearance, camera_box.max.Y, camera_box.min.Z - clearance], [camera_box.max.X + clearance, upper[1] + 1, camera_box.max.Z + clearance], "Unobstructed camera front, insertion and lens field corridor"))
-    for name in ("xt30", "balancer"):
-        position = placements[name]["position"]
-        width, length = c[name]["width_mm"], c[name]["length_mm"]
-        regions.append(_box(name + "_contact", "preserve", [position[0] - width / 2, position[1] - length / 2 - depth, 0], [position[0] + width / 2, position[1] + length / 2 + depth, position[2]], "Local connector seat with exposed retention ends for tie or adhesive", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
-        regions.append(_box(name + "_plug_access", "forbidden", [position[0] - width / 2 - clearance, position[1] - length / 2 - clearance, position[2]], [position[0] + width / 2 + clearance, position[1] + length / 2 + clearance, upper[2] + 1], "Top insertion and removal corridor for disconnected connector"))
-    regions.append(_cylinder("antenna_contact", "preserve", [0, -f["antenna_y_mm"], f["antenna_holder_height_mm"] / 2], settings["antenna_eyelet_radius_mm"], f["antenna_holder_height_mm"], "Local antenna retention eyelet, not a prescribed tail", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
-    regions.append(_cylinder("antenna_bore", "forbidden", [0, -f["antenna_y_mm"], upper[2] / 2], f["antenna_bore_mm"] / 2, upper[2] + 2, "VTX antenna through bore continuing above every design cell", rasterize=False))
-    antenna_access_height = upper[2] + 1 - f["antenna_holder_height_mm"]
-    regions.append(_cylinder("antenna_insertion_access", "forbidden", [0, -f["antenna_y_mm"], f["antenna_holder_height_mm"] + antenna_access_height / 2], f["antenna_bore_mm"] / 2, antenna_access_height, "Conservative antenna insertion corridor above the exact retention eyelet"))
     regions.append(_box("aio_side_assembly_access", "forbidden", [0, -c["aio15"]["length_mm"] / 2 - clearance, placements["aio15"]["position"][2]], [upper[0] + 1, c["aio15"]["length_mm"] / 2 + clearance, placements["aio15"]["position"][2] + c["aio15"]["stack_height_mm"] + clearance], "AIO insertion/removal through right side with connectors unplugged"))
-    regions.append(_box("balance_lead_routing", "forbidden", [f["connector_offset_x_mm"] - 2, -f["connector_y_mm"], 8], [f["connector_offset_x_mm"] + 2, -c["aio15"]["length_mm"] / 2, 12], "Accessible balance and power lead corridor; provisional connector routing"))
     return regions, placements, components
 
 def _connection_cases(regions, model, force):
@@ -284,7 +274,7 @@ def _connection_cases(regions, model, force):
     cases = []
     for region in regions:
         name = region["name"]
-        if region["role"] != "preserve" or not name.startswith(("aio_contact_", "battery_rail_", "camera_mount_", "xt30_contact", "balancer_contact", "antenna_contact")):
+        if region["role"] != "preserve" or not name.startswith(("aio_contact_", "battery_rail_", "camera_mount_")):
             continue
         if region["kind"] == "box":
             minimum, maximum = region["min_mm"], region["max_mm"]
@@ -381,7 +371,7 @@ def build_design_domain(parameters):
             "rasterization": "Allowed and preserve primitives at cell centers; forbidden cells conservatively removed on any positive-volume overlap. Exact preserve unions and forbidden cuts remain mandatory after reconstruction.",
             "assumptions": [
                 "Motor positions, component placements and local mounting faces are fixed interfaces, not design variables in this run.",
-                "Camera screw position, connector retention and cable envelopes are provisional; final hardware fit requires measurement.",
+                "Camera screw position is provisional; final hardware fit requires measurement. XT30, balance plug and antennas have no prescribed seat; they are strapped where they fit.",
                 "The initial design envelope is a full cuboid; no prescribed arms, central plate, battery walls, cage walls or tail links.",
                 "Local contact primitives are human-specified functional interfaces; connecting branches are optimizer variables.",
                 "Preserve volume fractions refer to raster cells; exact bores and interface boundaries change final physical volume.",

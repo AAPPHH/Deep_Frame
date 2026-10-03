@@ -66,8 +66,8 @@ def test_presets_translate_deterministically():
     first, second = FrameLayout(request()), FrameLayout(request())
     assert json.dumps(first.summary(), sort_keys=True) == json.dumps(second.summary(), sort_keys=True)
     assert first.patch(["crash_front", "crash_arm"]) == second.patch(["crash_front", "crash_arm"])
-    assert first.frame["wheelbase_mm"] == 132.5 and first.frame["camera_y_mm"] == pytest.approx(35.0) and first.frame["antenna_y_mm"] == pytest.approx(56.0)
-    assert first.frame["connector_y_mm"] == pytest.approx(45.0) and first.motors()["front_right"] == pytest.approx([53.4547, 39.1364], abs=1e-4)
+    assert first.frame["wheelbase_mm"] == 132.5 and first.frame["camera_y_mm"] == pytest.approx(35.0) and not {"antenna_y_mm", "connector_y_mm"} & set(first.frame)
+    assert "antennas" not in first.summary() and first.motors()["front_right"] == pytest.approx([53.4547, 39.1364], abs=1e-4)
     assert first.hoop()["x_mm"] == 12.0 and first.hoop()["path_yz_mm"][0] == pytest.approx([24.0, 27.5])
     patch = first.patch(["crash_front", "crash_arm"])
     assert patch["TOPOLOGY_CONFIG"]["optimizer"]["case_weights"] == {"crash_front": 2.0, "crash_arm": 2.0}
@@ -85,7 +85,8 @@ def test_override_changes_only_the_targeted_value():
     assert {name: spec for name, spec in tilted.components.items() if name != "camera"} == {name: spec for name, spec in base.components.items() if name != "camera"}
     wide = FrameLayout(request(overrides={"motors": {"wheelbase_mm": 136.0}}))
     assert {key for key in base.frame if base.frame[key] != wide.frame[key]} == {"wheelbase_mm"} and wide.components == base.components
-    assert validate_request(request(overrides={"antennas": {"angle_deg": 10.0}}))["overrides"] == {"antennas": {"angle_deg": 10.0}}
+    with pytest.raises(ValueError):
+        validate_request(request(overrides={"antennas": {"y_mm": -50.0}}))
 
 def test_datasheet_has_ten_fields_and_the_criteria_line(tmp_path):
     layout = FrameLayout(request())

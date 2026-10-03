@@ -76,7 +76,7 @@ COMPONENT_LIBRARY = {
             "stack_height_mm": "PROVISIONAL: complete populated board envelope; measure actual stack",
             "grommet_height_mm": "PROVISIONAL: HDZero manual, soft mount on the 4 included rubber grommets; height not given, typical whoop grommet",
             "elrs_antenna_clearance_mm": "HDZero AIO15 manual: lift the ELRS antenna at least 3 mm off the board",
-            "vtx_antenna": "HDZero AIO15 manual: UFL VTX antenna mounted outward; rear antenna eyelet keeps it outboard",
+            "vtx_antenna": "HDZero AIO15 manual: UFL VTX antenna mounted outward; strapped with a rubber band where it fits, no frame eyelet",
         },
     },
     "HDZero Lux": {
@@ -106,8 +106,8 @@ COMPONENT_LIBRARY = {
         "mass_g": 0.0,
         "hole_pattern": None,
         "keep_out": {"clearance_mm": 0.5},
-        "mounting": "eyelet",
-        "data": {"vtx": "UFL VTX antenna mounted outward through the rear eyelet", "elrs": "wire antenna lifted at least 3 mm above the AIO board"},
+        "mounting": "loose",
+        "data": {"vtx": "UFL VTX antenna mounted outward, strapped with a rubber band where it fits; no frame eyelet", "elrs": "wire antenna lifted at least 3 mm above the AIO board"},
         "source": "frame v0 antenna eyelet; HDZero AIO15 manual for VTX and ELRS routing",
         "mass_scope": "PROVISIONAL: antenna mass not measured, neglected",
     },
@@ -117,7 +117,7 @@ COMPONENT_LIBRARY = {
         "mass_g": 0.0,
         "hole_pattern": None,
         "keep_out": {"clearance_mm": 0.5},
-        "mounting": "strap",
+        "mounting": "loose",
         "source": "https://images.100y.com.tw/pdf_file/AMASS-XT30U.pdf#page=2",
         "model": "AMASS XT30U-F bounding envelope",
         "mass_scope": "already_in_battery",
@@ -129,7 +129,7 @@ COMPONENT_LIBRARY = {
         "mass_g": 0.0,
         "hole_pattern": None,
         "keep_out": {"clearance_mm": 0.5},
-        "mounting": "strap",
+        "mounting": "loose",
         "data": {"pins": 3},
         "source": "https://www.jst-mfg.com/product/pdf/eng/eXH.pdf#page=4",
         "model": "PROVISIONAL: JST XHP-3 housing envelope; verify actual GNB connector",
@@ -148,7 +148,7 @@ LIBRARY_FIELDS = {
     "connector": ["dimensions_mm.width", "dimensions_mm.length", "dimensions_mm.height"],
     "prop": ["dimensions_mm.diameter", "dimensions_mm.hub_diameter", "dimensions_mm.hub_height", "dimensions_mm.shaft_diameter", "data.size_in", "data.pitch_in", "data.blades"],
 }
-MOUNTING_TYPES = ("grommets", "screws", "strap", "eyelet", "shaft")
+MOUNTING_TYPES = ("grommets", "screws", "strap", "loose", "shaft")
 PROP_RULE = {"swept_margin_mm": 1.5, "thickness_mm": 0.8, "mass_g": 0.7, "source": "PROVISIONAL layout rule for prop sizes without a library entry: swept disk = prop size x 25.4 mm + 1.5 mm margin",
              "parameter_sources": {"thickness_mm": "PROVISIONAL: swept disk thickness; excludes blade flex", "mass_g": "PROVISIONAL: prop model not selected; equivalent uniform disk inertia"}}
 LEGACY_HOLE_KEYS = {"layout": "mount_layout", "pitch_mm": "mount_pitch_mm", "screw_diameter_mm": "screw_diameter_mm", "clearance_diameter_mm": "screw_clearance_mm"}
@@ -852,7 +852,6 @@ TOPOLOGY_CONFIG = {
     "aio_contact_radius_mm": 3.2,
     "aio_boss_radius_mm": 3.1,
     "camera_mount_radius_mm": 4.1,
-    "antenna_eyelet_radius_mm": 4.3,
     "flush_overlap_mm": 0.5,
     "prescribed_wall_margin_mm": 0.1,
     "contact_depth_mm": 4.0,
@@ -1065,8 +1064,6 @@ LAYOUT_RULES = {
     "battery_mounts": {"top": {"deck_top_mm": 28.0, "headroom_mm": 3.0}, "bottom": {"gap_mm": 1.0}},
     "battery_prop_clearance_mm": 2.0,
     "camera": {"stack_gap_mm": 12.35, "top_clearance_mm": 3.0},
-    "antennas": {"angle_deg": 0.0, "connector_clearance_mm": 0.5, "eyelet_radius_mm": 4.3, "envelope_margin_mm": 3.7},
-    "connectors": {"stack_gap_mm": 13.75},
     "cg_tolerance_mm": 3.0,
     "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3},
     "hoop": {"side_gap_mm": 4.0, "radius_mm": 1.6, "path_yz_mm": [[-11.0, 27.5], [-1.0, 26.0], [7.0, 23.5], [11.5, 18.0], [12.5, 11.0], [10.5, 5.0], [6.0, 2.0], [-2.0, 1.5]],
@@ -1075,7 +1072,7 @@ LAYOUT_RULES = {
 }
 
 LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float"},
-                    "antennas": {"angle_deg": "float", "y_mm": "float"}, "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"},
+                    "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"},
                     "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp")}}
 
 STYLES = {
