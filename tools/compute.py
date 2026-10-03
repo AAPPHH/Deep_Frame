@@ -14,6 +14,7 @@ CONFIG = {
     "forward_env": ("CALCULIX_PATH", "PYTHONPATH", "CUDA_PATH"),
     "forward_prefix": "DEEP_FRAME_",
     "thread_env": ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"),
+    "throttle": {"Deep_Frame-recon3": 2},
     "head": {"num_cpus": 24, "num_gpus": 1, "memory_gb": 40, "object_store_gb": 1, "gpu_gb": 14,
              "dashboard_port": 8265, "start_timeout_s": 7 * 24 * 3600},
 }
@@ -57,9 +58,15 @@ async def follow(client, job):
     async for lines in client.tail_job_logs(job):
         print(lines, end="", flush=True)
 
+def active(client, key):
+    return sum(1 for job in client.list_jobs() if job.status in ("PENDING", "RUNNING") and key in (job.metadata or {}).get("cwd", ""))
+
 def submit(kind, command, cwd, config=CONFIG):
     from ray.job_submission import JobStatus, JobSubmissionClient
     client = JobSubmissionClient(config["address"])
+    for key, limit in config["throttle"].items():
+        while key in str(Path(cwd).resolve()) and active(client, key) >= limit:
+            time.sleep(15)
     job = client.submit_job(**request(kind, command, cwd, config=config))
     print(f"compute: {kind} job {job} submitted", file=sys.stderr, flush=True)
     try:
