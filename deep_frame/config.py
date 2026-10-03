@@ -1071,6 +1071,9 @@ SPLINE_RECONSTRUCTION_CONFIG = {
     "clearance_iterations": 4,
     "clearance_margin_mm": 0.1,
     "clearance_tolerance_mm": 0.05,
+    "anchor_inset_mm": 0.5,
+    "anchor_snap_mm": 3.0,
+    "bridge_gap_mm": 3.0,
 }
 
 SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if isinstance(value, float) else "int" for key, value in SPLINE_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},

@@ -314,6 +314,22 @@ class Reconstruction:
             raw = self.raw_values(axes)-np.maximum(outside-cfg["root_distance_mm"], 0)*cfg["root_taper_slope"]
             self._blend(window, np.where(outside <= reach, raw, -np.inf).astype(np.float32))
 
+    def add_bridges(self):
+        gap, regions, count = self.config["bridge_gap_mm"], [r for r in self.domain["regions"] if r["role"] == "preserve"], 0
+        for i, a in enumerate(regions):
+            window = self.field.window(a, gap)
+            if window is None:
+                continue
+            axes = self.field.axes(window)
+            near = -primitive_distance(axes, a) <= gap
+            zone = np.zeros(near.shape, dtype=bool)
+            for b in regions[i+1:]:
+                zone |= near & (-primitive_distance(axes, b) <= gap)
+            if zone.any():
+                count += 1
+                self._blend(window, np.where(zone, self.raw_values(axes), -np.inf).astype(np.float32), self.config["transition_radius_mm"])
+        self.bridges = count
+
     def preserve_values(self, regions, pad):
         values = np.full(self.field.values.shape, -np.inf, dtype=np.float32)
         flush, r = self.config["preserve_flush_mm"], self.config["preserve_round_mm"]
@@ -373,6 +389,8 @@ class Reconstruction:
         self.field.smooth(self.config["member_smooth_mm"])
         if self.density is not None and self.config["root_distance_mm"] > 0:
             self.add_roots()
+        if self.density is not None and self.config.get("bridge_gap_mm", 0) > 0:
+            self.add_bridges()
         clip = lambda margin: self.field.intersect(-self.field.primitives(forbidden, margin+3*h)-margin)
         clip(offset)
         self.field.smooth_union(self.preserve_values(preserves, self.config["preserve_blend_mm"]+3*h), self.config["preserve_blend_mm"])
@@ -554,14 +572,32 @@ def fit_profile(t, values, keep, degree):
         return np.array([float(np.mean(values))]), (0.0, 1.0)
     return np.polyfit(t[keep], values[keep], min(degree, int(keep.sum())-1)), (float(t[keep].min()), float(t[keep].max()))
 
-def clearance(domain, points, eps=0.05):
-    forbidden = [r for r in domain["regions"] if r["role"] == "forbidden"]
-    def value(x):
-        axes = [x[:, 0], x[:, 1], x[:, 2]]
-        return np.minimum.reduce([primitive_distance(axes, _envelope(domain))]+[-primitive_distance(axes, r) for r in forbidden])
+def _slope(value, points, eps=0.05):
     points = np.atleast_2d(np.asarray(points, dtype=float))
     slope = np.stack([value(points+e)-value(points-e) for e in np.eye(3)*eps], axis=1)/(2*eps)
     return value(points), slope/np.maximum(np.linalg.norm(slope, axis=1, keepdims=True), 1e-9)
+
+def clearance(domain, points):
+    forbidden = [r for r in domain["regions"] if r["role"] == "forbidden"]
+    return _slope(lambda x: np.minimum.reduce([primitive_distance([x[:, 0], x[:, 1], x[:, 2]], _envelope(domain))]+[-primitive_distance([x[:, 0], x[:, 1], x[:, 2]], r) for r in forbidden]), points)
+
+def snap_anchors(graph, domain, config):
+    preserves = [r for r in domain["regions"] if r["role"] == "preserve"]
+    value = lambda x: np.maximum.reduce([primitive_distance([x[:, 0], x[:, 1], x[:, 2]], r) for r in preserves])
+    moved = []
+    for member in graph.members:
+        for side, anchor in enumerate(member["anchors"]):
+            if anchor is None or not preserves:
+                continue
+            point = np.asarray(anchor, dtype=float).copy()
+            for _ in range(config["clearance_iterations"]):
+                d, n = _slope(value, point)
+                if d[0] < -config["anchor_snap_mm"] or d[0] >= config["anchor_inset_mm"]-config["clearance_tolerance_mm"]:
+                    break
+                point = point+(config["anchor_inset_mm"]-d[0])*n[0]
+            moved.append(float(np.linalg.norm(point-anchor)))
+            member["anchors"][side] = point
+    return {"anchors": len(moved), "moved": sum(m > config["clearance_tolerance_mm"] for m in moved), "maximum_shift_mm": max(moved, default=0.0)}
 
 def seat_nodes(graph, domain, config):
     moved = []
@@ -579,7 +615,7 @@ def seat_nodes(graph, domain, config):
 def frame_axes(curve, major):
     tangent = np.gradient(curve, axis=0)
     tangent /= np.maximum(np.linalg.norm(tangent, axis=1, keepdims=True), 1e-12)
-    axis = major-(tangent@major)[:, None]*tangent
+    axis = major-np.sum(tangent*major, axis=-1)[:, None]*tangent
     fallback = np.cross(tangent, np.where(np.abs(tangent[:, :1]) < 0.9, [[1.0, 0.0, 0.0]], [[0.0, 1.0, 0.0]]))
     axis = np.where(np.linalg.norm(axis, axis=1, keepdims=True) > 1e-3, axis, fallback)
     axis /= np.linalg.norm(axis, axis=1, keepdims=True)
@@ -666,11 +702,11 @@ def reconstruct_splines(domain, density, config, body=None):
     weights = None if body is None else body_weights(body, grid, config["body_subdivisions"])
     graph = DesignGraph(solid, grid["origin_mm"], spacing[0], domain["preserve"], config, weights)
     areas = graph.areas()
-    seating = seat_nodes(graph, domain, config)
+    seating = {**seat_nodes(graph, domain, config), "anchors": snap_anchors(graph, domain, config)}
     rods = [spline_member(graph, member, area, config, domain) if member["kind"] == "rod" else None for member, area in zip(graph.members, areas)]
     rods = [None if rod is not None and member["nodes"][0] == member["nodes"][1] and rod["length"] < config["loop_factor"]*float(np.mean(rod["b"])) else rod for member, rod in zip(graph.members, rods)]
     times["skeleton_s"] = perf_counter()-started
-    builder, k = Reconstruction(domain, config), config["transition_radius_mm"]
+    builder, k = Reconstruction(domain, config, density if config["bridge_gap_mm"] > 0 else None), config["transition_radius_mm"]
     for rod in rods:
         if rod is not None:
             builder.add_member(rod, graph.h, k)
@@ -689,7 +725,7 @@ def reconstruct_splines(domain, density, config, body=None):
     budget = {"measured_members_mm3": float(sum(m["target_volume"] for m in graph.members)), "built_rods_mm3": float(sum(np.sum(np.pi*rod["a"]*rod["b"])*rod["length"]/len(rod["a"]) for rod in built)),
               "node_bodies_mm3": float(sum(4/3*np.pi*r**3 for r in radii)), "preserves_mm3": float(np.count_nonzero(domain["preserve"])*np.prod(spacing)), "section_source_mm3": float(graph.weights.sum()*np.prod(spacing)), "result_mm3": final["volume_mm3"]}
     report = {**graph.report(), **final, "method": "spline", "fragments_dropped": fragments, "splines": members, "control_points": {str(n): sum(1 for m in members if m["control_points"] == n) for n in (3, 4, 5)}, "mass_budget": budget, "seating": {"nodes": seating, "members_shifted": sum(1 for rod in built if rod["seat_shift_mm"] > 0), "maximum_member_shift_mm": max([rod["seat_shift_mm"] for rod in built], default=0.0)},
-              "joint_sections": sections_report, "bumps": bumps(graph, domain, rods, areas, config), "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "voxel_mm": config["voxel_mm"], "transition_radius_mm": k,
+              "joint_sections": sections_report, "preserve_bridges": getattr(builder, "bridges", 0), "bumps": bumps(graph, domain, rods, areas, config), "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "voxel_mm": config["voxel_mm"], "transition_radius_mm": k,
               "section_source": "raw body occupancy" if body is not None else "thresholded density", "runtime_s": {**times, "total_s": perf_counter()-started}}
     return mesh, graph, rods, report
 
