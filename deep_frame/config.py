@@ -706,6 +706,7 @@ PRINT_MATERIAL = {
 LOAD_COVARIANCE_LIMITS = {
     "groups": {"stack_fixed": {"support": "center_fixtures", "interfaces": ["motor_front_left", "motor_front_right", "motor_rear_left", "motor_rear_right", "battery", "camera"]},
                "motor_pads_fixed": {"support": "motor_fixtures", "interfaces": ["stack"]}},
+    "limit_group": "stack_fixed",
     "selectors": {"motor": "motor_fixtures box nearest to the motor axis", "battery": "deck", "camera": "camera", "stack": "center_fixtures"},
     "unit_force_n": 1.0,
     "unit_moment_nmm": 1.0,
@@ -713,13 +714,14 @@ LOAD_COVARIANCE_LIMITS = {
     "definition": ("F = interface flexibility (42 x 42, LOAD_COVARIANCE order): unit force split equally over the selector nodes, unit moment as minimum-norm couple field about the selector node centroid "
                    "(Sigma's reference point is taken at that centroid); F_ij = a_i . u_j (work-conjugate). Support per group as the evaluator arm-tip/crash fixtures: stack mount undersides fixed for motor pads, battery, camera; "
                    "four motor seat undersides fixed for the stack; F is block-diagonal across the two groups (stack <-> rest coupling zero by construction). "
-                   "Mean compliance tr(Sigma F) = sum_k l_k^T F l_k, worst-case compliance lambda_max(Sigma^1/2 F Sigma^1/2) = lambda_max(L^T F L), L = LoadCovariance().directions; both in N mm"),
+                   "Mean compliance tr(Sigma F) = sum_k l_k^T F l_k, worst-case compliance lambda_max(Sigma^1/2 F Sigma^1/2), both in N mm. The limits and the evaluator targets use limit_group (36 x 36: motors, battery, camera with the stack fixed, "
+                   "as the optimizer's COVARIANCE support); the stack block is reported under groups and all_dofs (about 0.1 % of tr for ManaFly and Aether4)"),
     "arm_mm": 66.25,
     "scaling": "force DOFs of a reference scaled to our arm like the arm-tip slope rule (k * arm_ref / arm_ours): F_scaled = S F S, S = sqrt(arm_ours / arm_ref) on force DOFs, 1 on moment DOFs",
-    "mean_compliance_n_mm": None,
-    "worst_case_compliance_n_mm": None,
-    "source": None,
-    "references": {},
+    "mean_compliance_n_mm": 0.3901,
+    "worst_case_compliance_n_mm": 0.1682,
+    "source": "stricter reference = BM Aether 4 (86.2 g, arm 95.3 mm) scaled to arm 66.25 mm, gap-finder flexibilities (diagonal), limit_group stack_fixed",
+    "references": {"aether4": {"raw": [0.5278, 0.2416], "scaled": [0.3901, 0.1682]}, "manafly3": {"raw": [1.249, 0.579], "scaled": [1.078, 0.480]}, "simp_mma_raw_1": [1.44, 0.501], "simp_mma_recon_1": [1.45, 0.520]},
     "evidence": "exports/cov/limits.md",
 }
 

@@ -377,26 +377,26 @@ class InterfaceCompliance:
     def scaling(self, arm_mm):
         return np.array([math.sqrt(self.config["arm_mm"] / arm_mm) if dof[0] == "F" else 1.0 for _, dof in self.labels])
 
+    def block(self, flexibility, product, index):
+        values, vectors = np.linalg.eigh(self.model.sigma[np.ix_(index, index)])
+        root = vectors * np.sqrt(np.clip(values, 0, None))
+        values, vectors = np.linalg.eigh(root.T @ flexibility[np.ix_(index, index)] @ root)
+        worst = root @ vectors[:, -1]
+        share = np.abs(worst) / np.abs(worst).max()
+        return {"mean_compliance_n_mm": float(np.sum(product[index])), "worst_case_compliance_n_mm": float(values[-1]), "top_eigenvalues_n_mm": values[::-1][:3].tolist(),
+                "worst_case_load": {"%s %s" % self.labels[i]: float(worst[k]) for k, i in enumerate(index) if share[k] >= 0.2}}
+
     def measure(self, flexibility, arm_mm=None):
         flexibility = np.asarray(flexibility, dtype=float)
         if arm_mm:
             scale = self.scaling(arm_mm)
             flexibility = flexibility * np.outer(scale, scale)
         flexibility = (flexibility + flexibility.T) / 2
-        sigma, directions = self.model.sigma, self.model.directions
-        values, vectors = np.linalg.eigh(directions.T @ flexibility @ directions)
-        product = np.diag(sigma @ flexibility)
-        worst = directions @ vectors[:, -1]
-        share = np.abs(worst) / np.abs(worst).max()
-        groups = {}
-        for name, group in self.config["groups"].items():
-            index = [i for i, (interface, _) in enumerate(self.labels) if interface in group["interfaces"]]
-            values_g, vectors_g = np.linalg.eigh(sigma[np.ix_(index, index)])
-            root = vectors_g * np.sqrt(np.clip(values_g, 0, None))
-            groups[name] = {"mean_compliance_n_mm": float(np.sum(product[index])), "worst_case_compliance_n_mm": float(np.linalg.eigvalsh(root.T @ flexibility[np.ix_(index, index)] @ root)[-1])}
-        return {"mean_compliance_n_mm": float(product.sum()), "worst_case_compliance_n_mm": float(values[-1]), "top_eigenvalues_n_mm": values[::-1][:3].tolist(),
+        product = np.diag(self.model.sigma @ flexibility)
+        groups = {name: self.block(flexibility, product, [i for i, (interface, _) in enumerate(self.labels) if interface in group["interfaces"]]) for name, group in self.config["groups"].items()}
+        return {**groups[self.config["limit_group"]], "all_dofs": self.block(flexibility, product, list(range(len(self.labels)))), "groups": groups,
                 "mean_by_interface_n_mm": {name: float(sum(product[i] for i, (interface, _) in enumerate(self.labels) if interface == name)) for name in dict.fromkeys(name for name, _ in self.labels)},
-                "worst_case_load": {f"{interface} {dof}": float(worst[i]) for i, (interface, dof) in enumerate(self.labels) if share[i] >= 0.2}, "groups": groups, "scaled_to_arm_mm": self.config["arm_mm"] if arm_mm else None}
+                "scaled_to_arm_mm": self.config["arm_mm"] if arm_mm else None}
 
     def gap_flexibility(self, record, coupled=False):
         names = {"battery": "battery_rails"}
@@ -477,8 +477,9 @@ def sigma_limits(settings, config=LOAD_COVARIANCE_LIMITS):
     for name, path in settings["evaluations"].items():
         if Path(path).exists():
             evaluation = read(path)
-            rows.setdefault(name, {"role": "evaluator only", "status": "ok", "arm_mm": evaluation["arm_mm"]})["evaluator"] = {"full": {key: evaluation[key] for key in (*keys, "top_eigenvalues_n_mm", "mean_by_interface_n_mm", "groups")},
-                "scaled": {key: evaluation["scaled"][key] for key in keys}, "diagonal": {key: evaluation["diagonal"][key] for key in keys}, "peak_memory_gb": evaluation["peak_memory_gb"], "runs": evaluation["runs"], "path": str(path)}
+            flexibility = np.asarray(evaluation["flexibility"])
+            rows.setdefault(name, {"role": "evaluator only", "status": "ok", "arm_mm": evaluation["arm_mm"]})["evaluator"] = {"full": measure.measure(flexibility), "scaled": measure.measure(flexibility, evaluation["arm_mm"]),
+                "diagonal": measure.measure(np.diag(np.diag(flexibility))), "peak_memory_gb": evaluation["peak_memory_gb"], "runs": evaluation["runs"], "centroids_mm": evaluation["centroids_mm"], "path": str(path)}
     references = [name for name, row in rows.items() if row["role"] == "references" and row["status"] == "ok"]
     limits = {}
     for variant in ("scaled", "raw"):
@@ -513,7 +514,9 @@ def limits_markdown(result):
         lines.append("| " + " | ".join(cells) + " |")
     limit = result["limits"]
     summary = [f"- {variant}: tr(ΣF) ≤ {number(limit[variant]['mean_compliance_n_mm']['value'], 4)} N mm ({limit[variant]['mean_compliance_n_mm']['source']}), λmax ≤ {number(limit[variant]['worst_case_compliance_n_mm']['value'], 4)} N mm ({limit[variant]['worst_case_compliance_n_mm']['source']})" for variant in ("scaled", "raw")]
-    return "\n".join(lines) + "\n\nGrenzen (strengere Referenz):\n" + "\n".join(summary) + "\n"
+    notes = [f"Definition: {result['definition']}", f"Skalierung auf Arm {result['arm_mm']} mm: {result['scaling']}",
+             "roh/skaliert/gekoppelt: Gap-Finder-Flexibilitaeten (diagonal; gekoppelt = zusaetzlich F-F und F-M innerhalb einer Schnittstelle aus mean_displacement); Evaluator voll = 42 x 42 inkl. Kopplung zwischen Schnittstellen; Abw. = Evaluator voll bzw. diagonal gegen Gap roh."]
+    return "\n".join(lines) + "\n\nGrenzen (strengere Referenz):\n" + "\n".join(summary) + "\n\n" + "\n".join(f"- {note}" for note in notes) + "\n"
 
 def slice_frame(spec, config=None):
     config = config or spec

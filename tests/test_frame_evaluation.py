@@ -66,16 +66,16 @@ def test_sigma_measure_matches_trace_and_symmetric_root_form():
     rng = np.random.default_rng(0)
     root = rng.normal(size=(42, 42))
     flexibility = root @ root.T * 1e-3
-    result = measure.measure(flexibility)
+    result = measure.measure(flexibility)["all_dofs"]
     values, vectors = np.linalg.eigh(sigma)
     half = vectors @ np.diag(np.sqrt(np.clip(values, 0, None))) @ vectors.T
     assert result["mean_compliance_n_mm"] == pytest.approx(np.trace(sigma @ flexibility), rel=1e-10)
     assert result["worst_case_compliance_n_mm"] == pytest.approx(np.linalg.eigvalsh(half @ flexibility @ half)[-1], rel=1e-6)
-    assert sum(result["mean_by_interface_n_mm"].values()) == pytest.approx(result["mean_compliance_n_mm"], rel=1e-10)
-    identity = measure.measure(np.eye(42))
+    assert sum(measure.measure(flexibility)["mean_by_interface_n_mm"].values()) == pytest.approx(result["mean_compliance_n_mm"], rel=1e-10)
+    identity = measure.measure(np.eye(42))["all_dofs"]
     assert identity["mean_compliance_n_mm"] == pytest.approx(np.trace(sigma), rel=1e-10)
     assert identity["worst_case_compliance_n_mm"] == pytest.approx(measure.model.eigenvalues[0], rel=1e-10)
-    scaled = measure.measure(np.eye(42), arm_mm=measure.config["arm_mm"] * 2)
+    scaled = measure.measure(np.eye(42), arm_mm=measure.config["arm_mm"] * 2)["all_dofs"]
     forces = np.array([dof[0] == "F" for _, dof in measure.labels])
     assert scaled["mean_compliance_n_mm"] == pytest.approx(np.trace(sigma[np.ix_(~forces, ~forces)]) + np.trace(sigma[np.ix_(forces, forces)]) / 2, rel=1e-10)
 
