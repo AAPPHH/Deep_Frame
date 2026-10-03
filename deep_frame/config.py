@@ -1107,7 +1107,7 @@ STAGES = {
 }
 RUN_SETTINGS = {"root": "exports/runs", "compute": "C:/clones/Deep_Frame-int/tools/compute.py", "domain_stage": "optimization", "domain_compute": "cpu",
                 "views": {"iso": [[0.55, -0.85, -0.62], [0, 0, 1]], "top": [[0, 0, -1], [0, 1, 0]], "side": [[-1, 0, 0], [0, 0, 1]], "front": [[0, -1, 0], [0, 0, 1]]},
-                "datasheet_voxel_mm": 0.5}
+                "datasheet_voxel_mm": 0.5, "deck_band_mm": 1.0}
 
 CONFIG = {
     "length_mm": 30.0,

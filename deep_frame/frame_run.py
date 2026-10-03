@@ -308,8 +308,10 @@ class FrameRun:
         patterns.append({"name": "stack", "center_mm": center[:2].tolist(), "z_mm": 1.5, "radius_mm": float(np.hypot(*(aio[0] - center)[:2])), "count": 4, "hole_diameter_mm": [1.6, 4.0],
                          "screw_diameter_mm": self.layout.components["aio15"]["screw_diameter_mm"], "tool_direction": [0, 0, -1]})
         components = [{"type": entry.get("prototype", name.split("_")[0]), "name": name, "center_mm": entry["center_of_mass_mm"]} for name, entry in placements.items() if entry["mass_g"] > 0]
+        rails = [region["max_mm"][2] for name, region in regions.items() if name.startswith("battery_rail_")]
+        deck = {**battery["attachment_region"], "min_mm": [*battery["attachment_region"]["min_mm"][:2], min(rails) - self.settings["deck_band_mm"]], "max_mm": [*battery["attachment_region"]["max_mm"][:2], max(rails) + 0.01]} if rails else battery["attachment_region"]
         selectors = {"center_fixtures": cases["arm_tip"]["fixed_regions"], "motor_fixtures": cases["modes"]["fixed_regions"], "arm_tip": cases["arm_tip"]["loads"][0]["region"], "arm_motor": "front_left",
-                     "camera": cases["camera_side"]["loads"][0]["region"], "deck": battery["attachment_region"], "battery_center_mm": battery["position_mm"], "battery_mass_g": battery["mass_g"]}
+                     "camera": cases["camera_side"]["loads"][0]["region"], "deck": deck, "battery_center_mm": battery["position_mm"], "battery_mass_g": battery["mass_g"]}
         out = self.dir / "evaluation"
         return {"name": self.dir.name, "stl": str(mesh), "output": str(out), "prop_diameter_mm": self.layout.components["prop"]["diameter_mm"], "motors": motors, "mount_patterns": patterns,
                 "components": components, "connectors": [{"name": name, "position_mm": placements[name]["center_of_mass_mm"], "direction": [0, 0, 1]} for name in ("xt30", "balancer") if name in placements],

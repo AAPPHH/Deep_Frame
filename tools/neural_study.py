@@ -33,7 +33,7 @@ STUDY = {
     "hoop": {"x_mm": 12.0, "radius_mm": 1.6, "path_yz_mm": [[24, 27.5], [34, 26], [42, 23.5], [46.5, 18], [47.5, 11], [45.5, 5], [41, 2], [33, 1.5]],
              "load_y_min_mm": 44.0, "load_z_mm": [4.0, 22.0], "case_weight": 1.0},
     "neural": {"max_frequency_per_mm": 0.2, "max_iterations": 110, "minimum_iterations": 40, "sharpness_iterations": 80, "sharpness_final": 8.0, "max_width_penalty": 0.0, "max_runtime_s": 1500.0},
-    "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads", "min_body_mm3": 1.0, "sample_sharpness": 32.0},
+    "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads", "min_body_mm3": 1.0, "sample_sharpness": 32.0, "flatten": ["battery_rail_"]},
     "prop_discs": {"mode": None, "weight": 3.0, "length_mm": 10.0, "corridor_half_width_mm": 4.0, "hub_margin_mm": 2.0},
     "modal": {"f1_min_hz": None, "case": "modes", "modes": 4, "tracked": 2, "initial_iterations": 30, "warm_iterations": 2, "penalty": 10.0, "ks": 40.0, "mass_cutoff": 0.1, "multiplier_interval": 5, "start_iteration": 1},
     "method": "neural",
@@ -227,9 +227,10 @@ def keep_connected(field, grid, threshold, anchor):
     return field, {"components_raw": int(count), "anchor_components": len(kept), "dropped_count": int(count - len(kept)),
                    "dropped_volume_mm3": float(np.count_nonzero(dropped) * cell), "largest_dropped_mm3": float(max([sizes[i] for i in range(1, count + 1) if i not in kept] or [0]) * cell)}
 
-def surface(density, grid, cfg, regions=(), anchor=None):
+def surface(density, grid, cfg, regions=(), anchor=None, preserve=None):
     spacing = np.asarray(grid["spacing_mm"], dtype=float)
     field = gaussian_filter(np.asarray(density, dtype=np.float32), cfg["sigma_cells"]) if cfg["sigma_cells"] > 0 else np.asarray(density, dtype=np.float32)
+    field = field if preserve is None else np.maximum(field, preserve)
     field = carve(field, grid, regions) if cfg["carve_bores"] else field
     connectivity = None
     if anchor is not None:
@@ -243,6 +244,13 @@ def surface(density, grid, cfg, regions=(), anchor=None):
         mesh = trimesh.util.concatenate([part for part in parts if abs(part.volume) >= cfg["min_body_mm3"]])
         connectivity = {**(connectivity or {}), "mesh_slivers_dropped": len(slivers), "mesh_slivers_mm3": float(sum(abs(part.volume) for part in slivers))}
     trimesh.smoothing.filter_taubin(mesh, lamb=0.5, nu=-0.53, iterations=cfg["taubin"])
+    vertices = mesh.vertices.copy()
+    for region in regions:
+        if region["kind"] == "box" and region["name"].startswith(tuple(cfg["flatten"])):
+            low, high = np.asarray(region["min_mm"]), np.asarray(region["max_mm"])
+            top = np.all((vertices[:, :2] >= low[:2]) & (vertices[:, :2] <= high[:2]), axis=1) & (vertices[:, 2] >= high[2] - 2 * spacing[2]) & (vertices[:, 2] <= high[2] + spacing[2])
+            vertices[top, 2] = high[2]
+    mesh.vertices = vertices
     if mesh.volume < 0:
         mesh.invert()
     return mesh, connectivity
@@ -371,7 +379,7 @@ def anchors(domain):
 
 def finish(out, density, fine_full, cfg, viewer):
     sections = cross_sections(gaussian_filter(np.asarray(density, dtype=np.float32), cfg["render"]["sigma_cells"]), fine_full)
-    mesh, connectivity = surface(density, fine_full["grid"], cfg["render"], fine_full["regions"], anchors(fine_full) if cfg["render"]["keep"] == "motor_pads" else None)
+    mesh, connectivity = surface(density, fine_full["grid"], cfg["render"], fine_full["regions"], anchors(fine_full) if cfg["render"]["keep"] == "motor_pads" else None, fine_full["preserve"])
     mesh.export(out / "geometry.stl")
     if viewer is not None:
         viewer.mkdir(parents=True, exist_ok=True)
