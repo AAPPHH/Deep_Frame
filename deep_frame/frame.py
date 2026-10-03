@@ -273,8 +273,6 @@ def assembly_placements(config: dict) -> dict:
         "aio15": {"prototype": "aio15", "position": (0, 0, f["base_thickness_mm"] + f["aio_standoff_mm"])},
         "camera": {"prototype": "camera", "position": (0, f["camera_y_mm"], f["base_thickness_mm"] + f["camera_bottom_clearance_mm"])},
         "battery": {"prototype": "battery", "position": (0, 0, f["deck_top_mm"])},
-        "xt30": {"prototype": "xt30", "position": (-f["connector_offset_x_mm"], -f["connector_y_mm"], f["base_thickness_mm"])},
-        "balancer": {"prototype": "balancer", "position": (f["connector_offset_x_mm"], -f["connector_y_mm"], f["base_thickness_mm"])},
     }
     for name, (x, y) in motor_positions(config).items():
         placements[f"motor_{name}"] = {"prototype": "motor", "position": (x, y, f["arm_height_mm"])}
@@ -331,7 +329,7 @@ def battery_prop_overlap(config: dict, components: dict) -> dict:
 
 def collision_and_clearance(config: dict, frame, components: dict) -> dict:
     shapes = {"frame": frame} | {name: part["shape"] for name, part in components.items()}
-    contacts = {"aio15", "battery", "xt30", "balancer"} | {name for name in components if name.startswith("motor_")}
+    contacts = {"aio15", "battery"} | {name for name in components if name.startswith("motor_")}
     settings = config["checks"]
     distances = {}
     collisions = []

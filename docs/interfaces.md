@@ -99,7 +99,7 @@ Der analytische Abnahmetest definiert ein Problem mit bekanntem Optimum bzw. bek
 
 Checkpoint `7a61253` ist ein Zwischenstand, keine fertige Frame-Abnahme. Rohrecherche: 36 Micro- und 39 grosse/historische Eintraege in `docs/research`; `frame_seed.json` enthaelt einen noch nicht final integrierten 135-mm-Entwurf.
 
-Vorbekannter Geometriefehler: XT30-Huelle schneidet den hinteren Antennenhalter um etwa 4 mm3; A behebt diesen Abstand. Die Frame-Motorbohrungen verwenden bisher ein Quadrat, waehrend Komponenten bereits zwei Lochbilder unterstuetzen.
+XT30, Balancer und VTX-Antenne haben im Designraum keine Schnittstelle mehr (Gummiband, frei platziert); nur der parametrische v0-Referenzrahmen enthaelt noch Steckeraufnahmen und Antennenbohrung. Die Frame-Motorbohrungen verwenden bisher ein Quadrat, waehrend Komponenten bereits zwei Lochbilder unterstuetzen.
 
 Belegte Motorreferenz: GEPRC GR1105, Durchmesser 14.2 mm, Hoehe ab Montageflaeche inkl. oberer Welle 14.6 mm, Masse 5.9 g inkl. abgebildeter Kabel. Zeichnung zeigt vier M2-Bohrungen auf 9-mm-Lochkreis, kein Quadrat mit 9-mm-Seiten. Quellen: https://geprc.com/product/gep-gr1105-motor/ , https://geprc.com/wp-content/uploads/2019/05/22-6199766706.jpg , https://geprc.com/wp-content/uploads/2019/05/22-8095453337.jpg . Die Nutzerfrage zu dieser Unterscheidung ist noch offen; beide Lochbilder bleiben parametrierbar und die getroffene Default-Annahme wird kenntlich gemacht.
 

@@ -42,9 +42,14 @@ def test_no_v0_shape_call_or_shape_parameter_dependency(monkeypatch, domain):
     assert np.array_equal(changed["allowed"], domain["allowed"])
     assert np.array_equal(changed["preserve"], domain["preserve"])
 
+def _y_max(region):
+    return region["max_mm"][1] if region["kind"] == "box" else region["center_mm"][1] + (region["height_mm"] / 2 if region["axis"] == "y" else region["radius_mm"])
+
 def test_exact_keepouts_include_hardware_props_holes_and_assembly_access(domain):
     names = {region["name"] for region in domain["regions"]}
-    assert {"aio15_envelope", "camera_envelope", "battery_envelope", "xt30_envelope", "balancer_envelope", "antenna_bore", "aio_side_assembly_access", "battery_insertion", "camera_front_access", "balance_lead_routing"} <= names
+    assert {"aio15_envelope", "camera_envelope", "battery_envelope", "aio_side_assembly_access", "battery_insertion", "camera_front_access"} <= names
+    assert not names & {"xt30_envelope", "balancer_envelope", "xt30_contact", "balancer_contact", "antenna_contact", "xt30_plug_access", "balancer_plug_access", "antenna_bore", "antenna_insertion_access", "balance_lead_routing"}
+    assert {region["name"] for region in domain["regions"] if region["role"] == "preserve" and _y_max(region) < -30} == {"rear_left_motor_contact", "rear_right_motor_contact"}
     assert sum(name.endswith("_swept_clearance") for name in names) == 4
     assert sum("motor_screw_" in name for name in names) == 16
     assert sum(name.startswith("aio_screw_") for name in names) == 4
@@ -91,7 +96,7 @@ def test_loads_mass_and_fair_local_fixture_contract(domain):
     assert cases["battery_impact"]["loads"][0]["force_n"] == pytest.approx([0, 0, -3.6284605])
     assert domain["point_masses"][0]["mass_g"] == 37
     assert domain["point_masses"][0]["position_mm"] == pytest.approx([0, 0, 33.5])
-    assert len([name for name in cases if name.startswith("connection_")]) == 11
+    assert {name for name in cases if name.startswith("connection_")} == {f"connection_aio_contact_{index}" for index in range(4)} | {"connection_battery_rail_-1", "connection_battery_rail_1", "connection_camera_mount_-1", "connection_camera_mount_1"}
     for case in cases.values():
         for fixture in case["fixed_regions"]:
             assert fixture["max_mm"][2] < 0.1
@@ -126,13 +131,8 @@ def test_preserve_cuts_are_explicit_and_new_hardware_overlap_is_rejected(domain)
     with pytest.raises(ValueError, match="Undeclared preserve/forbidden overlap"):
         build_design_domain(parameters)
 
-def test_tool_access_prevents_blind_antenna_caps_and_camera_voxel_slivers(domain):
+def test_tool_access_prevents_camera_voxel_slivers(domain):
     regions = {region["name"]: region for region in domain["regions"]}
-    antenna = regions["antenna_bore"]
-    assert antenna["center_mm"][2] + antenna["height_mm"] / 2 > 32
-    antenna_access = regions["antenna_insertion_access"]
-    assert antenna_access.get("rasterize", True)
-    assert antenna_access["center_mm"][2] - antenna_access["height_mm"] / 2 == pytest.approx(10)
     assert regions["camera_screw_axis"]["height_mm"] == pytest.approx(32)
     for sign in (-1, 1):
         lug = regions[f"camera_mount_{sign}"]
@@ -166,7 +166,7 @@ def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain)
     assert regions["battery_rail_1"]["max_mm"][2] == pytest.approx(28.5)
     assert regions["front_left_motor_contact"]["radius_mm"] - regions["front_left_motor_screw_0"]["radius_mm"] - 4.5 == pytest.approx(2.1)
     extended = {pair["preserve"] for pair in domain["metadata"]["flush_contact_extensions"]}
-    assert {"battery_rail_1", "xt30_contact", "front_left_motor_contact"} | {f"aio_contact_{index}" for index in range(4)} <= extended and "antenna_contact" not in extended
+    assert {"battery_rail_1", "front_left_motor_contact"} | {f"aio_contact_{index}" for index in range(4)} <= extended and not extended & {"xt30_contact", "balancer_contact", "antenna_contact"}
     assert regions["aio_contact_0"]["height_mm"] == pytest.approx(6.0) and regions["aio_contact_0"]["radius_mm"] == pytest.approx(3.1) and "flush_kept_near_wall" not in clearance
     keepout = {"name": "k", "role": "forbidden", "kind": "box", "min_mm": [0, 0, 4], "max_mm": [10, 10, 8], "purpose": ""}
     pad = {"name": "p", "role": "preserve", "kind": "box", "min_mm": [2, 2, 0], "max_mm": [8, 8, 4], "purpose": ""}

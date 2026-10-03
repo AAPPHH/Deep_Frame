@@ -16,7 +16,7 @@ Status: prototype on branch `feature/neural-topo`, not integrated into the main 
 - **Symmetry by construction:**
   - The frame's mirror plane is x = 0. The longitudinal axis is y: camera at +y, connectors at −y.
   - Flip checks on the c01 masks: the x-flip differs in 140 preserve cells, the y-flip in 1924. So the net is fed |x| (`mirror_axis: 0`).
-  - The raw network output is exactly symmetric; this is tested bitwise. The masked density is only as symmetric as the masks, which are slightly asymmetric (XT30/balancer keep-outs, rasterization).
+  - The raw network output is exactly symmetric; this is tested bitwise. The masked density is only as symmetric as the masks, which are slightly asymmetric (AIO side access, rasterization).
 - **Masks are hard:** preserve cells are 1, forbidden cells are 0, and only free cells carry the network output, in every iteration and in the fine sample (tested).
 - **Volume:**
   - Exact, through a scalar logit shift per evaluation: ρ = σ(s·(z + c)), with c found by bisection so that Σρ hits the budget, as in the OC multiplier search.

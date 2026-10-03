@@ -76,7 +76,7 @@ Die innere Optimierung verwendet dreidimensionale Hex8-Elastizitaet, SIMP mit Ex
 
 **5684 Zell-Dichten** bestimmen Material, Querschnitte, Verzweigungen und Verbindungen im gesamten zulaessigen 3D-Raum. 158 feste Zellen belegen nur **2.7046 Prozent** der 5842 erlaubten Zellen. Das volle Start-Cuboid misst 136 x 128 x 32 mm. Komponentenhuellen, Propeller-, Kabel-, Schraub- und Montagezugangsraeume schneiden verbotene Volumina daraus aus. [Domain und Quellen](topology_geometry.md) legen alle Angaben offen.
 
-Menschlich fest bleiben der Bauraum, 135-mm-Motorabstand und Komponentenpositionen, lokale Motor-/AIO-/Kamera-/Akku-/Strap-/Stecker-/Antennenkontakte, Lasten, Klemmungen, 2-mm-Mindestfeature und Druckrichtung. Es gibt keine vorgeschriebenen Arme oder tragenden Verbindungen. Die lokale Kameralaschenbreite von 6 mm passt zur Rasteraufloesung; reale Kamera- und Steckerbefestigung bleiben vorlaeufig.
+Menschlich fest bleiben der Bauraum, 135-mm-Motorabstand und Komponentenpositionen, lokale Motor-/AIO-/Kamera-/Akku-/Strap-Kontakte (keine Stecker- oder Antennensitze), Lasten, Klemmungen, 2-mm-Mindestfeature und Druckrichtung. Es gibt keine vorgeschriebenen Arme oder tragenden Verbindungen. Die lokale Kameralaschenbreite von 6 mm passt zur Rasteraufloesung; reale Kamerabefestigung bleibt vorlaeufig.
 
 Drei Hauptlastfaelle erhalten gemeinsam 90 Prozent des normierten Compliance-Ziels, 17 kleine Anschlusslastfaelle zusammen 10 Prozent. Die unabhaengige aeussere Bewertung beruecksichtigt Masse, Steifigkeit, maximale Verschiebung, Spannung und erste Eigenfrequenz gemeinsam durch feste Constraints und eine fuenfdimensionale Pareto-Auswahl. Modal- und Spannungswerte sind keine SIMP-Ersatzwerte: Sie stammen aus der erneut vernetzten exakten Geometrie.
 
