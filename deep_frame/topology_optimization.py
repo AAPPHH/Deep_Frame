@@ -393,18 +393,28 @@ class HexElasticity:
                     compiled["load_regions"].append((direct, mirror, vector))
                 if relief is not None:
                     compiled["inertia_relief"] = self._inertia(relief, case["name"], fixed_nodes, force, mirrored)
-                compiled["force"] = force
-                for fixed_part, part_force, sign in self._parts(fixed, force, mirrored):
-                    part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
-                    if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
-                        part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign, "support": fixed if self.symmetry is None else np.setdiff1d(fixed, self._plane_dofs(sign))}
-                        compiled["parts"].append(part)
-                        self.groups[fixed_part.tobytes()].append((compiled, part))
-                if not compiled["parts"]:
-                    raise ValueError("Topology load case has no resolvable force")
+                self._register(compiled, fixed, force, mirrored)
             self.cases.append(compiled)
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
+    def _register(self, compiled, fixed, force, mirrored):
+        compiled["force"] = force
+        for fixed_part, part_force, sign in self._parts(fixed, force, mirrored):
+            part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
+            if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
+                part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign, "support": fixed if self.symmetry is None else np.setdiff1d(fixed, self._plane_dofs(sign))}
+                compiled["parts"].append(part)
+                self.groups[fixed_part.tobytes()].append((compiled, part))
+        if not compiled["parts"]:
+            raise ValueError("Topology load case has no resolvable force")
+    def add_case(self, name, support, force, mirrored, keep_fields=True):
+        if name in {case["name"] for case in self.cases}:
+            raise ValueError("Topology load-case names must be unique")
+        source = next(case for case in self.cases if case["name"] == support)
+        compiled = {"name": name, "analysis": "static", "free": source["free"], "fixed": source["fixed"], "load_regions": [], "parts": [], "keep_fields": keep_fields}
+        self._register(compiled, source["fixed"], force, mirrored)
+        self.cases.append(compiled)
+        return compiled
     def _flip(self):
         flip = np.ones(3)
         flip[self.axis] = -1
@@ -569,6 +579,8 @@ class HexElasticity:
             if not np.isfinite(entry["compliance"]) or entry["compliance"] <= 0:
                 raise RuntimeError("Topology compliance must be finite and positive")
             result = {"compliance_n_mm": entry["compliance"], "derivative": -derivative * entry["energy"], "relative_residual": entry["residual"]}
+            if entry["case"].get("keep_fields"):
+                result.update(fields={sign: displacement for sign, displacement in entry["fields"]}, modulus_derivative=derivative)
             if metrics:
                 direct = sum(displacement for _, displacement in entry["fields"])
                 mirror = sum(sign * displacement for sign, displacement in entry["fields"])

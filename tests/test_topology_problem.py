@@ -4,7 +4,7 @@ import pytest
 
 from deep_frame.config import PRINT_MATERIAL
 from deep_frame.topology_optimization import elasticity_matrix, hexahedron_matrices, orthotropic_matrix
-from deep_frame.topology_problem import LOAD_COVARIANCE, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
+from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
     return {"kind": "box", "min_mm": list(map(float, low)), "max_mm": list(map(float, high))}
@@ -35,7 +35,7 @@ def tiny_problem():
     problem["width"].update(minimum_mm=1.0)
     problem["continuation"]["beta_schedule"] = [2.0, 8.0]
     problem["monitor"] = ["twist"]
-    problem["stiffness"]["min_n_per_mm"] = 50.0
+    problem.update(stiffness={**ARM_TIP, "min_n_per_mm": 50.0}, covariance=None)
     return problem
 
 @pytest.fixture(scope="module")
@@ -53,7 +53,7 @@ def test_orthotropic_reduces_to_isotropic():
 
 def test_length_scale_and_filter_radius():
     assert 0.85 < length_scale_ratio(0.75) < 0.9
-    assert filter_radius(PROBLEM["width"], [4 / 3] * 3) == pytest.approx(2.0 / length_scale_ratio(0.75))
+    assert filter_radius(PROBLEM["width"], [4 / 3] * 3) == pytest.approx(2.5 / length_scale_ratio(0.75))
 
 def test_robust_projection_member_width():
     domain = cantilever_domain((48, 2, 2), 0.25)
@@ -217,3 +217,68 @@ def test_load_covariance_diagonal_factor_is_antisymmetric():
     model = LoadCovariance(config)
     assert model.rank == 1 and np.isclose(model.correlation(("motor_front_left", "Fz"), ("motor_rear_right", "Fz")), -1.0)
     assert np.allclose(model.sigma[12:18], 0) and np.allclose(model.sigma[24:], 0)
+
+def covariance_rows(problem, density):
+    return {row["name"]: row for part in problem.physics(density)[:2] for row in part}
+
+def test_covariance_half_model_matches_dense_full_model():
+    from scipy.linalg import sqrtm
+    from scipy.sparse.linalg import splu
+    shape = (16, 3, 6)
+    density = np.random.default_rng(3).uniform(0.3, 1.0, shape)
+    half = TopologyProblem(*covariance_cantilever(shape))
+    full = TopologyProblem(*covariance_cantilever(shape, full=True))
+    mirrored = np.concatenate([density[:, ::-1, :], density], axis=1).ravel()
+    system, model = full.system, full.covariance
+    stiffness = system.matrix(system.young * (1e-6 + (1 - 1e-6) * mirrored ** 3)).tocsc()
+    free = next(case for case in system.cases if case["name"] == "tip")["free"]
+    loads = np.zeros((system.ndof, len(model.labels)))
+    for column, (name, dof) in enumerate(model.labels):
+        direct, values, _, _ = model.wrenches(full.domain["interfaces"][name])[LOAD_COVARIANCE["dofs"].index(dof)]
+        np.add.at(loads[:, column], direct, values)
+        nodal = loads[:, column].reshape(-1, 3)
+        arms = system.points - full.domain["interfaces"][name]["reference_mm"]
+        assert np.allclose(np.concatenate([nodal.sum(axis=0), np.cross(arms, nodal).sum(axis=0)]), np.eye(6)[LOAD_COVARIANCE["dofs"].index(dof)], atol=1e-10)
+    displacement = np.zeros_like(loads)
+    displacement[free] = splu(stiffness[free][:, free]).solve(loads[free])
+    flexibility, sigma = loads.T @ displacement, model.sigma
+    root = np.real(sqrtm(sigma))
+    expected = {"load_mean": np.trace(flexibility @ sigma), "load_worst": np.linalg.eigvalsh(root @ flexibility @ root).max()}
+    for problem, density in ((half, density.ravel()), (full, mirrored)):
+        rows = covariance_rows(problem, density)
+        for name, value in expected.items():
+            assert rows[name]["value"] == pytest.approx(value, rel=1e-8), name
+        assert rows["load_worst"]["info"]["ks_n_mm"] >= rows["load_worst"]["value"]
+    half.close()
+    full.close()
+
+def test_covariance_rank_one_and_gradients_match_finite_differences():
+    shape = (12, 3, 4)
+    domain, problem = covariance_cantilever(shape, settings={"labels": [["tip", "Fz"], ["mid", "Fz"], ["tip", "Fy"]], "std": [1.0, 1.0, 0.5], "correlation": 1.0})
+    problem["covariance"]["sigma"] = (np.outer([1.0, 1.0, 0.5], [1.0, 1.0, 0.5])).tolist()
+    single = TopologyProblem(domain, problem)
+    rows = covariance_rows(single, np.full(single.map.n, 0.6))
+    assert single.covariance.rank == 1 and rows["load_worst"]["value"] == pytest.approx(rows["load_mean"]["value"], rel=1e-10)
+    single.close()
+    domain, problem = covariance_cantilever(shape, limits={"mean_n_mm": 0.05, "worst_n_mm": 0.04})
+    problem["covariance"]["ks"] = 5.0
+    tested = TopologyProblem(domain, problem)
+    random = np.random.default_rng(5)
+    design, direction = random.uniform(0.3, 0.7, tested.map.n), random.standard_normal(tested.map.n)
+    result, step = tested.evaluate(design), 1e-5
+    plus, minus = tested.evaluate(design + step * direction), tested.evaluate(design - step * direction)
+    assert result["names"] == ["load_mean", "load_worst", "volume"]
+    for index, name in enumerate(result["names"]):
+        assert result["constraint_gradients"][index] @ direction == pytest.approx((plus["constraints"][index] - minus["constraints"][index]) / (2 * step), rel=1e-5), name
+    tested.close()
+
+def test_covariance_placeholder_limits_are_monitored():
+    domain, problem = covariance_cantilever((12, 3, 4))
+    placeholder = TopologyProblem(domain, problem)
+    result = placeholder.evaluate(np.full(placeholder.map.n, 0.5))
+    rows = {row["name"]: row for row in result["rows"]}
+    assert result["names"] == ["volume"] and rows["load_mean"]["status"] == rows["load_worst"]["status"] == "monitored"
+    assert PROBLEM["stiffness"] is None and PROBLEM["covariance"]["limits"]["mean_n_mm"] is None and PROBLEM["width"]["minimum_mm"] == 2.5
+    with pytest.raises(ValueError, match="interfaces"):
+        TopologyProblem(cantilever_domain((12, 3, 4), 1.0), {**problem, "covariance": PROBLEM["covariance"]})
+    placeholder.close()

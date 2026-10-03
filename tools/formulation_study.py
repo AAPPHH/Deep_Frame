@@ -13,7 +13,7 @@ from deep_frame.config import RUN_SETTINGS, STAGES, command_line
 from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge
 from deep_frame.topology_optimization import HexElasticity
-from deep_frame.topology_problem import MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, format_report, orthotropic_material, prolongate, shadow_thickness
+from deep_frame.topology_problem import ARM_TIP, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
 FORMULATION = {
@@ -62,7 +62,7 @@ def patched_builder(cfg, stiffness=True):
     from tools.neural_study import R2Domain, configure as study
     overrides = deepcopy(request["overrides"])
     if stiffness:
-        overrides["stiffness"] = {"min_n_per_mm": PROBLEM["stiffness"]["min_n_per_mm"]}
+        overrides["stiffness"] = {"min_n_per_mm": ARM_TIP["min_n_per_mm"]}
     return R2Domain(study(overrides))
 
 def motor_name(center):

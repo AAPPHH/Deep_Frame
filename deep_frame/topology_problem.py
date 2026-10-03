@@ -7,18 +7,33 @@ from deep_frame.config import COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELEC
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import DensityMap, HexElasticity, ModalConstraint, StiffnessConstraint, _settings
 
+ARM_TIP = {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0, "calibration": 1.0, "penalty": 1.0, "multiplier_interval": 1,
+           "definition": "evaluator arm_tip: centre mount undersides fixed, uniform pad load on the front-left motor seat, k = |F| / mean pad displacement along F = |F|^2 / compliance"}
+COVARIANCE = {
+    "support": "stiffness_arm_tip", "interfaces": ["motor_front_left", "motor_front_right", "motor_rear_left", "motor_rear_right", "battery", "camera"],
+    "sigma": None, "labels": None, "model": None, "prefix": "sigma_", "ks": 50.0, "ks_cutoff": 1e-9,
+    "limits": {"mean_n_mm": None, "worst_n_mm": None, "source": None},
+    "definition": {
+        "support": "stack mount undersides fixed in all translations (fixed regions of stiffness_arm_tip = evaluator arm_tip / gap finder group 'stack fixed'); the stack wrench is reacted by the fixture, so its 6 rows are dropped from Sigma (36 x 36 block of motors, battery, camera)",
+        "interfaces": "motor pads: thrust_all pad patches (pad top); battery: deck band of crash_back (deck top); camera: camera patch of crash_front; reference points as LOAD_COVARIANCE reference_points (pad top on the motor axis, deck top at the band centre on x = 0, midpoint of the camera side-screw axes)",
+        "wrench": "unit wrench (F, M about the reference point) -> minimum-norm nodal forces over the patch nodes: f = B^T (B B^T)^-1 w with B_i = [I; skew(r_i - r_ref)]",
+        "flexibility": "F = P^T K^-1 P over all 36 interface DOF including the cross-interface blocks (Sigma correlates interfaces, so the off-diagonal blocks enter); work-conjugate generalised displacements",
+        "mean": "tr(F Sigma) = sum_k d_k^T F d_k over the principal directions d_k (Sigma = D D^T) = expected compliance E[f^T u], N mm",
+        "worst": "lambda_max(Sigma^1/2 F Sigma^1/2) = lambda_max(D^T F D), N mm; the constraint uses KS_s over all eigenvalues of D^T F D / limit (s = ks; upper bound, overestimate <= ln(rank)/s of the limit)",
+        "sensitivity": "self-adjoint: d tr / d rho_e = -sum_k u_k^T dK_e u_k; d lambda_i = -(U v_i)^T dK_e (U v_i); KS weights softmax(s lambda_i / limit); the KS of the matrix stays smooth for repeated eigenvalues"},
+}
 PROBLEM = {
     "objective": "mass",
     "volume_max": 0.10,
-    "stiffness": {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0, "calibration": 1.0, "penalty": 1.0, "multiplier_interval": 1,
-                  "definition": "evaluator arm_tip: centre mount undersides fixed, uniform pad load on the front-left motor seat, k = |F| / mean pad displacement along F = |F|^2 / compliance"},
+    "stiffness": None,
+    "covariance": COVARIANCE,
     "crash": {"cases": ["crash_" + name for name in CRASH_DIRECTIONS], "ratio": 1.5, "reference": {}, "reference_source": None},
     "modal": {"f1_min_hz": 300.0, "case": "modes", "modes": 6, "tracked": 3, "ks": 40.0, "mass_cutoff": 0.1, "initial_iterations": 30, "warm_iterations": 3, "penalty": 1.0, "multiplier_interval": 1,
               "point_masses": ["battery", "aio15", "camera"]},
     "shadow": {"limit_mm": None, "exponent": 2.0, "hub_radius_mm": 7.88, "motors_mm": [], "radius_mm": None, "source": None,
                "definition": "w = ((r - r_hub) / (R - r_hub))^n inside the prop cylinder (full height), 0 inside the hub; t_w = sum(w rho V) / sum_discs(int w dA) = radially weighted equivalent material thickness under the props in mm"},
     "monitor": ["thrust_all", "torsion_yaw", "twist"],
-    "width": {"minimum_mm": 2.0, "eta": 0.5, "delta": 0.25, "minimum_cells": 1.5},
+    "width": {"minimum_mm": 2.5, "eta": 0.5, "delta": 0.25, "minimum_cells": 1.5},
     "interpolation": {"penalization": 3.0, "min_stiffness_ratio": 1e-6, "stiffness": "SIMP p=3, E_min = 1e-6 E", "mass": "linear, rho^6/c^5 below c = 0.1 (modal only, against spurious low-density modes)"},
     "fields": {"stiffness": "eroded", "mass": "intermediate", "volume": "intermediate", "shadow": "intermediate"},
     "continuation": {"beta_schedule": [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]},
@@ -67,7 +82,7 @@ def constraint_report(rows, termination=PROBLEM["termination"]):
     for row in rows:
         g = row["g"]
         status = "monitored" if g is None else "violated" if g > termination["violation"] else "active" if g >= -termination["active"] else "satisfied"
-        report.append({**{key: row[key] for key in ("name", "value", "limit", "unit", "sense", "field")}, "g": g, "status": status, "margin": None if g is None else -g})
+        report.append({**{key: row[key] for key in ("name", "value", "limit", "unit", "sense", "field")}, **({"info": row["info"]} if "info" in row else {}), "g": g, "status": status, "margin": None if g is None else -g})
     return report
 
 def format_report(report):
@@ -114,6 +129,11 @@ class TopologyProblem:
         self.cell = float(np.prod(self.system.spacing))
         self.allowed = int(np.count_nonzero(self.map.allowed))
         self.stiffness = StiffnessConstraint(self.system, problem["stiffness"]) if problem.get("stiffness") else None
+        self.covariance = None
+        if problem.get("covariance"):
+            if "interfaces" not in domain:
+                raise ValueError("The load covariance constraint needs domain interfaces")
+            self.covariance = InterfaceCovariance(self.system, problem["covariance"], domain["interfaces"])
         self.modal = ModalConstraint(self.system, problem["modal"]) if problem.get("modal") else None
         shadow = problem.get("shadow")
         self.shadow = None
@@ -144,18 +164,21 @@ class TopologyProblem:
     def physics(self, physical, iterations=None):
         physical = np.asarray(physical, dtype=float).ravel()
         solutions = self.compliances(physical)
-        rows = []
+        rows, monitor = [], []
         if self.stiffness is not None:
             g, slope, info = self.stiffness.measure(solutions[self.stiffness.case])
             rows.append({"name": self.problem["stiffness"]["name"] + "_stiffness", "g": float(g), "gradient": slope, "value": info["stiffness_n_per_mm"], "limit": info["target_n_per_mm"], "unit": "N/mm", "sense": ">="})
+        if self.covariance is not None:
+            for row in self.covariance.measure(solutions):
+                (rows if row["g"] is not None else monitor).append(row)
         for name in self.crash:
             limit = self.problem["crash"]["ratio"] * self.problem["crash"]["reference"][name]
             rows.append({"name": name, "g": solutions[name]["compliance_n_mm"] / limit - 1, "gradient": solutions[name]["derivative"] / limit, "value": solutions[name]["compliance_n_mm"], "limit": limit, "unit": "N mm", "sense": "<="})
         if self.modal is not None:
             g, slope, info = self.modal.measure(physical, self.penalization, self.min_stiffness_ratio, iterations)
             rows.append({"name": "f1", "g": float(g), "gradient": slope, "value": info["f1_hz"], "limit": self.problem["modal"]["f1_min_hz"], "unit": "Hz", "sense": ">=", "info": info})
-        monitor = [{"name": name, "g": None, "gradient": None, "value": solutions[name]["compliance_n_mm"], "limit": None, "unit": "N mm", "sense": "", "field": self.problem["fields"]["stiffness"]} for name in self.monitor]
-        for row in rows:
+        monitor += [{"name": name, "g": None, "gradient": None, "value": solutions[name]["compliance_n_mm"], "limit": None, "unit": "N mm", "sense": "", "field": self.problem["fields"]["stiffness"]} for name in self.monitor]
+        for row in rows + monitor:
             row["field"] = self.problem["fields"]["stiffness"]
         return rows, monitor, solutions
     def geometry(self, physical):
@@ -213,8 +236,33 @@ def cantilever_domain(shape=(32, 6, 12), spacing=1.0, force_n=1.0, material=None
             "metadata": {"fixture": "3D cantilever L:W:H = %g:%g:%g mm, half model about y = 0, x = 0 face clamped, tip load on the bottom edge at mid width" % (length, 2 * half, height)}}
 
 def cantilever_problem(min_n_per_mm, volume_max=1.0):
-    return {**deepcopy(PROBLEM), "volume_max": volume_max, "crash": None, "modal": None, "shadow": None, "monitor": [],
-            "stiffness": {**PROBLEM["stiffness"], "name": "tip", "case": "tip", "min_n_per_mm": min_n_per_mm}}
+    return {**deepcopy(PROBLEM), "volume_max": volume_max, "crash": None, "modal": None, "shadow": None, "monitor": [], "covariance": None,
+            "stiffness": {**ARM_TIP, "name": "tip", "case": "tip", "min_n_per_mm": min_n_per_mm}}
+
+CANTILEVER_COVARIANCE = {"labels": [["tip", "Fz"], ["mid", "Fz"], ["tip", "Fy"]], "std": [1.0, 1.0, 0.5], "correlation": 0.7,
+                         "statement": "two correlated vertical loads (tip and mid-span top, rho = 0.7) plus an independent lateral tip load (antisymmetric about the y = 0 mirror plane, exercises the antisymmetric half solve)"}
+
+def covariance_cantilever(shape=(32, 6, 12), spacing=1.0, limits=None, full=False, settings=CANTILEVER_COVARIANCE):
+    shape = list(shape)
+    length, half, height = (np.asarray(shape) * spacing).tolist()
+    tolerance = 1e-6
+    if full:
+        domain = cantilever_domain((shape[0], 2 * shape[1], shape[2]), spacing)
+        domain.update(symmetry=None)
+        domain["grid"]["origin_mm"][1] = -half
+        domain["load_cases"][0]["fixed_regions"][0]["min_mm"][1] = -half - tolerance
+    else:
+        domain = cantilever_domain(shape, spacing)
+    low = -half - tolerance
+    domain["interfaces"] = {"tip": {"regions": [{"kind": "box", "min_mm": [length - tolerance, low, -tolerance], "max_mm": [length + tolerance, half + tolerance, height + tolerance]}], "reference_mm": [length, 0.0, height / 2]},
+                            "mid": {"regions": [{"kind": "box", "min_mm": [length / 2 - spacing - tolerance, low, height - tolerance], "max_mm": [length / 2 + spacing + tolerance, half + tolerance, height + tolerance]}], "reference_mm": [length / 2, 0.0, height]}}
+    std = np.asarray(settings["std"], dtype=float)
+    correlation = np.eye(len(std))
+    correlation[0, 1] = correlation[1, 0] = settings["correlation"]
+    problem = {**cantilever_problem(1.0), "stiffness": None,
+               "covariance": {**deepcopy(COVARIANCE), "support": "tip", "sigma": (std[:, None] * correlation * std[None, :]).tolist(), "labels": settings["labels"],
+                              "limits": {"mean_n_mm": None, "worst_n_mm": None, "source": "cantilever proof", **(limits or {})}}}
+    return domain, problem
 
 def cantilever_dual(volume_fraction=0.3, domain=None, problem=None):
     from deep_frame.topology_optimization import optimize_topology
@@ -443,3 +491,88 @@ class LoadCovariance:
 def load_covariance(config=LOAD_COVARIANCE):
     model = LoadCovariance(config)
     return {"sigma": model.sigma, "mean": model.mean, "covariance": model.covariance, "directions": model.directions, "eigenvalues": model.eigenvalues, "rank": model.rank, "labels": model.labels, "model": model}
+
+class InterfaceCovariance:
+    def __init__(self, system, settings, interfaces):
+        self.system, self.settings = system, settings
+        if settings.get("sigma") is None:
+            model = LoadCovariance(settings.get("model") or LOAD_COVARIANCE)
+            keep = [index for index, (name, _) in enumerate(model.labels) if name in settings["interfaces"]]
+            sigma, labels = model.sigma[np.ix_(keep, keep)], [model.labels[index] for index in keep]
+        else:
+            sigma, labels = np.asarray(settings["sigma"], dtype=float), [tuple(label) for label in settings["labels"]]
+        missing = sorted({name for name, _ in labels} - set(interfaces))
+        if missing:
+            raise ValueError("Covariance interfaces missing from the domain: " + ", ".join(missing))
+        values, vectors = np.linalg.eigh((sigma + sigma.T) / 2)
+        values, vectors = values[::-1], vectors[:, ::-1]
+        if values[-1] < -1e-9 * values[0]:
+            raise ValueError("Load covariance is not positive semidefinite")
+        self.sigma, self.labels = sigma, labels
+        self.rank = int(np.sum(values > 1e-10 * values[0]))
+        self.directions = vectors[:, :self.rank] * np.sqrt(values[:self.rank])
+        self.factor = 1.0 if system.symmetry is None else 2.0
+        units = {name: self.wrenches(interfaces[name]) for name in dict.fromkeys(name for name, _ in labels)}
+        columns = [units[name][LOAD_COVARIANCE["dofs"].index(dof)] for name, dof in labels]
+        self.cases, self.forces = [], []
+        for k in range(self.rank):
+            force, mirrored = np.zeros(system.ndof), np.zeros(system.ndof)
+            for weight, (direct, direct_values, mirror, mirror_values) in zip(self.directions[:, k], columns):
+                np.add.at(force, direct, weight * direct_values)
+                np.add.at(mirrored, mirror, weight * mirror_values)
+            case = system.add_case(settings["prefix"] + str(k), settings["support"], force, mirrored)
+            case.pop("force")
+            self.cases.append(case["name"])
+            self.forces.append({part["sign"]: part["force"] for part in case["parts"]})
+    def wrenches(self, interface):
+        system = self.system
+        selected = [system._select_both(region, "covariance", "load") for region in interface["regions"]]
+        direct, mirror = (np.unique(np.concatenate([item[side] for item in selected])) for side in (0, 1))
+        flip = np.ones(3) if system.symmetry is None else system._flip()
+        arms = np.concatenate([system.points[direct], system.points[mirror] * flip]) - np.asarray(interface["reference_mm"], dtype=float)
+        if np.linalg.matrix_rank(arms - arms[0], tol=1e-8) < 2:
+            raise ValueError("An interface wrench needs at least three non-collinear nodes")
+        blocks = np.zeros((6, 3 * len(arms)))
+        for index, (x, y, z) in enumerate(arms):
+            blocks[:3, 3 * index:3 * index + 3] = np.eye(3)
+            blocks[3:, 3 * index:3 * index + 3] = [[0, -z, y], [z, 0, -x], [-y, x, 0]]
+        nodal = (blocks.T @ np.linalg.solve(blocks @ blocks.T, np.eye(6))).reshape(len(arms), 3, 6)
+        dofs = lambda nodes: (3 * nodes[:, None] + np.arange(3)).ravel()
+        return [(dofs(direct), nodal[:len(direct), :, j].ravel(), dofs(mirror), (nodal[len(direct):, :, j] * flip).ravel()) for j in range(6)]
+    def matrix(self, solutions):
+        fields = [solutions[name]["fields"] for name in self.cases]
+        zero = np.zeros(self.system.ndof)
+        flexibility, stacked = np.zeros((self.rank, self.rank)), {}
+        for sign in sorted({sign for field in fields for sign in field}):
+            stacked[sign] = np.column_stack([field.get(sign, zero) for field in fields])
+            flexibility += self.factor * np.column_stack([force.get(sign, zero) for force in self.forces]).T @ stacked[sign]
+        return (flexibility + flexibility.T) / 2, stacked
+    def energy(self, stacked, vector, derivative):
+        total = np.zeros(self.system.nelem)
+        for field in stacked.values():
+            element = (field @ vector)[self.system.dofs]
+            total += np.einsum("ei,ij,ej->e", element, self.system.ke, element, optimize=True)
+        return -self.factor * derivative * total
+    def measure(self, solutions):
+        limits, s = self.settings["limits"], self.settings["ks"]
+        flexibility, stacked = self.matrix(solutions)
+        mean = float(np.trace(flexibility))
+        values, vectors = np.linalg.eigh(flexibility)
+        values, vectors = values[::-1], vectors[:, ::-1]
+        worst = float(values[0])
+        scale = limits["worst_n_mm"] or worst
+        weights = np.exp(s * (values - worst) / scale)
+        ks = worst + scale * np.log(weights.sum()) / s
+        weights /= weights.sum()
+        wrench = self.directions @ vectors[:, 0]
+        top = np.argsort(np.abs(wrench))[::-1][:6]
+        info = {"eigenvalues_n_mm": values[:6].tolist(), "ks_n_mm": float(ks), "ks": s, "rank": self.rank, "worst_wrench": [["/".join(self.labels[i]), float(wrench[i])] for i in top]}
+        rows = [{"name": "load_mean", "value": mean, "limit": limits["mean_n_mm"], "unit": "N mm", "sense": "<=", "g": None, "gradient": None},
+                {"name": "load_worst", "value": worst, "limit": limits["worst_n_mm"], "unit": "N mm", "sense": "<=", "g": None, "gradient": None, "info": info}]
+        if limits["mean_n_mm"]:
+            rows[0].update(g=mean / limits["mean_n_mm"] - 1, gradient=sum(solutions[name]["derivative"] for name in self.cases) / limits["mean_n_mm"])
+        if limits["worst_n_mm"]:
+            derivative = solutions[self.cases[0]]["modulus_derivative"]
+            gradient = sum(weight * self.energy(stacked, vectors[:, i], derivative) for i, weight in enumerate(weights) if weight > self.settings["ks_cutoff"])
+            rows[1].update(g=float(ks / limits["worst_n_mm"] - 1), gradient=gradient / limits["worst_n_mm"])
+        return rows
