@@ -27,3 +27,6 @@ env/
 /exports/r3/
 /exports/recon/
 /exports/runs/
+/exports/r4recon/*/*/
+/exports/r4recon/*/*.json
+/exports/r4recon/*/*.log

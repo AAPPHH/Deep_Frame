@@ -999,8 +999,10 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "prune_passes": 3,
     "path_sigma_samples": 4.0,
     "section_sigma_samples": 6.0,
-    "minimum_radius_mm": 0.5,
-    "maximum_aspect": 4.0,
+    "minimum_radius_mm": 1.0,
+    "maximum_aspect": 2.0,
+    "joint_blend_factor": 0.5,
+    "anchor_reach_mm": 3.0,
     "volume_match": True,
     "shell_aspect": 2.2,
     "shell_sigma_mm": 1.0,
@@ -1013,7 +1015,7 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "fea_surface_mm": 0.5,
     "fea_surface_taubin": 10,
     "boolean_offset_mm": 0.3,
-    "closing_radius_mm": 0.0,
+    "closing_radius_mm": 0.5,
     "reference_subdivisions": 2,
     "preserve_blend_mm": 2.5,
     "preserve_round_mm": 0.8,
@@ -1024,9 +1026,12 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "root_taper_mm": 6.0,
     "root_taper_slope": 0.5,
     "root_slope_floor_mm": 1.0,
-    "minimum_scale": 0.9,
+    "minimum_scale": 0.7,
     "maximum_scale": 1.15,
     "calibration_tolerance": 0.03,
+    "load_path_voxel_mm": 0.3,
+    "load_path_core_mm": [0.5, 0.9],
+    "load_path_mounts": ["motor_contact", "aio_contact", "battery_rail", "camera_mount"],
 }
 
 DESIGN_RECONSTRUCTION_KINDS = {
@@ -1036,6 +1041,8 @@ DESIGN_RECONSTRUCTION_KINDS = {
     "fine_shape": ["int", "int", "int"],
     "volume_match": "flag",
     "root_preserves": "text",
+    "load_path_core_mm": ["float"],
+    "load_path_mounts": ["text"],
 }
 
 MATERIALS = {

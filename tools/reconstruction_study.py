@@ -13,12 +13,10 @@ from PIL import Image
 from scipy.ndimage import gaussian_filter
 
 from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, command_line, configure
-from deep_frame.topology_geometry import build_design_domain, symmetric_domains
-from deep_frame.topology_reconstruction import reconstruct, reference_body
-from tools.topology_study import study_parameters
+from deep_frame.topology_reconstruction import load_paths, reconstruct, reference_body
 
-RUN_CONFIG = {**DESIGN_RECONSTRUCTION_CONFIG, "geometry": None, "panels": None, "labels": None, "fea_surface_targets_mm": [0.5, 0.6], "fea_volume_targets_mm": [1.5, 1.2, 1.0], "fea_feature_degs": [40.0, 60.0, 89.0]}
-RUN_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, "geometry": "path", "panels": ["path"], "labels": ["text"], "fea_surface_targets_mm": ["float"], "fea_volume_targets_mm": ["float"], "fea_feature_degs": ["float"]}
+RUN_CONFIG = {**DESIGN_RECONSTRUCTION_CONFIG, "study": {}, "geometry": None, "panels": None, "labels": None, "fea_surface_targets_mm": [0.5, 0.6], "fea_volume_targets_mm": [1.5, 1.2, 1.0], "fea_feature_degs": [40.0, 60.0, 89.0]}
+RUN_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, "study": "object", "geometry": "path", "panels": ["path"], "labels": ["text"], "fea_surface_targets_mm": ["float"], "fea_volume_targets_mm": ["float"], "fea_feature_degs": ["float"]}
 FEA_RELAXED = {"surface_deviation_mm": 0.7, "fea_remesh_targets_mm": [1.5], "tet_attempts": ["remesh_hxt", "remesh_delaunay"]}
 def _camera(direction, up):
     d = np.asarray(direction, float)
@@ -135,8 +133,9 @@ def render_views(mesh, out, views=VIEWS):
     for name, (direction, up) in views.items():
         render(shaded, direction, up).save(out / f"{name}.png")
 
-def full_domain(shape):
-    return symmetric_domains(build_design_domain(study_parameters(shape)))[0]
+def full_domain(shape, study=None):
+    from tools.neural_study import R2Domain, configure as study_config
+    return R2Domain(study_config(study or {})).build(shape)[0]
 
 def _widen(region, band):
     if region.get("kind") != "box":
@@ -191,7 +190,7 @@ def fea_main(overrides):
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("geometry", "output"))
     config["output"].mkdir(parents=True, exist_ok=True)
     mesh = trimesh.load_mesh(config["geometry"], process=True)
-    domain = full_domain(config["fine_shape"])
+    domain = full_domain(config["fine_shape"], config["study"])
     settings = {**domain["fea_settings"], **{key: IMPLICIT_CONFIG[key] for key in MESH_KEYS}, "work_dir": str(config["output"]/"fea"), "mesh_timeout_s": 900.0, "solver_timeout_s": 1800.0, "threads": 8, "mesh_threads": 4, "fea_memory_budget_mb": 6000.0, "mesh_minimum_sicn": 0.005, **FEA_RELAXED}
     surface_trials, chosen = [], {}
     if config["fea_surface_mm"] > 0:
@@ -215,7 +214,7 @@ def summary(result):
 def build_main(overrides):
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("source", "output"))
     config["output"].mkdir(parents=True, exist_ok=True)
-    domain = full_domain(config["fine_shape"])
+    domain = full_domain(config["fine_shape"], config["study"])
     density = np.load(config["source"])["density"]
     reference, report_reference = reference_body(domain, density, config)
     reference.export(config["output"]/"reference.stl")
@@ -223,11 +222,12 @@ def build_main(overrides):
         report_reference["render_stl_mm3"] = float(trimesh.load_mesh(config["geometry"]).volume)
     mesh, graph, report = reconstruct(domain, density, config, config["target_volume_mm3"] or report_reference["volume_mm3"])
     report["reference"] = report_reference
+    report["load_paths"], report_reference["load_paths"] = load_paths(mesh, domain, config), load_paths(reference, domain, config)
     mesh.export(config["output"]/"geometry.stl")
     report["mass_g"] = report["volume_mm3"]*domain["material"]["density_g_cm3"]/1000
     (config["output"]/"reconstruction.json").write_text(json.dumps({**report, "config": {k: str(v) if isinstance(v, Path) else v for k, v in config.items()}}, indent=1, default=float))
     render_views(mesh, config["output"])
-    print(json.dumps({k: report[k] for k in ("members", "shells", "nodes", "volume_mm3", "target_volume_mm3", "global_scale", "mass_budget", "reference", "bodies", "watertight", "runtime_s")}, default=float), flush=True)
+    print(json.dumps({k: report[k] for k in ("members", "shells", "nodes", "continuity", "joint_sections", "load_paths", "volume_mm3", "target_volume_mm3", "global_scale", "mass_budget", "reference", "bodies", "watertight", "runtime_s")}, default=float), flush=True)
 
 def render_main(overrides):
     config = configure(RUN_CONFIG, RUN_KINDS, overrides, ("geometry", "output"))
