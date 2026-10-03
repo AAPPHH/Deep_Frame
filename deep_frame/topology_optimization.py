@@ -227,14 +227,23 @@ def elasticity_matrix(poisson_ratio):
     matrix[3:, 3:] = np.eye(3) * (1 - 2 * poisson_ratio) / 2
     return matrix / ((1 + poisson_ratio) * (1 - 2 * poisson_ratio))
 
-def hexahedron_matrices(spacing_mm, poisson_ratio):
+def orthotropic_matrix(constants):
+    xy, z, nu_xy, nu_xz = constants["e_xy_mpa"], constants["e_z_mpa"], constants["nu_xy"], constants["nu_xz"]
+    compliance = np.zeros((6, 6))
+    compliance[:3, :3] = [[1 / xy, -nu_xy / xy, -nu_xz / xy], [-nu_xy / xy, 1 / xy, -nu_xz / xy], [-nu_xz / xy, -nu_xz / xy, 1 / z]]
+    compliance[3:, 3:] = np.diag([1 / constants["g_xy_mpa"], 1 / constants["g_z_mpa"], 1 / constants["g_z_mpa"]])
+    if np.any(np.linalg.eigvalsh(compliance) <= 0):
+        raise ValueError("Orthotropic engineering constants are not positive definite")
+    return np.linalg.inv(compliance)
+
+def hexahedron_matrices(spacing_mm, poisson_ratio, constitutive=None):
     spacing = np.asarray(spacing_mm, dtype=float)
     if spacing.shape != (3,) or np.any(spacing <= 0) or not np.all(np.isfinite(spacing)):
         raise ValueError("Hexahedron spacing must contain three finite positive lengths")
     stiffness = np.zeros((24, 24))
     mass = np.zeros((24, 24))
     strain_matrices = []
-    constitutive = elasticity_matrix(poisson_ratio)
+    constitutive = elasticity_matrix(poisson_ratio) if constitutive is None else constitutive
     signs = 2 * _CORNERS - 1
     determinant = np.prod(spacing) / 8
     for location in np.ndindex(2, 2, 2):
@@ -328,8 +337,12 @@ class HexElasticity:
         self.density = float(material["density_g_cm3"])
         if not np.isfinite(self.young) or self.young <= 0 or not np.isfinite(self.density) or self.density <= 0:
             raise ValueError("Young modulus and density must be finite and positive")
-        self.constitutive = elasticity_matrix(material["poisson_ratio"])
-        self.ke, self.me, self.strain = hexahedron_matrices(self.spacing, material["poisson_ratio"])
+        if material.get("orthotropic"):
+            self.young = float(material["orthotropic"]["e_xy_mpa"])
+            self.constitutive = orthotropic_matrix(material["orthotropic"]) / self.young
+        else:
+            self.constitutive = elasticity_matrix(material["poisson_ratio"])
+        self.ke, self.me, self.strain = hexahedron_matrices(self.spacing, material["poisson_ratio"], self.constitutive)
         self.rows = np.repeat(self.dofs[self.active_elements], 24, axis=1).ravel()
         self.columns = np.tile(self.dofs[self.active_elements], (1, 24)).ravel()
         self.groups = defaultdict(list)
@@ -660,11 +673,14 @@ class StiffnessConstraint(AugmentedLagrangian):
         if len(case["load_regions"]) != 1 or "inertia_relief" in case:
             raise ValueError("The stiffness constraint needs a fixtured case with one load patch")
         self.target = settings["min_n_per_mm"] * settings["calibration"]
-    def __call__(self, solution):
+    def measure(self, solution):
         limit = self.force ** 2 / self.target
         violation = solution["compliance_n_mm"] / limit - 1
-        penalty, gradient, multiplier = self.augment(violation, solution["derivative"] / limit)
-        return penalty, gradient, {"stiffness_n_per_mm": self.force ** 2 / solution["compliance_n_mm"], "target_n_per_mm": self.target, "violation": float(violation), "multiplier": multiplier}
+        return violation, solution["derivative"] / limit, {"stiffness_n_per_mm": self.force ** 2 / solution["compliance_n_mm"], "target_n_per_mm": self.target, "violation": float(violation)}
+    def __call__(self, solution):
+        violation, slope, info = self.measure(solution)
+        penalty, gradient, multiplier = self.augment(violation, slope)
+        return penalty, gradient, {**info, "multiplier": multiplier}
 
 class ModalConstraint(AugmentedLagrangian):
     def __init__(self, system, settings):
@@ -713,6 +729,10 @@ class ModalConstraint(AugmentedLagrangian):
         part["vectors"] = vectors
         return values, vectors
     def __call__(self, physical_density, penalization=3.0, min_stiffness_ratio=1e-6, iterations=None):
+        violation, slope, info = self.measure(physical_density, penalization, min_stiffness_ratio, iterations)
+        penalty, gradient, multiplier = self.augment(violation, slope)
+        return penalty, gradient, {**info, "multiplier": multiplier}
+    def measure(self, physical_density, penalization=3.0, min_stiffness_ratio=1e-6, iterations=None):
         system, settings = self.system, self.settings
         density = np.asarray(physical_density, dtype=float).ravel()
         stiffness, mass = self.matrices(density, penalization, min_stiffness_ratio)
@@ -738,9 +758,8 @@ class ModalConstraint(AugmentedLagrangian):
             sensitivity += weight * (stiffness_slope * strain - value * mass_slope * kinetic) / self.target
         sensitivity[~system.active_elements] = 0
         violation = 1 - aggregate
-        penalty, gradient, multiplier = self.augment(violation, -sensitivity)
         frequencies = [[part["sign"], float(np.sqrt(max(value, 0)) / (2 * np.pi))] for part, value, _ in modes]
-        return penalty, gradient, {"f1_hz": float(np.sqrt(max(lowest * self.target, 0)) / (2 * np.pi)), "frequencies_hz": frequencies, "aggregate_ratio": float(aggregate), "violation": float(violation), "multiplier": multiplier}
+        return violation, -sensitivity, {"f1_hz": float(np.sqrt(max(lowest * self.target, 0)) / (2 * np.pi)), "frequencies_hz": frequencies, "aggregate_ratio": float(aggregate), "violation": float(violation)}
 
 DEFAULT_SETTINGS = {
     "volume_fraction": 0.20,
