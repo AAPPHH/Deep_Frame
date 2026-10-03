@@ -13,7 +13,7 @@ from deep_frame.config import RUN_SETTINGS, STAGES, command_line
 from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge
 from deep_frame.topology_optimization import HexElasticity
-from deep_frame.topology_problem import ARM_TIP, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, format_report, orthotropic_material, prolongate, shadow_thickness
+from deep_frame.topology_problem import ARM_TIP, CANTILEVER_COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
 FORMULATION = {
@@ -37,6 +37,8 @@ FORMULATION = {
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
+                   "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "cuda_cudss"},
 }
 
 def configure(overrides):
@@ -76,6 +78,12 @@ def frame_domain(cfg, shape):
     pads = {motor_name((np.asarray(load["region"]["min_mm"]) + load["region"]["max_mm"]) / 2): load["region"] for load in thrust["loads"]}
     for load in thrust["loads"]:
         load["force_n"] = [0.0, 0.0, numbers["thrust_per_motor_n"]]
+    regions = {region["name"]: region for region in half["regions"]}
+    camera = np.mean([regions[name]["center_mm"] for name in regions if name.startswith("camera_mount_")], axis=0)
+    centre = lambda box: ((np.asarray(box["min_mm"]) + box["max_mm"]) / 2).tolist()
+    deck, view = cases["crash_back"]["loads"][0]["region"], cases["crash_front"]["loads"][0]["region"]
+    half["interfaces"] = {**{"motor_" + name: {"regions": [deepcopy(region)], "reference_mm": centre(region)} for name, region in pads.items()},
+                          "battery": {"regions": [deepcopy(deck)], "reference_mm": [0.0, *centre(deck)[1:]]}, "camera": {"regions": [deepcopy(view)], "reference_mm": [0.0, *camera[1:].tolist()]}}
     rotation = cfg["loads"]["rotation"]
     twist = {**deepcopy(thrust), "name": "twist", "purpose": "diagonal differential thrust, saddle part", "loads": [{"region": deepcopy(region), "force_n": [0.0, 0.0, (1 if rotation[name] else -1) * numbers["thrust_per_motor_n"] / 2]} for name, region in pads.items()]}
     couples = []
@@ -231,6 +239,101 @@ def cantilever_mma(cfg):
     print(json.dumps({key: record[key] for key in ("status", "iterations", "volume_fraction_intermediate", "volume_deviation", "stiffness_n_per_mm", "stiffness_status", "mma_duality")}, default=float), flush=True)
     print(record["table"], flush=True)
 
+def rows_of(problem, design):
+    return {row["name"]: row for row in problem.evaluate(design)["rows"]}
+
+def dense_flexibility(problem, density):
+    from scipy.sparse.linalg import splu
+    system, model = problem.system, problem.covariance
+    stiffness = system.matrix(system.young * (1e-6 + (1 - 1e-6) * density ** 3)).tocsc()
+    free = next(case for case in system.cases if case["name"] == model.settings["support"])["free"]
+    loads = np.zeros((system.ndof, len(model.labels)))
+    for column, (name, dof) in enumerate(model.labels):
+        direct, values, _, _ = model.wrenches(problem.domain["interfaces"][name])[LOAD_COVARIANCE["dofs"].index(dof)]
+        np.add.at(loads[:, column], direct, values)
+    displacement = np.zeros_like(loads)
+    displacement[free] = splu(stiffness[free][:, free]).solve(loads[free])
+    return loads.T @ displacement
+
+def covariance_cantilever_check(cfg):
+    from scipy.linalg import sqrtm
+    settings, shape = cfg["covariance"], (32, 6, 12)
+    density = np.random.default_rng(settings["fd_seed"]).uniform(0.3, 1.0, shape)
+    half, full = TopologyProblem(*covariance_cantilever(shape)), TopologyProblem(*covariance_cantilever(shape, full=True))
+    mirrored = np.concatenate([density[:, ::-1, :], density], axis=1).ravel()
+    flexibility, sigma = dense_flexibility(full, mirrored), full.covariance.sigma
+    root = np.real(sqrtm(sigma))
+    dense = {"load_mean": float(np.trace(flexibility @ sigma)), "load_worst": float(np.linalg.eigvalsh(root @ flexibility @ root).max())}
+    measured = {name: {row["name"]: row["value"] for part in problem.physics(field)[:2] for row in part if row["name"] in dense} for name, problem, field in (("half", half, density.ravel()), ("full", full, mirrored))}
+    solid = dense_flexibility(full, np.ones_like(mirrored))
+    length, height, width = shape[0], shape[2], 2 * shape[1]
+    beam = {"tip_Fz_n_mm_per_n": length ** 3 / (3 * full.system.young * width * height ** 3 / 12), "tip_Fz_dense": float(solid[0, 0])}
+    half.close()
+    full.close()
+    limits = {"mean_n_mm": 1.2 * dense["load_mean"], "worst_n_mm": 1.2 * dense["load_worst"]}
+    domain, problem = covariance_cantilever(shape, limits=limits)
+    problem["covariance"]["ks"] = settings["ks_fd"]
+    tested = TopologyProblem(domain, problem)
+    design = np.random.default_rng(settings["fd_seed"]).uniform(0.2, 0.8, tested.map.n)
+    checks = finite_differences(tested, design, settings["fd_step"], settings["fd_seed"])
+    tested.close()
+    rank_one = {"labels": [["tip", "Fz"], ["mid", "Fz"], ["tip", "Fy"]], "std": [1.0, 1.0, 0.5], "correlation": 1.0}
+    domain, problem = covariance_cantilever(shape, settings=rank_one)
+    problem["covariance"]["sigma"] = np.outer(rank_one["std"], rank_one["std"]).tolist()
+    single = TopologyProblem(domain, problem)
+    values = {row["name"]: row["value"] for part in single.physics(density.ravel())[:2] for row in part if row["name"] in dense}
+    single.close()
+    record = {"statement": "cantilever 32 x 12 x 12 mm (half model 32 x 6 x 12 cells), x = 0 clamped; " + CANTILEVER_COVARIANCE["statement"], "sigma": sigma.tolist(), "labels": [list(label) for label in full.covariance.labels],
+              "density": "uniform random [0.3, 1] physical field, SIMP p = 3", "dense_full_model": dense, "optimizer": measured,
+              "relative_error": {name: {key: abs(value[key] / dense[key] - 1) for key in dense} for name, value in measured.items()},
+              "dense_flexibility": flexibility.tolist(), "rank_one": {**values, "relative_gap": abs(values["load_worst"] / values["load_mean"] - 1)}, "beam_theory_info": beam,
+              "finite_differences": {"ks": settings["ks_fd"], "limits": limits, "rows": checks}, "sha": git_sha()}
+    Path(cfg["output"]).with_name("formulation_covariance_cantilever.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({key: record[key] for key in ("dense_full_model", "relative_error", "rank_one")}, default=float), flush=True)
+    print(json.dumps({name: row["relative_error"] for name, row in checks.items()}), flush=True)
+
+def covariance_cantilever_mma(cfg):
+    settings, shape = cfg["covariance"], (32, 6, 12)
+    variant, other = settings["variant"], {"mean": "worst", "worst": "mean"}[settings["variant"]]
+    domain, problem = covariance_cantilever(shape)
+    reference = TopologyProblem(domain, problem)
+    solid = rows_of(reference, np.ones(reference.map.n))
+    reference.close()
+    limit = settings["limit_factor"] * solid["load_" + variant]["value"]
+    domain, problem = covariance_cantilever(shape, limits={variant + "_n_mm": limit, "source": f"{settings['limit_factor']} x solid-block value"})
+    tp = TopologyProblem(domain, problem)
+    started = perf_counter()
+    result = MMAOptimizer(tp, settings["settings"]).run(np.full(tp.map.n, settings["start"]))
+    rows = {row["name"]: row for row in result["result"]["rows"]}
+    tp.close()
+    record = {"variant": variant, "statement": f"min mass subject to load_{variant} <= {settings['limit_factor']} x solid value (load_{other} monitored); the constraint must end active", "solid": {name: row["value"] for name, row in solid.items()},
+              "limit_n_mm": limit, "status": result["status"], "iterations": result["iterations"], "runtime_s": perf_counter() - started, "levels": result["levels"], "volume_fraction_intermediate": rows["volume"]["value"],
+              "constraint": rows["load_" + variant], "monitored": rows["load_" + other], "rows": result["result"]["rows"], "table": format_report(result["result"]["rows"]), "sha": git_sha()}
+    target = Path(cfg["output"]).with_name(f"formulation_covariance_mma_{variant}.json")
+    target.write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    np.savez_compressed(target.with_suffix(".npz"), design=result["design"])
+    print(json.dumps({key: record[key] for key in ("variant", "status", "iterations", "volume_fraction_intermediate", "limit_n_mm")}, default=float), flush=True)
+    print(record["table"], flush=True)
+
+def covariance_frame(cfg):
+    import psutil
+    started = perf_counter()
+    half, problem = frame_setup(cfg, cfg["shape"])
+    tp = TopologyProblem(half, problem, linear_solver=cfg["covariance"]["frame_solver"])
+    built = perf_counter() - started
+    density = np.load(cfg["covariance"]["frame_density"])["density"].ravel().astype(float)
+    clock = perf_counter()
+    report = tp.physical_report(density)
+    evaluated = perf_counter() - clock
+    record = {"density": cfg["covariance"]["frame_density"], "density_sha256_16": digest(cfg["covariance"]["frame_density"]), "grid": half["grid"]["shape"], "rank": tp.covariance.rank,
+              "interfaces": half["interfaces"], "cases": len(tp.system.cases), "factorization_groups": len(tp.system.groups), "build_s": built, "evaluate_s": evaluated,
+              "peak_rss_gb": psutil.Process().memory_info().peak_wset / 2 ** 30 if hasattr(psutil.Process().memory_info(), "peak_wset") else None,
+              "mass_g": report["mass_g"], "rows": report["rows"], "table": format_report(report["rows"]), "sha": git_sha()}
+    tp.close()
+    Path(cfg["output"]).with_name("formulation_covariance_frame.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({key: record[key] for key in ("rank", "build_s", "evaluate_s", "peak_rss_gb", "mass_g")}, default=float), flush=True)
+    print(record["table"], flush=True)
+
 def checkpoint(path):
     def save(x, history, levels):
         np.savez_compressed(path, design=x, level=history[-1]["level"], iteration=len(history))
@@ -382,7 +485,8 @@ def main(argv=None):
     return command_line({"references": lambda overrides: references(configure(overrides)), "modal_split": lambda overrides: modal_split(configure(overrides)), "cantilever": lambda overrides: cantilever(configure(overrides)),
                          "cantilever_mma": lambda overrides: cantilever_mma(configure(overrides)), "frame_mma": lambda overrides: frame_mma(configure(overrides)),
                          "frame_runs": lambda overrides: frame_runs(configure(overrides)), "manafly_check": lambda overrides: manafly_check(configure(overrides)), "compose": lambda overrides: compose(configure(overrides)),
-                         "agreement": lambda overrides: agreement(configure(overrides))}, argv)
+                         "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),
+                         "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())
