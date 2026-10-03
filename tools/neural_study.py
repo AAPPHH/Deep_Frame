@@ -433,6 +433,7 @@ def run_al(cfg, variant, out, builder, render_cfg):
     summary = result["summary"]
     np.savez_compressed(out / "density_half.npz", density=result["density"])
     np.savez_compressed(out / "fields_half.npz", design=result["design"], eroded=result["eroded"], dilated=result["dilated"])
+    np.savez_compressed(out / "network.npz", *optimizer.design.field.parameters, wavenumbers=optimizer.design.field.wavenumbers)
     fine_full, _ = builder.build(cfg["fine_shape"], settings.get("volume_fraction", 0.06))
     density = upsample(result["density"], fine_full)
     np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))

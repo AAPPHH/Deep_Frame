@@ -135,5 +135,8 @@ def test_neural_al_fit_and_guarded_run():
     summary = result["summary"]
     assert summary["fit"]["mean_abs_error"] < 0.1 and summary["iterations"] == 6 and summary["stop_reason"] == "guard" and not summary["converged"]
     assert [entry["beta"] for entry in result["history"]] == [2.0] * 3 + [8.0] * 3 and len(summary["level_reports"]) == 1
+    final = NeuralAugmentedLagrangian({"frequencies": 8, "hidden": [8], "max_frequency_per_mm": 0.3, "max_iterations": 30, "learning_rate": 1e-9, "level": {"minimum_iterations": 3, "maximum_iterations": 3}})
+    steady = final.run([(domain, lambda: TopologyProblem(domain, {**tiny_problem(), "termination": {"mass_change": 1.0, "violation": 1e9, "window": 5, "active": 0.01}}))])["summary"]
+    assert steady["stop_reason"] == "termination" and steady["iterations"] == 8
     assert result["density"].shape == tuple(domain["grid"]["shape"]) and np.all(result["density"][domain["preserve"]] == 1)
     assert any(value > 0 for value in summary["multipliers"]) and len(summary["final"]["rows"]) > 6

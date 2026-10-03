@@ -416,6 +416,7 @@ class NeuralAugmentedLagrangian:
                         self.reports.append({"iteration": entry["iteration"], "grid": grid, "reason": "settled" if self.settled(steps, result["max_violation"]) else "level_iterations", **_compact(problem.report(x))})
                         problem.advance()
                         level, steps = problem.level, 0
+                        termination = Termination(problem.problem["termination"]) if problem.final_level else termination
                         self.optimizer.rate = settings["learning_rate"] * settings["rate_decay"] ** level
                         if not final_grid and level >= settings["coarse_levels"]:
                             stop_reason = "next_grid"
