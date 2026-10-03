@@ -1057,8 +1057,8 @@ SPLINE_RECONSTRUCTION_CONFIG = {
     "profile_sigma_samples": 1.0,
     "minimum_radius_mm": 1.25,
     "maximum_aspect": 2.2,
-    "transition_radius_mm": 1.0,
-    "preserve_blend_mm": 1.0,
+    "transition_radius_mm": 1.5,
+    "preserve_blend_mm": 1.5,
     "shell_outline_sigma_mm": 2.5,
     "member_smooth_mm": 0.0,
     "closing_radius_mm": 0.0,
@@ -1074,6 +1074,7 @@ SPLINE_RECONSTRUCTION_CONFIG = {
     "anchor_inset_mm": 0.5,
     "anchor_snap_mm": 3.0,
     "bridge_gap_mm": 3.0,
+    "minimum_shell_mm": 2.0,
 }
 
 SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if isinstance(value, float) else "int" for key, value in SPLINE_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},

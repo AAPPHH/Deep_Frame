@@ -530,7 +530,7 @@ def add_shells(builder, graph, domain, config, scale=1.0, blend=0.0, extend=Fals
         if member["kind"] == "shell":
             a, b = sections(member["a"], member["b"], scale, config)
             member = dict(extended(member, graph.nodes, scale, config), kind="shell") if extend else dict(member, a=a, b=b)
-            builder.add_member(dict(member, shell=dict(member["shell"], thickness=np.maximum(member["shell"]["thickness"]*scale, 2*config["minimum_radius_mm"]))), graph.h, blend)
+            builder.add_member(dict(member, shell=dict(member["shell"], thickness=np.maximum(member["shell"]["thickness"]*scale, config.get("minimum_shell_mm", 2*config["minimum_radius_mm"])))), graph.h, blend)
     hoop = domain.get("metadata", {}).get("round2", {}).get("hoop")
     for path in hoop_paths(hoop):
         builder.add_member(tube(path, max(hoop["radius_mm"], config["minimum_radius_mm"])), graph.h, blend)
@@ -647,7 +647,7 @@ def spline_member(graph, member, area, config, domain=None):
     count = 3+sum(length >= limit for limit in config["spline_lengths_mm"])
     control, curve, t = fit_spline(path, count, max(int(np.ceil(length/config["spline_sample_mm"]))+1, 4))
     t = t[int(ends[0] is not None):len(t)-int(ends[1] is not None)]
-    reach = [graph.nodes[n-1]["radius"] if isinstance(n, int) else 0.0 for n in member["nodes"]]
+    reach = [graph.nodes[n-1]["radius"] if isinstance(n, int) else config["transition_radius_mm"] for n in member["nodes"]]
     keep = (t*length > reach[0]) & ((1-t)*length > reach[1])
     arc = max(float(np.linalg.norm(np.diff(curve, axis=0), axis=1).sum()), 1e-12)
     area = area*length/arc
