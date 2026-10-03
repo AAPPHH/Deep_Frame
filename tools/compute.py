@@ -37,7 +37,9 @@ def encode(data):
 
 def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=sys.executable):
     need = JOB_TYPES[kind]
-    env = {key: value for key, value in environ.items() if key in config["forward_env"] or key.startswith(config["forward_prefix"])}
+    if not need["gpu_gb"] and any("gpu-venv" in str(part) or "Deep_Frame-gpu/" in str(part) for part in command):
+        need = dict(need, gpu_gb=JOB_TYPES["gpu"]["gpu_gb"])
+    env ={key: value for key, value in environ.items() if key in config["forward_env"] or key.startswith(config["forward_prefix"])}
     env.update({key: str(need["num_cpus"]) for key in config["thread_env"]})
     payload = {"command": list(command), "cwd": str(Path(cwd).resolve()), "env": env}
     return {"entrypoint": subprocess.list2cmdline([python, str(Path(__file__).resolve()), "exec", encode(payload)]),
