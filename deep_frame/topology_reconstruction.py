@@ -198,7 +198,7 @@ class DesignGraph:
         dangling = sum(1 for m in self.members for side, node in enumerate(m["nodes"]) if not isinstance(node, int) and m["anchors"][side] is None)
         main = max(carrying, key=lambda part: len(part & anchors), default=set())
         return {"anchors": len(anchors), "anchor_components": len(carrying), "anchors_in_main": len(main & anchors), "members_off_main": sum(1 for m in self.members if m["nodes"][0] not in main), "dangling_ends": dangling,
-                "passed": len(carrying) == 1}
+                "passed": len(carrying) == 1 and not any(m["nodes"][0] not in main for m in self.members)}
 
     def report(self):
         rods = [m for m in self.members if m["kind"] == "rod"]
