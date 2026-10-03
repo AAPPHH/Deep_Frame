@@ -1,6 +1,5 @@
 import json
 import shutil
-import statistics
 import sys
 from pathlib import Path
 from time import perf_counter
@@ -376,7 +375,7 @@ def resources(summary, history):
            "details": [{key: solver.get(key) for key in ("shape", "nnz", "device_min_free_bytes", "device_used_after_phase_max_bytes", "cudss_memory_estimates")} for solver in solvers]} if solvers else None
     elapsed = [entry["elapsed_s"] for entry in history if not entry["final_evaluation"]]
     steps = np.diff(elapsed).tolist()
-    return {"gpu_memory": gpu, "host_peak_rss_gb": rss, "seconds_per_iteration": {"first_s": elapsed[0] if elapsed else None, "mean_s": statistics.mean(steps) if steps else None, "median_s": statistics.median(steps) if steps else None},
+    return {"gpu_memory": gpu, "host_peak_rss_process_gb": rss, "seconds_per_iteration": {"first_s": elapsed[0] if elapsed else None, "mean_s": float(np.mean(steps)) if steps else None, "median_s": float(np.median(steps)) if steps else None},
             "warm_start": summary.get("warm_start")}
 
 def run_variant(cfg, variant):
@@ -384,6 +383,8 @@ def run_variant(cfg, variant):
     cfg = {**cfg, "render": render_cfg}
     out = Path(cfg["root"]) / variant["name"]
     out.mkdir(parents=True, exist_ok=True)
+    if "cupy" in sys.modules:
+        sys.modules["cupy"].get_default_memory_pool().free_all_blocks()
     started = perf_counter()
     builder = R2Domain(cfg)
     _, half = builder.build(cfg["shape"], neural["volume_fraction"])
