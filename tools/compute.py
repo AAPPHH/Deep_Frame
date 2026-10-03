@@ -18,7 +18,7 @@ CONFIG = {
              "dashboard_port": 8265, "start_timeout_s": 7 * 24 * 3600},
 }
 JOB_TYPES = {
-    "density_neural": {"num_cpus": 4, "memory_gb": 4, "gpu_gb": 2},
+    "density_neural": {"num_cpus": 4, "memory_gb": 24, "gpu_gb": 2},
     "density_simp": {"num_cpus": 4, "memory_gb": 8, "gpu_gb": 10},
     "density_simp_1mm": {"num_cpus": 8, "memory_gb": 28, "gpu_gb": 14},
     "geometry": {"num_cpus": 4, "memory_gb": 4, "gpu_gb": 0},
