@@ -4,7 +4,7 @@ import pytest
 
 from deep_frame.config import PRINT_MATERIAL
 from deep_frame.topology_optimization import elasticity_matrix, hexahedron_matrices, orthotropic_matrix
-from deep_frame.topology_problem import PROBLEM, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
+from deep_frame.topology_problem import MMAOptimizer, PROBLEM, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
     return {"kind": "box", "min_mm": list(map(float, low)), "max_mm": list(map(float, high))}
@@ -166,3 +166,28 @@ def test_orthotropic_bar_modulus(axis, modulus):
     displacement[free] = spsolve(stiffness[free][:, free].tocsc(), case["force"][free])
     tip = displacement[3 * np.flatnonzero(np.abs(system.points[:, axis] - end[axis]) < 1e-9) + axis].mean()
     assert 1.0 * 12 / (4 * tip) == pytest.approx(modulus, rel=0.04)
+
+def test_cantilever_stiffness_gradient_matches_finite_differences():
+    problem = TopologyProblem(cantilever_domain((12, 3, 4), 1.0), cantilever_problem(5.0))
+    random = np.random.default_rng(5)
+    design, direction = random.uniform(0.3, 0.7, problem.map.n), random.standard_normal(problem.map.n)
+    result, step = problem.evaluate(design), 1e-5
+    plus, minus = problem.evaluate(design + step * direction), problem.evaluate(design - step * direction)
+    for index, name in enumerate(result["names"]):
+        assert result["constraint_gradients"][index] @ direction == pytest.approx((plus["constraints"][index] - minus["constraints"][index]) / (2 * step), rel=1e-5), name
+    problem.close()
+
+def test_mma_min_mass_cantilever_ends_with_active_stiffness():
+    pytest.importorskip("mmapy")
+    domain = cantilever_domain((16, 4, 6), 1.0)
+    solid = TopologyProblem(domain, cantilever_problem(1.0))
+    stiffness = {row["name"]: row for row in solid.evaluate(np.ones(solid.map.n))["rows"]}["tip_stiffness"]["value"]
+    solid.close()
+    problem = cantilever_problem(0.4 * stiffness)
+    problem["continuation"]["beta_schedule"] = [1.0, 4.0]
+    optimizer = MMAOptimizer(TopologyProblem(domain, problem), {"level_max_iterations": 60, "final_max_iterations": 200, "move": 0.2})
+    result = optimizer.run(np.ones(domain["allowed"].size))
+    rows = {row["name"]: row for row in result["result"]["rows"]}
+    assert result["status"] == "converged" and rows["tip_stiffness"]["status"] == "active"
+    assert rows["volume"]["value"] < 0.8 and result["history"][-1]["max_violation"] <= 1e-3
+    optimizer.problem.close()
