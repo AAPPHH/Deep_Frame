@@ -4,6 +4,7 @@ from time import perf_counter
 
 import networkx as nx
 import numpy as np
+from scipy.interpolate import BSpline
 from scipy.ndimage import binary_dilation, convolve, distance_transform_edt, gaussian_filter, gaussian_filter1d, label, map_coordinates
 from skimage.morphology import skeletonize
 
@@ -54,9 +55,10 @@ def _neighbour_label(labels, voxel):
     return int(max(set(hits), key=hits.count)) if hits else 0
 
 class DesignGraph:
-    def __init__(self, solid, origin, spacing, preserve, config=DESIGN_RECONSTRUCTION_CONFIG):
+    def __init__(self, solid, origin, spacing, preserve, config=DESIGN_RECONSTRUCTION_CONFIG, weights=None):
         self.h, self.origin, self.config = float(spacing), np.asarray(origin, dtype=float), config
         self.solid, self.preserve = solid, preserve
+        self.weights = solid.astype(np.float32) if weights is None else np.asarray(weights, dtype=np.float32)
         self.radius = distance_transform_edt(solid)*self.h
         skeleton = skeletonize(solid).astype(bool)
         self.spurs = self._prune(skeleton, binary_dilation(preserve, CUBE, 2))
@@ -105,11 +107,30 @@ class DesignGraph:
             self.graph.add_edge(ends[0], ends[1], member=len(self.members))
             self.members.append({"voxels": path, "nodes": ends})
 
+    def assign(self, weights):
+        cells = np.argwhere((weights > 0) & ~self.preserve)
+        return cells, self.ids[tuple(self.nearest[(slice(None),)+tuple(cells.T)])], weights[tuple(cells.T)].astype(float)
+
+    def areas(self, weights=None):
+        cells, owner, w = self.assign(self.weights if weights is None else weights)
+        outward = np.zeros_like(self.tangents)
+        for member in self.members:
+            outward[member["rows"][0]] -= member["tangents"][0]
+            outward[member["rows"][-1]] += member["tangents"][-1]
+        beyond = np.einsum("ij,ij->i", (cells-self.nearest[(slice(None),)+tuple(cells.T)].T)*self.h, outward[owner]) > self.h/2
+        counts = np.bincount(owner, weights=np.where(beyond, 0.0, w), minlength=len(self.tangents))
+        result = []
+        for member in self.members:
+            step = np.linalg.norm(np.diff(self.centers(member["voxels"]), axis=0), axis=1)
+            result.append(counts[member["rows"]]*self.h**3/np.maximum(np.r_[step, 0]/2+np.r_[0, step]/2, self.h/2))
+        return result
+
     def _sections(self):
         h, cfg = self.h, self.config
         ids = np.full(self.skeleton.shape, -1, dtype=np.int64)
         voxels = np.argwhere(self.skeleton)
         ids[tuple(voxels.T)] = np.arange(len(voxels))
+        self.ids = ids
         tangents = np.zeros((len(voxels), 3))
         for member in self.members:
             points = gaussian_filter1d(self.centers(member["voxels"]).astype(float), cfg["path_sigma_samples"], axis=0, mode="nearest") if len(member["voxels"]) > 2 else self.centers(member["voxels"])
@@ -118,17 +139,17 @@ class DesignGraph:
             tangent /= np.maximum(np.linalg.norm(tangent, axis=1, keepdims=True), 1e-12)
             member["tangents"] = tangent
             tangents[ids[tuple(member["voxels"].T)]] = tangent
-        _, index = distance_transform_edt(~self.skeleton, return_indices=True)
-        cells = np.argwhere(self.solid & ~self.preserve)
-        owners = index[(slice(None),)+tuple(cells.T)].T
-        owner = ids[tuple(owners.T)]
+        self.tangents = tangents
+        self.nearest = distance_transform_edt(~self.skeleton, return_indices=True)[1]
+        cells, owner, weight = self.assign(self.weights)
+        owners = self.nearest[(slice(None),)+tuple(cells.T)].T
         offsets = (cells-owners)*h
         along = np.einsum("ij,ij->i", offsets, tangents[owner])
         across = offsets-along[:, None]*tangents[owner]
         moments = np.zeros((len(voxels), 3, 3))
-        np.add.at(moments, owner, across[:, :, None]*across[:, None, :])
-        counts = np.bincount(owner, minlength=len(voxels)).astype(float)
-        self.assigned = {"owner": owner, "cells": cells}
+        np.add.at(moments, owner, weight[:, None, None]*across[:, :, None]*across[:, None, :])
+        counts = np.bincount(owner, weights=weight, minlength=len(voxels))
+        self.assigned = {"owner": owner, "cells": cells, "weight": weight}
         for node in self.nodes:
             node["volume"] = float(counts[ids[tuple(node["voxels"].T)]].sum()*h**3)
         for number, member in enumerate(self.members):
@@ -174,7 +195,7 @@ class DesignGraph:
 
     def _shell(self, mask):
         h, sigma = self.h, self.config["shell_sigma_mm"]
-        points = self.centers(self.assigned["cells"][mask])
+        points, weight = self.centers(self.assigned["cells"][mask]), self.assigned["weight"][mask]
         center = points.mean(axis=0)
         _, vectors = np.linalg.eigh(np.cov((points-center).T))
         frame = vectors[:, ::-1]
@@ -184,13 +205,13 @@ class DesignGraph:
         cells = tuple(np.floor((local[:, :2]-low)/h).astype(int).T)
         count = np.zeros(shape)
         height = np.zeros(shape)
-        np.add.at(count, cells, 1.0)
-        np.add.at(height, cells, local[:, 2])
+        np.add.at(count, cells, weight)
+        np.add.at(height, cells, weight*local[:, 2])
         footprint = count > 0
         weight = gaussian_filter(footprint.astype(float), sigma/h)
         surface = gaussian_filter(np.where(footprint, height/np.maximum(count, 1), 0), sigma/h)/np.maximum(weight, 1e-9)
         thickness = gaussian_filter(count*h, sigma/h)/np.maximum(weight, 1e-9)
-        outline = gaussian_filter((distance_transform_edt(footprint)-distance_transform_edt(~footprint))*h, sigma/h)
+        outline = gaussian_filter((distance_transform_edt(footprint)-distance_transform_edt(~footprint))*h, self.config["shell_outline_sigma_mm"]/h)
         return {"center": center, "frame": frame, "low": low, "surface": surface, "thickness": thickness, "outline": outline, "bounds": (points.min(axis=0)-2.0, points.max(axis=0)+2.0)}
 
     def continuity(self):
@@ -307,13 +328,13 @@ class Reconstruction:
             np.maximum(values[window], value.astype(np.float32), out=values[window])
         return values
 
-    def add_member(self, member, h):
+    def add_member(self, member, h, blend=0.0):
         k = self.config["transition_radius_mm"]
         if member["kind"] == "shell":
             shell = dict(member["shell"], h=h)
             window = self.field.window(_box(*shell["bounds"]), k)
             if window is not None:
-                self._blend(window, np.maximum(shell_values(self.field.axes(window), shell), sweep_values(self.field.axes(window), member["points"], member["b"], member["b"], member["axis"])))
+                self._blend(window, np.maximum(shell_values(self.field.axes(window), shell), sweep_values(self.field.axes(window), member["points"], member["b"], member["b"], member["axis"])), blend)
             return
         reach = float(np.max(member["a"]))+2*self.field.spacing[0]
         window = self.field.window(_box(member["points"].min(axis=0), member["points"].max(axis=0)), reach+k)
@@ -332,7 +353,7 @@ class Reconstruction:
                 continue
             target = tuple(slice(l.start-w.start, l.stop-w.start) for l, w in zip(local, window))
             np.maximum(values[target], sweep_values(self.field.axes(local), member["points"][[i, j]], member["a"][[i, j]], member["b"][[i, j]], member["axis"][[i, j]], (i == 0 and flat[0], j == len(member["points"])-1 and flat[1])), out=values[target])
-        self._blend(window, values)
+        self._blend(window, values, blend)
 
     def add_node(self, node, blend):
         region = {"kind": "sphere", "center_mm": node["center"], "radius_mm": node["radius"]}
@@ -434,14 +455,10 @@ def joint_sections(field, items, radii, h):
 def build_field(graph, domain, config, scale=1.0, density=None, check=False):
     builder = Reconstruction(domain, config, density)
     rods = [extended(member, graph.nodes, scale, config) if member["kind"] == "rod" else None for member in graph.members]
-    for member, rod in zip(graph.members, rods):
-        if rod is None:
-            a, b = sections(member["a"], member["b"], scale, config)
-            rod = dict(member, a=a, b=b, shell=dict(member["shell"], thickness=np.maximum(member["shell"]["thickness"]*scale, 2*config["minimum_radius_mm"])))
-        builder.add_member(rod, graph.h)
-    hoop = domain.get("metadata", {}).get("round2", {}).get("hoop")
-    for path in hoop_paths(hoop):
-        builder.add_member(tube(path, max(hoop["radius_mm"], config["minimum_radius_mm"])), graph.h)
+    for rod in rods:
+        if rod is not None:
+            builder.add_member(rod, graph.h)
+    add_shells(builder, graph, domain, config, scale)
     items = joints(graph, rods)
     radii = [node_radius(dict(node, volume=node["volume"]*scale**2)) for node in graph.nodes]
     blends = [[] for _ in graph.nodes]
@@ -481,18 +498,156 @@ def reconstruct(domain, density, config=DESIGN_RECONSTRUCTION_CONFIG, target=Non
     times["calibration_s"] = perf_counter()-started-times["skeleton_s"]
     mesh, extraction = build_field(graph, domain, config, scale, density, True)
     times["field_extract_s"] = perf_counter()-started-times["skeleton_s"]-times["calibration_s"]
-    parts = mesh.split(only_watertight=False)
-    largest = max(parts, key=lambda part: abs(part.volume))
-    debris = {"count": len(parts)-1, "volume_mm3": float(sum(abs(p.volume) for p in parts if p is not largest))}
-    mesh, booleans = exact_booleans(largest, core_domain(domain, config), IMPLICIT_CONFIG)
+    mesh, final = finalize(mesh, domain, config)
     times["booleans_s"] = perf_counter()-started-sum(times.values())
     rods = [m for m in graph.members if m["kind"] == "rod"]
     budget = {"target_mm3": target, "assigned_members_mm3": float(sum(m["target_volume"] for m in graph.members)), "built_members_mm3": float(sum(np.sum(np.pi*m["a"]*m["b"]*scale**2*m["length"]/max(len(m["a"]), 1)) for m in rods)),
               "assigned_nodes_mm3": float(sum(n["volume"] for n in graph.nodes)), "node_spheres_mm3": extraction["node_spheres_mm3"], "preserves_mm3": float(np.count_nonzero(domain["preserve"])*np.prod(spacing)), "result_mm3": float(mesh.volume), "relative_to_target": float(mesh.volume/target-1)}
-    report = {**graph.report(), "fragments_dropped": fragments, "target_volume_mm3": target, "global_scale": scale, "calibration": trials, "mass_budget": budget, "extraction_debris": debris, "solid_volume_mm3": float(solid.sum()*np.prod(spacing)), "volume_mm3": float(mesh.volume),
-              "watertight": bool(mesh.is_watertight), "bodies": len(mesh.split(only_watertight=False)), "exact_booleans": {key: booleans[key] for key in ("status", "components", "passed", "preserve_added_mm3", "forbidden_removed_mm3", "envelope_removed_mm3", "maximum_cylinder_oversize_mm")},
+    report = {**graph.report(), "fragments_dropped": fragments, "target_volume_mm3": target, "global_scale": scale, "calibration": trials, "mass_budget": budget, **final, "solid_volume_mm3": float(solid.sum()*np.prod(spacing)),
               "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "joint_sections": extraction["joint_sections"], "voxel_mm": config["voxel_mm"], "transition_radius_mm": config["transition_radius_mm"], "preserve_blend_mm": config["preserve_blend_mm"], "runtime_s": {**times, "total_s": perf_counter()-started}}
     return mesh, graph, report
+
+def add_shells(builder, graph, domain, config, scale=1.0, blend=0.0, extend=False):
+    for member in graph.members:
+        if member["kind"] == "shell":
+            a, b = sections(member["a"], member["b"], scale, config)
+            member = dict(extended(member, graph.nodes, scale, config), kind="shell") if extend else dict(member, a=a, b=b)
+            builder.add_member(dict(member, shell=dict(member["shell"], thickness=np.maximum(member["shell"]["thickness"]*scale, 2*config["minimum_radius_mm"]))), graph.h, blend)
+    hoop = domain.get("metadata", {}).get("round2", {}).get("hoop")
+    for path in hoop_paths(hoop):
+        builder.add_member(tube(path, max(hoop["radius_mm"], config["minimum_radius_mm"])), graph.h, blend)
+
+def finalize(mesh, domain, config):
+    parts = mesh.split(only_watertight=False)
+    largest = max(parts, key=lambda part: abs(part.volume))
+    mesh, booleans = exact_booleans(largest, core_domain(domain, config), IMPLICIT_CONFIG)
+    return mesh, {"extraction_debris": {"count": len(parts)-1, "volume_mm3": float(sum(abs(p.volume) for p in parts if p is not largest))}, "volume_mm3": float(mesh.volume), "watertight": bool(mesh.is_watertight), "bodies": len(mesh.split(only_watertight=False)),
+                  "exact_booleans": {key: booleans[key] for key in ("status", "components", "passed", "preserve_added_mm3", "forbidden_removed_mm3", "envelope_removed_mm3", "maximum_cylinder_oversize_mm")}}
+
+def body_weights(mesh, grid, subdivisions):
+    from deep_frame.topology_implicit_validation import occupancy
+    spacing, origin, shape = np.asarray(grid["spacing_mm"], dtype=float), np.asarray(grid["origin_mm"], dtype=float), tuple(grid["shape"])
+    h = float(spacing[0])/subdivisions
+    solid, lower, _ = occupancy(mesh, h, 2*h)
+    index = np.floor((lower+(np.argwhere(solid)+0.5)*h-origin)/spacing).astype(int)
+    index = index[np.all((index >= 0) & (index < shape), axis=1)]
+    weights = np.zeros(shape, dtype=np.float32)
+    np.add.at(weights, tuple(index.T), np.float32(1/subdivisions**3))
+    return np.minimum(weights, 1)
+
+def spline_basis(t, count):
+    degree = min(3, count-1)
+    knots = np.r_[[0.0]*degree, np.linspace(0, 1, count-degree+1), [1.0]*degree]
+    return BSpline.design_matrix(np.clip(t, 0, 1), knots, degree).toarray()
+
+def fit_spline(path, count, samples):
+    t = np.r_[0, np.cumsum(np.linalg.norm(np.diff(path, axis=0), axis=1))]
+    t = t/max(t[-1], 1e-12)
+    basis = spline_basis(t, count)
+    inner = np.linalg.lstsq(basis[:, 1:-1], path-basis[:, :1]*path[0]-basis[:, -1:]*path[-1], rcond=None)[0]
+    control = np.vstack([path[0], inner, path[-1]])
+    return control, spline_basis(np.linspace(0, 1, samples), count)@control, t
+
+def fit_profile(t, values, keep, degree):
+    keep = keep if keep.sum() >= 2 else np.ones(len(t), dtype=bool)
+    if keep.sum() < 2:
+        return np.array([float(np.mean(values))]), (0.0, 1.0)
+    return np.polyfit(t[keep], values[keep], min(degree, int(keep.sum())-1)), (float(t[keep].min()), float(t[keep].max()))
+
+def profile_values(profile, t):
+    coefficients, (low, high) = profile
+    return np.polyval(coefficients, np.clip(t, low, high))
+
+def spline_member(graph, member, area, config):
+    ends = [graph.nodes[n-1]["center"] if isinstance(n, int) else member["anchors"][side] for side, n in enumerate(member["nodes"])]
+    inner = graph.centers(member["voxels"])
+    path = np.concatenate([[ends[0]]]*(ends[0] is not None)+[inner]+[[ends[1]]]*(ends[1] is not None))
+    length = float(np.linalg.norm(np.diff(path, axis=0), axis=1).sum()) if len(path) > 1 else graph.h
+    count = 3+sum(length >= limit for limit in config["spline_lengths_mm"])
+    control, curve, t = fit_spline(path, count, max(int(np.ceil(length/config["spline_sample_mm"]))+1, 4))
+    t = t[int(ends[0] is not None):len(t)-int(ends[1] is not None)]
+    reach = [graph.nodes[n-1]["radius"] if isinstance(n, int) else float(graph.radius[tuple(member["voxels"][-side])])+graph.h if ends[side] is not None else 0.0 for side, n in enumerate(member["nodes"])]
+    keep = (t*length > reach[0]) & ((1-t)*length > reach[1])
+    arc = max(float(np.linalg.norm(np.diff(curve, axis=0), axis=1).sum()), 1e-12)
+    area = area*length/arc
+    measured = gaussian_filter1d(area, config["profile_sigma_samples"], mode="nearest") if config["profile_sigma_samples"] > 0 and len(area) > 1 else area
+    profile = fit_profile(t, measured, keep, config["profile_degree"])
+    aspect = float(np.clip(member["aspect"], 1.0, config["maximum_aspect"]))
+    fitted = np.maximum(profile_values(profile, np.linspace(0, 1, len(curve))), 0.0)
+    b = np.sqrt(fitted/(np.pi*aspect))
+    a, b = np.maximum(aspect*b, config["minimum_radius_mm"]), np.maximum(b, config["minimum_radius_mm"])
+    tangent = np.gradient(curve, axis=0)
+    tangent /= np.maximum(np.linalg.norm(tangent, axis=1, keepdims=True), 1e-12)
+    major = np.mean(member["axis"], axis=0)
+    major = major if np.linalg.norm(major) > 1e-6 else np.array([0.0, 0.0, 1.0])
+    axis = major-(tangent@major)[:, None]*tangent
+    fallback = np.cross(tangent, np.where(np.abs(tangent[:, :1]) < 0.9, [[1.0, 0.0, 0.0]], [[0.0, 1.0, 0.0]]))
+    axis = np.where(np.linalg.norm(axis, axis=1, keepdims=True) > 1e-3, axis, fallback)
+    axis /= np.linalg.norm(axis, axis=1, keepdims=True)
+    return {"kind": "rod", "points": curve, "a": a, "b": b, "axis": axis, "nodes": [0 if ends[side] is not None and not isinstance(n, int) else "joined" for side, n in enumerate(member["nodes"])], "control": control, "profile": profile, "t": t, "keep": keep, "length": arc, "path_length": length, "aspect": aspect, "stretch": length/arc}
+
+def bumps(graph, domain, rods, areas, config):
+    loads = [load["region"] for key in ("load_cases", "comparison_load_cases") for case in domain.get(key, []) for load in case.get("loads", [])]
+    gap = distance_transform_edt(~graph.preserve)*graph.h
+    pad, rows = config["bump_pad_mm"], []
+    for number, (member, rod, area) in enumerate(zip(graph.members, rods, areas)):
+        if rod is None or len(area) < 3:
+            continue
+        area = area*rod["stretch"]
+        measured = gaussian_filter1d(area, config["profile_sigma_samples"], mode="nearest") if config["profile_sigma_samples"] > 0 else area
+        fitted = np.sqrt(np.maximum(profile_values(rod["profile"], rod["t"]), 1e-9)/np.pi)
+        excess = np.sqrt(measured/np.pi)-fitted
+        step = rod["path_length"]/max(len(area), 1)
+        for i in np.flatnonzero(excess > config["bump_minimum_mm"]):
+            if excess[i] < excess[max(i-2, 0):i+3].max():
+                continue
+            above = excess > excess[i]/2
+            low, high = i, i
+            while low > 0 and above[low-1]:
+                low -= 1
+            while high < len(above)-1 and above[high+1]:
+                high += 1
+            point = graph.centers(member["voxels"][i])
+            extent = (high-low+1)*step
+            near = [n for n in member["nodes"] if isinstance(n, int) and np.linalg.norm(point-graph.nodes[n-1]["center"]) < graph.nodes[n-1]["radius"]+pad]
+            kind = ("load_point" if any(region_contains(point[None], region, pad)[0] for region in loads) else "prescribed" if gap[tuple(member["voxels"][i])] <= fitted[i]+pad else
+                    "junction" if near or not rod["keep"][i] else "grid_artefact" if extent < rod["length"]/3 else "optimizer_feature")
+            rows.append({"member": number, "point_mm": np.round(point, 2).tolist(), "excess_mm": round(float(excess[i]), 3), "fitted_radius_mm": round(float(fitted[i]), 3), "extent_mm": round(float(extent), 2), "member_length_mm": round(rod["length"], 2), "class": kind})
+    return rows
+
+def reconstruct_splines(domain, density, config, body=None):
+    started, times = perf_counter(), {}
+    grid = domain["grid"]
+    spacing = np.asarray(grid["spacing_mm"], dtype=float)
+    solid, fragments = solid_body(density, config, float(np.prod(spacing)))
+    weights = None if body is None else body_weights(body, grid, config["body_subdivisions"])
+    graph = DesignGraph(solid, grid["origin_mm"], spacing[0], domain["preserve"], config, weights)
+    areas = graph.areas()
+    rods = [spline_member(graph, member, area, config) if member["kind"] == "rod" else None for member, area in zip(graph.members, areas)]
+    rods = [None if rod is not None and member["nodes"][0] == member["nodes"][1] and rod["length"] < config["loop_factor"]*float(np.mean(rod["b"])) else rod for member, rod in zip(graph.members, rods)]
+    times["skeleton_s"] = perf_counter()-started
+    builder, k = Reconstruction(domain, config), config["transition_radius_mm"]
+    for rod in rods:
+        if rod is not None:
+            builder.add_member(rod, graph.h, k)
+    add_shells(builder, graph, domain, config, 1.0, k, True)
+    items = joints(graph, rods)
+    radii = [max([node["radius"]]+[item["b"] for item in items if item["node"] == number+1]) for number, node in enumerate(graph.nodes)]
+    for node, radius in zip(graph.nodes, radii):
+        builder.add_node(dict(node, radius=radius), k)
+    mesh, extraction = builder.finish()
+    sections_report = joint_sections(builder.field, items, radii, builder.field.spacing[0])
+    times["field_extract_s"] = perf_counter()-started-times["skeleton_s"]
+    mesh, final = finalize(mesh, domain, config)
+    times["booleans_s"] = perf_counter()-started-sum(times.values())
+    built = [rod for rod in rods if rod is not None]
+    members = [{"member": number, "length_mm": round(rod["length"], 2), "control_points": len(rod["control"]), "aspect": round(rod["aspect"], 3), "radius_mm": [round(float(np.sqrt(rod["a"]*rod["b"]).min()), 3), round(float(np.sqrt(rod["a"]*rod["b"]).max()), 3)]} for number, rod in enumerate(rods) if rod is not None]
+    budget = {"measured_members_mm3": float(sum(m["target_volume"] for m in graph.members)), "built_rods_mm3": float(sum(np.sum(np.pi*rod["a"]*rod["b"])*rod["length"]/len(rod["a"]) for rod in built)),
+              "node_bodies_mm3": float(sum(4/3*np.pi*r**3 for r in radii)), "preserves_mm3": float(np.count_nonzero(domain["preserve"])*np.prod(spacing)), "section_source_mm3": float(graph.weights.sum()*np.prod(spacing)), "result_mm3": final["volume_mm3"]}
+    report = {**graph.report(), **final, "method": "spline", "fragments_dropped": fragments, "splines": members, "control_points": {str(n): sum(1 for m in members if m["control_points"] == n) for n in (3, 4, 5)}, "mass_budget": budget,
+              "joint_sections": sections_report, "bumps": bumps(graph, domain, rods, areas, config), "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "voxel_mm": config["voxel_mm"], "transition_radius_mm": k,
+              "section_source": "raw body occupancy" if body is not None else "thresholded density", "runtime_s": {**times, "total_s": perf_counter()-started}}
+    return mesh, graph, rods, report
 
 def mount_regions(domain, config):
     regions = [r for r in domain["regions"] if r["role"] == "preserve" and any(key in r["name"] for key in config["load_path_mounts"])]

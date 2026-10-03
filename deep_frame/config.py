@@ -1007,6 +1007,7 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "volume_match": True,
     "shell_aspect": 2.2,
     "shell_sigma_mm": 1.0,
+    "shell_outline_sigma_mm": 1.0,
     "transition_radius_mm": 1.5,
     "voxel_mm": 0.25,
     "target_volume_mm3": 0.0,
@@ -1045,6 +1046,32 @@ DESIGN_RECONSTRUCTION_KINDS = {
     "load_path_core_mm": ["float"],
     "load_path_mounts": ["text"],
 }
+
+SPLINE_RECONSTRUCTION_CONFIG = {
+    **DESIGN_RECONSTRUCTION_CONFIG,
+    "section_body": None,
+    "body_subdivisions": 3,
+    "spline_lengths_mm": [10.0, 20.0],
+    "spline_sample_mm": 0.6,
+    "profile_degree": 2,
+    "profile_sigma_samples": 1.0,
+    "minimum_radius_mm": 1.25,
+    "maximum_aspect": 2.2,
+    "transition_radius_mm": 1.0,
+    "preserve_blend_mm": 1.0,
+    "shell_outline_sigma_mm": 2.5,
+    "member_smooth_mm": 0.0,
+    "closing_radius_mm": 0.0,
+    "root_distance_mm": 0.0,
+    "calibration_steps": 0,
+    "volume_match": False,
+    "bump_minimum_mm": 0.3,
+    "bump_pad_mm": 1.5,
+    "loop_factor": 6.0,
+}
+
+SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if isinstance(value, float) else "int" for key, value in SPLINE_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},
+                               "section_body": "path", "spline_lengths_mm": ["float"]}
 
 MATERIALS = {
     "PA6-CF": {

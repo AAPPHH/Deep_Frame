@@ -2,9 +2,9 @@ import numpy as np
 import pytest
 from scipy.ndimage import label
 
-from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG
+from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_CONFIG
 from deep_frame.topology_implicit import TWENTY_SIX, ImplicitField
-from deep_frame.topology_reconstruction import DesignGraph, Reconstruction, hoop_paths, load_paths, reconstruct, sections, sweep_values, tube
+from deep_frame.topology_reconstruction import DesignGraph, Reconstruction, hoop_paths, load_paths, reconstruct, reconstruct_splines, sections, sweep_values, tube
 
 H = 0.5
 RADIUS = 1.5
@@ -95,3 +95,55 @@ def test_detached_member_fails_continuity_and_load_path(truss):
     far = {"name": "far_mount", "role": "preserve", "kind": "box", "min_mm": [30.0, 20.0, 1.0], "max_mm": [32.0, 22.0, 3.0]}
     result = load_paths(mesh, dict(domain, regions=domain["regions"]+[far]), {**config, "load_path_mounts": ["hub", "far"]})
     assert result["r0.5"]["carried"] == 1 and result["r0.5"]["missing"] == ["far_mount"] and not result["passed"]
+
+WAVE = {"spacing": 0.25, "a": np.array([4.0, 12.0, 6.0]), "b": np.array([44.0, 12.0, 6.0]), "c": np.array([24.0, 30.0, 6.0]), "radius": 1.75, "taper": (2.2, 1.6), "amplitude": 0.4, "ripple": 0.2, "wavelength": 5.0}
+
+@pytest.fixture(scope="module")
+def waves():
+    h, shape = WAVE["spacing"], (192, 144, 48)
+    centers = (np.stack(np.meshgrid(*[np.arange(n) for n in shape], indexing="ij"), axis=-1)+0.5)*h
+    x, y = centers[..., 0], centers[..., 1]
+    phase = lambda s: np.sin(2*np.pi*s/WAVE["wavelength"])
+    middle = (WAVE["a"]+WAVE["b"])/2
+    along = np.clip(x, WAVE["a"][0], WAVE["b"][0])
+    bar = np.hypot(np.hypot(x-along, y-WAVE["a"][1]-WAVE["amplitude"]*phase(along)), centers[..., 2]-WAVE["a"][2]) <= WAVE["radius"]+WAVE["ripple"]*phase(1.3*along)
+    t = np.clip((y-middle[1])/(WAVE["c"][1]-middle[1]), 0, 1)
+    stem = np.hypot(np.hypot(x-middle[0]-WAVE["amplitude"]*phase(y), y-middle[1]-t*(WAVE["c"][1]-middle[1])), centers[..., 2]-middle[2]) <= WAVE["taper"][0]+t*(WAVE["taper"][1]-WAVE["taper"][0])+WAVE["ripple"]*phase(1.3*y)
+    pads = [{"name": f"pad_{name}", "role": "preserve", "kind": "box", "min_mm": (WAVE[name]-[2.5, 2.5, 2.5]).tolist(), "max_mm": (WAVE[name]+[2.5, 2.5, 2.5]).tolist()} for name in ("a", "b", "c")]
+    preserve = np.zeros(shape, dtype=bool)
+    for pad in pads:
+        preserve |= np.all((centers >= pad["min_mm"]) & (centers <= pad["max_mm"]), axis=-1)
+    density = (bar | stem | preserve).astype(np.float32)
+    domain = {"grid": {"origin_mm": [0.0, 0.0, 0.0], "spacing_mm": [h]*3, "shape": list(shape)}, "regions": pads, "preserve": preserve}
+    config = {**SPLINE_RECONSTRUCTION_CONFIG, "density_sigma_cells": 0.0, "voxel_mm": 0.25, "preserve_round_mm": 0.0}
+    mesh, graph, rods, report = reconstruct_splines(domain, density, config)
+    return domain, density, config, mesh, graph, rods, report
+
+def test_spline_fit_removes_waves_and_keeps_length_and_mass(waves):
+    domain, density, config, mesh, graph, rods, report = waves
+    built = [rod for rod in rods if rod is not None]
+    assert len(built) == 3 and len(graph.nodes) == 1 and all(3 <= len(rod["control"]) <= 5 for rod in built)
+    for rod in built:
+        points = rod["points"]
+        bar = abs(points[-1, 0]-points[0, 0]) > abs(points[-1, 1]-points[0, 1])
+        along, lateral = (points[:, 0], points[:, 1]-WAVE["a"][1]) if bar else (points[:, 1], points[:, 0]-WAVE["c"][0])
+        inner = np.minimum(np.linalg.norm(points-points[0], axis=1), np.linalg.norm(points-points[-1], axis=1)) > 4.0
+        phase = 2*np.pi*along[inner]/WAVE["wavelength"]
+        assert np.hypot(2*np.mean(lateral[inner]*np.sin(phase)), 2*np.mean(lateral[inner]*np.cos(phase))) < WAVE["amplitude"]/4
+        assert np.abs(lateral[inner]).max() < WAVE["amplitude"]
+        assert rod["length"] == pytest.approx(float(np.linalg.norm(points[-1]-points[0])), rel=0.02)
+    assert mesh.is_watertight and report["bodies"] == 1
+    assert mesh.volume == pytest.approx(float(density.sum())*WAVE["spacing"]**3, rel=0.02)
+
+def test_spline_cross_section_is_monotone_and_smooth(waves):
+    domain, density, config, mesh, graph, rods, report = waves
+    stem = max((rod for rod in rods if rod is not None), key=lambda rod: abs(rod["points"][-1, 1]-rod["points"][0, 1]))
+    radius = np.sqrt(stem["a"]*stem["b"])
+    steps = np.diff(radius if stem["points"][-1, 1] > stem["points"][0, 1] else radius[::-1])
+    assert np.all(steps <= 1e-9) and radius.max()-radius.min() > 0.2
+    assert np.abs(np.diff(steps)).max() < 0.02
+    assert np.all(radius >= config["minimum_radius_mm"]-1e-9)
+
+def test_spline_node_transition_has_no_necking(waves):
+    domain, density, config, mesh, graph, rods, report = waves
+    assert report["joint_sections"]["count"] == 3 and report["joint_sections"]["below_one"] == 0 and report["joint_sections"]["minimum_ratio"] >= 0.98
