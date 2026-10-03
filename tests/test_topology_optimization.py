@@ -661,6 +661,18 @@ def test_optimizers_carry_prop_disc_weights_and_the_f1_constraint(method):
     assert result["status"] == "ok" and result["summary"]["modal"]["final"]["f1_hz"] > 0
     assert all(entry["f1_hz"] > 0 and entry["modal_penalty"] > 0 for entry in result["history"][:-1])
 
+def test_radial_prop_weights_are_free_at_the_hub_and_grow_quadratically_to_the_tip():
+    from deep_frame.topology_optimization import volume_weights
+    discs = {"mode": "soft", "motors_mm": [[10.0, 0.0]], "radius_mm": 30.0, "plane_mm": 5.0, "weight": 3.0, "length_mm": 10.0, "hub_radius_mm": 5.0, "radial_power": 2.0}
+    points = np.array([[10.0, 0.0, 5.0], [14.9, 0.0, 5.0], [27.5, 0.0, 5.0], [10.0, 30.0, 5.0], [40.0, 0.0, 15.0], [41.0, 0.0, 5.0]])
+    weights = volume_weights(points, discs)
+    assert weights[:2] == pytest.approx([1.0, 1.0]) and weights[2] == pytest.approx(1.75) and weights[3] == pytest.approx(4.0)
+    assert weights[4] == pytest.approx(1 + 3 * np.exp(-1.0)) and weights[5] == 1.0
+    uniform = volume_weights(points, {key: value for key, value in discs.items() if key != "radial_power"})
+    assert uniform[:5] == pytest.approx([4.0, 4.0, 4.0, 4.0, 1 + 3 * np.exp(-1.0)]) and uniform[5] == 1.0
+    from tools.neural_study import STUDY
+    assert STUDY["prop_discs"]["radial_power"] == 2.0
+
 def stiffness_settings(**changes):
     return {"min_n_per_mm": 10.0, "case": "push", "calibration": 1.0, "penalty": 10.0, "multiplier_interval": 10 ** 6, **changes}
 
