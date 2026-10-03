@@ -163,6 +163,10 @@ def camera_mount_z(config: dict) -> float:
     extent = abs(camera["height_mm"] * cos(tilt)) + abs(camera["length_mm"] * sin(tilt))
     return config["frame"]["base_thickness_mm"] + config["frame"]["camera_bottom_clearance_mm"] + extent / 2
 
+def prop_plane_z(config: dict) -> float:
+    c = config["components"]
+    return config["frame"]["arm_height_mm"] + c["motor"]["height_mm"] + config["frame"]["prop_motor_gap_mm"] + c["prop"]["thickness_mm"]
+
 def structural_margins(config: dict) -> dict:
     f = config["frame"]
     c = config["components"]

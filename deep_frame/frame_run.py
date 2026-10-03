@@ -13,7 +13,7 @@ import numpy as np
 from deep_frame.config import (COMPONENT_DEFAULTS, COMPONENT_LIBRARY, DURABILITY, FRAME_COMPONENT_KINDS, FRAME_DEFAULTS, FRAME_LAYOUT_KINDS, FRAME_PRINT_KINDS, FRAME_REQUEST,
                                FRAME_REQUEST_KINDS, LAYOUT_OVERRIDES, LAYOUT_RULES, LIBRARY_FIELDS, MATERIALS, MOUNTING_TYPES, RUN_GRIDS, RUN_SETTINGS, STAGES, STYLES, component_spec,
                                configure, prop_spec)
-from deep_frame.frame import camera_mount_z, motor_positions
+from deep_frame.frame import camera_mount_z, motor_positions, prop_plane_z
 
 ROOT = Path(__file__).resolve().parents[1]
 MOTORS = ("front_left", "front_right", "rear_left", "rear_right")
@@ -145,7 +145,7 @@ class FrameLayout:
         deck_bottom = f["deck_top_mm"] - f["deck_thickness_mm"]
         if self.request["layout"]["battery_mount"] == "top" and min(f["deck_top_mm"] - camera_top, deck_bottom - stack_top) < rules["camera"]["top_clearance_mm"] - 1e-9:
             raise ValueError(f"Battery underside z = {f['deck_top_mm']:.1f} mm or deck bottom z = {deck_bottom:.1f} mm leaves less than {rules['camera']['top_clearance_mm']} mm above camera top {camera_top:.1f} mm or stack top {stack_top:.1f} mm")
-        prop_plane = f["arm_height_mm"] + c["motor"]["height_mm"] + f["prop_motor_gap_mm"] + c["prop"]["thickness_mm"]
+        prop_plane = prop_plane_z(self.parameters())
         corners = np.asarray([[sx * c["battery"]["width_mm"] / 2, sy * c["battery"]["length_mm"] / 2] for sx in (-1, 1) for sy in (-1, 1)])
         plan = min(float(np.min(np.hypot(*(np.clip(m, corners.min(0), corners.max(0)) - m)))) for m in motors) - c["prop"]["diameter_mm"] / 2
         if plan < rules["battery_prop_clearance_mm"] and f["deck_top_mm"] < prop_plane + rules["battery_prop_clearance_mm"]:
@@ -260,9 +260,12 @@ class FrameRun:
         crash = [case["name"] for case in domain["load_cases"] if case["name"].startswith("crash_")]
         variant = self.request["name"]
         out = self.dir / "optimization"
-        neural = {"max_frequency_per_mm": LAYOUT_RULES["neural"]["max_frequency_per_mm"] * LAYOUT_RULES["neural"]["reference_width_mm"] / self.layout.durability["minimum_width_mm"], **self.grid["neural"]}
+        options = self.layout.overrides.get("optimizer", {})
+        frequency = 1 / (2 * LAYOUT_RULES["neural"]["half_wavelength_per_width"] * self.layout.durability["minimum_width_mm"])
+        neural = {"max_frequency_per_mm": options.get("max_frequency_per_mm", frequency), **self.grid["neural"]}
         overrides = {"root": str(out), "viewer_root": "", "shape": self.grid["shape"], "fine_shape": self.grid["fine_shape"], "neural": neural,
-                     "pad": {**LAYOUT_RULES["pad"], "support_half_mm": 5.0, "bore_margin_mm": 0.5}, "variants": [{"name": variant, "neural": {"volume_fraction": self.layout.durability["volume_fraction"]}}]}
+                     "pad": {**LAYOUT_RULES["pad"], "support_half_mm": 5.0, "bore_margin_mm": 0.5}, "variants": [{"name": variant, "neural": {"volume_fraction": options.get("volume_fraction", self.layout.durability["volume_fraction"])}}]}
+        overrides.update({key: value for key, value in (("prop_discs", {"mode": options.get("prop_discs")}), ("modal", {"f1_min_hz": options.get("f1_min_hz")}), ("method", options.get("method"))) if value not in (None, {"mode": None}, {"f1_min_hz": None})})
         if self.layout.style["hoops"]:
             overrides["hoop"] = self.layout.hoop()
         source = (Path(self.stages["optimization"]["worktree"]) / self.stages["optimization"]["tool"]).read_text(encoding="utf-8")
@@ -346,7 +349,9 @@ class FrameRun:
             if self.manifest["stages"]["optimization"]["status"] == "ran":
                 mesh = result / "geometry.stl"
                 self.manifest["raw_geometry"] = str(mesh)
-                if not self.available("reconstruction"):
+                if not self.request["reconstruction"]:
+                    self.mark("reconstruction", "skipped", "reconstruction disabled in the request; raw threshold body evaluated")
+                elif not self.available("reconstruction"):
                     self.mark("reconstruction", "pending", "stage tool not found")
                 else:
                     rebuilt = self.reconstruction(result / "density_fine.npz")

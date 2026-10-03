@@ -11,9 +11,9 @@ from skimage.measure import marching_cubes
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import deep_frame.topology_neural as topology_neural
 from deep_frame.config import CRASH_DIRECTIONS, command_line
-from deep_frame.frame import motor_positions
+from deep_frame.frame import motor_positions, prop_plane_z
 from deep_frame.topology_geometry import _merge, build_design_domain, grid_centers, region_contains, symmetric_domains
-from deep_frame.topology_neural import _sigmoid, cell_centers, member_widths, neural_settings, optimize_neural, volume_shift
+from deep_frame.topology_neural import member_widths, neural_settings, optimize_neural
 from deep_frame.topology_optimization import HexElasticity
 from tools.multi_crash_study import cross_sections, stitch
 from tools.topology_study import study_parameters
@@ -34,8 +34,13 @@ STUDY = {
              "load_y_min_mm": 44.0, "load_z_mm": [4.0, 22.0], "case_weight": 1.0},
     "neural": {"max_frequency_per_mm": 0.2, "max_iterations": 110, "minimum_iterations": 40, "sharpness_iterations": 80, "sharpness_final": 8.0, "max_width_penalty": 0.0, "max_runtime_s": 1500.0},
     "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads", "min_body_mm3": 1.0},
+    "prop_discs": {"mode": None, "weight": 3.0, "length_mm": 10.0, "corridor_half_width_mm": 4.0, "hub_margin_mm": 2.0},
+    "modal": {"f1_min_hz": None, "case": "modes", "modes": 4, "tracked": 2, "initial_iterations": 30, "warm_iterations": 2, "penalty": 10.0, "ks": 40.0, "mass_cutoff": 0.1, "multiplier_interval": 5, "start_iteration": 1},
+    "method": "neural",
+    "simp": {"filter_radius_mm": 4.0, "projection": "single", "beta_schedule": [1.0, 2.0, 4.0, 8.0], "beta_interval": 35, "max_iterations": 140, "minimum_iterations": 20, "move_limit": 0.1, "max_runtime_s": 1500.0},
     "variants": [{"name": "neural_r3_v05", "neural": {"volume_fraction": 0.05}}],
 }
+VARIANT_KEYS = ("prop_discs", "modal", "method", "simp")
 
 def configure(overrides):
     unknown = sorted(set(overrides) - set(STUDY))
@@ -73,7 +78,7 @@ def lower_chord(density, grid, cfg, sigma=1.0, threshold=0.5):
 
 class R2Domain:
     def __init__(self, cfg):
-        self.pad, self.hoop, self.crash, self.relief = cfg["pad"], cfg["hoop"], cfg["crash_directions"], cfg["inertia_relief"]
+        self.pad, self.hoop, self.crash, self.relief, self.discs = cfg["pad"], cfg["hoop"], cfg["crash_directions"], cfg["inertia_relief"], cfg["prop_discs"]
     def hoop_paths(self):
         return [np.array([[sign * self.hoop["x_mm"], y, z] for y, z in self.hoop["path_yz_mm"]], dtype=float) for sign in (-1, 1)]
     def masses(self, domain, fraction):
@@ -88,6 +93,21 @@ class R2Domain:
             items += [{"name": name, "region": bounds(regions[key]), "mass_g": component["mass_g"] / len(targets)} for key in targets]
         frame = fraction * domain["metadata"]["allowed_volume_mm3"] * domain["material"]["density_g_cm3"] / 1000 if self.relief["frame_mass"] == "target" else 0.0
         return {"point_masses": items, "preserve_mass_g": frame}
+    def prop_discs(self, parameters):
+        motors = np.array(list(motor_positions(parameters).values()))
+        return {**self.discs, "motors_mm": motors.tolist(), "radius_mm": parameters["components"]["prop"]["diameter_mm"] / 2, "plane_mm": prop_plane_z(parameters),
+                "pad_radius_mm": parameters["components"]["motor"]["diameter_mm"] / 2 + self.discs["hub_margin_mm"]}
+    def keep_out(self, centers, discs):
+        blocked = np.zeros(centers.shape[:-1], dtype=bool)
+        for x, y in discs["motors_mm"]:
+            offset = centers[..., :2] - [x, y]
+            radial = np.linalg.norm(offset, axis=-1)
+            direction = -np.asarray([x, y]) / np.hypot(x, y)
+            along = offset @ direction
+            across = np.abs(offset @ [-direction[1], direction[0]])
+            corridor = (along >= 0) & (across <= discs["corridor_half_width_mm"])
+            blocked |= (radial <= discs["radius_mm"]) & (radial > discs["pad_radius_mm"]) & ~corridor & (centers[..., 2] <= discs["plane_mm"])
+        return blocked
     def build(self, shape, fraction=0.05):
         parameters = study_parameters(shape)
         parameters["frame"]["arm_height_mm"] = self.pad["top_mm"]
@@ -109,6 +129,10 @@ class R2Domain:
         for path in self.hoop_paths():
             tube |= polyline_distance(centers, path) <= self.hoop["radius_mm"]
         preserve = (preserve | tube) & allowed
+        discs = self.prop_discs(parameters)
+        unblocked = int(np.count_nonzero(allowed))
+        if discs["mode"] == "hard":
+            allowed &= ~(self.keep_out(centers, discs) & ~preserve)
         domain.update(allowed=allowed, preserve=preserve, forbidden=~allowed)
         if label(allowed)[1] != 1:
             raise ValueError("Round-2 domain is not face-connected")
@@ -133,6 +157,7 @@ class R2Domain:
             for case in domain["load_cases"]:
                 if case["analysis"] == "static" and any(case["name"].startswith(key) for key in self.relief["cases"]):
                     case.update(fixed_regions=[], inertia_relief=relief)
+        domain["metadata"]["round4"] = {"prop_discs": discs, "allowed_cells": int(np.count_nonzero(allowed)), "unblocked_cells": unblocked}
         domain["metadata"]["round2"] = {"pad": self.pad, "hoop": self.hoop, "hoop_cells": int(np.count_nonzero(tube & allowed)), "motors_mm": motors.tolist(), "crash_directions": list(self.crash),
                                         "inertia_relief_cases": [case["name"] for case in domain["load_cases"] if "inertia_relief" in case], "inertia_relief_masses": relief if self.relief else None}
         return symmetric_domains(domain)
@@ -166,15 +191,6 @@ def time_solve(cfg):
         times.append(perf_counter() - start)
     system.close()
     print(json.dumps({"shape": cfg["shape"], "half": half["grid"]["shape"], "cases": len(half["load_cases"]), "domain_s": built - started, "solve_s": times}), flush=True)
-
-def sample_full(mapping, fine, sharpness, fraction):
-    allowed, preserve = fine["allowed"], fine["preserve"]
-    free = allowed & ~preserve
-    points = cell_centers(fine["grid"]).reshape(*fine["grid"]["shape"], 3)[free]
-    logits = np.concatenate([mapping.field.forward(mapping.field.features(chunk))[0] for chunk in np.array_split(points, max(1, len(points) // 200000))])
-    density = preserve.astype(float)
-    density[free] = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, fraction * np.count_nonzero(allowed) - np.count_nonzero(preserve))))
-    return density
 
 def carve(field, grid, regions):
     spacing = np.asarray(grid["spacing_mm"], dtype=float)
@@ -357,20 +373,29 @@ def finish(out, density, fine_full, cfg, viewer):
     render_views(mesh, out)
     allowed_volume = np.count_nonzero(fine_full["allowed"]) * np.prod(fine_full["grid"]["spacing_mm"])
     solid = gaussian_filter(np.asarray(density, dtype=np.float32), cfg["render"]["sigma_cells"]) > cfg["render"]["threshold"]
-    return {"mass_g": float(mesh.volume * 1.09 / 1000), "mesh_volume_mm3": float(mesh.volume), "volume_fraction_mesh": float(mesh.volume / allowed_volume),
+    discs = fine_full["metadata"]["round4"]["prop_discs"]
+    centers = grid_centers(fine_full["grid"])
+    footprint = np.zeros(solid.shape, dtype=bool)
+    for x, y in discs["motors_mm"]:
+        radial = np.hypot(centers[..., 0] - x, centers[..., 1] - y)
+        footprint |= (radial <= discs["radius_mm"]) & (radial > discs["pad_radius_mm"])
+    return {"prop_disc_share": float(np.count_nonzero(solid & footprint) / max(np.count_nonzero(solid), 1)), "prop_disc_top_share": float(np.count_nonzero((solid & footprint).any(2)) / np.count_nonzero(footprint.any(2))),
+            "mass_g": float(mesh.volume * 1.09 / 1000), "mesh_volume_mm3": float(mesh.volume), "volume_fraction_mesh": float(mesh.volume / allowed_volume),
             "watertight": bool(mesh.is_watertight), "bodies": len(mesh.split(only_watertight=False)), "connectivity": connectivity,
             "member_width": member_widths(solid, fine_full["grid"]["spacing_mm"], fine_full["preserve"] | fine_full["forbidden"]),
             "width_height_ratio": sections["width_height_ratio"], "chord": lower_chord(density, fine_full["grid"], cfg["chord"], cfg["render"]["sigma_cells"], cfg["render"]["threshold"])}
 
 def run_variant(cfg, variant):
     neural, render_cfg = {**cfg["neural"], **variant.get("neural", {})}, {**cfg["render"], **variant.get("render", {})}
-    cfg = {**cfg, "render": render_cfg}
+    cfg = {**_merge(cfg, {key: variant[key] for key in VARIANT_KEYS if key in variant}), "render": render_cfg}
     out = Path(cfg["root"]) / variant["name"]
     out.mkdir(parents=True, exist_ok=True)
     started = perf_counter()
     builder = R2Domain(cfg)
     _, half = builder.build(cfg["shape"], neural["volume_fraction"])
-    settings = base_settings(half, neural)
+    discs = half["metadata"]["round4"]["prop_discs"]
+    neural["volume_fraction"] *= half["metadata"]["round4"]["unblocked_cells"] / half["metadata"]["round4"]["allowed_cells"]
+    settings = base_settings(half, {**neural, "prop_discs": discs if discs["mode"] == "soft" else None, "modal": cfg["modal"] if cfg["modal"]["f1_min_hz"] else None})
     holder = {}
     original = topology_neural.NeuralDensity
     class Capture(original):
@@ -380,7 +405,7 @@ def run_variant(cfg, variant):
     topology_neural.NeuralDensity = Capture
     try:
         with (out / "iterations.jsonl").open("w") as log:
-            result = optimize_neural(half, settings, progress_callback=lambda e: (log.write(json.dumps({k: e.get(k) for k in ("iteration", "objective", "volume_fraction", "sharpness", "elapsed_s")}) + "\n"), log.flush()))
+            result = optimize_neural(half, settings, progress_callback=lambda e: (log.write(json.dumps({k: e.get(k) for k in ("iteration", "objective", "volume_fraction", "sharpness", "elapsed_s", "f1_hz", "modal_penalty")}) + "\n"), log.flush()))
     finally:
         topology_neural.NeuralDensity = original
     optimized = perf_counter() - started
@@ -390,15 +415,15 @@ def run_variant(cfg, variant):
     summary = result["summary"]
     np.savez_compressed(out / "density_half.npz", density=result["density"])
     fine_full, _ = builder.build(cfg["fine_shape"], neural["volume_fraction"])
-    density = sample_full(holder["mapping"], fine_full, render_cfg.get("sample_sharpness", summary["sharpness_final"]), settings["volume_fraction"])
+    density = holder["mapping"].sample(fine_full, render_cfg.get("sample_sharpness", summary["sharpness_final"]), settings["volume_fraction"])
     np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
     viewer = Path(cfg["viewer_root"]) / (cfg["viewer_prefix"] + variant["name"]) if cfg["viewer_root"] else None
-    info = {"variant": variant["name"], "method": "neural round 3" if cfg["inertia_relief"] else "neural round 2",
+    info = {"variant": variant["name"], "method": "neural round 4" if cfg["inertia_relief"] else "neural round 2",
             "inertia_relief": [{key: value for key, value in case.items() if key in ("name", "inertia_relief")} for case in summary["system"]["cases"] if "inertia_relief" in case] or None, "volume_fraction_target": settings["volume_fraction"], "volume_fraction_opt": summary["volume_fraction"],
             "iterations": summary["iterations"], "stop_reason": summary["stop_reason"], "optimize_runtime_s": optimized,
             **finish(out, density, fine_full, cfg, viewer), "total_runtime_s": perf_counter() - started,
             "grid_opt_half": half["grid"], "grid_render_full": fine_full["grid"], "neural": {k: settings[k] for k in ("max_frequency_per_mm", "frequencies", "hidden", "learning_rate", "sharpness_final", "sharpness_iterations", "max_iterations", "max_width_penalty")},
-            "round2": half["metadata"]["round2"], "render": render_cfg, "objective_final": summary["objective_final"],
+            "round2": half["metadata"]["round2"], "round4": {**half["metadata"]["round4"], "modal": cfg["modal"], "volume_weighted": settings["prop_discs"] is not None, "summary_modal": summary.get("modal")}, "render": render_cfg, "objective_final": summary["objective_final"],
             "static_surrogate_metrics": summary["static_surrogate_metrics"], "load_cases": [case["name"] for case in half["load_cases"]]}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=str))
     print(json.dumps({k: info[k] for k in ("variant", "iterations", "optimize_runtime_s", "total_runtime_s", "mass_g", "bodies", "connectivity")}), flush=True)

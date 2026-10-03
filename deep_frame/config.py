@@ -1063,11 +1063,12 @@ LAYOUT_RULES = {
     "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3},
     "hoop": {"side_gap_mm": 4.0, "radius_mm": 1.6, "path_yz_mm": [[-11.0, 27.5], [-1.0, 26.0], [7.0, 23.5], [11.5, 18.0], [12.5, 11.0], [10.5, 5.0], [6.0, 2.0], [-2.0, 1.5]],
              "load_y_min_mm": 9.0, "load_z_mm": [4.0, 22.0]},
-    "neural": {"max_frequency_per_mm": 0.2, "reference_width_mm": 2.0},
+    "neural": {"half_wavelength_per_width": 2.0},
 }
 
 LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float"},
-                    "antennas": {"angle_deg": "float", "y_mm": "float"}, "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"}}
+                    "antennas": {"angle_deg": "float", "y_mm": "float"}, "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"},
+                    "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp")}}
 
 STYLES = {
     "freestyle": {"crash_directions": ["front", "side_left", "side_right", "arm_front_left", "arm_front_right", "arm_rear_left", "arm_rear_right", "below", "back"],
@@ -1082,9 +1083,9 @@ DURABILITY = {
 
 FRAME_REQUEST = {"name": None, "style": "freestyle", "durability": "standard", "prop_size_in": 2.5, "layout": {"x_type": "compressed_x", "battery_mount": "top"},
                  "components": {"motor": "GTS V3 1203", "aio": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "antennas": "HDZero VTX + ELRS", "prop": "HQProp T2.5X2X3V2S"},
-                 "material": "PA6-CF", "print": {"nozzle_mm": 0.4, "layer_mm": 0.2}, "overrides": {}, "grid": "coarse"}
+                 "material": "PA6-CF", "print": {"nozzle_mm": 0.4, "layer_mm": 0.2}, "overrides": {}, "grid": "coarse", "reconstruction": True}
 FRAME_REQUEST_KINDS = {"name": "text", "style": tuple(STYLES), "durability": tuple(DURABILITY), "prop_size_in": "float", "layout": "object", "components": "object",
-                       "material": tuple(MATERIALS), "print": "object", "overrides": "object", "grid": ("coarse", "fine")}
+                       "material": tuple(MATERIALS), "print": "object", "overrides": "object", "grid": ("coarse", "fine"), "reconstruction": "flag"}
 FRAME_LAYOUT_KINDS = {"x_type": tuple(LAYOUT_RULES["x_types"]), "battery_mount": tuple(LAYOUT_RULES["battery_mounts"])}
 FRAME_PRINT_KINDS = {"nozzle_mm": "float", "layer_mm": "float"}
 FRAME_COMPONENT_KINDS = {"motor": "text", "aio": "text", "camera": "text", "battery": "text", "antennas": "text", "prop": "text"}
@@ -1097,12 +1098,12 @@ RUN_GRIDS = {
 }
 
 STAGES = {
-    "optimization": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu-venv/Scripts/python.exe"},
-    "reconstruction": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "geometry": {"worktree": "C:/clones/Deep_Frame-int", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "evaluation": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "datasheet": {"worktree": "C:/clones/Deep_Frame-int", "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "renders": {"worktree": "C:/clones/Deep_Frame-int", "tool": "tools/neural_study.py", "argv": ["render_views"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "optimization": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu-venv/Scripts/python.exe"},
+    "reconstruction": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "geometry": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "evaluation": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "datasheet": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "renders": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/neural_study.py", "argv": ["render_views"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
 }
 RUN_SETTINGS = {"root": "exports/runs", "compute": "C:/clones/Deep_Frame-int/tools/compute.py", "domain_stage": "optimization", "domain_compute": "cpu",
                 "views": {"iso": [[0.55, -0.85, -0.62], [0, 0, 1]], "top": [[0, 0, -1], [0, 1, 0]], "side": [[-1, 0, 0], [0, 0, 1]], "front": [[0, -1, 0], [0, 0, 1]]},

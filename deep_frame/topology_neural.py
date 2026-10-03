@@ -29,6 +29,8 @@ NEURAL_SETTINGS = {
     "max_width_penalty": 0.0,
     "max_width_window_mm": 8.0,
     "max_local_fraction": 0.3,
+    "prop_discs": None,
+    "modal": None,
 }
 
 def neural_settings(settings):
@@ -102,13 +104,25 @@ class Adam:
 def _sigmoid(value):
     return 0.5 * (1 + np.tanh(0.5 * value))
 
-def volume_shift(logits, sharpness, budget):
+def volume_weights(points, discs):
+    weights = np.ones(len(points))
+    if not discs or discs.get("mode") != "soft":
+        return weights
+    points = np.asarray(points, dtype=float)
+    inside = np.zeros(len(points), dtype=bool)
+    for x, y in discs["motors_mm"]:
+        inside |= np.hypot(points[:, 0] - x, points[:, 1] - y) <= discs["radius_mm"]
+    weights[inside] += discs["weight"] * np.exp(-np.abs(points[inside, 2] - discs["plane_mm"]) / discs["length_mm"])
+    return weights
+
+def volume_shift(logits, sharpness, budget, weights=None):
     lower, upper = -60.0 / sharpness - np.max(logits), 60.0 / sharpness - np.min(logits)
-    if not 0 < budget < len(logits):
+    weights = np.ones(len(logits)) if weights is None else weights
+    if not 0 < budget < np.sum(weights):
         raise ValueError("The volume budget must exceed the preserve cells and stay below the allowed cells")
     for _ in range(100):
         middle = (lower + upper) / 2
-        if np.sum(_sigmoid(sharpness * (logits + middle))) > budget:
+        if np.dot(weights, _sigmoid(sharpness * (logits + middle))) > budget:
             upper = middle
         else:
             lower = middle
@@ -120,23 +134,27 @@ class NeuralDensity:
         self.allowed, self.preserve, self.forbidden = validate_masks(domain)
         self.free = self.allowed & ~self.preserve
         self.budget = settings["volume_fraction"] * np.count_nonzero(self.allowed) - np.count_nonzero(self.preserve)
-        self.features = self.field.features(cell_centers(domain["grid"])[self.free])
+        self.discs = settings["prop_discs"]
+        points = cell_centers(domain["grid"])[self.free]
+        self.weights = volume_weights(points, self.discs)
+        self.features = self.field.features(points)
     def physical(self, sharpness=1.0):
         logits, activations = self.field.forward(self.features)
-        density = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, self.budget)))
+        density = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, self.budget, self.weights)))
         physical = self.preserve.astype(float)
         physical[self.free] = density
         return physical, (activations, sharpness * density * (1 - density))
     def gradient(self, cache, physical_gradient):
         activations, slope = cache
         gradient = np.asarray(physical_gradient)[self.free]
-        return self.field.backward(activations, slope * (gradient - np.dot(gradient, slope) / max(np.sum(slope), 1e-300)))
-    def sample(self, domain, sharpness, fraction):
+        return self.field.backward(activations, slope * (gradient - self.weights * np.dot(gradient, slope) / max(np.dot(self.weights, slope), 1e-300)))
+    def sample(self, domain, sharpness, fraction, chunk=200000):
         allowed, preserve, _ = validate_masks(domain)
         free = allowed & ~preserve
-        logits = self.field.forward(self.field.features(cell_centers(domain["grid"])[free]))[0]
+        points = cell_centers(domain["grid"])[free]
+        logits = np.concatenate([self.field.forward(self.field.features(part))[0] for part in np.array_split(points, max(1, len(points) // chunk))])
         density = preserve.astype(float)
-        density[free] = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, fraction * np.count_nonzero(allowed) - np.count_nonzero(preserve))))
+        density[free] = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, fraction * np.count_nonzero(allowed) - np.count_nonzero(preserve), volume_weights(points, self.discs))))
         return density.reshape(tuple(domain["grid"]["shape"]))
 
 class LocalVolumePenalty:
