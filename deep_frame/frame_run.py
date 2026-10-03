@@ -279,7 +279,8 @@ class FrameRun:
 
     def reconstruction(self, density):
         out = self.dir / "reconstruction"
-        overrides = {"source": str(density), "output": str(out), "fine_shape": self.grid["fine_shape"], **self.grid["reconstruction"]}
+        study = {"pad": {**LAYOUT_RULES["pad"], "support_half_mm": 5.0, "bore_margin_mm": 0.5}, **({"hoop": self.layout.hoop()} if self.layout.style["hoops"] else {})}
+        overrides = {"source": str(density), "output": str(out), "fine_shape": self.grid["fine_shape"], "study": study, **self.grid["reconstruction"]}
         command = self.command("reconstruction", {"patch": self.layout.patch(), "argv": self.stages["reconstruction"]["argv"], "overrides": overrides}, "cli")
         self.execute("reconstruction", command, self.stages["reconstruction"]["worktree"], [out / "geometry.stl"])
         return out / "geometry.stl"
