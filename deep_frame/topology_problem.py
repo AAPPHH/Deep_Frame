@@ -3,7 +3,7 @@ from time import perf_counter
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
-from deep_frame.config import CRASH_DIRECTIONS, PRINT_MATERIAL
+from deep_frame.config import COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, PRINT_MATERIAL
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import DensityMap, HexElasticity, ModalConstraint, StiffnessConstraint, _settings
 
@@ -325,3 +325,121 @@ class MMAOptimizer:
         status = "converged" if reason == "converged" else "not_converged_" + reason
         return {"design": x, "status": status, "iterations": len(history), "runtime_s": runtime, "seconds_per_iteration": runtime / len(history), "history": history, "levels": levels, "result": result,
                 "settings": settings}
+
+_PARTS = {key: COMPONENT_LIBRARY[DEFAULT_SELECTION[key]] for key in ("motor", "aio15", "camera", "battery")}
+_PROP = COMPONENT_LIBRARY["HQProp T2.5X2X3V2S"]
+_ROTOR_RAD_S = 2 * np.pi * 8000 * 7.4 * 0.75 / 60
+LOAD_COVARIANCE = {
+    "interfaces": ["motor_front_left", "motor_front_right", "motor_rear_left", "motor_rear_right", "stack", "battery", "camera"],
+    "dofs": ["Fx", "Fy", "Fz", "Mx", "My", "Mz"],
+    "units": {"force": "N", "moment": "N mm", "sigma": "second moment E[f f^T] = C + mu mu^T (N^2, N^2 mm, N^2 mm^2)", "frame": "x right, y forward, z up; loads act on the frame, moments about the interface reference point"},
+    "reference_points": {"motor": "pad top centre on the motor axis", "stack": "AIO grommet seat plane on the stack axis", "battery": "deck top (rail plane) under the battery centre", "camera": "midpoint of the two side screw axes"},
+    "all_up_mass_g": INTEGRATION_CONFIG["all_up_mass_g"],
+    "g_m_s2": INTEGRATION_CONFIG["standard_gravity_m_s2"],
+    "rotation": {"motor_front_left": 1.0, "motor_front_right": -1.0, "motor_rear_left": -1.0, "motor_rear_right": 1.0},
+    "points": {"motor": [[_PARTS["motor"]["mass_g"], _PARTS["motor"]["dimensions_mm"]["height"] / 2], [_PROP["mass_g"], _PARTS["motor"]["dimensions_mm"]["height"] + _PROP["dimensions_mm"]["hub_height"] / 2]],
+               "stack": [[_PARTS["aio15"]["mass_g"], _PARTS["aio15"]["dimensions_mm"]["grommet_height"] + _PARTS["aio15"]["dimensions_mm"]["stack_height"] / 2]],
+               "battery": [[_PARTS["battery"]["mass_g"], _PARTS["battery"]["dimensions_mm"]["height"] / 2]], "camera": [[_PARTS["camera"]["mass_g"], 0.0]]},
+    "prop_height_mm": _PARTS["motor"]["dimensions_mm"]["height"] + _PROP["dimensions_mm"]["hub_height"] / 2,
+    "torque_per_thrust_mm": 52.5 * 0.75 / _ROTOR_RAD_S * 1000 / _PROP["data"]["thrust_n_estimate"],
+    "rotor_momentum_n_mm_s": 5.9e-7 * _ROTOR_RAD_S * np.sqrt(0.5) * 1000,
+    "factors": [
+        {"name": "collective", "kind": "thrust", "pattern": [1, 1, 1, 1], "mean": 1.01, "std": 0.583, "unit": "N je Motor",
+         "source": "Schub je Motor gleichverteilt auf [0; 2,02 N] (HQProp-Schaetzung 2,02 N): Mittel 1,01 N, Streuung 2,02/sqrt(12); Fz am Pad, Reaktionsmoment Mz, Traegheit aller Massen mit a_z = 4 T / m_ges"},
+        {"name": "diagonal_fl_rr", "kind": "thrust", "pattern": [1, 0, 0, -1], "std": 0.35, "unit": "N",
+         "source": "ANNAHME: Steuerung um die Diagonalachse FR-RL (Roll+Nick kombiniert): FL +, RR - (Twist); 0,35 N ~ 17 % Maximalschub, 3 sigma ~ halber Schub"},
+        {"name": "diagonal_fr_rl", "kind": "thrust", "pattern": [0, 1, -1, 0], "std": 0.35, "unit": "N", "source": "ANNAHME: wie diagonal_fl_rr fuer die andere Diagonale: FR +, RL -"},
+        {"name": "yaw_saddle", "kind": "thrust", "pattern": [1, -1, -1, 1], "std": 0.35, "unit": "N", "source": "ANNAHME: Gier-Kommando, gleichsinnige Diagonalpaare gemeinsam +/- (Sattel); koppelt ueber k_Q in alle vier Mz"},
+        {"name": "thrust_scatter", "kind": "motor", "axis": "Fz", "at": "prop", "std": 0.10, "unit": "N", "source": "ANNAHME: unabhaengige Streuung je Motor (Unwucht, Turbulenz, ESC), 5 % Maximalschub"},
+        {"name": "h_force_x", "kind": "motor", "axis": "Fx", "at": "prop", "std": 0.10, "unit": "N", "source": "ANNAHME: Rotor-H-Kraft/Blattschlag ~5 % Maximalschub in der Propebene, je Motor unabhaengig"},
+        {"name": "h_force_y", "kind": "motor", "axis": "Fy", "at": "prop", "std": 0.10, "unit": "N", "source": "ANNAHME: wie h_force_x in y"},
+        {"name": "torque_transient", "kind": "motor", "axis": "Mz", "at": "pad", "std": 4.0, "unit": "N mm", "source": "ANNAHME: Hochlauf-Reaktionsmoment je Motor; Grenze kt I = 1,19 N mm/A x ~10 A ~ 12 N mm = 3 sigma"},
+        {"name": "body_rate_p", "kind": "gyro", "axis": 0, "std": 6.0, "unit": "rad/s", "source": "ANNAHME: Rollrate RMS 6 rad/s (Spitzen ~17 rad/s = 1000 deg/s); Kreiselmoment H x Omega am Pad"},
+        {"name": "body_rate_q", "kind": "gyro", "axis": 1, "std": 6.0, "unit": "rad/s", "source": "ANNAHME: wie body_rate_p fuer die Nickrate"},
+        {"name": "body_accel_x", "kind": "body", "axis": 0, "std": 1.0, "unit": "g", "source": "ANNAHME: seitliche spezifische Kraft im Koerpersystem (Luftwiderstand, Boeen) 1 g RMS, gemeinsam fuer alle Massen"},
+        {"name": "body_accel_y", "kind": "body", "axis": 1, "std": 1.0, "unit": "g", "source": "ANNAHME: wie body_accel_x in y"},
+        *[{"name": "battery_" + "xyz"[axis], "kind": "component", "interface": "battery", "axis": axis, "std": 7.5, "unit": "g",
+           "source": "Nutzervorgabe Akkumasse x 5-10 g in alle Richtungen: Mitte 7,5 g als RMS je Achse, 37 g -> 2,72 N am Akkuschwerpunkt, unabhaengig je Achse; z zusaetzlich zum Schubanteil aus collective"} for axis in range(3)],
+        *[{"name": part + "_" + "xyz"[axis], "kind": "component", "interface": part, "axis": axis, "std": 2.0, "unit": "g",
+           "source": "Nutzervorgabe Masse x Flugbeschleunigung: lokale Manoever-/Vibrationsbeschleunigung 2 g RMS je Achse (ANNAHME), zusaetzlich zu collective und body_accel"} for part in ("stack", "camera") for axis in range(3)],
+    ],
+    "sources": {"rotation": "Betaflight-Standard props in: FL und RR CW, FR und RL CCW (von oben); Reaktionsmoment auf den Rahmen +z bei CW; props out kehrt nur die Vorzeichen Mz/Fz um",
+                "torque_per_thrust_mm": "Schaetzung wie FORMULATION loads: 52,5 W x 0,75 / (2 pi x 0,75 x KV x 7,4 V / 60) = 8,47 N mm bei 2,02 N -> k_Q = 4,19 mm",
+                "rotor_momentum_n_mm_s": "J ~ 5,9e-7 kg m^2 (Prop 1,2 g als Stab 5..31,75 mm + Glocke ~2 g bei 7,5 mm), omega = 0,75 KV 7,4 V sqrt(0,5) bei Mittelschub",
+                "points": "Hebel aus COMPONENT_LIBRARY: Motor-SP 9,9/2 ueber Pad, Prop 9,9 + 5/2, AIO 3 + 6/2 ueber Grommetsitz, Akku 11/2 ueber Deck; Kamera-SP auf der Seitenschraubenachse (ANNAHME)",
+                "excluded": "Crash-Richtungen sind NICHT in Sigma; sie bleiben Crash-Nebenbedingungen"},
+}
+
+class LoadCovariance:
+    def __init__(self, config=LOAD_COVARIANCE):
+        self.config = c = deepcopy(config)
+        self.labels = [(name, dof) for name in c["interfaces"] for dof in c["dofs"]]
+        self.motors = [name for name in c["interfaces"] if name.startswith("motor_")]
+        self.mean = np.zeros(len(self.labels))
+        columns, self.names = [], []
+        for factor in c["factors"]:
+            for name, column in self.columns(factor):
+                columns.append(column * factor["std"])
+                self.names.append(name)
+                self.mean += column * factor.get("mean", 0.0)
+        self.scatter = np.column_stack(columns)
+        self.covariance = self.scatter @ self.scatter.T
+        self.sigma = self.covariance + np.outer(self.mean, self.mean)
+        values, vectors = np.linalg.eigh(self.sigma)
+        if values[0] < -1e-9 * values[-1] or not np.allclose(self.sigma, self.sigma.T):
+            raise ValueError("Load covariance is not symmetric positive semidefinite")
+        self.eigenvalues, vectors = np.clip(values[::-1], 0.0, None), vectors[:, ::-1]
+        self.rank = int(np.sum(self.eigenvalues > 1e-10 * self.eigenvalues[0]))
+        self.directions = vectors[:, :self.rank] * np.sqrt(self.eigenvalues[:self.rank])
+    def wrench(self, name, force, height=0.0, moment=(0.0, 0.0, 0.0)):
+        column = np.zeros(len(self.labels))
+        start = self.labels.index((name, "Fx"))
+        column[start:start + 3] = force
+        column[start + 3:start + 6] = np.cross([0.0, 0.0, height], force) + np.asarray(moment)
+        return column
+    def inertia(self, name, accel):
+        return sum(self.wrench(name, -mass / 1000 * np.asarray(accel), height) for mass, height in self.config["points"]["motor" if name in self.motors else name])
+    def columns(self, factor):
+        c, kind = self.config, factor["kind"]
+        if kind == "thrust":
+            pattern = np.asarray(factor["pattern"], dtype=float)
+            column = sum(self.inertia(name, [0.0, 0.0, pattern.sum() / (c["all_up_mass_g"] / 1000)]) for name in c["interfaces"])
+            for name, weight in zip(self.motors, pattern):
+                column = column + self.wrench(name, [0.0, 0.0, weight], c["prop_height_mm"], [0.0, 0.0, c["rotation"][name] * c["torque_per_thrust_mm"] * weight])
+            return [(factor["name"], column)]
+        if kind == "motor":
+            unit = np.eye(6)[c["dofs"].index(factor["axis"])]
+            return [(factor["name"] + "_" + name, self.wrench(name, unit[:3], c["prop_height_mm"] if factor["at"] == "prop" else 0.0, unit[3:])) for name in self.motors]
+        if kind == "gyro":
+            rate = np.eye(3)[factor["axis"]]
+            return [(factor["name"], sum(self.wrench(name, np.zeros(3), 0.0, np.cross([0.0, 0.0, -c["rotation"][name] * c["rotor_momentum_n_mm_s"]], rate)) for name in self.motors))]
+        if kind == "body":
+            return [(factor["name"], sum(self.inertia(name, np.eye(3)[factor["axis"]] * c["g_m_s2"]) for name in c["interfaces"]))]
+        if kind == "component":
+            return [(factor["name"], self.inertia(factor["interface"], np.eye(3)[factor["axis"]] * c["g_m_s2"]))]
+        raise ValueError("Unknown load factor kind: " + kind)
+    def label(self, index):
+        return "/".join(self.labels[index])
+    def correlation(self, a, b, centered=False):
+        matrix = self.covariance if centered else self.sigma
+        i, j = self.labels.index(a), self.labels.index(b)
+        return float(matrix[i, j] / np.sqrt(matrix[i, i] * matrix[j, j]))
+    def dominant(self, count=6, entries=4):
+        rows = []
+        for k in range(min(count, self.rank)):
+            vector = self.directions[:, k] / np.sqrt(self.eigenvalues[k])
+            top = np.argsort(np.abs(vector))[::-1][:entries]
+            rows.append({"eigenvalue": float(self.eigenvalues[k]), "share": float(self.eigenvalues[k] / self.eigenvalues.sum()), "entries": [(self.label(i), round(float(vector[i]), 3)) for i in top]})
+        return rows
+    def markdown(self):
+        lines = ["| Faktor | Wert | Einheit | Mittel | Begruendung / Quelle |", "|---|---|---|---|---|"]
+        lines += [f"| {f['name']} | {f['std']:g} | {f['unit']} | {f.get('mean', 0.0):g} | {f['source']} |" for f in self.config["factors"]]
+        lines += ["", "| Schnittstelle | DOF | Mittel | Streuung | RMS sqrt(Sigma_ii) |", "|---|---|---|---|---|"]
+        lines += [f"| {name} | {dof} | {self.mean[i]:.3g} | {np.sqrt(self.covariance[i, i]):.3g} | {np.sqrt(self.sigma[i, i]):.3g} |" for i, (name, dof) in enumerate(self.labels)]
+        lines += ["", "| Eigenwert | Anteil | dominante Eintraege |", "|---|---|---|"]
+        lines += [f"| {row['eigenvalue']:.4g} | {row['share']:.1%} | " + ", ".join(f"{label} {value:+.2f}" for label, value in row["entries"]) + " |" for row in self.dominant(10)]
+        return "\n".join(lines)
+
+def load_covariance(config=LOAD_COVARIANCE):
+    model = LoadCovariance(config)
+    return {"sigma": model.sigma, "mean": model.mean, "covariance": model.covariance, "directions": model.directions, "eigenvalues": model.eigenvalues, "rank": model.rank, "labels": model.labels, "model": model}

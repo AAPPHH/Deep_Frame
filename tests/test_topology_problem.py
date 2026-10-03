@@ -4,7 +4,7 @@ import pytest
 
 from deep_frame.config import PRINT_MATERIAL
 from deep_frame.topology_optimization import elasticity_matrix, hexahedron_matrices, orthotropic_matrix
-from deep_frame.topology_problem import MMAOptimizer, PROBLEM, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
+from deep_frame.topology_problem import LOAD_COVARIANCE, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
     return {"kind": "box", "min_mm": list(map(float, low)), "max_mm": list(map(float, high))}
@@ -191,3 +191,29 @@ def test_mma_min_mass_cantilever_ends_with_active_stiffness():
     assert result["status"] == "converged" and rows["tip_stiffness"]["status"] == "active"
     assert rows["volume"]["value"] < 0.8 and result["history"][-1]["max_violation"] <= 1e-3
     optimizer.problem.close()
+
+def test_load_covariance_factorisation_and_physics():
+    loads = load_covariance()
+    sigma, directions, model = loads["sigma"], loads["directions"], loads["model"]
+    assert sigma.shape == (42, 42) and len(loads["labels"]) == 42 and loads["labels"][0] == ("motor_front_left", "Fx") and loads["labels"][-1] == ("camera", "Mz")
+    assert np.allclose(sigma, sigma.T) and np.allclose(directions @ directions.T, sigma, atol=1e-9 * np.abs(sigma).max())
+    assert loads["rank"] == directions.shape[1] and loads["eigenvalues"][-1] >= 0
+    rng = np.random.default_rng(0)
+    root = rng.standard_normal((42, 42))
+    flexibility = root @ root.T
+    samples = model.scatter @ rng.standard_normal((model.scatter.shape[1], 200000)) + model.mean[:, None]
+    assert np.isclose(np.trace(flexibility @ sigma), np.mean(np.einsum("ij,ij->j", samples, flexibility @ samples)), rtol=0.02)
+    values, vectors = np.linalg.eigh(sigma)
+    half = vectors @ np.diag(np.sqrt(np.clip(values, 0, None))) @ vectors.T
+    assert np.isclose(np.linalg.eigvalsh(half @ flexibility @ half)[-1], np.linalg.eigvalsh(directions.T @ flexibility @ directions)[-1])
+    index = {label: i for i, label in enumerate(loads["labels"])}
+    assert loads["mean"][index["motor_front_left", "Mz"]] > 0 > loads["mean"][index["motor_front_right", "Mz"]] and loads["mean"][index["battery", "Fz"]] < 0
+    assert model.correlation(("motor_front_left", "Fz"), ("battery", "Fz")) < 0
+    assert all(sigma[index[name, dof], index[name, dof]] == 0 for name, dof in (("camera", "Mz"), ("battery", "Mz"), ("stack", "Mz")))
+
+def test_load_covariance_diagonal_factor_is_antisymmetric():
+    config = deepcopy(LOAD_COVARIANCE)
+    config["factors"] = [factor for factor in config["factors"] if factor["name"] == "diagonal_fl_rr"]
+    model = LoadCovariance(config)
+    assert model.rank == 1 and np.isclose(model.correlation(("motor_front_left", "Fz"), ("motor_rear_right", "Fz")), -1.0)
+    assert np.allclose(model.sigma[12:18], 0) and np.allclose(model.sigma[24:], 0)
