@@ -50,7 +50,7 @@ FORMULATION = {
     "stand_fd": {"shape": [68, 64, 24], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.05, "output": "docs/validation/stand_stability_fd.json", "exact": "docs/validation/stand_stability.json",
                  "fields": {"rail_v3b": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/domain.json"],
                             "battery_free": ["C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/domain.json"]}},
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
             "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -1020,7 +1020,7 @@ def checkpoint(path):
 
 def optimize_stage(cfg, half, problem, design, out, start_level):
     out.mkdir(parents=True, exist_ok=True)
-    tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["linear_solver"])
+    tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["stage_solvers"].get(out.name, cfg["mma"]["linear_solver"]))
     if cfg["mma"]["resume"] and (out / "checkpoint.npz").is_file():
         saved = np.load(out / "checkpoint.npz")
         design, start_level = saved["design"], int(saved["level"])
@@ -1085,8 +1085,12 @@ def frame_mma(cfg):
                 start = body_start(cfg, prolongate(reference, fine["grid"], coarse), coarse)
                 result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
             design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
+        if cfg["mma"]["until"] == "coarse":
+            return
         with phase("fine"):
             design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
+        if cfg["mma"]["until"] == "fine":
+            return
         out = root / cfg["mma"]["variant"]
         out.mkdir(parents=True, exist_ok=True)
         physical = np.load(root / "fine" / "density_half.npz")["density"]
