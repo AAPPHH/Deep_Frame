@@ -50,7 +50,7 @@ FORMULATION = {
     "stand_fd": {"shape": [68, 64, 24], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.05, "output": "docs/validation/stand_stability_fd.json", "exact": "docs/validation/stand_stability.json",
                  "fields": {"rail_v3b": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/domain.json"],
                             "battery_free": ["C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/domain.json"]}},
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
             "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -1065,6 +1065,7 @@ def body_start(cfg, design, half):
 
 def frame_mma(cfg):
     started = perf_counter()
+    config.STAND_STABILITY.update(cfg["mma"]["stand"])
     root = Path(cfg["mma"]["root"])
     root.mkdir(parents=True, exist_ok=True)
     probe = MemoryProbe(cfg["mma"]["memory_s"], root / "memory.jsonl") if cfg["mma"]["memory_s"] else None
