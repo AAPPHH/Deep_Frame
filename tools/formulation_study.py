@@ -39,7 +39,7 @@ FORMULATION = {
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
-            "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
+            "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe", "label": "SIMP-MMA on the shared formulation",
             "bodies": ["raw", "recon"], "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
             "figures": [{"output": "{method}_4views.png", "panels": ["raw", "recon", "manafly"], "labels": ["SIMP-MMA raw", "SIMP-MMA recon", "ManaFly"]}]},
     "v3": {"worktree": "C:/clones/Deep_Frame-recon3", "ref": "HEAD", "copy": "C:/Users/jfham/AppData/Local/Temp/claude/c--clones-Deep-Frame/2bec171b-ba58-44fe-ab0f-61ff45688b18/scratchpad/recon3_copy",
@@ -409,20 +409,20 @@ def frame_mma(cfg):
     print(json.dumps({"iterations": info["iterations"], "total_runtime_s": info["total_runtime_s"], "mass_g_body": body["mass_g"], "bodies": body["bodies"], "watertight": body["watertight"]}, default=float), flush=True)
 
 class ResultRun(FrameRun):
-    def __init__(self, request, result, stages):
-        self.result = Path(result)
+    def __init__(self, request, result, stages, label="SIMP-MMA on the shared formulation"):
+        self.result, self.label = Path(result), label
         super().__init__(request, stages)
     def available(self, stage):
         return stage == "optimization" or super().available(stage)
     def optimization(self, domain):
-        self.manifest["stages"]["optimization"] = {"status": "ran", "source": str(self.result), "method": "SIMP-MMA on the shared formulation", **_git(str(ROOT))}
+        self.manifest["stages"]["optimization"] = {"status": "ran", "source": str(self.result), "method": self.label, **_git(str(ROOT))}
         self.save()
         return self.result
 
 class V3Run(ResultRun):
-    def __init__(self, request, result, stages, compare, sha):
+    def __init__(self, request, result, stages, compare, sha, label):
         self.sha = sha
-        super().__init__(request, result, stages)
+        super().__init__(request, result, stages, label)
         self.grid = {**self.grid, "compute": {**self.grid["compute"], "reconstruction": stages["reconstruction"]["compute"]},
                      "reconstruction": {**self.grid["reconstruction"], **({"compare_bodies": [str(compare)], "compare_labels": ["recon_1to1"]} if compare else {})}}
     def reconstruction(self, density):
@@ -447,9 +447,9 @@ def body_run(cfg, suffix, request, stages, runs):
         source, sha = v3_source(cfg)
         stages = {**stages, "reconstruction": {**stages["reconstruction"], "worktree": source.as_posix(), "argv": cfg["v3"]["argv"], "compute": cfg["v3"]["compute"]}}
         compare = runs.get(cfg["v3"]["compare"])
-        run = V3Run(named, root / cfg["mma"]["variant"], stages, compare and Path(compare) / "frame.stl", sha)
+        run = V3Run(named, root / cfg["mma"]["variant"], stages, compare and Path(compare) / "frame.stl", sha, cfg["mma"]["label"])
     else:
-        run = ResultRun(named, root / cfg["mma"]["variant"], stages)
+        run = ResultRun(named, root / cfg["mma"]["variant"], stages, cfg["mma"]["label"])
     manifest = run.run()
     path = (ROOT / RUN_SETTINGS["root"] / manifest["name"]).resolve()
     target = Path(cfg["mma"]["viewer"]) / cfg["mma"]["viewer_names"][suffix].format(method=method) / "geometry.stl"
@@ -500,7 +500,7 @@ def compose(cfg):
         rows = []
         for name in views:
             row = output.with_name(f"{output.stem}_{name}.png")
-            compose_main({"panels": [str(folders[panel] / f"{name}.png") for panel in figure["panels"]], "labels": [f"{label} ({name})" for label in figure["labels"]], "output": str(row)})
+            compose_main({"panels": [str(Path(folders.get(panel, panel)) / f"{name}.png") for panel in figure["panels"]], "labels": [f"{label} ({name})" for label in figure["labels"]], "output": str(row)})
             rows.append(Image.open(row))
         canvas = Image.new("RGB", (max(image.width for image in rows), sum(image.height for image in rows)), "white")
         for index, image in enumerate(rows):
