@@ -1,0 +1,1 @@
+{"run": "docs/validation/bottom_domain/run_cfg.json", "density": "C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "output": "docs/validation/bottom_domain/after", "before": "docs/validation/bottom_domain/before/floor.json"}

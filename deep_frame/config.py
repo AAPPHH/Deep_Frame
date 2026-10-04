@@ -883,6 +883,7 @@ TOPOLOGY_CONFIG = {
         "axis_order": "xyz",
         "order": "C",
     },
+    "floor_drop_mm": 4.0,
     "component_clearance_mm": 0.5,
     "prop_clearance_mm": 2.0,
     "motor_contact_radius_mm": 7.7,

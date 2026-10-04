@@ -470,7 +470,7 @@ FLOOR_LABELS = ["frei, leer", "verboten (Keep-out)", "Optimiererdichte > 0.5", "
 
 def floor_check(run, density, output, before=None):
     from tools.formulation_study import configure as formulation, patched_builder
-    from deep_frame.topology_geometry import grid_centers, mirror_field, region_contains
+    from deep_frame.topology_geometry import embed_field, grid_centers, mirror_field, region_contains
     plt, _ = _plot_modules()
     from matplotlib.colors import ListedColormap
     from matplotlib.patches import Patch
@@ -480,7 +480,7 @@ def floor_check(run, density, output, before=None):
     h, origin = np.asarray(grid["spacing_mm"]), np.asarray(grid["origin_mm"])
     field = mirror_field(np.load(density)["density"])
     floor = preserve.shape[2] - field.shape[2]
-    field = np.pad(field, ((0, 0), (0, 0), (floor, 0)))
+    field = embed_field(field, grid) * (np.arange(preserve.shape[2]) >= floor)
     free = (field > 0.5) & allowed & ~preserve
     centers, cell = grid_centers(grid), float(np.prod(h))
     regions = {region["name"]: region for region in full["regions"]}

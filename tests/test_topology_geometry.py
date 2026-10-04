@@ -10,14 +10,14 @@ from scipy.ndimage import label
 from deep_frame.config import FEA_CONFIG, IMPLICIT_CONFIG, TOPOLOGY_CONFIG
 from deep_frame.fea import evaluate
 from deep_frame.frame import reference_parameters
-from deep_frame.topology_geometry import build_design_domain, grid_centers, region_bounds, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
+from deep_frame.topology_geometry import build_design_domain, embed_field, grid_centers, lowered_grid, region_bounds, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
 
 @pytest.fixture(scope="module")
 def domain():
     return build_design_domain(reference_parameters())
 
 def test_domain_is_free_connected_3d_space_with_small_preserve_fraction(domain):
-    assert domain["grid"]["shape"] == [34, 32, 8]
+    assert domain["grid"]["shape"] == [34, 32, 9] and domain["grid"]["origin_mm"] == [-68.0, -64.0, -4.0]
     assert domain["grid"]["axis_order"] == "xyz"
     assert domain["grid"]["order"] == "C"
     assert domain["allowed"].dtype == bool
@@ -26,7 +26,7 @@ def test_domain_is_free_connected_3d_space_with_small_preserve_fraction(domain):
     assert label(domain["allowed"])[1] == 1
     assert domain["metadata"]["free_fraction_of_allowed"] > 0.95
     assert domain["metadata"]["allowed_cells"] > domain["allowed"].size / 2
-    assert np.count_nonzero(domain["allowed"].any(axis=(0, 1))) == 8
+    assert np.count_nonzero(domain["allowed"].any(axis=(0, 1))) == 9
     assert len([region for region in domain["regions"] if region["role"] == "allowed"]) == 1
     assert domain["metadata"]["preserve_volume_mm3"] == domain["preserve"].sum() * 64.0
 
@@ -191,6 +191,33 @@ def test_aio_seat_eyes_on_fine_grids_leave_the_floor_free():
     parameters["frame"]["aio_standoff_mm"] = 8.8
     parameters["topology"] = {"grid": {"shape": [102, 96, 24], "spacing_mm": [4 / 3] * 3}}
     _check_eyes(build_design_domain(parameters), 11.3, 8.0)
+
+@pytest.mark.parametrize("spacing, cells", [(4.0, 1), (2.0, 2), (4 / 3, 3), (2 / 3, 6), (0.75, 6)])
+def test_floor_drop_keeps_spacing_and_lowers_the_floor_by_whole_cells(spacing, cells):
+    grid = {"origin_mm": [-68.0, -64.0, 0.0], "spacing_mm": [spacing] * 3, "shape": [10, 10, 12]}
+    lowered = lowered_grid(grid, TOPOLOGY_CONFIG["floor_drop_mm"])
+    assert lowered["spacing_mm"] == grid["spacing_mm"] and lowered["shape"] == [10, 10, 12 + cells] and grid["shape"] == [10, 10, 12]
+    assert lowered["origin_mm"][2] == pytest.approx(-cells * spacing) and -lowered["origin_mm"][2] >= TOPOLOGY_CONFIG["floor_drop_mm"] - 1e-9
+    assert lowered["origin_mm"][2] + spacing * lowered["shape"][2] == pytest.approx(12 * spacing)
+
+def test_embed_field_pads_old_fields_below_their_floor():
+    field = np.zeros((2, 3, 4))
+    field[:, :, 0], field[:, :, 3] = 0.7, 1.0
+    embedded = embed_field(field, {"shape": [2, 3, 6]})
+    assert embedded.shape == (2, 3, 6) and np.array_equal(embedded[:, :, 2:], field) and np.all(embedded[:, :, :2] == 0.7)
+    with pytest.raises(ValueError):
+        embed_field(field, {"shape": [2, 3, 3]})
+
+def test_lowered_floor_leaves_room_below_the_old_floor_and_bores_reach_it(domain):
+    floor = domain["grid"]["origin_mm"][2]
+    centers = grid_centers(domain["grid"])
+    below = centers[..., 2] < 0
+    assert floor <= -TOPOLOGY_CONFIG["floor_drop_mm"] and domain["allowed"][below].mean() > 0.9 and not domain["preserve"][below].any()
+    envelope = next(region for region in domain["regions"] if region["name"] == "design_envelope")
+    assert envelope["min_mm"][2] == pytest.approx(floor)
+    for region in domain["regions"]:
+        if "motor_screw_" in region["name"] or region["name"].endswith("_shaft_clearance") or region["name"].startswith("aio_screw_"):
+            assert region_bounds(region)[0][2] == pytest.approx(floor - 1)
 
 def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain):
     clearance = domain["metadata"]["prescribed_clearance"]

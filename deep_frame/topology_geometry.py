@@ -229,9 +229,10 @@ def _component_regions(parameters, settings, grid):
     motor_radius = settings["motor_contact_radius_mm"]
     for name, (x, y) in motor_positions(parameters).items():
         regions.append(_cylinder(name + "_motor_contact", "preserve", [x, y, f["arm_height_mm"] / 2], motor_radius, f["arm_height_mm"], "Motor bolt attachment disk; no prescribed connecting arm", attachment_area_min_mm2=12.0, minimum_wall_mm=settings["manufacturing"]["minimum_feature_mm"]))
-        regions.append(_cylinder(name + "_shaft_clearance", "forbidden", [x, y, f["arm_height_mm"] / 2], f["motor_shaft_hole_mm"] / 2, f["arm_height_mm"] + 2, "Motor shaft clearance", rasterize=False))
+        bore_z, bore_height = (origin[2] + f["arm_height_mm"]) / 2, f["arm_height_mm"] - origin[2] + 2
+        regions.append(_cylinder(name + "_shaft_clearance", "forbidden", [x, y, bore_z], f["motor_shaft_hole_mm"] / 2, bore_height, "Motor shaft clearance", rasterize=False))
         for index, (hx, hy) in enumerate(mount_positions(parameters)[name]):
-            regions.append(_cylinder(f"{name}_motor_screw_{index}", "forbidden", [hx, hy, f["arm_height_mm"] / 2], (c["motor"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2, f["arm_height_mm"] + 2, "Through screw bore and unobstructed underside screwdriver approach", rasterize=False))
+            regions.append(_cylinder(f"{name}_motor_screw_{index}", "forbidden", [hx, hy, bore_z], (c["motor"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2, bore_height, "Through screw bore and unobstructed underside screwdriver approach", rasterize=False))
         sign = -1 if x < 0 else 1
         corridor_min = [min(x - sign * 5, sign * 20), y - 2, f["arm_height_mm"] + 1]
         corridor_max = [max(x - sign * 5, sign * 20), y + 2, f["arm_height_mm"] + 5]
@@ -299,9 +300,23 @@ def _connection_cases(regions, model, force):
         cases.append({"name": "connection_" + name, "analysis": "static", "fixed_regions": deepcopy(fixtures), "loads": [{"region": selector, "force_n": [0.0, 0.0, -force]}], "purpose": "Small declared attachment proof load; enforces mechanically connected required interface"})
     return cases
 
+def lowered_grid(grid, drop):
+    grid = deepcopy(grid)
+    cells = int(np.ceil(drop / grid["spacing_mm"][2] - 1e-9))
+    grid["shape"][2] += cells
+    grid["origin_mm"][2] -= cells * grid["spacing_mm"][2]
+    return grid
+
+def embed_field(field, grid):
+    field = np.asarray(field)
+    cells = grid["shape"][2] - field.shape[2]
+    if cells < 0 or field.shape[:2] != tuple(grid["shape"][:2]):
+        raise ValueError("Field does not fit the grid below its top layer")
+    return np.pad(field, ((0, 0), (0, 0), (cells, 0)), mode="edge")
+
 def build_design_domain(parameters):
     settings = _merge(TOPOLOGY_CONFIG, parameters.get("topology", {}))
-    grid = deepcopy(settings["grid"])
+    grid = lowered_grid(settings["grid"], settings["floor_drop_mm"])
     centers = grid_centers(grid)
     manufacturing = settings["manufacturing"]
     required_feature = manufacturing["nozzle_width_mm"] * manufacturing["minimum_wall_nozzles"]

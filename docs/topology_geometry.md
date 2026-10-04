@@ -42,7 +42,7 @@ Die implizite Route blaeht jede Preserve-Primitive um `preserve_inflation_mm` = 
 - Jede Keep-out-Wand, die eine Preserve-Primitive schneidet, und jedes koaxiale Keep-out-Zylinderpaar muss einen Rand von mindestens 2.0 mm plus `prescribed_wall_margin_mm` = 0.1 mm lassen (Polygon- und Float-Reserve).
 - Zwei Preserve-Primitiven ueberlappen oder liegen weiter als dieser Rand plus beide Aufblaehungen auseinander.
 
-`prescribed_clearance` prueft diese Regeln nach der Verlaengerung und speichert das Ergebnis in `metadata.prescribed_clearance`; die Standarddomaene muss sie bestehen. Vorgeschriebene Bohrungen sind ausgenommen, ihre Stege regelt die C6-Bohrungstoleranz. Die Ebene z = 0 ist Bauraumgrenze, kein Keep-out, und bleibt unveraendert. Messung auf den gespeicherten Dichten: `docs/validation/implicit_domain_ledges.md`.
+`prescribed_clearance` prueft diese Regeln nach der Verlaengerung und speichert das Ergebnis in `metadata.prescribed_clearance`; die Standarddomaene muss sie bestehen. Vorgeschriebene Bohrungen sind ausgenommen, ihre Stege regelt die C6-Bohrungstoleranz. Die Ebene z = 0 ist Bezugsebene, kein Keep-out; der Bauraumboden liegt `floor_drop_mm` darunter (siehe Boden des Bauraums). Messung auf den gespeicherten Dichten: `docs/validation/implicit_domain_ledges.md`.
 
 ### Verbotene Volumina und Montage
 
@@ -99,6 +99,24 @@ Weitere Zellen in der Bodenschicht (z = 0..1.33): 112 Preserve-Zellen, davon 84 
 - Der Optimierer selbst ist davon nur ueber die Anbindungslasten und die Punktmassen betroffen (`R2Domain` rechnet `arm_tip`, `thrust_all` und `crash_*` mit Inertia Relief ohne Fixierung). Die Sigma-Kalibrierung 1.384 / 1.374 ist mit der alten Lagerung gemessen und muss auf dem neuen Rahmen neu bestimmt werden.
 
 Domaenendiff auf dem Laufgitter (`docs/validation/bottom_domain/eyes/floor.json`, Feld wie oben): Preserve -1195 mm3 (5547 -> 4352 mm3; je Auge 398 -> 100 mm3 Raster, 356 -> 115 mm3 exakt), erlaubter Raum -626 mm3 (die vier Werkzeugkorridore). In der Bodenschicht bleiben 28 Preserve-Zellen (Buegelrohrende) und die alten Saeulenfusszellen werden frei.
+
+### Bauraumboden abgesenkt
+
+- `TOPOLOGY_CONFIG["floor_drop_mm"]` = 4.0: `build_design_domain` setzt den Gitterboden um ganze Zellen unter z = 0 (`lowered_grid`: 1 Zelle bei 4 mm, 2 bei 2 mm, 3 bei 4/3 mm, 6 bei 2/3 mm), Zellweite und Oberkante z = 32 bleiben. Studienformen wie `[102, 96, 24]` behalten damit ihre 4/3 mm, das Gitter hat 27 statt 24 Lagen; der 0.75-mm-Lauf (`[182, 170, 48]`) bekommt 54 statt 48 Lagen.
+- Alle Komponentenkoordinaten bleiben, z = 0 bleibt die Bezugsebene des Layouts (Motorpads, Stack, Akku, Kamera, Rotorebene, Schwerpunktband). Durchgangsbohrungen der Motoren und des Stacks (`*_motor_screw_*`, `*_shaft_clearance`, `aio_screw_*`) und die gerasterten Schraubkorridore unter den Motorpads (`R2Domain`) reichen jetzt bis zum neuen Boden.
+- Alte Dichtefelder (Startfelder, Referenzen) mit 24 Lagen passen ueber `embed_field` auf das neue Gitter: die neuen Lagen unten wiederholen die unterste Lage (`tools/formulation_study.py` frame_mma, plumbing, fd, modal_split).
+
+Begruendung (Absenken statt Layout anheben):
+
+- **Untergurt:** Der abgeschnittene Gurt war 1.3 bis 2.7 mm hoch. Ein voller Querschnitt bei 2.5 mm robuster Mindestbreite plus einer Zelle Filterreserve braucht rund 4 mm; 3 Zellen auf 4/3 mm passen genau.
+- **Layout anheben** wuerde Motorpads, Rotorebene, Akku und Kamera um denselben Betrag verschieben. Das veraendert das Layout von Agent A (Schwerpunkt relativ zur Rotorebene bleibt zwar gleich, aber Akku-Oberkante und Buegel stossen an z = 32) und verschiebt die Armwurzel-Korrektur. Absenken ist eine reine Domaenenaenderung.
+- **Hoehe:** Bauraum 36 statt 32 mm. Die Gesamthoehe des Rahmens waechst nur, wo der Optimierer Material unter z = 0 legt, hoechstens um 4 mm (Hoehe/Radstand dann 0.27, Ziel <= 0.4).
+- **Keep-outs:** unveraendert; unter z = 0 liegen nur die Bohrungs- und Werkzeugkorridore.
+- **Druck:** Druckrichtung bleibt +z (`build_direction`), Stuetzen sind erlaubt (`supports_allowed`). Eine erzwungene flache Bodenebene gibt es nicht mehr: Die Bettauflage sind die tiefsten Gurte und Augenstuetzen. Der Evaluator meldet `bed_contact_mm2` und den Ueberhanganteil; beides ist im naechsten Lauf zu pruefen.
+- **Kosten:** +12.5 % Zellen in z. Fuer den 0.75-mm-Lauf, der schon am Host-RAM scheiterte (34.6 GB RSS beim Aufbau), ist das relevant: grob +12 % Speicher.
+- **Nicht mitgezogen:** `LAYOUT_RULES["envelope"]` (Boden z = 0, Hoehe 32) bleibt die Layout-Huelle fuer Akkulage unten und Referenzvergleiche; nur der Topologie-Bauraum ist abgesenkt.
+
+Nachweis am Feld `battery_free` auf dem neuen Gitter (`docs/validation/bottom_domain/after/floor.png`, `after/floor.json`): Unter den vorher abgeschnittenen Gurtzellen (orange, z = 0..1.33) liegen jetzt 3 freie Lagen bis z = -4; unter den Augen liegen die 2-mm-Werkzeugkorridore, die auf dem 4/3-mm-Raster konservativ eine 5.3-mm-Spalte sperren, die Augen werden also seitlich oder ueber Streben angebunden. Domaenendiff gegen vorher: erlaubter Raum +67129 mm3 (374917 -> 442046 mm3), Preserve -1195 mm3 (5547 -> 4352 mm3), Bauraum z 0..32 -> -4..32 mm, Stackfixierung z -0.01..0.01 -> 7.99..11.81 mm.
 
 ## Dichtefeld zu pruefbarer freier Geometrie
 
