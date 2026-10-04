@@ -162,7 +162,8 @@ class TopologyProblem:
             self.modal.lumped_slope = lambda mode: sum(body.lumped_slope(mode) for body in self.bodies.values())
         if self.camera is not None:
             camera, cases = domain["camera"], {case["name"]: case for case in self.system.cases}
-            self.zones = {name: ZoneImpact(self.system, cases[name], camera["zone"], force, problem["camera"]["zone_floor"]) for name, force in camera["zones"].items() if name in cases}
+            step = float(np.min(self.system.spacing)) * problem["camera"]["step_fraction"]
+            self.zones = {name: ShieldedImpact(self.system, cases[name], force, camera["keep_out"], problem["camera"], step) for name, force in camera["zones"].items() if name in cases}
             self.fit = RigidFit(self.system, camera["reference_regions"], self.camera.reference)
             self.coverage = FrontCoverage(domain, camera["coverage"])
             self.body_update(np.ones(self.system.nelem))
@@ -263,6 +264,7 @@ class TopologyProblem:
             limit = limits.get(name) if isinstance(limits, dict) else limits
             value, gradient, delta = self.camera_shift(name, solutions)
             rows.append({"name": "camera_shift_" + name, "g": None if limit is None else value / limit - 1, "gradient": gradient / (limit or 1.0), "value": value, "limit": limit, "unit": "mm", "sense": "<=", "info": {"delta_mm": delta.tolist()}})
+        rows += [{"name": "camera_shielding_" + name, "g": None, "gradient": None, "value": zone.shielding(self.physical), "limit": None, "unit": "-", "sense": ""} for name, zone in self.zones.items()]
         area, slope = self.camera.contact_area()
         rows.append({"name": "camera_mount_area", "g": None if minimum is None else 1 - area / minimum, "gradient": -slope / (minimum or 1.0), "value": area, "limit": minimum, "unit": "mm2", "sense": ">="})
         return rows
@@ -893,40 +895,116 @@ class CameraSupport(BatterySupport):
         self.assemble(system, settings, camera, nodes[keep], inside[keep], np.zeros(count, dtype=int), np.sign(points[keep, 0]), np.ones(count, dtype=bool), shear)
         self.summary = {"nodes": len(self.index), "patch_area_mm2": float(self.area.sum()), "face_x_mm": float(high[0]), "keep_out_cells_mm": [low.tolist(), high.tolist()]}
 
-class ZoneImpact:
-    def __init__(self, system, case, zone, force, floor):
-        from deep_frame.topology_geometry import region_contains
+class RaySampler:
+    def __init__(self, domain, origin, axes, window, silhouette, depth, step):
+        from scipy.sparse import csr_matrix
+        grid, symmetric = domain["grid"], domain.get("symmetry") is not None
+        h, base_point, shape = np.asarray(grid["spacing_mm"], dtype=float), np.asarray(grid["origin_mm"], dtype=float), np.asarray(grid["shape"], dtype=int)
+        outward, right, up = (np.asarray(vector, dtype=float) for vector in axes)
+        (u0, u1), (v0, v1) = window
+        (s0, s1), (t0, t1) = silhouette
+        u, v = np.meshgrid(np.arange(u0 + step / 2, u1, step), np.arange(v0 + step / 2, v1, step), indexing="ij")
+        ring = ~((u > s0) & (u < s1) & (v > t0) & (v < t1))
+        self.u, self.v = u[ring], v[ring]
+        t = np.arange(depth[0] + step / 2, depth[1], step)[::-1]
+        points = (np.asarray(origin, dtype=float) + self.u[:, None, None] * right + self.v[:, None, None] * up + t[None, :, None] * outward).reshape(-1, 3)
+        self.rays, self.samples, self.step = len(self.u), len(t), step
+        self.left = points[:, 0] < 0 if symmetric else np.zeros(len(points), dtype=bool)
+        if symmetric:
+            points[:, 0] = np.abs(points[:, 0])
+        scaled = (points - base_point) / h - 0.5
+        lower = np.floor(scaled).astype(int)
+        fraction = scaled - lower
+        rows, columns, values = [], [], []
+        for corner in np.indices((2, 2, 2)).reshape(3, -1).T:
+            index = lower + corner
+            if symmetric:
+                index[:, 0] = np.where(index[:, 0] < 0, -index[:, 0] - 1, index[:, 0])
+            weight = np.prod(np.where(corner, fraction, 1 - fraction), axis=1)
+            valid = np.all((index >= 0) & (index < shape), axis=1) & (weight > 0)
+            rows.append(np.flatnonzero(valid))
+            columns.append(np.ravel_multi_index(tuple(index[valid].T), tuple(shape)))
+            values.append(weight[valid])
+        allowed = np.asarray(domain["allowed"], dtype=float).ravel()
+        self.matrix = csr_matrix((np.concatenate(values), (np.concatenate(rows), np.concatenate(columns))), shape=(len(points), int(np.prod(shape)))).multiply(allowed[None, :]).tocsr()
+    def density(self, physical):
+        return np.clip(self.matrix @ np.asarray(physical, dtype=float).ravel(), 0, 1).reshape(self.rays, self.samples)
+    @staticmethod
+    def opening(density):
+        return np.concatenate([np.ones((len(density), 1)), np.cumprod(1 - density, axis=1)], axis=1)
+    def covered(self, physical):
+        density = self.density(physical)
+        opening = self.opening(density)
+        closing = np.concatenate([np.cumprod((1 - density)[:, ::-1], axis=1)[:, ::-1], np.ones((self.rays, 1))], axis=1)
+        area = self.step * self.step
+        return float(area * np.sum(1 - opening[:, -1])), self.matrix.T @ (area * opening[:, :-1] * closing[:, 1:]).ravel()
+
+class FrontCoverage(RaySampler):
+    def __init__(self, domain, spec):
+        super().__init__(domain, spec["front_mm"], spec["axes"], spec["window_mm"], spec["silhouette_mm"], spec["depth_mm"], spec["step_mm"])
+        self.frontal = spec["frontal_area_mm2"]
+    def measure(self, physical):
+        value, gradient = self.covered(physical)
+        return value / self.frontal, gradient / self.frontal
+
+class ShieldedImpact:
+    def __init__(self, system, case, force, keep_out, settings, step):
+        from scipy.sparse import csr_matrix, diags
         operator = system.relief_operators[case["name"]]
-        self.system, self.case, self.floor = system, case, floor
-        self.elements = np.flatnonzero(region_contains(cell_centers(system.domain["grid"]), zone) & system.active_elements)
-        if not len(self.elements):
-            raise ValueError("The camera impact zone holds no allowed cells")
-        self.nodes = system.connectivity[self.elements]
-        self.factor = 1.0 if system.symmetry is None else 2.0
-        plane = np.zeros(len(system.points), dtype=bool)
+        self.system, self.case, self.force = system, case, np.asarray(force, dtype=float)
+        normal = self.force / np.linalg.norm(self.force)
+        right = np.cross([0.0, 0.0, 1.0], normal)
+        right = np.array([1.0, 0.0, 0.0]) if np.linalg.norm(right) < 1e-9 else right / np.linalg.norm(right)
+        up = np.cross(normal, right)
+        low, high = np.asarray(keep_out["min_mm"], dtype=float), np.asarray(keep_out["max_mm"], dtype=float)
+        half = (high - low) / 2
+        reach = [float(np.abs(axis) @ half) for axis in (normal, right, up)]
+        origin = (low + high) / 2 - normal * reach[0]
+        margin = settings["window_mm"]
+        self.rays = RaySampler(system.domain, origin, [-normal, right, up], [[-reach[1] - margin["side"], reach[1] + margin["side"]], [-reach[2], reach[2] + margin["top"]]],
+                               [[-reach[1], reach[1]], [-reach[2], reach[2]]], settings["protection_depth_mm"], step)
+        self.hits = origin + np.clip(self.rays.u, -reach[1], reach[1])[:, None] * right + np.clip(self.rays.v, -reach[2], reach[2])[:, None] * up
+        self.spec = {"origin_mm": origin.tolist(), "axes": [(-normal).tolist(), right.tolist(), up.tolist()], "reach_mm": reach, "rays": self.rays.rays, "samples": self.rays.samples}
+        matrix = self.rays.matrix
+        sums = np.asarray(matrix.sum(axis=1)).ravel()
+        spread = diags(np.divide(1.0, sums, out=np.zeros_like(sums), where=sums > 0)) @ matrix
+        nelem, count = system.nelem, len(system.points)
+        incidence = csr_matrix((np.full(8 * nelem, 0.125), (system.connectivity.ravel(), np.repeat(np.arange(nelem), 8))), shape=(count, nelem))
+        self.direct_map = (incidence @ (diags((~self.rays.left).astype(float)) @ spread).T).tocsr()
+        self.mirror_map = (incidence @ (diags(self.rays.left.astype(float)) @ spread).T).tocsr()
+        self.elements = np.flatnonzero(np.asarray(matrix.sum(axis=0)).ravel() > 0)
+        self.plane = np.zeros(count, dtype=bool)
         if system.symmetry is not None:
-            plane[system.plane_nodes] = True
-        self.double = np.where(plane, 2.0, 1.0) if system.symmetry is not None else np.ones(len(system.points))
-        self.single = (~plane).astype(float) if system.symmetry is not None else np.zeros(len(system.points))
-        self.force, self.flip = np.asarray(force, dtype=float), operator["flip"]
+            self.plane[system.plane_nodes] = True
+        self.flip = operator["flip"]
         self.mass_direct, self.mass_mirror, self.total, self.center = operator["direct"], operator["mirror"], operator["total"], operator["center"]
         self.arm_direct, self.arm_mirror = system.points - self.center, system.points * self.flip - self.center
         self.inverse = np.linalg.inv(operator["inertia"])
         self.bodies = {body["name"]: body for body in operator["bodies"]}
-    def shares(self, physical):
-        weight = self.floor + (1 - self.floor) * np.asarray(physical, dtype=float).ravel()[self.elements]
-        total = self.factor * weight.sum()
-        share = np.zeros(len(self.system.points))
-        np.add.at(share, self.nodes.ravel(), np.repeat(weight / (8 * total), 8))
-        return weight, total, share
+        if "camera" not in self.bodies:
+            raise ValueError("The shielded camera impact needs the camera body in the inertia relief")
+    def split(self, physical):
+        density = self.rays.density(physical)
+        opening = RaySampler.opening(density)
+        return density, opening, density * opening[:, :-1] / self.rays.rays, opening[:, -1] / self.rays.rays
+    def shielding(self, physical):
+        return 1 - float(np.sum(self.split(physical)[3]))
     def loads(self, physical):
-        _, _, share = self.shares(physical)
-        direct, mirror = share[:, None] * self.double[:, None] * self.force, share[:, None] * self.single[:, None] * self.force
-        linear, angular = (direct.sum(axis=0) + mirror.sum(axis=0)) / self.total, self.inverse @ (np.cross(self.arm_direct, direct).sum(axis=0) + np.cross(self.arm_mirror, mirror).sum(axis=0))
+        _, _, caught, passed = self.split(physical)
+        direct_share, mirror_share = self.direct_map @ caught.ravel(), self.mirror_map @ caught.ravel()
+        direct, mirror = (direct_share + mirror_share * self.plane)[:, None] * self.force, (mirror_share * ~self.plane)[:, None] * self.force
+        applied = float(passed.sum()) * self.force
+        linear = (direct.sum(axis=0) + mirror.sum(axis=0) + applied) / self.total
+        angular = self.inverse @ (np.cross(self.arm_direct, direct).sum(axis=0) + np.cross(self.arm_mirror, mirror).sum(axis=0) + np.cross(passed @ (self.hits - self.center), self.force))
         direct = direct - self.mass_direct[:, None] * (linear + np.cross(angular, self.arm_direct))
         mirror = mirror - self.mass_mirror[:, None] * (linear + np.cross(angular, self.arm_mirror))
-        loads = [{"name": name, "position_mm": body["position_mm"], "force_n": -body["mass_g"] * (linear + np.cross(angular, np.asarray(body["position_mm"]) - self.center)),
-                  "moment_n_mm": -np.asarray(body["inertia_g_mm2"]) @ angular} for name, body in self.bodies.items()]
+        loads = []
+        for name, body in self.bodies.items():
+            position = np.asarray(body["position_mm"], dtype=float)
+            force, moment = -body["mass_g"] * (linear + np.cross(angular, position - self.center)), -np.asarray(body["inertia_g_mm2"]) @ angular
+            if name == "camera":
+                force, moment = force + applied, moment + np.cross(passed @ (self.hits - position), self.force)
+            loads.append({"name": name, "position_mm": body["position_mm"], "force_n": force, "moment_n_mm": moment})
         return direct.ravel(), (mirror * self.flip).ravel(), loads
     def gradient(self, physical, fields, adjoints, supports):
         zero = np.zeros(self.system.ndof)
@@ -941,48 +1019,19 @@ class ZoneImpact:
             linear -= body["mass_g"] * moved
             angular -= body["mass_g"] * np.cross(position - self.center, moved) + np.asarray(body["inertia_g_mm2"]) @ adjoint[3:]
         turn = self.inverse @ angular
-        nodal = (direct + linear / self.total + np.cross(turn, self.arm_direct)) @ self.force * self.double + (mirror + linear / self.total + np.cross(turn, self.arm_mirror)) @ self.force * self.single
-        weight, total, _ = self.shares(physical)
-        element = nodal[self.nodes].sum(axis=1) / 8
-        value = float(weight @ element) / total
-        gradient = np.zeros(self.system.nelem)
-        gradient[self.elements] = (1 - self.floor) * (element - self.factor * value) / total
-        return gradient
-
-class FrontCoverage:
-    def __init__(self, domain, spec):
-        from scipy.sparse import csr_matrix
-        grid, symmetric = domain["grid"], domain.get("symmetry") is not None
-        h, origin, shape = np.asarray(grid["spacing_mm"], dtype=float), np.asarray(grid["origin_mm"], dtype=float), np.asarray(grid["shape"], dtype=int)
-        axis, right, up = (np.asarray(vector, dtype=float) for vector in spec["axes"])
-        step = spec["step_mm"]
-        (u0, u1), (v0, v1) = spec["window_mm"]
-        u, v, t = np.arange(u0 + step / 2, u1, step), np.arange(v0 + step / 2, v1, step), np.arange(step / 2, spec["length_mm"], step)
-        points = (np.asarray(spec["front_mm"]) + u[:, None, None, None] * right + v[None, :, None, None] * up + t[None, None, :, None] * axis).reshape(-1, 3)
-        self.rays, self.samples = len(u) * len(v), len(t)
-        if symmetric:
-            points[:, 0] = np.abs(points[:, 0])
-        scaled = (points - origin) / h - 0.5
-        base = np.floor(scaled).astype(int)
-        fraction = scaled - base
-        rows, columns, values = [], [], []
-        for corner in np.indices((2, 2, 2)).reshape(3, -1).T:
-            index = base + corner
-            if symmetric:
-                index[:, 0] = np.where(index[:, 0] < 0, -index[:, 0] - 1, index[:, 0])
-            weight = np.prod(np.where(corner, fraction, 1 - fraction), axis=1)
-            valid = np.all((index >= 0) & (index < shape), axis=1) & (weight > 0)
-            rows.append(np.flatnonzero(valid))
-            columns.append(np.ravel_multi_index(tuple(index[valid].T), tuple(shape)))
-            values.append(weight[valid])
-        allowed = np.asarray(domain["allowed"], dtype=float).ravel()
-        self.matrix = csr_matrix((np.concatenate(values), (np.concatenate(rows), np.concatenate(columns))), shape=(len(points), int(np.prod(shape)))).multiply(allowed[None, :]).tocsr()
-        self.weight = step * step / spec["frontal_area_mm2"]
-    def measure(self, physical):
-        density = np.clip(self.matrix @ np.asarray(physical, dtype=float).ravel(), 0, 1).reshape(self.rays, self.samples)
-        opening = np.concatenate([np.ones((self.rays, 1)), np.cumprod(1 - density, axis=1)], axis=1)
-        closing = np.concatenate([np.cumprod((1 - density)[:, ::-1], axis=1)[:, ::-1], np.ones((self.rays, 1))], axis=1)
-        return float(self.weight * np.sum(1 - opening[:, -1])), self.matrix.T @ (self.weight * opening[:, :-1] * closing[:, 1:]).ravel()
+        nodal_direct = (direct + linear / self.total + np.cross(turn, self.arm_direct)) @ self.force
+        nodal_mirror = np.where(self.plane, nodal_direct, (mirror + linear / self.total + np.cross(turn, self.arm_mirror)) @ self.force)
+        value = (self.direct_map.T @ nodal_direct + self.mirror_map.T @ nodal_mirror).reshape(self.rays.rays, self.rays.samples)
+        tail = (linear / self.total + np.cross(turn, self.hits - self.center)) @ self.force
+        if "camera" in adjoints:
+            adjoint = np.asarray(adjoints["camera"], dtype=float)
+            tail = tail + (adjoint[:3] + np.cross(adjoint[3:], self.hits - supports["camera"].reference)) @ self.force
+        density, opening, _, _ = self.split(physical)
+        slope = np.zeros_like(density)
+        for index in range(self.rays.samples - 1, -1, -1):
+            slope[:, index] = opening[:, index] * (value[:, index] - tail)
+            tail = value[:, index] * density[:, index] + (1 - density[:, index]) * tail
+        return self.rays.matrix.T @ slope.ravel() / self.rays.rays
 
 def rigid_rows(arm):
     rows = np.zeros((len(arm), 3, 6))

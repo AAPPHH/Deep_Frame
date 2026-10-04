@@ -4,7 +4,7 @@ import pytest
 
 from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, PRINT_MATERIAL
 from deep_frame.topology_optimization import HexElasticity, elasticity_matrix, hexahedron_matrices, orthotropic_matrix
-from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
+from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
     return {"kind": "box", "min_mm": list(map(float, low)), "max_mm": list(map(float, high))}
@@ -350,11 +350,47 @@ def camera_domain():
     axis, up = [0.0, np.cos(tilt), np.sin(tilt)], [0.0, -np.sin(tilt), np.cos(tilt)]
     domain["camera"] = {"keep_out": keep, "reference_mm": [0.0, 2.0, 2.0], "center_mm": [0.0, 2.0, 2.0], "mass_g": 2.0, "screw_axis_yz_mm": [2.0, 2.0], "zone": zone, "zones": zones,
                         "displacement_cases": ["crash_front", "crash_camera_oblique"], "reference_regions": [box([0.0, -4.0, 0.0], [2.0, -2.0, 2.0])],
-                        "coverage": {"axes": [axis, [1.0, 0.0, 0.0], up], "front_mm": [0.0, 3.0, 2.0], "window_mm": [[-2.0, 2.0], [-1.0, 2.0]], "step_mm": 0.5, "length_mm": 4.0, "frontal_area_mm2": 4.0}}
+                        "coverage": {"axes": [axis, [1.0, 0.0, 0.0], up], "front_mm": [0.0, 3.0, 2.0], "window_mm": [[-2.0, 2.0], [-1.0, 2.0]], "silhouette_mm": [[-1.0, 1.0], [-1.0, 1.0]], "step_mm": 0.5, "depth_mm": [0.0, 4.0], "frontal_area_mm2": 4.0}}
     problem = tiny_problem()
     problem["camera"] = {**deepcopy(CAMERA_SUPPORT), "patch_radius_mm": 1.0, "limit_mm": 0.01, "min_area_mm2": 1.0, "min_coverage": 0.2, "crash_reference": {"crash_front": 0.01}}
     problem["shadow"] = None
     return domain, problem
+
+def external_split(zone, physical):
+    _, _, caught, passed = zone.split(physical)
+    frame = (zone.direct_map @ caught.ravel() + zone.mirror_map @ caught.ravel()).sum() * zone.force
+    return frame, passed.sum() * zone.force
+
+def test_shielded_impact_conserves_the_crash_force():
+    domain, problem = camera_domain()
+    tested = TopologyProblem(domain, problem)
+    settings = {**problem["camera"], "window_mm": {"side": 1.0, "top": 1.0}, "protection_depth_mm": [0.0, 1.0]}
+    zone = ShieldedImpact(tested.system, tested.zones["crash_front"].case, [0.0, -2.0, 0.0], domain["camera"]["keep_out"], settings, 0.5)
+    assert zone.spec["origin_mm"] == pytest.approx([0.0, 3.0, 2.0]) and zone.rays.rays == 32
+    empty, full = np.zeros(tested.system.nelem), np.asarray(domain["allowed"], dtype=float).ravel()
+    frame, camera = external_split(zone, empty)
+    assert zone.shielding(empty) == 0 and np.allclose(frame, 0) and np.allclose(camera, zone.force)
+    frame, camera = external_split(zone, full)
+    shield = zone.shielding(full)
+    assert shield > 0.8 and np.allclose(frame, shield * zone.force) and np.allclose(camera, (1 - shield) * zone.force)
+    for physical in (empty, full):
+        direct, mirrored, loads = zone.loads(physical)
+        total = direct.reshape(-1, 3).sum(axis=0) + (mirrored.reshape(-1, 3) * tested.system._flip()).sum(axis=0) + sum(np.asarray(load["force_n"]) for load in loads)
+        assert np.allclose(total, 0.0, atol=1e-9)
+    tested.close()
+
+def test_front_coverage_counts_only_material_within_the_protection_depth():
+    shape = (8, 20, 8)
+    domain = {"grid": {"origin_mm": [-4.0, 0.0, 0.0], "spacing_mm": [1.0, 1.0, 1.0], "shape": list(shape)}, "allowed": np.ones(shape, dtype=bool)}
+    spec = {"front_mm": [0.0, 2.0, 4.0], "axes": [[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]], "window_mm": [[-3.0, 3.0], [-3.0, 3.0]], "silhouette_mm": [[-1.0, 1.0], [-1.0, 1.0]],
+            "step_mm": 0.5, "depth_mm": [0.0, 6.0], "frontal_area_mm2": 4.0}
+    far, near = np.zeros(shape), np.zeros(shape)
+    far[:, 13:15] = 1.0
+    near[:, 4:6] = 1.0
+    coverage = FrontCoverage(domain, spec)
+    assert coverage.measure(far.ravel())[0] == 0 and np.allclose(coverage.measure(far.ravel())[1].reshape(shape)[:, 10:], 0)
+    assert coverage.measure(near.ravel())[0] == pytest.approx(32.0 / 4.0)
+    assert FrontCoverage(domain, {**spec, "depth_mm": [0.0, 15.0]}).measure(far.ravel())[0] == pytest.approx(32.0 / 4.0)
 
 def test_free_camera_support_equilibrium_and_gradients():
     tested = TopologyProblem(*camera_domain())
