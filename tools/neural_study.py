@@ -44,6 +44,7 @@ STUDY = {
     "simp": {"filter_radius_mm": 4.0, "projection": "single", "beta_schedule": [1.0, 2.0, 4.0, 8.0], "beta_interval": 35, "max_iterations": 140, "minimum_iterations": 20, "move_limit": 0.1, "max_runtime_s": 1500.0},
     "variants": [{"name": "neural_r3_v05", "neural": {"volume_fraction": 0.05}}],
     "al": {"settings": {}, "cantilever": {"reference": "docs/validation/formulation_cantilever.json", "output": "docs/validation/neural_al_cantilever.json", "settings": {"volume_fraction": 0.5, "max_frequency_per_mm": 0.15}},
+           "covariance": {"reference": "docs/validation/formulation_covariance_mma_mean.json", "output": "docs/validation/neural_al_covariance_cantilever.json", "settings": {"volume_fraction": 0.5, "max_frequency_per_mm": 0.15}},
            "frame": {"start": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1/density_half.npz", "linear_solver": "cuda_cudss", "settings": {"coarse_levels": 3, "learning_rate": 0.003, "rate_decay": 0.85, "max_iterations": 1500, "max_runtime_s": 16200.0}}},
 }
 VARIANT_KEYS = ("prop_discs", "modal", "stiffness", "method", "simp")
@@ -550,12 +551,10 @@ def directional_check(problem, design, multipliers, seed=7, step=1e-6):
     analytic, numeric = float(sum(np.sum(g * d) for g, d in zip(gradients, direction))), (shifted(1.0) - shifted(-1.0)) / (2 * step)
     return {"analytic": analytic, "finite_difference": numeric, "relative_error": abs(analytic - numeric) / max(abs(numeric), 1e-30), "step": step, "variable": "all network parameters, random direction"}
 
-def al_cantilever(cfg):
+def al_proof(cfg, spec, domain, problem, key, limit, volume):
     from deep_frame.topology_neural import NeuralAugmentedLagrangian
-    from deep_frame.topology_problem import TopologyProblem, cantilever_domain, cantilever_problem
-    spec = cfg["al"]["cantilever"]
+    from deep_frame.topology_problem import TopologyProblem
     reference = json.loads(Path(spec["reference"]).read_text(encoding="utf-8"))
-    domain, problem = cantilever_domain(), cantilever_problem(reference["stiffness_n_per_mm"])
     optimizer = NeuralAugmentedLagrangian({**cfg["al"]["settings"], **spec["settings"]})
     result = optimizer.run([(domain, lambda: TopologyProblem(domain, problem))])
     check = TopologyProblem(domain, problem)
@@ -565,13 +564,28 @@ def al_cantilever(cfg):
     fd = directional_check(check, optimizer.design, optimizer.multipliers)
     check.close()
     rows = {row["name"]: row for row in result["summary"]["final"]["rows"]}
-    summary = {key: result["summary"][key] for key in ("stop_reason", "converged", "iterations", "elapsed_s", "seconds_per_iteration", "al_rule", "multipliers", "penalties", "level_reports")}
-    out = {"reference": reference, "stiffness_limit_n_per_mm": reference["stiffness_n_per_mm"], "stiffness_n_per_mm": rows["tip_stiffness"]["value"], "stiffness_status": rows["tip_stiffness"]["status"], "stiffness_margin": rows["tip_stiffness"]["margin"],
-           "volume_fraction_intermediate": rows["volume"]["value"], "volume_ratio_to_reference": rows["volume"]["value"] / reference["volume_fraction_intermediate"], "mass_g": result["summary"]["final"]["mass_g"],
+    summary = {name: result["summary"][name] for name in ("stop_reason", "converged", "iterations", "elapsed_s", "seconds_per_iteration", "al_rule", "multipliers", "penalties", "level_reports")}
+    out = {"reference": reference, "constraint": key, "limit": limit, "value": rows[key]["value"], "status": rows[key]["status"], "margin": rows[key]["margin"],
+           "volume_fraction_intermediate": rows["volume"]["value"], "volume_ratio_to_reference": rows["volume"]["value"] / volume, "mass_g": result["summary"]["final"]["mass_g"],
            "mass_by_field_g": result["summary"]["final"].get("mass_by_field_g"), "rows": result["summary"]["final"]["rows"], "finite_difference": fd, **summary,
-           "history": [{key: entry[key] for key in ("iteration", "beta", "mass_g", "max_violation")} for entry in result["history"]]}
+           "history": [{name: entry[name] for name in ("iteration", "beta", "mass_g", "max_violation")} for entry in result["history"]]}
     Path(spec["output"]).write_text(json.dumps(out, indent=1, default=float), encoding="utf-8")
-    print(json.dumps({key: out[key] for key in ("stiffness_n_per_mm", "stiffness_status", "volume_fraction_intermediate", "volume_ratio_to_reference", "stop_reason", "iterations", "finite_difference")}, default=float), flush=True)
+    print(json.dumps({name: out[name] for name in ("constraint", "value", "limit", "status", "volume_fraction_intermediate", "volume_ratio_to_reference", "stop_reason", "iterations", "finite_difference")}, default=float), flush=True)
+    return out
+
+def al_cantilever(cfg):
+    from deep_frame.topology_problem import cantilever_domain, cantilever_problem
+    spec = cfg["al"]["cantilever"]
+    reference = json.loads(Path(spec["reference"]).read_text(encoding="utf-8"))
+    al_proof(cfg, spec, cantilever_domain(), cantilever_problem(reference["stiffness_n_per_mm"]), "tip_stiffness", reference["stiffness_n_per_mm"], reference["volume_fraction_intermediate"])
+
+def al_covariance(cfg):
+    from deep_frame.topology_problem import covariance_cantilever
+    spec = cfg["al"]["covariance"]
+    reference = json.loads(Path(spec["reference"]).read_text(encoding="utf-8"))
+    variant = reference["variant"]
+    domain, problem = covariance_cantilever(limits={variant + "_n_mm": reference["limit_n_mm"], "source": "same limit as " + spec["reference"]})
+    al_proof(cfg, spec, domain, problem, "load_" + variant, reference["limit_n_mm"], reference["volume_fraction_intermediate"])
 
 def run_main(overrides):
     cfg = configure(overrides)
@@ -584,7 +598,7 @@ def render_main(overrides):
         rerender(cfg, variant)
 
 def main(argv=None):
-    return command_line({"run": run_main, "al_cantilever": lambda overrides: al_cantilever(configure(overrides)), "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "calibrate": lambda overrides: calibrate(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
+    return command_line({"run": run_main, "al_cantilever": lambda overrides: al_cantilever(configure(overrides)), "al_covariance": lambda overrides: al_covariance(configure(overrides)), "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "calibrate": lambda overrides: calibrate(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
                          "compare": lambda overrides: stitch(**{key: [Path(path) for path in value] if key == "inputs" else Path(value) if key == "output" else value for key, value in configure(overrides)["compare"].items()})}, argv)
 
 if __name__ == "__main__":
