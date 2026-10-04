@@ -1120,11 +1120,12 @@ CABLES = {
     "seat_tolerance_mm": 0.05,
     "check_step_mm": 2.0,
     "closure_rays": 8,
+    "ray_chunk": 64,
     "print_axis": [0.0, 0.0, 1.0],
     "packing": {"1": 1.0, "2": 2.0, "3": 2.155, "4": 2.414, "5": 2.701, "6": 3.0},
     "source": "user: C channel open downward, closed toward the props, clip slot 0.3-0.4 mm narrower than the bundle, inner size bundle + 0.2 mm, lips >= 0.8 mm, teardrop interior, short exit guides; wall_mm 1.0 is a design choice (2.5 perimeters at 0.4 mm), below the 2 mm wall rule",
 }
-CABLES_KINDS = {key: "float" for key, value in CABLES.items() if isinstance(value, float)} | {"cables": "object", "stack_regions": "text", "profile_segments": "int", "closure_rays": "int", "seat_iterations": "int", "print_axis": ["float"], "packing": "object", "source": "text"}
+CABLES_KINDS = {key: "float" for key, value in CABLES.items() if isinstance(value, float)} | {"cables": "object", "stack_regions": "text", "profile_segments": "int", "closure_rays": "int", "ray_chunk": "int", "seat_iterations": "int", "print_axis": ["float"], "packing": "object", "source": "text"}
 
 MATERIALS = {
     "PA6-CF": {

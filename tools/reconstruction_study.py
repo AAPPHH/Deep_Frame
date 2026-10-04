@@ -515,28 +515,43 @@ def cable_section(mesh, before, path, out):
     plt.close(fig)
 
 def cables_main(overrides):
+    import pickle
+    import psutil
     config = configure(CABLE_RUN_CONFIG, CABLE_RUN_KINDS, overrides, ("source", "output", "body"))
     cables = configure(CABLES, CABLES_KINDS, config["cables"])
     out = config["output"]
     out.mkdir(parents=True, exist_ok=True)
     started = perf_counter()
-    domain = full_domain(config)
     density = np.load(config["source"])["density"]
-    source = config["section_body"] or config["source"].with_name("geometry.stl")
-    graph, rods = spline_graph(domain, density, config, trimesh.load_mesh(source, process=True) if Path(source).is_file() else None)[:2]
+    domain = stored_domain(config["domain"], density.shape) if config["domain"] else full_domain(config)
+    cache = out/"graph.pkl"
+    if cache.is_file():
+        graph, rods = pickle.loads(cache.read_bytes())
+    else:
+        source = config["section_body"] or config["source"].with_name("geometry.stl")
+        graph, rods = spline_graph(domain, density, config, trimesh.load_mesh(source, process=True) if Path(source).is_file() else None)[:2]
+        cache.write_bytes(pickle.dumps((graph, rods)))
+    graph_peak = getattr(psutil.Process().memory_info(), "peak_wset", 0)/2**30
     body = trimesh.load_mesh(config["body"], process=True)
     channels = CableChannels(graph, rods, domain, cables)
+    peak = lambda: round(getattr(psutil.Process().memory_info(), "peak_wset", 0)/2**30, 2)
+    peaks = {"graph": graph_peak}
     channels.plan(body)
+    peaks["plan"] = peak()
     mesh, applied = channels.apply(body, core_domain(domain, config))
+    peaks["apply"] = peak()
     report = {**channels.report(mesh, body), "apply": applied, "body": str(config["body"]), "mass_before_g": float(body.volume)*domain["material"]["density_g_cm3"]/1000, "mass_after_g": float(mesh.volume)*domain["material"]["density_g_cm3"]/1000}
     mesh.export(out/"frame.stl")
     for path in channels.paths:
         if path["routed"] and path["name"] in config["section_paths"]:
             cable_section(mesh, body, path, out/f"section_{path['name']}.png")
+    peaks["report"] = peak()
     render_views(mesh, out, CABLE_VIEWS)
-    report["runtime_s"] = perf_counter()-started
+    peaks["render"] = peak()
+    report["peak_gb"] = peaks
+    report["runtime_s"], report["peak_rss_gb"] = perf_counter()-started, peak()
     (out/"cables.json").write_text(json.dumps({**report, "config": {"cables": cables, "body": str(config["body"]), "source": str(config["source"])}}, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value) if isinstance(value, np.floating) else str(value)), encoding="utf-8")
-    print(json.dumps({"steckbrief": report["steckbrief"], "printability": report["printability"], "mass_g": [report["mass_before_g"], report["mass_after_g"]], "apply": applied}, default=float), flush=True)
+    print(json.dumps({"steckbrief": report["steckbrief"], "printability": report["printability"], "mass_g": [report["mass_before_g"], report["mass_after_g"]], "apply": applied, "peak_rss_gb": report["peak_rss_gb"], "peak_gb": peaks}, default=float), flush=True)
 
 def main(argv=None):
     return command_line({"build": build_main, "splines": splines_main, "cables": cables_main, "study": study_main, "fea": fea_main, "render": render_main, "compose": compose_main}, argv)

@@ -455,10 +455,12 @@ def sections(a, b, scale, config):
     b = np.maximum(np.asarray(b, dtype=float)*scale, config["minimum_radius_mm"])
     return np.clip(np.asarray(a, dtype=float)*scale, b, config["maximum_aspect"]*b), b
 
-def stored_domain(path):
+def stored_domain(path, shape=None):
     from deep_frame.topology_geometry import grid_centers, rasterize_regions
     stored = json.loads(Path(path).read_text(encoding="utf-8"))
     domain = stored.get("domain", stored)
+    if shape is not None and list(shape) != list(domain["grid"]["shape"]):
+        domain = {**domain, "grid": {**domain["grid"], "shape": list(shape), "spacing_mm": (np.asarray(domain["grid"]["spacing_mm"])*domain["grid"]["shape"]/np.asarray(shape)).tolist()}}
     masks = rasterize_regions(domain["grid"], domain["regions"])
     centers = grid_centers(domain["grid"])
     hoop = domain.get("metadata", {}).get("round2", {}).get("hoop")

@@ -18,6 +18,13 @@ def _unit(vectors):
 def arc_length(points):
     return float(np.linalg.norm(np.diff(points, axis=0), axis=1).sum()) if len(points) > 1 else 0.0
 
+def first_hits(mesh, origins, directions, chunk=CABLES["ray_chunk"]):
+    distance = np.full(len(origins), np.inf)
+    for start in range(0, len(origins), chunk):
+        hits, rays, _ = mesh.ray.intersects_location(origins[start:start+chunk], directions[start:start+chunk], multiple_hits=False)
+        distance[start+rays] = np.linalg.norm(hits-origins[start+rays], axis=1)
+    return distance
+
 def bundle_diameter(diameters, packing=CABLES["packing"]):
     diameters = sorted(diameters, reverse=True)
     return max(float(sum(diameters[:2])), float(diameters[0]*packing[str(min(len(diameters), max(map(int, packing))))])) if diameters else 0.0
@@ -194,8 +201,8 @@ class CableChannels:
         self.paths = [self._path(item, body) for item in routes]
         return self.paths
 
-    def _inside(self, points, names):
-        return np.any([region_contains(points, self.preserves[n], 0.0) for n in names], axis=0) if names else np.zeros(len(points), dtype=bool)
+    def _inside(self, points, names, padding=0.0):
+        return np.any([region_contains(points, self.preserves[n], padding) for n in names], axis=0) if names else np.zeros(len(points), dtype=bool)
 
     def _path(self, item, body):
         cfg, route = self.config, item["route"]
@@ -253,20 +260,23 @@ class CableChannels:
         return float(min(np.linalg.norm(c[:2]-points[0, :2]) for c in centers))
 
     def _slot_depth(self, body, points, v):
-        hits, rays, _ = body.ray.intersects_location(points, -v, multiple_hits=False)
-        depth = np.zeros(len(points))
-        inside = body.contains(points)
-        depth[rays] = np.where(inside[rays], np.linalg.norm(hits-points[rays], axis=1), 0.0)
-        return depth
+        distance = first_hits(body, points, -v)
+        return np.where(np.isfinite(distance) & body.contains(points), distance, 0.0)
 
     def solids(self):
-        shells, cavities = [], []
+        shells, cavities, swept = [], [], set()
         for path in (p for p in self.paths if p["routed"]):
-            profiles = path["profiles"]
-            args = (path["points"], path["u"], path["v"])
-            shells.append(sweep(*args, [p.shell() for p in profiles]))
-            cavities.append(sweep(*args, [p.cavity() for p in profiles]))
-            cavities.append(sweep(*args, [p.slot_cut(d) for p, d in zip(profiles, path["slot_depth"])]))
+            own = ~np.isin(path["owner"], list(swept)) | path["guide"]
+            own = maximum_filter1d(own.astype(np.uint8), 2*int(np.ceil(self.config["guide_flare_mm"]/self.config["sample_mm"]))+1).astype(bool)
+            path["swept"] = own
+            swept |= set(int(i) for i in path["owner"])
+            runs = np.split(np.arange(len(own)), np.flatnonzero(np.diff(own.astype(int)))+1)
+            for run in (r for r in runs if own[r[0]] and len(r) > 1):
+                profiles = [path["profiles"][k] for k in run]
+                args = (path["points"][run], path["u"][run], path["v"][run])
+                shells.append(sweep(*args, [p.shell() for p in profiles]))
+                cavities.append(sweep(*args, [p.cavity() for p in profiles]))
+                cavities.append(sweep(*args, [p.slot_cut(d) for p, d in zip(profiles, path["slot_depth"][run])]))
         return shells, cavities
 
     def apply(self, body, core):
@@ -278,14 +288,17 @@ class CableChannels:
         shell = Manifold.batch_boolean(shells, OpType.Add)
         cavity = Manifold.batch_boolean([Manifold.batch_boolean(cavities, OpType.Add), keep], OpType.Subtract)
         result = Manifold.batch_boolean([Manifold.batch_boolean([_manifold(body), shell], OpType.Add), cavity], OpType.Subtract)
-        mesh, booleans = exact_booleans(_trimesh(result), core, IMPLICIT_CONFIG)
+        cut = dict(core, regions=[r for r in core["regions"] if r["role"] != "preserve"])
+        mesh, booleans = exact_booleans(_trimesh(result), cut, IMPLICIT_CONFIG)
         parts = mesh.split(only_watertight=False)
         largest = max(parts, key=lambda part: abs(part.volume))
-        if len(parts) > 1:
-            mesh, booleans = exact_booleans(largest, core, IMPLICIT_CONFIG)
-        pieces = sorted(mesh.split(only_watertight=False), key=lambda part: -abs(part.volume))
-        return mesh, {"shell_mm3": float(shell.volume()), "cavity_mm3": float(cavity.volume()), "debris": {"count": len(parts)-1, "volume_mm3": float(sum(abs(p.volume) for p in parts if p is not largest))}, "bodies": len(pieces), "minor_bodies": [{"volume_mm3": float(abs(part.volume)), "bounds_mm": np.round(part.bounds, 2).tolist()} for part in pieces[1:6]],
-                      "watertight": bool(mesh.is_watertight), "volume_mm3": float(mesh.volume), "exact_booleans": {key: booleans[key] for key in ("status", "passed", "components", "preserve_added_mm3", "forbidden_removed_mm3", "envelope_removed_mm3")}, "runtime_s": perf_counter()-started}
+        minor = [part for part in parts if part is not largest]
+        if minor:
+            mesh = largest
+        reference = exact_booleans(body, core, IMPLICIT_CONFIG)[1]
+        return mesh, {"shell_mm3": float(shell.volume()), "cavity_mm3": float(cavity.volume()), "bodies": len(parts), "dropped_bodies": [{"volume_mm3": float(abs(part.volume)), "bounds_mm": np.round(part.bounds, 2).tolist()} for part in sorted(minor, key=lambda part: -abs(part.volume))[:6]],
+                      "dropped_volume_mm3": float(sum(abs(part.volume) for part in minor)), "watertight": bool(mesh.is_watertight), "volume_mm3": float(mesh.volume), "exact_booleans": {key: booleans[key] for key in ("status", "passed", "components", "forbidden_removed_mm3", "envelope_removed_mm3")},
+                      "body_preserve_deficit_mm3": reference["preserve_added_mm3"], "runtime_s": perf_counter()-started}
 
     def check(self, mesh):
         cfg = self.config
@@ -295,7 +308,7 @@ class CableChannels:
                 reports.append({"name": path["name"], "routed": False, "continuous": False, "closed_to_props": False})
                 continue
             step = max(int(round(cfg["check_step_mm"]/cfg["sample_mm"])), 1)
-            rows = np.flatnonzero(~path["inside"])[::step]
+            rows = np.flatnonzero(~self._inside(path["points"], path["end_regions"], max(p.radius for p in path["profiles"])))[::step]
             core = rows[~path["guide"][rows]]
             angles = np.linspace(0, 2*np.pi, 9)[:-1]
             ring = [path["points"][rows]+0.45*np.array([p.bundle for p in np.array(path["profiles"])[rows]])[:, None]*(np.cos(a)*path["u"][rows]+np.sin(a)*path["v"][rows]) for a in angles]
@@ -303,38 +316,39 @@ class CableChannels:
             for points in [path["points"][rows]]+ring:
                 blocked |= mesh.contains(points)
             blocked_points = np.round(path["points"][rows][blocked], 1).tolist()[:12]
-            open_rays, total = self._closure(mesh, path["points"][core])
+            open_rays, total, open_targets, open_any = self._closure(mesh, path["points"][core])
             fit = self._fit(path)
             reports.append({"name": path["name"], "kind": path["kind"], "routed": True, "start": path["start_regions"], "end": path["end_regions"][-1], "members": path["route"]["members"],
                             "route_mm": round(path["route_mm"], 1), "channel_mm": round(path["channel_mm"], 1), "lead_mm": round(path["lead_mm"], 1), "cable_mm": round(path["route_mm"]+path["lead_mm"], 1),
                             "cost": round(path["route"]["cost"], 1), "bend_deg": round(float(np.degrees(path["route"]["bend_rad"])), 1), "prop_mm": round(sum(self.router.costs[i]["prop_mm"] for i in path["route"]["members"]), 1),
                             "checked_sections": int(len(rows)), "blocked_sections": int(blocked.sum()), "blocked_points_mm": blocked_points, "seat_shift_mm": round(path["seat_shift_mm"], 2), "continuous": bool(len(rows) and not blocked.any()),
-                            "closure_rays": total, "open_rays": open_rays, "open_points_mm": getattr(self, "open_points", np.zeros((0, 3)))[:12].tolist() if open_rays else [], "closed_to_props": bool(total and not open_rays), "members_below_limit": [row for row in fit if row["below_limit"]],
+                            "closure_rays": total, "open_rays": open_rays, "open_targets": open_targets, "open_any_disc_rays": open_any, "open_points_mm": getattr(self, "open_points", np.zeros((0, 3)))[:12].tolist() if open_rays else [], "closed_to_props": bool(total and not open_rays), "members_below_limit": [row for row in fit if row["below_limit"]],
                             "profile": path["profiles"][len(path["profiles"])//2].size, "centerline_mm": np.round(path["points"], 2).tolist()})
         return reports
 
     def _closure(self, mesh, points):
-        cfg = self.config
+        cfg, shadow = self.config, self.router.shadow
         if not len(points):
-            return 0, 0
-        targets = []
-        for disc in self.router.shadow["discs"]:
+            return 0, 0, {}, 0
+        up = _unit(cfg["print_axis"])
+        angles = np.linspace(0, 2*np.pi, cfg["closure_rays"]+1)[:-1]
+        origins, ends, labels, spec = [points, points], [points+up*100.0, points+_unit(points-np.outer(points@up, up))*100.0], [np.full(len(points), "up"), np.full(len(points), "outside")], [np.ones(len(points), bool)]*2
+        for disc in shadow["discs"]:
             center = np.asarray(disc["center_mm"], dtype=float)
+            near = np.hypot(points[:, 0]-center[0], points[:, 1]-center[1]) <= shadow["radius_mm"]
             for radius in (0.5*disc["radius_mm"], disc["radius_mm"]):
-                angles = np.linspace(0, 2*np.pi, cfg["closure_rays"]+1)[:-1]
-                targets.append(center+radius*np.stack([np.cos(angles), np.sin(angles), 0*angles], axis=1))
-        targets = np.vstack(targets)
-        origins = np.repeat(points, len(targets), axis=0)
-        ends = np.tile(targets, (len(points), 1))
-        up = points+np.asarray(cfg["print_axis"])*100.0
-        origins, ends = np.vstack([origins, points]), np.vstack([ends, up])
+                targets = center+radius*np.stack([np.cos(angles), np.sin(angles), 0*angles], axis=1)
+                origins.append(np.repeat(points, len(targets), axis=0))
+                ends.append(np.tile(targets, (len(points), 1)))
+                labels.append(np.full(len(points)*len(targets), disc["name"]))
+                spec.append(np.repeat(near, len(targets)))
+        origins, ends, labels, spec = np.vstack(origins), np.vstack(ends), np.concatenate(labels), np.concatenate(spec)
         directions = ends-origins
         reach = np.linalg.norm(directions, axis=1)
-        hits, rays, _ = mesh.ray.intersects_location(origins, directions/reach[:, None], multiple_hits=False)
-        blocked = np.zeros(len(origins), dtype=bool)
-        blocked[rays] = np.linalg.norm(hits-origins[rays], axis=1) < reach[rays]
-        self.open_points = np.unique(np.round(origins[~blocked], 1), axis=0)
-        return int((~blocked).sum()), int(len(origins))
+        blocked = first_hits(mesh, origins, directions/reach[:, None]) < reach
+        self.open_points = np.unique(np.round(origins[spec & ~blocked], 1), axis=0)
+        found, counts = np.unique(labels[~blocked], return_counts=True)
+        return int((spec & ~blocked).sum()), int(spec.sum()), {str(k): int(v) for k, v in zip(found, counts)}, int((~blocked).sum())
 
     def _fit(self, path):
         rows = []
@@ -348,13 +362,15 @@ class CableChannels:
                          "channel_width_mm": round(2*profile.outer, 2), "channel_height_mm": round(profile.outer+profile.top, 2), "below_limit": bool(width < 2*profile.outer)})
         return rows
 
-    def printability(self, mesh):
+    def printability(self, mesh, before):
         from scipy.spatial import cKDTree
         cfg = self.config
         centers = np.vstack([p["points"][~p["inside"]] for p in self.paths if p["routed"]])
         radius = max(p.radius for path in self.paths if path["routed"] for p in path["profiles"])
         distance = cKDTree(centers).query(mesh.triangles_center)[0]
         near = distance <= radius+0.05
+        index = np.flatnonzero(near)
+        near[index] = np.concatenate([before.nearest.on_surface(mesh.triangles_center[index[k:k+2000]])[1] for k in range(0, len(index), 2000)]) > 0.02
         normals = mesh.face_normals[near]
         down = -normals@_unit(cfg["print_axis"])
         overhang = np.degrees(np.arcsin(np.clip(down, -1, 1)))
@@ -362,11 +378,11 @@ class CableChannels:
         worst = overhang > cfg["teardrop_deg"]+1.0
         spots = np.unique(np.round(mesh.triangles_center[near][worst]/2)*2, axis=0)
         return {"cavity_faces": int(near.sum()), "maximum_overhang_deg": float(overhang.max()) if len(overhang) else 0.0, "area_over_limit_mm2": float(area[worst].sum()), "cavity_area_mm2": float(area.sum()),
-                "limit_deg": cfg["teardrop_deg"], "spots_mm": spots[:20].tolist(), "spot_count": int(len(spots)), "definition": "final-mesh faces within inner radius + 0.05 mm of a channel centre line; overhang = asin(-n . print_axis)"}
+                "limit_deg": cfg["teardrop_deg"], "spots_mm": spots[:20].tolist(), "spot_count": int(len(spots)), "definition": "final-mesh faces within inner radius + 0.05 mm of a channel centre line and more than 0.02 mm from the body before the channels; overhang = asin(-n . print_axis)"}
 
     def report(self, mesh, before):
         checks = self.check(mesh)
-        return {"paths": checks, "printability": self.printability(mesh), "shared_bundles_mm": {str(k): v for k, v in self.shared.items()},
+        return {"paths": checks, "printability": self.printability(mesh, before), "shared_bundles_mm": {str(k): v for k, v in self.shared.items()},
                 "volume_before_mm3": float(before.volume), "volume_after_mm3": float(mesh.volume), "volume_change_mm3": float(mesh.volume-before.volume),
                 "steckbrief": {item["name"]: {"cable_mm": item.get("cable_mm"), "channel_mm": item.get("channel_mm"), "continuous": item["continuous"], "closed_to_props": item["closed_to_props"]} for item in checks},
                 "bundle_model": {kind: COMPONENT_LIBRARY[spec["part"]]["cable"] for kind, spec in self.config["cables"].items()}}
