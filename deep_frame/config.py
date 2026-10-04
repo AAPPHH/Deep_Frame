@@ -1347,7 +1347,7 @@ def configure(defaults, kinds, overrides, required=()):
     return config
 
 STAND_STABILITY = {
-    "enabled": False, "reserve_min_mm": 15.0, "prop_clearance_min_mm": 17.0,
+    "enabled": True, "reserve_min_mm": 15.0, "prop_clearance_min_mm": 17.0, "enabled_source": "orchestrator 2026-10-04: on for the frame runs (user wants the standing condition in this run)",
     "prop_clearance_source": "ManaFly 3 measured with the same evaluator component model (prop disc underside 17.4 mm above its lowest point, docs/validation/stand_stability.json), rounded down to 17 mm; our rail v3b and free-battery frames 19.2 mm",
     "reserve_source": "user 2026-10-04: centre of gravity at least 15 mm inside the support polygon",
     "contact_tolerance_mm": 0.2, "directions": 64, "ground_sharpness_per_mm": 6.0, "density_lift_mm": 20.0, "contact_penalty": 2.0, "support_sharpness_per_mm": 1.0, "ks_per_mm": 4.0,

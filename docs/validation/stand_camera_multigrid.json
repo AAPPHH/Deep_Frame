@@ -1,0 +1,1802 @@
+{
+ "statement": "MG vs cuDSS on the COARSE grid (34x64x27 half, 191100 DOFs) of the full new setup (free battery, free camera, floor z = -4) after merging feature/camera-fix and feature/stand-stability with STAND_STABILITY enabled; same design (exports/runs/free_layout_opt/coarse/design.npz) through both solvers; no cuDSS on the fine grid",
+ "note": "the start design was optimised on an older domain (138429 vs 139035 active DOFs): mass 14.07 g instead of 15.77 g, battery_contact_area 0, f1 9.7 Hz; values are therefore not representative of a converged frame, the comparison is solver vs solver on one design",
+ "stand_camfix_raw_coarse_cudss": {
+  "sha": "067637394b3ee5a7277de74adb9c31446436ff06",
+  "config": {
+   "run": "C:/clones/Deep_Frame-layout/exports/runs/free_layout_opt",
+   "grids": [
+    "coarse"
+   ],
+   "evaluations": 3,
+   "mma_iterations": 2,
+   "sample_s": 0.5,
+   "output": "exports/solver_memory/stand_camfix_raw_coarse_cudss",
+   "reference": null,
+   "start": null,
+   "multigrid": null,
+   "share_static": "auto",
+   "modal": {}
+  },
+  "linear_solver": "cuda_cudss",
+  "table": "| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi total GB | CuPy pool GB | host RSS GB |\n|---|---|---|---|---|---|---|---|---|\n| coarse | 4 | 11.5, 6.9 | 13.7 | 6.06 | 0.52 | 6.79 | 1.77 | 4.10 |",
+  "mass_g": 14.065253118069586,
+  "f1_hz": 9.718625181677028,
+  "evaluations": [
+   {
+    "index": 0,
+    "modal": "cold",
+    "seconds": 11.54224389999581,
+    "factorizations": 4,
+    "rss_gb": 3.9289588928222656,
+    "pool_used_gb": 1.4068012237548828,
+    "pool_total_gb": 1.5239744186401367,
+    "device_used_gb": 6.88427734375,
+    "smi_used_gb": 6.5439453125,
+    "dedicated_gb": 5.8168182373046875,
+    "shared_gb": 0.521484375
+   },
+   {
+    "index": 1,
+    "modal": "cold",
+    "seconds": 9.219934699998703,
+    "factorizations": 4,
+    "smi_used_gb": 6.7880859375,
+    "rss_gb": 4.086940765380859,
+    "pool_used_gb": 1.4068012237548828,
+    "pool_total_gb": 1.7672185897827148,
+    "device_used_gb": 7.13232421875,
+    "dedicated_gb": 6.0609588623046875,
+    "shared_gb": 0.521484375
+   },
+   {
+    "index": 2,
+    "modal": "warm",
+    "seconds": 6.886457999993581,
+    "factorizations": 4,
+    "smi_used_gb": 6.7880859375,
+    "dedicated_gb": 6.0609588623046875,
+    "shared_gb": 0.521484375,
+    "rss_gb": 4.084991455078125,
+    "pool_used_gb": 1.4068012237548828,
+    "pool_total_gb": 1.7672185897827148,
+    "device_used_gb": 7.12841796875
+   }
+  ],
+  "mma": {
+   "iterations": [
+    {
+     "seconds": 13.70162240001082,
+     "factorizations": 4
+    },
+    {
+     "seconds": 13.79101559999981,
+     "factorizations": 4
+    }
+   ],
+   "seconds_per_iteration": 13.746319000005315,
+   "rss_gb": 4.102260589599609,
+   "pool_used_gb": 1.4068012237548828,
+   "pool_total_gb": 1.7672185897827148,
+   "device_used_gb": 7.13232421875,
+   "smi_used_gb": 6.7919921875,
+   "dedicated_gb": 6.0609588623046875,
+   "shared_gb": 0.521484375
+  },
+  "noise_floor": {
+   "objective_rel": 0.0,
+   "constraints_g_abs": 5.281748371999129e-10,
+   "values_rel": 6.116658884800571e-11,
+   "values_by_name": {
+    "load_mean": {
+     "value": 132.1428527299768,
+     "abs": 3.1377567211166024e-11,
+     "rel": 2.374518679060421e-13
+    },
+    "load_worst": {
+     "value": 45.18956384111105,
+     "abs": 4.412470389070222e-12,
+     "rel": 9.76435710816928e-14
+    },
+    "crash_front": {
+     "value": 1124.7109552275851,
+     "abs": 1.3214958016760647e-09,
+     "rel": 1.1749648169903886e-12
+    },
+    "crash_side_left": {
+     "value": 763.701897148401,
+     "abs": 2.305569068994373e-09,
+     "rel": 3.0189385120073356e-12
+    },
+    "crash_side_right": {
+     "value": 763.7018971484156,
+     "abs": 2.3054553821566515e-09,
+     "rel": 3.0187896491615185e-12
+    },
+    "crash_arm_front_left": {
+     "value": 1425.1217733755,
+     "abs": 8.716983757039998e-08,
+     "rel": 6.116658884800571e-11
+    },
+    "crash_arm_front_right": {
+     "value": 1236.2559274560701,
+     "abs": 6.6972916101804e-09,
+     "rel": 5.417398987895559e-12
+    },
+    "crash_arm_rear_left": {
+     "value": 1089.2676844941561,
+     "abs": 2.7181386030861177e-08,
+     "rel": 2.4953816603385157e-11
+    },
+    "crash_arm_rear_right": {
+     "value": 1033.5962730000194,
+     "abs": 1.4549414117936976e-08,
+     "rel": 1.4076496305184241e-11
+    },
+    "crash_below": {
+     "value": 1681.2401150379844,
+     "abs": 5.773017619503662e-10,
+     "rel": 3.4337853158906045e-13
+    },
+    "crash_back": {
+     "value": 1904.181847089904,
+     "abs": 1.7309957911493257e-09,
+     "rel": 9.09049623487771e-13
+    },
+    "f1": {
+     "value": 9.718625181677028,
+     "abs": 1.9539925233402755e-14,
+     "rel": 2.010564752537455e-15
+    },
+    "battery_shift_flight": {
+     "value": 121.64479353469643,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_front": {
+     "value": 174.2259573083631,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_left": {
+     "value": 147.26370853771724,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_right": {
+     "value": 147.26370853771866,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_left": {
+     "value": 103.5931436484305,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_right": {
+     "value": 124.1247955585566,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_left": {
+     "value": 131.91319018027409,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_right": {
+     "value": 102.51881953530159,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_below": {
+     "value": 109.02518053921244,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_back": {
+     "value": 2.3161632587008016,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_camera_oblique": {
+     "value": 169.5597012520294,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_contact_area": {
+     "value": 0.0,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shift_crash_front": {
+     "value": 7.81174794215415,
+     "abs": 5.915534728728744e-11,
+     "rel": 7.572613418319652e-12
+    },
+    "camera_shift_crash_camera_oblique": {
+     "value": 6.0279423209289416,
+     "abs": 5.261568958303542e-12,
+     "rel": 8.728631891575073e-13
+    },
+    "camera_mount_area": {
+     "value": 52.88918470380647,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "volume": {
+     "value": 0.031416943000400356,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "shadow": {
+     "value": 0.22235887918232103,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_reserve": {
+     "value": 3.363764051159207,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_prop_clearance": {
+     "value": 20.565615792746677,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_coverage": {
+     "value": 0.3933500865064814,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   },
+   "f1_rel": 2.010564752537455e-15,
+   "gradients_rel_norm": 3.035703056945796e-10,
+   "gradients_rel_norm_by_name": {
+    "load_mean": 3.996304649149186e-12,
+    "load_worst": 4.562308172980221e-12,
+    "crash_front": 8.831031960831518e-12,
+    "crash_side_left": 1.294284501315343e-10,
+    "crash_side_right": 1.292149802125213e-10,
+    "crash_arm_front_left": 3.035703056945796e-10,
+    "crash_arm_front_right": 4.0054191451590585e-11,
+    "crash_arm_rear_left": 2.0653440221925715e-10,
+    "crash_arm_rear_right": 7.463670680177305e-11,
+    "crash_below": 1.2832963605692522e-11,
+    "crash_back": 4.126946843460108e-11,
+    "f1": 1.4186911108005322e-13,
+    "battery_shift_flight": 0.0,
+    "battery_shift_crash_front": 0.0,
+    "battery_shift_crash_side_left": 0.0,
+    "battery_shift_crash_side_right": 0.0,
+    "battery_shift_crash_arm_front_left": 0.0,
+    "battery_shift_crash_arm_front_right": 0.0,
+    "battery_shift_crash_arm_rear_left": 0.0,
+    "battery_shift_crash_arm_rear_right": 0.0,
+    "battery_shift_crash_below": 0.0,
+    "battery_shift_crash_back": 0.0,
+    "battery_shift_crash_camera_oblique": 0.0,
+    "battery_contact_area": 0.0,
+    "camera_shift_crash_front": 1.7713052255355098e-11,
+    "camera_shift_crash_camera_oblique": 1.1927209768935933e-11,
+    "camera_mount_area": 0.0,
+    "volume": 0.0,
+    "shadow": 0.0,
+    "stand_reserve": 0.0,
+    "stand_prop_clearance": 0.0,
+    "camera_coverage": 0.0
+   },
+   "objective_gradient_rel_norm": 0.0,
+   "monitored_by_name": {
+    "camera_shielding_crash_front": {
+     "value": 0.005417198775548804,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_below": {
+     "value": -2.220446049250313e-16,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_camera_oblique": {
+     "value": 0.029153625360309965,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "thrust_all": {
+     "value": 205.91086436268304,
+     "abs": 6.100435712141916e-10,
+     "rel": 2.9626584935299267e-12
+    },
+    "torsion_yaw": {
+     "value": 0.365838205897341,
+     "abs": 1.9346746427117978e-12,
+     "rel": 5.288334054575734e-12
+    },
+    "twist": {
+     "value": 102.45080766365479,
+     "abs": 2.6544029196884367e-09,
+     "rel": 2.590904825663084e-11
+    },
+    "stand_ground_z": {
+     "value": -1.3322824594133418,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   }
+  },
+  "deviation": null
+ },
+ "stand_camfix_raw_coarse_multigrid": {
+  "sha": "067637394b3ee5a7277de74adb9c31446436ff06",
+  "config": {
+   "run": "C:/clones/Deep_Frame-layout/exports/runs/free_layout_opt",
+   "grids": [
+    "coarse"
+   ],
+   "evaluations": 3,
+   "mma_iterations": 2,
+   "sample_s": 0.5,
+   "output": "exports/solver_memory/stand_camfix_raw_coarse_multigrid",
+   "reference": "exports/solver_memory/stand_camfix_raw_coarse_cudss",
+   "start": null,
+   "multigrid": null,
+   "share_static": "auto",
+   "modal": {}
+  },
+  "linear_solver": "multigrid",
+  "table": "| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi total GB | CuPy pool GB | host RSS GB |\n|---|---|---|---|---|---|---|---|---|\n| coarse | 0 | 16.7, 20.7 | 17.6 | 2.61 | 0.11 | 3.34 | 0.16 | 2.68 |",
+  "mass_g": 14.065253118069586,
+  "f1_hz": 9.718625181676938,
+  "evaluations": [
+   {
+    "index": 0,
+    "modal": "cold",
+    "seconds": 16.668487999995705,
+    "factorizations": 0,
+    "multigrid_solves": 6,
+    "multigrid_coarsest_factorizations": 6,
+    "torch_peak_reserved_gb": 1.00390625,
+    "rss_gb": 2.5456771850585938,
+    "pool_used_gb": 0.12431907653808594,
+    "pool_total_gb": 0.12996339797973633,
+    "device_used_gb": 3.37255859375,
+    "smi_used_gb": 3.0322265625,
+    "dedicated_gb": 2.3042564392089844,
+    "shared_gb": 0.107421875
+   },
+   {
+    "index": 1,
+    "modal": "cold",
+    "seconds": 23.345426100000623,
+    "factorizations": 0,
+    "multigrid_solves": 12,
+    "multigrid_coarsest_factorizations": 12,
+    "torch_peak_reserved_gb": 1.271484375,
+    "rss_gb": 2.679656982421875,
+    "pool_used_gb": 0.12431907653808594,
+    "pool_total_gb": 0.12996339797973633,
+    "device_used_gb": 3.64013671875,
+    "smi_used_gb": 3.2998046875,
+    "dedicated_gb": 2.57183837890625,
+    "shared_gb": 0.107421875
+   },
+   {
+    "index": 2,
+    "modal": "warm",
+    "seconds": 20.69556300000113,
+    "factorizations": 0,
+    "multigrid_solves": 18,
+    "multigrid_coarsest_factorizations": 17,
+    "torch_peak_reserved_gb": 1.271484375,
+    "dedicated_gb": 2.55621337890625,
+    "shared_gb": 0.107421875,
+    "rss_gb": 2.6340408325195312,
+    "pool_used_gb": 0.12431907653808594,
+    "pool_total_gb": 0.12996339797973633,
+    "device_used_gb": 3.62451171875,
+    "smi_used_gb": 3.2802734375
+   }
+  ],
+  "mma": {
+   "iterations": [
+    {
+     "seconds": 17.14190360000066,
+     "factorizations": 0
+    },
+    {
+     "seconds": 18.14865400000417,
+     "factorizations": 0
+    }
+   ],
+   "seconds_per_iteration": 17.645278800002416,
+   "smi_used_gb": 3.3369140625,
+   "rss_gb": 2.6591835021972656,
+   "pool_used_gb": 0.12432289123535156,
+   "pool_total_gb": 0.16315221786499023,
+   "device_used_gb": 3.68115234375,
+   "dedicated_gb": 2.61285400390625,
+   "shared_gb": 0.107421875
+  },
+  "noise_floor": {
+   "objective_rel": 0.0,
+   "constraints_g_abs": 1.3186714831192603e-08,
+   "values_rel": 1.4722850946341548e-10,
+   "values_by_name": {
+    "load_mean": {
+     "value": 132.1428527295582,
+     "abs": 2.0747847884194925e-12,
+     "rel": 1.5701074598909404e-14
+    },
+    "load_worst": {
+     "value": 45.18956384101156,
+     "abs": 8.554934538551606e-12,
+     "rel": 1.8931217324092909e-13
+    },
+    "crash_front": {
+     "value": 1124.710955804167,
+     "abs": 6.218306225491688e-08,
+     "rel": 5.528803817017685e-11
+    },
+    "crash_side_left": {
+     "value": 763.7018979839576,
+     "abs": 1.4763031686015893e-08,
+     "rel": 1.9330882540671658e-11
+    },
+    "crash_side_right": {
+     "value": 763.7018980024368,
+     "abs": 1.5311343304347247e-08,
+     "rel": 2.0048848044500202e-11
+    },
+    "crash_arm_front_left": {
+     "value": 1425.1217707839778,
+     "abs": 1.0577423381619155e-09,
+     "rel": 7.422119006574701e-13
+    },
+    "crash_arm_front_right": {
+     "value": 1236.2559280401529,
+     "abs": 1.4246779755922034e-08,
+     "rel": 1.1524134633277413e-11
+    },
+    "crash_arm_rear_left": {
+     "value": 1089.267684640033,
+     "abs": 2.052502168226056e-09,
+     "rel": 1.8842954740774672e-12
+    },
+    "crash_arm_rear_right": {
+     "value": 1033.596272053162,
+     "abs": 5.32054400537163e-10,
+     "rel": 5.147603710685571e-13
+    },
+    "crash_below": {
+     "value": 1681.2401152619452,
+     "abs": 1.3499175111064687e-08,
+     "rel": 8.029296344122416e-12
+    },
+    "crash_back": {
+     "value": 1904.1818471397044,
+     "abs": 1.216903910972178e-09,
+     "rel": 6.390691691553014e-13
+    },
+    "f1": {
+     "value": 9.718625181676938,
+     "abs": 1.5987211554602254e-14,
+     "rel": 1.6450075248033878e-15
+    },
+    "battery_shift_flight": {
+     "value": 121.64479353469643,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_front": {
+     "value": 174.2259573083631,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_left": {
+     "value": 147.26370853771724,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_right": {
+     "value": 147.26370853771866,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_left": {
+     "value": 103.5931436484305,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_right": {
+     "value": 124.1247955585566,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_left": {
+     "value": 131.91319018027409,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_right": {
+     "value": 102.51881953530159,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_below": {
+     "value": 109.02518053921244,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_back": {
+     "value": 2.3161632587008016,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_camera_oblique": {
+     "value": 169.5597012520294,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_contact_area": {
+     "value": 0.0,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shift_crash_front": {
+     "value": 7.811747940830019,
+     "abs": 1.1501120056323089e-09,
+     "rel": 1.4722850946341548e-10
+    },
+    "camera_shift_crash_camera_oblique": {
+     "value": 6.027942320280012,
+     "abs": 6.395257656777176e-10,
+     "rel": 1.0609354431380991e-10
+    },
+    "camera_mount_area": {
+     "value": 52.88918470380647,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "volume": {
+     "value": 0.031416943000400356,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "shadow": {
+     "value": 0.22235887918232103,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_reserve": {
+     "value": 3.363764051159207,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_prop_clearance": {
+     "value": 20.565615792746677,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_coverage": {
+     "value": 0.3933500865064814,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   },
+   "f1_rel": 1.6450075248033878e-15,
+   "gradients_rel_norm": 0.0019660152771808965,
+   "gradients_rel_norm_by_name": {
+    "load_mean": 9.368016107919987e-11,
+    "load_worst": 1.2361901976853203e-10,
+    "crash_front": 4.717879976644304e-09,
+    "crash_side_left": 1.867216864672788e-09,
+    "crash_side_right": 1.3393480718037737e-10,
+    "crash_arm_front_left": 1.0211901805150608e-10,
+    "crash_arm_front_right": 6.287750978088726e-10,
+    "crash_arm_rear_left": 6.933094775682401e-11,
+    "crash_arm_rear_right": 4.1602068831562933e-11,
+    "crash_below": 1.1845774047716768e-09,
+    "crash_back": 2.6536956243487633e-10,
+    "f1": 0.0019660152771808965,
+    "battery_shift_flight": 0.0,
+    "battery_shift_crash_front": 0.0,
+    "battery_shift_crash_side_left": 0.0,
+    "battery_shift_crash_side_right": 0.0,
+    "battery_shift_crash_arm_front_left": 0.0,
+    "battery_shift_crash_arm_front_right": 0.0,
+    "battery_shift_crash_arm_rear_left": 0.0,
+    "battery_shift_crash_arm_rear_right": 0.0,
+    "battery_shift_crash_below": 0.0,
+    "battery_shift_crash_back": 0.0,
+    "battery_shift_crash_camera_oblique": 0.0,
+    "battery_contact_area": 0.0,
+    "camera_shift_crash_front": 2.0500134651814314e-09,
+    "camera_shift_crash_camera_oblique": 1.977144027912451e-09,
+    "camera_mount_area": 0.0,
+    "volume": 0.0,
+    "shadow": 0.0,
+    "stand_reserve": 0.0,
+    "stand_prop_clearance": 0.0,
+    "camera_coverage": 0.0
+   },
+   "objective_gradient_rel_norm": 0.0,
+   "monitored_by_name": {
+    "camera_shielding_crash_front": {
+     "value": 0.005417198775548804,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_below": {
+     "value": -2.220446049250313e-16,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_camera_oblique": {
+     "value": 0.029153625360309965,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "thrust_all": {
+     "value": 205.91086435873888,
+     "abs": 2.0474999473663047e-10,
+     "rel": 9.94362271142304e-13
+    },
+    "torsion_yaw": {
+     "value": 0.3658382056869348,
+     "abs": 3.0397906414236786e-13,
+     "rel": 8.309112045079764e-13
+    },
+    "twist": {
+     "value": 102.45080771356314,
+     "abs": 3.70107500202721e-10,
+     "rel": 3.612538626708393e-12
+    },
+    "stand_ground_z": {
+     "value": -1.3322824594133418,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   }
+  },
+  "deviation": {
+   "objective_rel": 0.0,
+   "constraints_g_abs": 4.17840340105613e-08,
+   "values_rel": 1.8184566468114664e-09,
+   "values_by_name": {
+    "load_mean": {
+     "value": 132.1428527299768,
+     "abs": 4.185949364909902e-10,
+     "rel": 3.1677455711233587e-12
+    },
+    "load_worst": {
+     "value": 45.18956384111105,
+     "abs": 9.949019386112923e-11,
+     "rel": 2.2016188120545295e-12
+    },
+    "crash_front": {
+     "value": 1124.7109552275851,
+     "abs": 5.765818968939129e-07,
+     "rel": 5.126489559064014e-10
+    },
+    "crash_side_left": {
+     "value": 763.701897148401,
+     "abs": 8.35556534184434e-07,
+     "rel": 1.0940872836696257e-09
+    },
+    "crash_side_right": {
+     "value": 763.7018971484156,
+     "abs": 8.540212093066657e-07,
+     "rel": 1.1182651404893625e-09
+    },
+    "crash_arm_front_left": {
+     "value": 1425.1217733755,
+     "abs": 2.5915221613104222e-06,
+     "rel": 1.8184566468114664e-09
+    },
+    "crash_arm_front_right": {
+     "value": 1236.2559274560701,
+     "abs": 5.840827270731097e-07,
+     "rel": 4.724610124013864e-10
+    },
+    "crash_arm_rear_left": {
+     "value": 1089.2676844941561,
+     "abs": 1.4587681107514072e-07,
+     "rel": 1.339219120806694e-10
+    },
+    "crash_arm_rear_right": {
+     "value": 1033.5962730000194,
+     "abs": 9.468574262427865e-07,
+     "rel": 9.160805345152097e-10
+    },
+    "crash_below": {
+     "value": 1681.2401150379844,
+     "abs": 2.2396079657482915e-07,
+     "rel": 1.3321166594324878e-10
+    },
+    "crash_back": {
+     "value": 1904.181847089904,
+     "abs": 4.980029189027846e-08,
+     "rel": 2.6153117658582105e-11
+    },
+    "f1": {
+     "value": 9.718625181677028,
+     "abs": 9.059419880941277e-14,
+     "rel": 9.32170930721911e-15
+    },
+    "battery_shift_flight": {
+     "value": 121.64479353469643,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_front": {
+     "value": 174.2259573083631,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_left": {
+     "value": 147.26370853771724,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_right": {
+     "value": 147.26370853771866,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_left": {
+     "value": 103.5931436484305,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_right": {
+     "value": 124.1247955585566,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_left": {
+     "value": 131.91319018027409,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_right": {
+     "value": 102.51881953530159,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_below": {
+     "value": 109.02518053921244,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_back": {
+     "value": 2.3161632587008016,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_camera_oblique": {
+     "value": 169.5597012520294,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_contact_area": {
+     "value": 0.0,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shift_crash_front": {
+     "value": 7.81174794215415,
+     "abs": 1.324131027047315e-09,
+     "rel": 1.6950508859892573e-10
+    },
+    "camera_shift_crash_camera_oblique": {
+     "value": 6.0279423209289416,
+     "abs": 6.489297987855025e-10,
+     "rel": 1.0765361780792531e-10
+    },
+    "camera_mount_area": {
+     "value": 52.88918470380647,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "volume": {
+     "value": 0.031416943000400356,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "shadow": {
+     "value": 0.22235887918232103,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_reserve": {
+     "value": 3.363764051159207,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_prop_clearance": {
+     "value": 20.565615792746677,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_coverage": {
+     "value": 0.3933500865064814,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   },
+   "f1_rel": 9.32170930721911e-15,
+   "gradients_rel_norm": 0.0028771107410090146,
+   "gradients_rel_norm_by_name": {
+    "load_mean": 1.6283551994966322e-10,
+    "load_worst": 1.399495065812343e-10,
+    "crash_front": 2.296369628873352e-09,
+    "crash_side_left": 5.4624098107244855e-09,
+    "crash_side_right": 5.469921850378469e-09,
+    "crash_arm_front_left": 8.358944365230796e-09,
+    "crash_arm_front_right": 8.024459308268777e-10,
+    "crash_arm_rear_left": 3.739869327651308e-09,
+    "crash_arm_rear_right": 3.973210102807427e-09,
+    "crash_below": 3.39526019505406e-09,
+    "crash_back": 8.315552243304029e-10,
+    "f1": 0.0028771107410090146,
+    "battery_shift_flight": 0.0,
+    "battery_shift_crash_front": 0.0,
+    "battery_shift_crash_side_left": 0.0,
+    "battery_shift_crash_side_right": 0.0,
+    "battery_shift_crash_arm_front_left": 0.0,
+    "battery_shift_crash_arm_front_right": 0.0,
+    "battery_shift_crash_arm_rear_left": 0.0,
+    "battery_shift_crash_arm_rear_right": 0.0,
+    "battery_shift_crash_below": 0.0,
+    "battery_shift_crash_back": 0.0,
+    "battery_shift_crash_camera_oblique": 0.0,
+    "battery_contact_area": 0.0,
+    "camera_shift_crash_front": 1.1152302243104516e-09,
+    "camera_shift_crash_camera_oblique": 3.1718958990793067e-09,
+    "camera_mount_area": 0.0,
+    "volume": 0.0,
+    "shadow": 0.0,
+    "stand_reserve": 0.0,
+    "stand_prop_clearance": 0.0,
+    "camera_coverage": 0.0
+   },
+   "objective_gradient_rel_norm": 0.0,
+   "monitored_by_name": {
+    "camera_shielding_crash_front": {
+     "value": 0.005417198775548804,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_below": {
+     "value": -2.220446049250313e-16,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_camera_oblique": {
+     "value": 0.029153625360309965,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "thrust_all": {
+     "value": 205.91086436268304,
+     "abs": 3.944165882785455e-09,
+     "rel": 1.9154724521180977e-11
+    },
+    "torsion_yaw": {
+     "value": 0.365838205897341,
+     "abs": 2.1040619246903702e-10,
+     "rel": 5.751345514964606e-10
+    },
+    "twist": {
+     "value": 102.45080766365479,
+     "abs": 4.9908351229532855e-08,
+     "rel": 4.871445366578426e-10
+    },
+    "stand_ground_z": {
+     "value": -1.3322824594133418,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   }
+  }
+ },
+ "stand_camfix_coarse_cudss": {
+  "sha": "067637394b3ee5a7277de74adb9c31446436ff06",
+  "config": {
+   "run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt",
+   "grids": [
+    "coarse"
+   ],
+   "evaluations": 3,
+   "mma_iterations": 2,
+   "sample_s": 0.5,
+   "output": "exports/solver_memory/stand_camfix_coarse_cudss",
+   "reference": null,
+   "start": "C:/clones/Deep_Frame-layout/exports/runs/free_layout_opt/coarse",
+   "multigrid": null,
+   "share_static": "auto",
+   "modal": {}
+  },
+  "linear_solver": "cuda_cudss",
+  "table": "| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi total GB | CuPy pool GB | host RSS GB |\n|---|---|---|---|---|---|---|---|---|\n| coarse | 4 | 11.9, 6.7 | 14.2 | 6.06 | 0.52 | 6.80 | 1.77 | 4.32 |",
+  "mass_g": 14.065253118069586,
+  "f1_hz": 9.718625181677044,
+  "evaluations": [
+   {
+    "index": 0,
+    "modal": "cold",
+    "seconds": 11.948371999998926,
+    "factorizations": 4,
+    "rss_gb": 4.014751434326172,
+    "pool_used_gb": 1.4128713607788086,
+    "pool_total_gb": 1.5239744186401367,
+    "device_used_gb": 6.88427734375,
+    "smi_used_gb": 6.556640625,
+    "dedicated_gb": 5.8168182373046875,
+    "shared_gb": 0.521484375
+   },
+   {
+    "index": 1,
+    "modal": "cold",
+    "seconds": 9.112324199988507,
+    "factorizations": 4,
+    "smi_used_gb": 6.8037109375,
+    "dedicated_gb": 6.0609588623046875,
+    "shared_gb": 0.521484375,
+    "rss_gb": 4.162357330322266,
+    "pool_used_gb": 1.6346616744995117,
+    "pool_total_gb": 1.7672185897827148,
+    "device_used_gb": 7.12841796875
+   },
+   {
+    "index": 2,
+    "modal": "warm",
+    "seconds": 6.749843499987037,
+    "factorizations": 4,
+    "rss_gb": 4.0811920166015625,
+    "pool_used_gb": 1.4068012237548828,
+    "pool_total_gb": 1.7672185897827148,
+    "device_used_gb": 7.12841796875,
+    "smi_used_gb": 6.80078125,
+    "dedicated_gb": 6.0609588623046875,
+    "shared_gb": 0.521484375
+   }
+  ],
+  "mma": {
+   "iterations": [
+    {
+     "seconds": 13.89647240001068,
+     "factorizations": 4
+    },
+    {
+     "seconds": 14.513293699987116,
+     "factorizations": 4
+    }
+   ],
+   "seconds_per_iteration": 14.204883049998898,
+   "smi_used_gb": 6.8046875,
+   "dedicated_gb": 6.0648651123046875,
+   "shared_gb": 0.521484375,
+   "rss_gb": 4.318767547607422,
+   "pool_used_gb": 1.650045394897461,
+   "pool_total_gb": 1.7672185897827148,
+   "device_used_gb": 7.13232421875
+  },
+  "noise_floor": {
+   "objective_rel": 0.0,
+   "constraints_g_abs": 1.113103387240244e-09,
+   "values_rel": 1.6529244071588004e-10,
+   "values_by_name": {
+    "load_mean": {
+     "value": 132.1428527300072,
+     "abs": 1.0064127309306059e-10,
+     "rel": 7.616096596513601e-13
+    },
+    "load_worst": {
+     "value": 45.189563841118265,
+     "abs": 7.702283255639486e-12,
+     "rel": 1.7044385032614832e-13
+    },
+    "crash_front": {
+     "value": 1124.7109552295199,
+     "abs": 8.242295734817162e-10,
+     "rel": 7.328367965558898e-13
+    },
+    "crash_side_left": {
+     "value": 763.7018971497257,
+     "abs": 1.0629264579620212e-08,
+     "rel": 1.3918080627127626e-11
+    },
+    "crash_side_right": {
+     "value": 763.7018971497403,
+     "abs": 1.0629491953295656e-08,
+     "rel": 1.391837835281888e-11
+    },
+    "crash_arm_front_left": {
+     "value": 1425.1217734040195,
+     "abs": 2.3556185624329373e-07,
+     "rel": 1.6529244071588004e-10
+    },
+    "crash_arm_front_right": {
+     "value": 1236.255927452114,
+     "abs": 1.662579052208457e-08,
+     "rel": 1.3448502169247287e-11
+    },
+    "crash_arm_rear_left": {
+     "value": 1089.2676845094668,
+     "abs": 5.578453965426888e-08,
+     "rel": 5.121288407577289e-11
+    },
+    "crash_arm_rear_right": {
+     "value": 1033.5962729683465,
+     "abs": 1.0717303666751832e-07,
+     "rel": 1.0368945735430341e-10
+    },
+    "crash_below": {
+     "value": 1681.2401150382848,
+     "abs": 2.19279172597453e-09,
+     "rel": 1.3042704051375769e-12
+    },
+    "crash_back": {
+     "value": 1904.181847092396,
+     "abs": 1.9670096662594005e-09,
+     "rel": 1.032994652933458e-12
+    },
+    "f1": {
+     "value": 9.718625181677044,
+     "abs": 5.861977570020827e-14,
+     "rel": 6.0316942576123555e-15
+    },
+    "battery_shift_flight": {
+     "value": 121.64479353469643,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_front": {
+     "value": 174.2259573083631,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_left": {
+     "value": 147.26370853771724,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_right": {
+     "value": 147.26370853771866,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_left": {
+     "value": 103.5931436484305,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_right": {
+     "value": 124.1247955585566,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_left": {
+     "value": 131.91319018027409,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_right": {
+     "value": 102.51881953530159,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_below": {
+     "value": 109.02518053921244,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_back": {
+     "value": 2.3161632587008016,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_camera_oblique": {
+     "value": 169.5597012520294,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_contact_area": {
+     "value": 0.0,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shift_crash_front": {
+     "value": 7.811747942238088,
+     "abs": 4.4646064623066195e-11,
+     "rel": 5.715246440769692e-12
+    },
+    "camera_shift_crash_camera_oblique": {
+     "value": 6.027942321040897,
+     "abs": 9.394796052220045e-11,
+     "rel": 1.5585411325896303e-11
+    },
+    "camera_mount_area": {
+     "value": 52.88918470380647,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "volume": {
+     "value": 0.031416943000400356,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "shadow": {
+     "value": 0.22235887918232103,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_reserve": {
+     "value": 3.363764051159207,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_prop_clearance": {
+     "value": 20.565615792746677,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_coverage": {
+     "value": 0.3933500865064814,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   },
+   "f1_rel": 6.0316942576123555e-15,
+   "gradients_rel_norm": 7.419374462327114e-10,
+   "gradients_rel_norm_by_name": {
+    "load_mean": 1.3206244664165532e-11,
+    "load_worst": 4.480443376828821e-12,
+    "crash_front": 7.937944167011265e-12,
+    "crash_side_left": 4.001646098000082e-10,
+    "crash_side_right": 3.9893185639792756e-10,
+    "crash_arm_front_left": 7.419374462327114e-10,
+    "crash_arm_front_right": 1.2778940868286644e-10,
+    "crash_arm_rear_left": 4.0639192083895176e-10,
+    "crash_arm_rear_right": 3.7033861238341433e-10,
+    "crash_below": 9.401797845539795e-12,
+    "crash_back": 3.759403995490634e-11,
+    "f1": 2.6035817297398383e-13,
+    "battery_shift_flight": 0.0,
+    "battery_shift_crash_front": 0.0,
+    "battery_shift_crash_side_left": 0.0,
+    "battery_shift_crash_side_right": 0.0,
+    "battery_shift_crash_arm_front_left": 0.0,
+    "battery_shift_crash_arm_front_right": 0.0,
+    "battery_shift_crash_arm_rear_left": 0.0,
+    "battery_shift_crash_arm_rear_right": 0.0,
+    "battery_shift_crash_below": 0.0,
+    "battery_shift_crash_back": 0.0,
+    "battery_shift_crash_camera_oblique": 0.0,
+    "battery_contact_area": 0.0,
+    "camera_shift_crash_front": 1.4897035210504295e-11,
+    "camera_shift_crash_camera_oblique": 2.8418253119813732e-11,
+    "camera_mount_area": 0.0,
+    "volume": 0.0,
+    "shadow": 0.0,
+    "stand_reserve": 0.0,
+    "stand_prop_clearance": 0.0,
+    "camera_coverage": 0.0
+   },
+   "objective_gradient_rel_norm": 0.0,
+   "monitored_by_name": {
+    "camera_shielding_crash_front": {
+     "value": 0.005417198775548804,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_below": {
+     "value": -2.220446049250313e-16,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_camera_oblique": {
+     "value": 0.029153625360309965,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "thrust_all": {
+     "value": 205.91086436357557,
+     "abs": 7.092921805451624e-10,
+     "rel": 3.444656418384848e-12
+    },
+    "torsion_yaw": {
+     "value": 0.3658382059006799,
+     "abs": 6.275091557483847e-12,
+     "rel": 1.715264140341714e-11
+    },
+    "twist": {
+     "value": 102.45080766421904,
+     "abs": 6.82636880355858e-09,
+     "rel": 6.663069778748744e-11
+    },
+    "stand_ground_z": {
+     "value": -1.3322824594133418,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   }
+  },
+  "deviation": null
+ },
+ "stand_camfix_coarse_multigrid": {
+  "sha": "067637394b3ee5a7277de74adb9c31446436ff06",
+  "config": {
+   "run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt",
+   "grids": [
+    "coarse"
+   ],
+   "evaluations": 3,
+   "mma_iterations": 2,
+   "sample_s": 0.5,
+   "output": "exports/solver_memory/stand_camfix_coarse_multigrid",
+   "reference": "exports/solver_memory/stand_camfix_coarse_cudss",
+   "start": "C:/clones/Deep_Frame-layout/exports/runs/free_layout_opt/coarse",
+   "multigrid": null,
+   "share_static": "auto",
+   "modal": {}
+  },
+  "linear_solver": "multigrid",
+  "table": "| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi total GB | CuPy pool GB | host RSS GB |\n|---|---|---|---|---|---|---|---|---|\n| coarse | 0 | 16.3, 9.5 | 18.1 | 2.57 | 0.11 | 3.31 | 0.16 | 2.71 |",
+  "mass_g": 14.065253118069586,
+  "f1_hz": 9.718625181676948,
+  "evaluations": [
+   {
+    "index": 0,
+    "modal": "cold",
+    "seconds": 16.28214370000933,
+    "factorizations": 0,
+    "multigrid_solves": 6,
+    "multigrid_coarsest_factorizations": 6,
+    "torch_peak_reserved_gb": 1.00390625,
+    "rss_gb": 2.5872955322265625,
+    "pool_used_gb": 0.12431907653808594,
+    "pool_total_gb": 0.12996339797973633,
+    "device_used_gb": 3.37255859375,
+    "smi_used_gb": 3.044921875,
+    "dedicated_gb": 2.3042564392089844,
+    "shared_gb": 0.107421875
+   },
+   {
+    "index": 1,
+    "modal": "cold",
+    "seconds": 14.826252500002738,
+    "factorizations": 0,
+    "multigrid_solves": 12,
+    "multigrid_coarsest_factorizations": 12,
+    "torch_peak_reserved_gb": 1.2734375,
+    "dedicated_gb": 2.57183837890625,
+    "shared_gb": 0.107421875,
+    "rss_gb": 2.632068634033203,
+    "pool_used_gb": 0.12431907653808594,
+    "pool_total_gb": 0.12996339797973633,
+    "device_used_gb": 3.64013671875,
+    "smi_used_gb": 3.3125
+   },
+   {
+    "index": 2,
+    "modal": "warm",
+    "seconds": 9.511940500000492,
+    "factorizations": 0,
+    "multigrid_solves": 18,
+    "multigrid_coarsest_factorizations": 16,
+    "torch_peak_reserved_gb": 1.2734375,
+    "rss_gb": 2.6327972412109375,
+    "pool_used_gb": 0.12431907653808594,
+    "pool_total_gb": 0.12996339797973633,
+    "device_used_gb": 3.53857421875,
+    "smi_used_gb": 3.2109375,
+    "dedicated_gb": 2.46832275390625,
+    "shared_gb": 0.107421875
+   }
+  ],
+  "mma": {
+   "iterations": [
+    {
+     "seconds": 16.9279181999882,
+     "factorizations": 0
+    },
+    {
+     "seconds": 19.331046399995103,
+     "factorizations": 0
+    }
+   ],
+   "seconds_per_iteration": 18.12948229999165,
+   "rss_gb": 2.710521697998047,
+   "pool_used_gb": 0.12432289123535156,
+   "pool_total_gb": 0.16315221786499023,
+   "device_used_gb": 3.30615234375,
+   "smi_used_gb": 2.974609375,
+   "dedicated_gb": 2.2378501892089844,
+   "shared_gb": 0.107421875
+  },
+  "noise_floor": {
+   "objective_rel": 0.0,
+   "constraints_g_abs": 2.606014959383174e-08,
+   "values_rel": 3.736342218702769e-10,
+   "values_by_name": {
+    "load_mean": {
+     "value": 132.14285272954749,
+     "abs": 4.7691628424217924e-11,
+     "rel": 3.609096325612619e-13
+    },
+    "load_worst": {
+     "value": 45.18956384101564,
+     "abs": 5.5564441936439835e-12,
+     "rel": 1.2295857099202092e-13
+    },
+    "crash_front": {
+     "value": 1124.7109558593347,
+     "abs": 1.21733592095552e-07,
+     "rel": 1.0823544614850981e-10
+    },
+    "crash_side_left": {
+     "value": 763.7018979780912,
+     "abs": 1.0154622032132465e-08,
+     "rel": 1.3296578231659413e-11
+    },
+    "crash_side_right": {
+     "value": 763.701897989604,
+     "abs": 8.963070285972208e-10,
+     "rel": 1.1736346746769795e-12
+    },
+    "crash_arm_front_left": {
+     "value": 1425.1217707790647,
+     "abs": 7.344397090491839e-09,
+     "rel": 5.153522485644796e-12
+    },
+    "crash_arm_front_right": {
+     "value": 1236.2559280416476,
+     "abs": 1.0645635484252125e-08,
+     "rel": 8.611190646515945e-12
+    },
+    "crash_arm_rear_left": {
+     "value": 1089.267684642577,
+     "abs": 4.979483492206782e-10,
+     "rel": 4.571404772593348e-13
+    },
+    "crash_arm_rear_right": {
+     "value": 1033.5962720516582,
+     "abs": 3.5697667044587433e-09,
+     "rel": 3.4537341135846608e-12
+    },
+    "crash_below": {
+     "value": 1681.2401152582966,
+     "abs": 1.0292683327861596e-07,
+     "rel": 6.12207812224388e-11
+    },
+    "crash_back": {
+     "value": 1904.181847138999,
+     "abs": 1.5279510989785194e-10,
+     "rel": 8.024186877289268e-14
+    },
+    "f1": {
+     "value": 9.718625181676948,
+     "abs": 5.329070518200751e-15,
+     "rel": 5.483358416011286e-16
+    },
+    "battery_shift_flight": {
+     "value": 121.64479353469643,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_front": {
+     "value": 174.2259573083631,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_left": {
+     "value": 147.26370853771724,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_right": {
+     "value": 147.26370853771866,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_left": {
+     "value": 103.5931436484305,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_right": {
+     "value": 124.1247955585566,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_left": {
+     "value": 131.91319018027409,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_right": {
+     "value": 102.51881953530159,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_below": {
+     "value": 109.02518053921244,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_back": {
+     "value": 2.3161632587008016,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_camera_oblique": {
+     "value": 169.5597012520294,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_contact_area": {
+     "value": 0.0,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shift_crash_front": {
+     "value": 7.811747941878874,
+     "abs": 2.91873636371065e-09,
+     "rel": 3.736342218702769e-10
+    },
+    "camera_shift_crash_camera_oblique": {
+     "value": 6.027942319292879,
+     "abs": 1.0540235351186311e-09,
+     "rel": 1.7485627421237098e-10
+    },
+    "camera_mount_area": {
+     "value": 52.88918470380647,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "volume": {
+     "value": 0.031416943000400356,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "shadow": {
+     "value": 0.22235887918232103,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_reserve": {
+     "value": 3.363764051159207,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_prop_clearance": {
+     "value": 20.565615792746677,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_coverage": {
+     "value": 0.3933500865064814,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   },
+   "f1_rel": 5.483358416011286e-16,
+   "gradients_rel_norm": 7.757213227768638e-09,
+   "gradients_rel_norm_by_name": {
+    "load_mean": 2.497805583189177e-10,
+    "load_worst": 4.83930279185125e-11,
+    "crash_front": 7.757213227768638e-09,
+    "crash_side_left": 5.564799855380672e-10,
+    "crash_side_right": 1.9307819044568558e-09,
+    "crash_arm_front_left": 1.2179891868732372e-10,
+    "crash_arm_front_right": 5.5664237369160705e-11,
+    "crash_arm_rear_left": 5.231231203350312e-11,
+    "crash_arm_rear_right": 7.232822977161726e-11,
+    "crash_below": 6.662798584752092e-09,
+    "crash_back": 4.997942793710603e-11,
+    "f1": 7.593300905535061e-11,
+    "battery_shift_flight": 0.0,
+    "battery_shift_crash_front": 0.0,
+    "battery_shift_crash_side_left": 0.0,
+    "battery_shift_crash_side_right": 0.0,
+    "battery_shift_crash_arm_front_left": 0.0,
+    "battery_shift_crash_arm_front_right": 0.0,
+    "battery_shift_crash_arm_rear_left": 0.0,
+    "battery_shift_crash_arm_rear_right": 0.0,
+    "battery_shift_crash_below": 0.0,
+    "battery_shift_crash_back": 0.0,
+    "battery_shift_crash_camera_oblique": 0.0,
+    "battery_contact_area": 0.0,
+    "camera_shift_crash_front": 5.075884292419864e-09,
+    "camera_shift_crash_camera_oblique": 1.7237271228357968e-09,
+    "camera_mount_area": 0.0,
+    "volume": 0.0,
+    "shadow": 0.0,
+    "stand_reserve": 0.0,
+    "stand_prop_clearance": 0.0,
+    "camera_coverage": 0.0
+   },
+   "objective_gradient_rel_norm": 0.0,
+   "monitored_by_name": {
+    "camera_shielding_crash_front": {
+     "value": 0.005417198775548804,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_below": {
+     "value": -2.220446049250313e-16,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_camera_oblique": {
+     "value": 0.029153625360309965,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "thrust_all": {
+     "value": 205.91086435870943,
+     "abs": 1.8275159163749777e-11,
+     "rel": 8.875276795455204e-14
+    },
+    "torsion_yaw": {
+     "value": 0.3658382056869985,
+     "abs": 2.2609691896491313e-13,
+     "rel": 6.180243491527391e-13
+    },
+    "twist": {
+     "value": 102.45080771408061,
+     "abs": 1.3972538681628066e-09,
+     "rel": 1.3638290408234343e-11
+    },
+    "stand_ground_z": {
+     "value": -1.3322824594133418,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   }
+  },
+  "deviation": {
+   "objective_rel": 0.0,
+   "constraints_g_abs": 4.1091361424605566e-08,
+   "values_rel": 1.8419160950227614e-09,
+   "values_by_name": {
+    "load_mean": {
+     "value": 132.1428527300072,
+     "abs": 4.597211500367848e-10,
+     "rel": 3.4789709813218723e-12
+    },
+    "load_worst": {
+     "value": 45.189563841118265,
+     "abs": 1.0262368732583127e-10,
+     "rel": 2.2709598987643547e-12
+    },
+    "crash_front": {
+     "value": 1124.7109552295199,
+     "abs": 6.298148491623579e-07,
+     "rel": 5.599792962217848e-10
+    },
+    "crash_side_left": {
+     "value": 763.7018971497257,
+     "abs": 8.283655006380286e-07,
+     "rel": 1.0846712620849042e-09
+    },
+    "crash_side_right": {
+     "value": 763.7018971497403,
+     "abs": 8.398637874051929e-07,
+     "rel": 1.0997272503049962e-09
+    },
+    "crash_arm_front_left": {
+     "value": 1425.1217734040195,
+     "abs": 2.624954731800244e-06,
+     "rel": 1.8419160950227614e-09
+    },
+    "crash_arm_front_right": {
+     "value": 1236.255927452114,
+     "abs": 5.895335561945103e-07,
+     "rel": 4.768701553646106e-10
+    },
+    "crash_arm_rear_left": {
+     "value": 1089.2676845094668,
+     "abs": 1.3311023394635413e-07,
+     "rel": 1.2220158170422366e-10
+    },
+    "crash_arm_rear_right": {
+     "value": 1033.5962729683465,
+     "abs": 9.166883501166012e-07,
+     "rel": 8.86892081648087e-10
+    },
+    "crash_below": {
+     "value": 1681.2401150382848,
+     "abs": 2.200117705797311e-07,
+     "rel": 1.3086278908751892e-10
+    },
+    "crash_back": {
+     "value": 1904.181847092396,
+     "abs": 4.660296326619573e-08,
+     "rel": 2.4474008791416878e-11
+    },
+    "f1": {
+     "value": 9.718625181677044,
+     "abs": 9.592326932761353e-14,
+     "rel": 9.870045148820219e-15
+    },
+    "battery_shift_flight": {
+     "value": 121.64479353469643,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_front": {
+     "value": 174.2259573083631,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_left": {
+     "value": 147.26370853771724,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_side_right": {
+     "value": 147.26370853771866,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_left": {
+     "value": 103.5931436484305,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_front_right": {
+     "value": 124.1247955585566,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_left": {
+     "value": 131.91319018027409,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_arm_rear_right": {
+     "value": 102.51881953530159,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_below": {
+     "value": 109.02518053921244,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_back": {
+     "value": 2.3161632587008016,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_shift_crash_camera_oblique": {
+     "value": 169.5597012520294,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "battery_contact_area": {
+     "value": 0.0,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shift_crash_front": {
+     "value": 7.811747942238088,
+     "abs": 3.5921399188509895e-10,
+     "rel": 4.598381751961433e-11
+    },
+    "camera_shift_crash_camera_oblique": {
+     "value": 6.027942321040897,
+     "abs": 1.7480186187412983e-09,
+     "rel": 2.899859563419732e-10
+    },
+    "camera_mount_area": {
+     "value": 52.88918470380647,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "volume": {
+     "value": 0.031416943000400356,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "shadow": {
+     "value": 0.22235887918232103,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_reserve": {
+     "value": 3.363764051159207,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "stand_prop_clearance": {
+     "value": 20.565615792746677,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_coverage": {
+     "value": 0.3933500865064814,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   },
+   "f1_rel": 9.870045148820219e-15,
+   "gradients_rel_norm": 0.002877110753348184,
+   "gradients_rel_norm_by_name": {
+    "load_mean": 1.0717724787476054e-10,
+    "load_worst": 4.255018346433133e-11,
+    "crash_front": 2.1400954704655107e-09,
+    "crash_side_left": 5.653880369698017e-09,
+    "crash_side_right": 5.5585680831091175e-09,
+    "crash_arm_front_left": 8.443200439192164e-09,
+    "crash_arm_front_right": 3.7110975782061224e-10,
+    "crash_arm_rear_left": 3.863371840135753e-09,
+    "crash_arm_rear_right": 3.867534886581882e-09,
+    "crash_below": 3.114267547937236e-09,
+    "crash_back": 8.488650559915659e-10,
+    "f1": 0.002877110753348184,
+    "battery_shift_flight": 0.0,
+    "battery_shift_crash_front": 0.0,
+    "battery_shift_crash_side_left": 0.0,
+    "battery_shift_crash_side_right": 0.0,
+    "battery_shift_crash_arm_front_left": 0.0,
+    "battery_shift_crash_arm_front_right": 0.0,
+    "battery_shift_crash_arm_rear_left": 0.0,
+    "battery_shift_crash_arm_rear_right": 0.0,
+    "battery_shift_crash_below": 0.0,
+    "battery_shift_crash_back": 0.0,
+    "battery_shift_crash_camera_oblique": 0.0,
+    "battery_contact_area": 0.0,
+    "camera_shift_crash_front": 2.1598075574335056e-09,
+    "camera_shift_crash_camera_oblique": 7.788410411590996e-10,
+    "camera_mount_area": 0.0,
+    "volume": 0.0,
+    "shadow": 0.0,
+    "stand_reserve": 0.0,
+    "stand_prop_clearance": 0.0,
+    "camera_coverage": 0.0
+   },
+   "objective_gradient_rel_norm": 0.0,
+   "monitored_by_name": {
+    "camera_shielding_crash_front": {
+     "value": 0.005417198775548804,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_below": {
+     "value": -2.220446049250313e-16,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "camera_shielding_crash_camera_oblique": {
+     "value": 0.029153625360309965,
+     "abs": 0.0,
+     "rel": 0.0
+    },
+    "thrust_all": {
+     "value": 205.91086436357557,
+     "abs": 4.866137714998331e-09,
+     "rel": 2.363225335408345e-11
+    },
+    "torsion_yaw": {
+     "value": 0.3658382059006799,
+     "abs": 2.1368140590283247e-10,
+     "rel": 5.84087179677576e-10
+    },
+    "twist": {
+     "value": 102.45080766421904,
+     "abs": 4.986156909581041e-08,
+     "rel": 4.866879064460959e-10
+    },
+    "stand_ground_z": {
+     "value": -1.3322824594133418,
+     "abs": 0.0,
+     "rel": 0.0
+    }
+   }
+  }
+ }
+}

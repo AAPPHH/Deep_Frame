@@ -819,7 +819,8 @@ def factor_inventory(tp):
 def evaluation_arrays(result):
     values = {row["name"]: row["value"] for row in result["rows"]}
     return {"objective": np.float64(result["objective"]), "objective_gradient": result["objective_gradient"], "constraints": result["constraints"], "constraint_gradients": result["constraint_gradients"],
-            "names": np.array(result["names"]), "values": np.array([values[name] for name in result["names"]]), "f1": np.float64(values["f1"]), "mass_g": np.float64(result["mass_g"]), "beta": np.float64(result["beta"])}
+            "names": np.array(result["names"]), "values": np.array([values[name] for name in result["names"]]), "monitored": np.array([row["name"] for row in result["rows"] if row["g"] is None and isinstance(row["value"], float)]),
+            "monitored_values": np.array([row["value"] for row in result["rows"] if row["g"] is None and isinstance(row["value"], float)]), "f1": np.float64(values["f1"]), "mass_g": np.float64(result["mass_g"]), "beta": np.float64(result["beta"])}
 
 def deviation(a, b):
     scale = lambda x: np.maximum(np.abs(x), 1e-30)
@@ -827,7 +828,8 @@ def deviation(a, b):
     return {"objective_rel": float(abs(a["objective"] - b["objective"]) / scale(b["objective"])), "constraints_g_abs": float(np.max(np.abs(a["constraints"] - b["constraints"]))),
             "values_rel": float(np.max(np.abs(a["values"] - b["values"]) / scale(b["values"]))), "values_by_name": {str(name): {"value": float(y), "abs": float(abs(x - y)), "rel": float(abs(x - y) / scale(y))} for name, x, y in zip(b["names"], a["values"], b["values"])}, "f1_rel": float(abs(a["f1"] - b["f1"]) / b["f1"]),
             "gradients_rel_norm": float(max(rows)), "gradients_rel_norm_by_name": dict(zip([str(name) for name in b["names"]], map(float, rows))),
-            "objective_gradient_rel_norm": float(np.linalg.norm(a["objective_gradient"] - b["objective_gradient"]) / np.linalg.norm(b["objective_gradient"]))}
+            "objective_gradient_rel_norm": float(np.linalg.norm(a["objective_gradient"] - b["objective_gradient"]) / np.linalg.norm(b["objective_gradient"])),
+            "monitored_by_name": {str(name): {"value": float(y), "abs": float(abs(x - y)), "rel": float(abs(x - y) / scale(y))} for name, x, y in zip(b.get("monitored", []), a.get("monitored_values", []), b.get("monitored_values", []))}}
 
 def solver_grid(cfg, spec, grid, probe, out):
     half, problem = frame_setup(cfg, cfg["shape"] if grid == "fine" else cfg["coarse_shape"])
