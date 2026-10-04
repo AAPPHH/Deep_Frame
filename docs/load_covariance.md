@@ -145,3 +145,22 @@ Standard bleibt `"rails"` (zwei Schienen als feste Bereiche). Mit `"free"` (Auft
 - Prüfung:
   - `tests/test_topology_problem.py::test_free_battery_support_equilibrium_and_gradients` (Gleichgewicht Σ T_jᵀ f_j = w, FD aller Zeilen auf dem Minigitter);
   - `tools/formulation_study.py battery_fd` (FD auf dem Rahmengitter 68 × 64 × 24 → `docs/validation/battery_support_fd.json`).
+
+## Freier Kamerakäfig (`CAMERA_SUPPORT`, Schalter `TOPOLOGY_CONFIG["camera_support"]`)
+
+Standard bleibt `"prescribed"` (Bügelpfad, Laschen, Aufprallkontakte als feste Bereiche). Mit `"free"` (Auftrag: `overrides.camera.support = "free"`) entfallen Bügel, Laschen und Aufprallkontakte; die Kamera ist ein Starrkörper wie der freie Akku.
+
+- Körper: Lux 2,3 g, Quader 16 × 14 × 14 mm, um `tilt_deg` gekippt, Eigenträgheit gedreht. Volumen = Keep-out `camera_envelope`, Referenzpunkt Mitte der Schraubachse (wie der Sigma-Kamerablock).
+- Kopplung: bilaterale Federn (normal x, Schub y/z) an den Knoten zwischen erlaubten Zellen und Kamera-Keep-out auf beiden Seitenflächen innerhalb 4 mm um die Schraubachse. k = Fläche × Pad (ANNAHME 1000 / 400 N/mm³) × (floor + (1 − floor) ρ³).
+- Sichtfeld 4:3 (126° × 94°) als Keep-out: Pyramidenstumpf ab der Kamerafront (Öffnung ±3 mm) entlang der gekippten Achse, jede Zelle mit einer Ecke im Stumpf + 0,5 mm. `camera_front_access` (Einschub) bleibt.
+- Crash als designabhängige Last: `crash_front` (−y), `crash_below` (+z) und neu `crash_camera_oblique` (45° von vorn links) wirken mit voller Crashkraft auf die Zone vor und über der Kamera (x ± (Keep-out + 6 mm), y ab Kameramitte bis zur Hüllenfront, z ab Kameramitte bis Keep-out-Oberkante + 6 mm). Verteilung f_e = F w_e / Σw mit w_e = floor + (1 − floor) ρ_e. Das Inertia Relief wird je Auswertung aus Kraft und Moment der aktuellen Verteilung neu gebildet (linear im Lastvektor, Massen fest), einschließlich der Körperwrenches von Akku und Kamera.
+- Nebenbedingungen:
+  - Kameraverschiebung relativ zum Rahmen |δ| ≤ Grenze je Fall `crash_front`, `crash_camera_oblique`. δ ist die Starrkörperbewegung der Kamera auf ihren Federn am verformten Rahmen, s = D⁻¹(w + Σ Tᵀ K u), minus dem Starrkörper-Ausgleich der Stack-Montage (`aio_contact_`), ausgewertet am Kameraschwerpunkt. Die Sensitivität kommt aus drei adjungierten Lastfällen je Crashfall.
+  - Frontabdeckung ≥ Grenze: projizierte Materialfläche vor der Kamerafront entlang achsparalleler Strahlen der gekippten Achse im Fenster Front ± (B/2 + 6 mm) × [−H/2, H/2 + 6 mm]. Je Strahl gilt 1 − Π(1 − ρ_s) (Abtastung h/2, trilinear, Zwischenfeld), bezogen auf die Frontfläche B × H. Werte über 1 sind möglich, weil das Fenster größer ist als die Front.
+  - Montagefläche Σ A ρ ≥ Grenze.
+  - Die Kameramasse liegt in der Modalanalyse nach k verteilt auf den Federknoten.
+  - Die Kamera-Sigma-Spalten wirken wie beim Akku über die Federn.
+- Grenzen: aus ManaFly mit denselben Definitionen gemessen (Abschnitt unten). Ohne gesetzte Grenze werden die Zeilen nur überwacht.
+- Prüfung:
+  - `tests/test_topology_problem.py::test_free_camera_support_equilibrium_and_gradients` (Gleichgewicht der Zonenlast mit Relief, FD aller Zeilen);
+  - `tools/formulation_study.py camera_fd` (Rahmengitter).

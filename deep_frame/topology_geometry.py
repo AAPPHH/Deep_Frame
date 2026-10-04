@@ -253,7 +253,7 @@ def _component_regions(parameters, settings, grid):
         regions.append(_box("battery_contact", "allowed", [-battery_half, battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_z - 3.0], [battery_half, battery_y + c["battery"]["length_mm"] / 2 + clearance, battery_z], "Free battery support: contact plane under the battery (flatten target), no prescribed geometry"))
     regions.append(_box("battery_insertion", "forbidden", [-battery_half, battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_z], [battery_half, battery_y + c["battery"]["length_mm"] / 2 + clearance, max(battery_z + c["battery"]["height_mm"] + clearance, upper[2] + 1)], "Battery removal vertically above its contact pads"))
     camera_width = c["camera"]["width_mm"] + 2 * f["camera_side_clearance_mm"]
-    for sign in (-1, 1):
+    for sign in (-1, 1) if settings.get("camera_support", "prescribed") == "prescribed" else ():
         x = sign * (camera_width / 2 + settings["camera_contact_width_mm"] / 2)
         width, length = settings["camera_contact_width_mm"], settings["camera_contact_length_mm"]
         regions.append(_box(f"camera_impact_contact_{sign}", "preserve", [x - width / 2, f["camera_y_mm"] - length / 2, f["cage_height_mm"] - depth], [x + width / 2, f["camera_y_mm"] + length / 2, f["cage_height_mm"]], "Two local protective impact contacts, without a predefined cage", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))

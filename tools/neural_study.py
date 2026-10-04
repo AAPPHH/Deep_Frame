@@ -152,12 +152,13 @@ class R2Domain:
                     z = bottom if abs(center[2]) < 1 else center[2]
                     box["min_mm"] = [center[0] - self.pad["support_half_mm"], center[1] - self.pad["support_half_mm"], z - tolerance]
                     box["max_mm"] = [center[0] + self.pad["support_half_mm"], center[1] + self.pad["support_half_mm"], z + tolerance]
-        front = next(case for case in domain["load_cases"] if case["name"] == "crash_front")
-        force = float(np.linalg.norm(front["loads"][0]["force_n"]))
-        r, y_max = self.hoop["radius_mm"] + spacing[0], max(y for y, _ in self.hoop["path_yz_mm"]) + self.hoop["radius_mm"] + spacing[1]
-        loads = [{"region": {"kind": "box", "min_mm": [sign * self.hoop["x_mm"] - r, self.hoop["load_y_min_mm"], self.hoop["load_z_mm"][0]], "max_mm": [sign * self.hoop["x_mm"] + r, y_max, self.hoop["load_z_mm"][1]]}, "force_n": [0.0, -force / 2, 0.0]} for sign in (-1, 1)]
-        domain["load_cases"].append({"name": "crash_hoop", "analysis": "static", "fixed_regions": [dict(box) for box in front["fixed_regions"]], "loads": loads, "purpose": "Frontal crash on the camera hoop fronts"})
-        domain["optimizer_settings"]["case_weights"]["crash_hoop"] = self.hoop["case_weight"]
+        if self.hoop:
+            front = next(case for case in domain["load_cases"] if case["name"] == "crash_front")
+            force = float(np.linalg.norm(front["loads"][0]["force_n"]))
+            r, y_max = self.hoop["radius_mm"] + spacing[0], max(y for y, _ in self.hoop["path_yz_mm"]) + self.hoop["radius_mm"] + spacing[1]
+            loads = [{"region": {"kind": "box", "min_mm": [sign * self.hoop["x_mm"] - r, self.hoop["load_y_min_mm"], self.hoop["load_z_mm"][0]], "max_mm": [sign * self.hoop["x_mm"] + r, y_max, self.hoop["load_z_mm"][1]]}, "force_n": [0.0, -force / 2, 0.0]} for sign in (-1, 1)]
+            domain["load_cases"].append({"name": "crash_hoop", "analysis": "static", "fixed_regions": [dict(box) for box in front["fixed_regions"]], "loads": loads, "purpose": "Frontal crash on the camera hoop fronts"})
+            domain["optimizer_settings"]["case_weights"]["crash_hoop"] = self.hoop["case_weight"]
         if self.stiffness["min_n_per_mm"]:
             source = next(case for case in domain["load_cases"] if case["name"] == self.stiffness["source_case"])
             domain["load_cases"].append({**deepcopy(source), "name": self.stiffness["case"], "purpose": "arm-tip stiffness constraint, evaluator support (centre mount undersides fixed)"})

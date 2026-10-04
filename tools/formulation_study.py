@@ -15,6 +15,7 @@ import deep_frame.config as config
 from deep_frame.config import RUN_SETTINGS, STAGES, command_line
 from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge
+from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import HexElasticity
 from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
@@ -83,9 +84,13 @@ def patched_settings(cfg):
     for patch in patches:
         for name, values in patch.items():
             _update(getattr(config, name), values)
+    if free_camera_mode():
+        overrides["hoop"] = None
     settings = study(overrides)
     if free_battery():
         settings["inertia_relief"]["attachments"].pop("battery")
+    if free_camera_mode():
+        settings["inertia_relief"]["attachments"].pop("camera")
     return settings
 
 def free_battery():
@@ -120,6 +125,71 @@ def free_support(half):
                                                           "statement": "battery rigid body on density-dependent contact springs (BATTERY_SUPPORT); its inertia and the crash_back deck load act on the body, not on frame nodes"}
     return half
 
+def free_camera_mode():
+    return config.TOPOLOGY_CONFIG.get("camera_support", "prescribed") == "free"
+
+def camera_frame(part):
+    tilt = np.radians(part["tilt_deg"])
+    axis, up = np.array([0.0, np.cos(tilt), np.sin(tilt)]), np.array([0.0, -np.sin(tilt), np.cos(tilt)])
+    rotation = np.column_stack([[1.0, 0.0, 0.0], axis, up])
+    size = np.array([part["width_mm"], part["length_mm"], part["height_mm"]])
+    inertia = rotation @ np.diag(part["mass_g"] / 12 * np.array([size[1] ** 2 + size[2] ** 2, size[0] ** 2 + size[2] ** 2, size[0] ** 2 + size[1] ** 2])) @ rotation.T
+    return axis, up, size, inertia
+
+def fov_cells(grid, front, axis, up, spec):
+    h = np.asarray(grid["spacing_mm"], dtype=float)
+    centers = cell_centers(grid)
+    half_angles = np.tan(np.radians(np.asarray(spec["fov_deg"]) / 2))
+    blocked = np.zeros(len(centers), dtype=bool)
+    for corner in np.indices((2, 2, 2)).reshape(3, -1).T:
+        offset = centers + (corner - 0.5) * h - front
+        depth, across, height = offset @ axis, offset[:, 0], offset @ up
+        reach = np.maximum(depth, 0.0)
+        blocked |= (depth >= -spec["fov_clearance_mm"]) & (np.abs(across) <= spec["aperture_mm"] + spec["fov_clearance_mm"] + reach * half_angles[0]) & (np.abs(height) <= spec["aperture_mm"] + spec["fov_clearance_mm"] + reach * half_angles[1])
+    return blocked.reshape(tuple(grid["shape"]))
+
+def free_camera(half):
+    spec, part = config.CAMERA_SUPPORT, {**config.COMPONENT_DEFAULTS["camera"]}
+    regions = {region["name"]: region for region in half["regions"]}
+    keep_out, screw = regions["camera_envelope"], regions["camera_screw_axis"]
+    grid = half["grid"]
+    upper = np.asarray(grid["origin_mm"]) + np.asarray(grid["spacing_mm"]) * np.asarray(grid["shape"])
+    low, high = np.asarray(keep_out["min_mm"]), np.asarray(keep_out["max_mm"])
+    center = (low + high) / 2
+    center[0] = 0.0
+    axis, up, size, inertia = camera_frame(part)
+    front = center + axis * size[1] / 2
+    blocked = fov_cells(grid, front, axis, up, spec)
+    lost = int(np.count_nonzero(blocked & half["preserve"]))
+    half["allowed"] = half["allowed"] & ~blocked
+    half["preserve"] &= half["allowed"]
+    half["forbidden"] = ~half["allowed"]
+    zone = {"kind": "box", "min_mm": [-high[0] - spec["zone_mm"]["side"], float(center[1]), float(center[2])], "max_mm": [high[0] + spec["zone_mm"]["side"], float(upper[1]), float(min(high[2] + spec["zone_mm"]["top"], upper[2]))]}
+    cases = {case["name"]: case for case in half["load_cases"]}
+    force = float(np.linalg.norm(cases["crash_front"]["loads"][0]["force_n"]))
+    angle = np.radians(spec["oblique_deg"])
+    zones = {name: (force * np.asarray(direction)).tolist() for name, direction in spec["zone_cases"].items() if name in cases}
+    zones["crash_camera_oblique"] = (force * np.array([np.sin(angle), -np.cos(angle), 0.0])).tolist()
+    oblique = {**deepcopy(cases["crash_front"]), "name": "crash_camera_oblique", "purpose": "oblique camera crash on the impact zone"}
+    half["load_cases"].append(oblique)
+    body = {"name": "camera", "mass_g": part["mass_g"], "position_mm": center.tolist(), "inertia_g_mm2": inertia.tolist(), "force_n": [0.0, 0.0, 0.0]}
+    for case in half["load_cases"]:
+        if "inertia_relief" in case:
+            case["inertia_relief"] = {**deepcopy(case["inertia_relief"]), "bodies": case["inertia_relief"].get("bodies", []) + [{**deepcopy(body), "force_n": zones.get(case["name"], body["force_n"])}]}
+        if case["name"] in zones:
+            case["loads"] = []
+    half["point_masses"] = [item for item in half["point_masses"] if item["name"] != "camera"]
+    step = float(np.min(grid["spacing_mm"])) * spec["step_fraction"]
+    window = [[-size[0] / 2 - spec["window_mm"]["side"], size[0] / 2 + spec["window_mm"]["side"]], [-size[2] / 2, size[2] / 2 + spec["window_mm"]["top"]]]
+    half["camera"] = {"keep_out": deepcopy(keep_out), "reference_mm": [0.0, *screw["center_mm"][1:]], "center_mm": center.tolist(), "size_mm": size.tolist(), "mass_g": part["mass_g"], "inertia_g_mm2": inertia.tolist(),
+                      "screw_axis_yz_mm": list(screw["center_mm"][1:]), "zone": zone, "zones": zones, "displacement_cases": [name for name in spec["displacement_cases"] if name in zones],
+                      "reference_regions": [deepcopy(region) for name, region in regions.items() if name.startswith("aio_contact_")],
+                      "coverage": {"axes": [axis.tolist(), [1.0, 0.0, 0.0], up.tolist()], "front_mm": front.tolist(), "window_mm": window, "step_mm": step, "length_mm": float(np.linalg.norm(upper - np.asarray(grid["origin_mm"]))), "frontal_area_mm2": float(size[0] * size[2])},
+                      "fov_cells": int(np.count_nonzero(blocked)), "fov_preserve_cells_removed": lost, "tilt_deg": part["tilt_deg"]}
+    half["metadata"]["formulation"]["camera_support"] = {"mode": "free", **{key: half["camera"][key] for key in ("reference_mm", "center_mm", "zone", "zones", "fov_cells", "fov_preserve_cells_removed")},
+                                                         "statement": "camera rigid body on density-dependent screw springs (CAMERA_SUPPORT), no hoops or lugs; 4:3 field of view as keep-out; frontal, below and oblique crash as design-dependent loads on the impact zone"}
+    return half
+
 def motor_name(center):
     return ("front_" if center[1] > 0 else "rear_") + ("left" if center[0] < 0 else "right")
 
@@ -132,7 +202,7 @@ def frame_domain(cfg, shape):
     for load in thrust["loads"]:
         load["force_n"] = [0.0, 0.0, numbers["thrust_per_motor_n"]]
     regions = {region["name"]: region for region in half["regions"]}
-    camera = np.mean([regions[name]["center_mm"] for name in regions if name.startswith("camera_mount_")], axis=0)
+    camera = np.asarray(regions["camera_screw_axis"]["center_mm"], dtype=float)
     centre = lambda box: ((np.asarray(box["min_mm"]) + box["max_mm"]) / 2).tolist()
     deck, view = cases["crash_back"]["loads"][0]["region"], cases["crash_front"]["loads"][0]["region"]
     half["interfaces"] = {**{"motor_" + name: {"regions": [deepcopy(region)], "reference_mm": centre(region)} for name, region in pads.items()},
@@ -161,12 +231,15 @@ def frame_domain(cfg, shape):
     discs = half["metadata"]["round4"]["prop_discs"]
     half["metadata"]["formulation"] = {"loads": numbers, "load_parameters": cfg["loads"], "shadow": {"motors_mm": discs["motors_mm"], "radius_mm": discs["radius_mm"]},
                                        "inertia_relief_frame_mass_g": relief["preserve_mass_g"], "inertia_relief": "point masses + frame mass at the reference fraction on the preserves, design-independent (keeps compliance self-adjoint)"}
-    return free_support(half) if free_battery() else half
+    half = free_support(half) if free_battery() else half
+    return free_camera(half) if free_camera_mode() else half
 
 def frame_problem(half, references=None):
     problem = deepcopy(PROBLEM)
     if "battery" in half:
         problem["battery"] = deepcopy(BATTERY_SUPPORT)
+    if "camera" in half:
+        problem["camera"] = deepcopy(config.CAMERA_SUPPORT)
     problem["shadow"].update(half["metadata"]["formulation"]["shadow"])
     if references:
         problem["crash"].update(reference=references["crash_compliance_n_mm"], reference_source=references["source"])
@@ -494,7 +567,6 @@ def export_body(cfg, physical, out):
 
 def battery_start(cfg, design, half):
     from deep_frame.topology_geometry import region_contains
-    from deep_frame.topology_neural import cell_centers
     spec = cfg["mma"]["battery_start"]
     if "battery" not in half or not spec:
         return design

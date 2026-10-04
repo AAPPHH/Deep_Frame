@@ -350,6 +350,8 @@ class FrameLayout:
                  "INTEGRATION_CONFIG": {"crash_directions": list(self.style["crash_directions"])}}
         if "support" in self.overrides.get("battery", {}):
             patch["TOPOLOGY_CONFIG"]["battery_support"] = self.overrides["battery"]["support"]
+        if "support" in self.overrides.get("camera", {}):
+            patch["TOPOLOGY_CONFIG"]["camera_support"] = self.overrides["camera"]["support"]
         if weights:
             patch["TOPOLOGY_CONFIG"]["optimizer"] = {"case_weights": weights}
         return patch
