@@ -3,7 +3,7 @@ import pytest
 import trimesh
 
 from deep_frame.config import EVALUATION_CONFIG
-from deep_frame.frame_evaluation import append_datasheet, assess, mass_properties, scaled, top_view, voxel_grid
+from deep_frame.frame_evaluation import append_datasheet, assess, mass_properties, overhangs, printed, scaled, top_view, voxel_grid
 
 def test_mass_and_inertia_of_box_with_point_component():
     mesh = trimesh.creation.box(extents=(10, 20, 30))
@@ -16,6 +16,21 @@ def test_mass_and_inertia_of_box_with_point_component():
     izz = frame / 12 * (10 ** 2 + 20 ** 2) + 5.0 / 12 * (2 ** 2 + 4 ** 2)
     ixx = frame / 12 * (20 ** 2 + 30 ** 2) + frame * center ** 2 + 5.0 / 12 * (4 ** 2 + 6 ** 2) + 5.0 * (40 - center) ** 2
     assert np.diag(result["inertia_g_mm2"]) == pytest.approx([ixx, ixx - frame / 12 * (20 ** 2 - 10 ** 2) - 5.0 / 12 * (4 ** 2 - 2 ** 2), izz], rel=1e-9)
+
+@pytest.mark.parametrize("floor", [0.0, -4.0])
+def test_standing_surface_is_the_lowest_point_of_the_body(floor):
+    mesh = trimesh.creation.box(extents=(40, 40, 10))
+    mesh.apply_translation([0, 0, 5 + floor])
+    components = [{"name": "prop_a", "type": "prop", "mass_g": 1.0, "center_mm": [0.0, 0.0, 20.0], "size_mm": [60.0, 60.0, 4.0], "shape": "disc"},
+                  {"name": "camera", "type": "camera", "mass_g": 5.0, "center_mm": [0.0, 30.0, 6.0], "size_mm": [14.0, 12.0, 12.0], "shape": "box"}]
+    standing = mass_properties(mesh, components, 1.0)["standing"]
+    center = (16.0 * (5 + floor) + 1.0 * 20 + 5.0 * 6) / 22.0
+    assert standing["ground_z_mm"] == pytest.approx(floor) and standing["center_of_mass_height_mm"] == pytest.approx(center - floor) and standing["frame_center_of_mass_height_mm"] == pytest.approx(5.0)
+    assert standing["component_clearance_mm"] == pytest.approx({"prop_a": 18.0 - floor, "camera": -floor}) and standing["min_clearance_mm"] == pytest.approx({"camera": -floor, "prop": 18.0 - floor})
+    reference = trimesh.creation.box(extents=(40, 40, 10))
+    reference.apply_translation([0, 0, 5])
+    assert overhangs(printed(mesh, [0, 0, 1]), 45.0, 0.2) == overhangs(printed(reference, [0, 0, 1]), 45.0, 0.2)
+    assert overhangs(printed(mesh, [0, 0, 1]), 45.0, 0.2)["bed_contact_mm2"] == pytest.approx(1600.0)
 
 def test_prop_disc_share_of_half_covering_plate():
     plate = trimesh.creation.box(extents=(100, 200, 2), transform=trimesh.transformations.translation_matrix((-50, 0, 1)))

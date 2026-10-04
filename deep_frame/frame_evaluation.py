@@ -99,8 +99,13 @@ def mass_properties(mesh, components, density):
     bodies = [(mesh.volume * density / 1000, np.asarray(mesh.center_mass), np.asarray(mesh.moment_inertia) * density / 1000)]
     bodies += [(item["mass_g"], np.asarray(item["center_mm"]), component_inertia(item)) for item in components]
     total, center, inertia = rigid_assembly(bodies)
+    ground = float(mesh.bounds[0][2])
+    clearance = {item["name"]: item["center_mm"][2] - item["size_mm"][2] / 2 - ground for item in components}
+    standing = {"ground_z_mm": ground, "center_of_mass_height_mm": float(center[2] - ground), "frame_center_of_mass_height_mm": float(bodies[0][1][2] - ground), "component_clearance_mm": clearance,
+                "min_clearance_mm": {kind: min((value for item, value in zip(components, clearance.values()) if item["type"] == kind), default=None) for kind in sorted({item["type"] for item in components})},
+                "method": "standing surface = horizontal plane through the lowest point of the frame body (user decision 2026-10-04, not z = 0); heights and clearances of component undersides (box bottom, prop disc underside) above that plane in layout coordinates"}
     return {"frame_mass_g": bodies[0][0], "frame_volume_mm3": float(mesh.volume), "total_mass_g": float(total), "component_mass_g": float(total - bodies[0][0]), "center_of_mass_mm": center.tolist(),
-            "frame_center_of_mass_mm": bodies[0][1].tolist(), "inertia_g_mm2": inertia.tolist(), "principal_inertia_g_mm2": np.linalg.eigvalsh(inertia).tolist(), "components": components,
+            "frame_center_of_mass_mm": bodies[0][1].tolist(), "inertia_g_mm2": inertia.tolist(), "principal_inertia_g_mm2": np.linalg.eigvalsh(inertia).tolist(), "components": components, "standing": standing,
             "model": "frame: exact mesh volume integrals x density; components: homogeneous boxes (props: discs) with parallel-axis theorem about the total centre of mass"}
 
 def voxel_grid(mesh, h):
@@ -166,7 +171,7 @@ def overhangs(mesh, angle, bed):
     down = (normal[:, 2] < -math.cos(math.radians(angle))) & (centre[:, 2] > bed)
     contact = (normal[:, 2] < -0.99) & (centre[:, 2] <= bed)
     return {"overhang_area_mm2": float(area[down].sum()), "overhang_share": float(area[down].sum() / area.sum()), "bed_contact_mm2": float(area[contact].sum()), "print_height_mm": float(mesh.extents[2]),
-            "print_footprint_mm": mesh.extents[:2].tolist(), "overhang_deg": angle, "method": f"faces whose normal lies within {90 - angle:g} deg of straight down above the bed, area share of the surface"}
+            "print_footprint_mm": mesh.extents[:2].tolist(), "overhang_deg": angle, "method": f"bed = plane through the lowest point along the print axis; faces whose normal lies within {90 - angle:g} deg of straight down above the bed, area share of the surface"}
 
 def section(mesh, z, center, half, h):
     segments = trimesh.intersections.mesh_plane(mesh, [0, 0, 1], [0, 0, z])
@@ -632,7 +637,7 @@ def report_line(result):
     try:
         m = g["mass"]
         inertia = np.diag(m["inertia_g_mm2"]) * 1e-3
-        cells += [f"{number(m['frame_mass_g'])} g", f"SP z {number(m['center_of_mass_mm'][2])} mm; Ixx/Iyy/Izz {'/'.join(number(v, 0) for v in inertia)} kg·mm² (K)"]
+        cells += [f"{number(m['frame_mass_g'])} g", f"SP {number(m['standing']['center_of_mass_height_mm'] if 'standing' in m else m['center_of_mass_mm'][2])} mm über Standfläche; Ixx/Iyy/Izz {'/'.join(number(v, 0) for v in inertia)} kg·mm² (K)"]
         cells.append(f"{number(100 * g['airflow']['prop_ring_share'])} % ({number(g['airflow']['prop_diameter_mm'], 0)} mm)")
         asm = g["assembly"]
         cells.append(f"Bohrb. {sum(p['found'] for p in asm['bolt_patterns'])}/{sum(p['expected'] for p in asm['bolt_patterns'])}, Passung {'ok' if asm['fit_passed'] else 'nein'}, Werkzeug {'ok' if asm['tools_passed'] else 'nein'}{'' if asm['connectors_checked'] else ', Stecker n/a'}")
@@ -640,7 +645,7 @@ def report_line(result):
         cells.append(f"Überh. {number(100 * p['overhang_share'])} %, Öffn. r=1 {number(100 * w['deep_fraction'], 2) if w else '–'} %/{number(w.get('largest_deep_mm3'))} mm³/Motorzonen {len(w.get('motor_zone_hits') or {}) if w else '–'},Stütze {number((s.get('support_mm3') or 0) / 1000, 2) if s else '–'} cm³, {number((s.get('supports') or {}).get('print_time_min'), 0)} min")
         form = g["form"]
         cells.append(f"Strebe {'/'.join(number(form['strut_width_mm'][k]) for k in ('p10', 'p50', 'p90'))} mm, H/B {number(form['section_ratio']['p50'], 2)}, offen {number(100 - 100 * g['airflow']['bbox_share'], 0)} %, "
-                     f"Höhe {number(form['flight_height_mm'])} mm, Körper {form['mesh_bodies']}, Schlaufen {form['loops']['loops']}, Sym. {number(form['symmetry']['rms_mm'], 2)} mm, Rauh. {number(form['roughness']['curvature_neighbour_rms_per_mm'], 3)}/mm")
+                     f"Höhe {number(form['flight_height_mm'])} mm, Prop über Boden {number(m.get('standing', {}).get('min_clearance_mm', {}).get('prop'))} mm, Körper {form['mesh_bodies']}, Schlaufen {form['loops']['loops']}, Sym. {number(form['symmetry']['rms_mm'], 2)} mm, Rauh. {number(form['roughness']['curvature_neighbour_rms_per_mm'], 3)}/mm")
     except (KeyError, TypeError):
         cells += ["–"] * (7 - len(cells))
     cases = f.get("load_cases") or {}
