@@ -57,7 +57,7 @@ def test_missing_part_aborts_with_the_required_field_list():
     ({"overrides": {"camera": {"zoom": 2.0}}}, "Unknown configuration keys: zoom"),
     ({"layout": {"x_type": "compressed_x", "battery_mount": "bottom"}}, "battery_mount bottom needs"),
     ({"prop_size_in": 3.0}, "leave the design envelope"),
-    ({"overrides": {"battery": {"deck_top_mm": 25.0}}}, "Battery underside"),
+    ({"overrides": {"battery": {"deck_top_mm": 19.0}}}, "Battery underside"),
     ({"overrides": {"motors": {"wheelbase_mm": 120.0}}}, "neighbouring"),
 ])
 def test_invalid_configurations_are_rejected(changes, message):

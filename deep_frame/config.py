@@ -1118,10 +1118,11 @@ LAYOUT_OPTIMIZATION = {
     "objective": "lexicographic: maximise the smallest of alpha_roll/pitch/yaw, then the second smallest with the first held within rank_tolerance of its optimum, then the third",
     "rank_tolerance": 1e-4,
     "cg_horizontal_mm": 1.0,
-    "cg_band_mm": [0.0, 5.0],
-    "cg_band_source": "user: centre of gravity above the prop plane (lower edge 0 mm); upper edge 5 mm ASSUMPTION; prop plane = rotor plane at the prop hub mid-plane, as LOAD_COVARIANCE prop_height_mm",
-    "fov_deg": [145.0, 94.0],
-    "fov_source": "https://docs.hd-zero.com/camera-lux: H 126 / V 94 deg (4:3), H 145 / V 82 deg (16:9); per direction the larger value, equidistant fisheye model",
+    "cg_band_mm": [-5.0, 5.0],
+    "cg_band_source": "user decision 2026-10-04: centre of gravity within -5..+5 mm of the prop plane (was 0..+5; references -3.75..+1.0 mm, docs/layout_constraint_check.md); prop plane = rotor plane at the prop hub mid-plane, as LOAD_COVARIANCE prop_height_mm",
+    "fov_modes": {"4:3": [126.0, 94.0], "16:9": [145.0, 82.0]},
+    "fov_deg": [126.0, 94.0],
+    "fov_source": "https://docs.hd-zero.com/camera-lux: H 126 / V 94 deg (4:3), H 145 / V 82 deg (16:9); user decision 2026-10-04: 4:3 is the standard, 16:9 an option (set fov_deg to fov_modes['16:9']); equidistant fisheye model",
     "fov_samples": [12, 72],
     "battery_gap_mm": LAYOUT_RULES["camera"]["top_clearance_mm"],
     "mount_gap_mm": 3.0,
@@ -1203,8 +1204,9 @@ FRAME_REQUEST = {"name": None, "style": "freestyle", "durability": "standard", "
                  "components": {"motor": "GTS V3 1203", "aio": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "antennas": "HDZero VTX + ELRS", "prop": "HQProp T2.5X2X3V2S"},
                  "material": "PA6-CF", "print": {"nozzle_mm": 0.4, "layer_mm": 0.2}, "overrides": {}, "grid": "coarse", "reconstruction": True}
 LAYOUT_DEFAULT = {"request": {"x_type": "compressed_x", "battery_mount": "top", "prop_size_in": 2.5, "components": FRAME_REQUEST["components"], "tilt_deg": 20.0, "motors": {}},
-                  "layout": {"battery_y_mm": -3.3, "deck_top_mm": 25.8, "camera_y_mm": 49.4, "camera_bottom_clearance_mm": 7.0, "aio_standoff_mm": 8.8},
-                  "source": "run.py layout 2026-10-04 (exports/layout/layout_optimization.json, frames.ours.rounded): lexicographic SciPy differential_evolution optimum rounded to 0.1 mm towards feasibility; alpha roll/pitch/yaw 2375/2072/111.5 rad/s2; frame share simp_mma_cov3_v3_2 frame.stl sha256 81504ebdb07388a2"}
+                  "layout": {"battery_y_mm": -2.8, "deck_top_mm": 20.0, "camera_y_mm": 41.1, "camera_bottom_clearance_mm": 7.0, "aio_standoff_mm": 3.0},
+                  "source": "run.py layout 2026-10-04 15:08 via Ray cpu (exports/layout/layout_optimization.json sha256 76dc08750ba4dc91, frames.ours.rounded): lexicographic SciPy differential_evolution optimum rounded to 0.1 mm towards feasibility; FOV 4:3 126/94 deg, CoG band -5..+5 mm; alpha roll/pitch/yaw 2448/2204/112.9 rad/s2; CoG -2.91 mm below the rotor plane, y +0.04 mm; binding battery_over_stack, camera_under_hoop, camera_sees_no_prop; frame share simp_mma_cov3_v3_2 frame.stl sha256 81504ebdb07388a2; "
+                            "previous (FOV 145/94, CoG 0..+5): -3.3 / 25.8 / 49.4 / 7.0 / 8.8 mm, alpha 2375/2072/111.5 rad/s2 (exports/layout/layout_optimization_phase1.json)"}
 FRAME_REQUEST_KINDS = {"name": "text", "style": tuple(STYLES), "durability": tuple(DURABILITY), "prop_size_in": "float", "layout": "object", "components": "object",
                        "material": tuple(MATERIALS), "print": "object", "overrides": "object", "grid": ("coarse", "fine"), "reconstruction": "flag"}
 FRAME_LAYOUT_KINDS = {"x_type": tuple(LAYOUT_RULES["x_types"]), "battery_mount": tuple(LAYOUT_RULES["battery_mounts"])}
