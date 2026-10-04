@@ -213,9 +213,10 @@ class FrameLayout:
     def __init__(self, request):
         self.request = validate_request(request)
         self.parts = {role: library_part(role, name) for role, name in self.request["components"].items()}
-        self.style, self.durability = STYLES[self.request["style"]], DURABILITY[self.request["durability"]]
-        self.material = MATERIALS[self.request["material"]]
         self.overrides = self.request["overrides"]
+        self.free_camera = self.overrides.get("camera", {}).get("support") == "free"
+        self.style, self.durability = {**STYLES[self.request["style"]], "hoops": STYLES[self.request["style"]]["hoops"] and not self.free_camera}, DURABILITY[self.request["durability"]]
+        self.material = MATERIALS[self.request["material"]]
         self.notes = []
         self.components = self._components()
         self.frame = self._frame()
@@ -446,8 +447,8 @@ class FrameRun:
         overrides.update({key: value for key, value in (("prop_discs", {"mode": options.get("prop_discs")}), ("modal", {"f1_min_hz": options.get("f1_min_hz")}), ("method", options.get("method"))) if value not in (None, {"mode": None}, {"f1_min_hz": None})})
         if options.get("arm_tip_stiffness_min_n_per_mm"):
             overrides["stiffness"] = {"min_n_per_mm": options["arm_tip_stiffness_min_n_per_mm"], **({"calibration": options["stiffness_calibration"]} if options.get("stiffness_calibration") else {})}
-        if self.layout.style["hoops"]:
-            overrides["hoop"] = self.layout.hoop()
+        if self.layout.style["hoops"] or self.layout.free_camera:
+            overrides["hoop"] = self.layout.hoop() if self.layout.style["hoops"] else None
         source = (Path(self.stages["optimization"]["worktree"]) / self.stages["optimization"]["tool"]).read_text(encoding="utf-8")
         if '"crash_directions"' in source:
             overrides["crash_directions"] = list(self.layout.style["crash_directions"])
@@ -462,7 +463,7 @@ class FrameRun:
 
     def reconstruction(self, density):
         out = self.dir / "reconstruction"
-        study = {"pad": {**LAYOUT_RULES["pad"], "support_half_mm": 5.0, "bore_margin_mm": 0.5}, **({"hoop": self.layout.hoop()} if self.layout.style["hoops"] else {})}
+        study = {"pad": {**LAYOUT_RULES["pad"], "support_half_mm": 5.0, "bore_margin_mm": 0.5}, **({"hoop": self.layout.hoop() if self.layout.style["hoops"] else None} if self.layout.style["hoops"] or self.layout.free_camera else {})}
         overrides = {"source": str(density), "output": str(out), "fine_shape": self.grid["fine_shape"], "study": study, **self.grid["reconstruction"]}
         command = self.command("reconstruction", {"patch": self.layout.patch(), "argv": self.stages["reconstruction"]["argv"], "overrides": overrides}, "cli")
         self.execute("reconstruction", command, self.stages["reconstruction"]["worktree"], [out / "geometry.stl"])
