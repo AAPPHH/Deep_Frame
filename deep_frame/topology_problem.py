@@ -6,6 +6,7 @@ from scipy.interpolate import RegularGridInterpolator
 from deep_frame.config import BATTERY_SUPPORT, COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import SOLVER_CHOICE, DensityMap, HexElasticity, StiffnessConstraint, _settings
+from deep_frame.topology_stability import StandStability
 
 ARM_TIP = {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0, "calibration": 1.0, "penalty": 1.0, "multiplier_interval": 1,
            "definition": "evaluator arm_tip: centre mount undersides fixed, uniform pad load on the front-left motor seat, k = |F| / mean pad displacement along F = |F|^2 / compliance"}
@@ -50,6 +51,7 @@ PROBLEM = {
     "material": "orthotropic",
     "battery": None,
     "solver_choice": SOLVER_CHOICE,
+    "stability": None,
 }
 
 def length_scale_ratio(eta_eroded, samples=2001):
@@ -174,6 +176,7 @@ class TopologyProblem:
         self.shadow = None
         if shadow and shadow["motors_mm"]:
             self.shadow = radial_weight(cell_centers(domain["grid"]), shadow) * np.asarray(domain["allowed"]).ravel() * self.cell * self.factor / weighted_disc_area(shadow)
+        self.stability = StandStability(domain, problem["stability"]) if (problem.get("stability") or {}).get("enabled") else None
         names = [case["name"] for case in self.system.cases]
         self.crash = [name for name in (problem.get("crash") or {}).get("cases", []) if name in names]
         self.monitor = [name for name in problem.get("monitor", []) if name in names]
@@ -310,6 +313,8 @@ class TopologyProblem:
             limit = self.problem["shadow"]["limit_mm"]
             value = float(np.dot(self.shadow, physical))
             rows.append({"name": "shadow", "g": value / limit - 1, "gradient": self.shadow / limit, "value": value, "limit": limit, "unit": "mm", "sense": "<="})
+        if self.stability is not None:
+            rows += self.stability.rows(physical)
         if self.camera is not None:
             value, gradient = self.coverage.measure(physical)
             minimum = self.problem["camera"]["min_coverage"]

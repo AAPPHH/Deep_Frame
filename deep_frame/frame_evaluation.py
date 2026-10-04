@@ -12,6 +12,7 @@ from scipy import ndimage
 from deep_frame.config import COMPONENT_DEFAULTS, EVALUATION_CONFIG, LOAD_COVARIANCE_LIMITS, EVALUATION_KINDS, FEA_CONFIG, FRAME_DEFAULTS, IMPLICIT_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG, configure
 from deep_frame.fea import MESH_KEYS, clean_slivers, evaluate, print_axes, robust_surface
 from deep_frame.topology_geometry import region_contains, stack_pattern
+from deep_frame.topology_stability import stand_measure
 
 MOTORS = ("front_left", "front_right", "rear_left", "rear_right")
 CRASH = ("crash_front", "crash_arm", "crash_back")
@@ -103,6 +104,7 @@ def mass_properties(mesh, components, density):
     standing = {"ground_z_mm": ground, "center_of_mass_height_mm": float(center[2] - ground), "frame_center_of_mass_height_mm": float(bodies[0][1][2] - ground), "component_clearance_mm": clearance,
                 "min_clearance_mm": {kind: min((value for item, value in zip(components, clearance.values()) if item["type"] == kind), default=None) for kind in sorted({item["type"] for item in components})},
                 "method": "standing surface = horizontal plane through the lowest point of the frame body (user decision 2026-10-04, not z = 0); heights and clearances of component undersides (box bottom, prop disc underside) above that plane in layout coordinates"}
+    standing["stability"] = stand_measure(mesh, center, components)
     return {"frame_mass_g": bodies[0][0], "frame_volume_mm3": float(mesh.volume), "total_mass_g": float(total), "component_mass_g": float(total - bodies[0][0]), "center_of_mass_mm": center.tolist(),
             "frame_center_of_mass_mm": bodies[0][1].tolist(), "inertia_g_mm2": inertia.tolist(), "principal_inertia_g_mm2": np.linalg.eigvalsh(inertia).tolist(), "components": components, "standing": standing,
             "model": "frame: exact mesh volume integrals x density; components: homogeneous boxes (props: discs) with parallel-axis theorem about the total centre of mass"}
@@ -644,7 +646,7 @@ def report_line(result):
         cells.append(f"Überh. {number(100 * p['overhang_share'])} %, Öffn. r=1 {number(100 * w['deep_fraction'], 2) if w else '–'} %/{number(w.get('largest_deep_mm3'))} mm³/Motorzonen {len(w.get('motor_zone_hits') or {}) if w else '–'},Stütze {number((s.get('support_mm3') or 0) / 1000, 2) if s else '–'} cm³, {number((s.get('supports') or {}).get('print_time_min'), 0)} min")
         form = g["form"]
         cells.append(f"Strebe {'/'.join(number(form['strut_width_mm'][k]) for k in ('p10', 'p50', 'p90'))} mm, H/B {number(form['section_ratio']['p50'], 2)}, offen {number(100 - 100 * g['airflow']['bbox_share'], 0)} %, "
-                     f"Höhe {number(form['flight_height_mm'])} mm, Prop über Boden {number(m.get('standing', {}).get('min_clearance_mm', {}).get('prop'))} mm, Körper {form['mesh_bodies']}, Schlaufen {form['loops']['loops']}, Sym. {number(form['symmetry']['rms_mm'], 2)} mm, Rauh. {number(form['roughness']['curvature_neighbour_rms_per_mm'], 3)}/mm")
+                     f"Höhe {number(form['flight_height_mm'])} mm, Prop über Boden {number(m.get('standing', {}).get('min_clearance_mm', {}).get('prop'))} mm, Standreserve {number(m.get('standing', {}).get('stability', {}).get('reserve_mm'))} mm, Körper {form['mesh_bodies']}, Schlaufen {form['loops']['loops']}, Sym. {number(form['symmetry']['rms_mm'], 2)} mm, Rauh. {number(form['roughness']['curvature_neighbour_rms_per_mm'], 3)}/mm")
     except (KeyError, TypeError):
         cells += ["–"] * (7 - len(cells))
     cases = f.get("load_cases") or {}

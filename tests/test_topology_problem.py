@@ -2,8 +2,9 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
-from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, PRINT_MATERIAL
+from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, COMPONENT_DEFAULTS, PRINT_MATERIAL
 from deep_frame.topology_optimization import HexElasticity, elasticity_matrix, hexahedron_matrices, orthotropic_matrix
+from deep_frame.topology_stability import FOUR_FEET, StandStability, stand_design, stand_domain
 from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
@@ -439,3 +440,46 @@ def test_shared_static_falls_back_to_own_factorization_when_inaccurate():
         assert tested[name]["compliance_n_mm"] == pytest.approx(exact[name]["compliance_n_mm"], rel=1e-10)
     shared.solve(density)
     assert shared.diagnostics()["factorization_groups"] == 4 and shared.diagnostics()["unshared_static_groups"] == 2
+
+@pytest.mark.parametrize("half", [False, True])
+def test_stand_reserve_box_on_four_feet(half):
+    domain = stand_domain(half)
+    rows = {row["name"]: row for row in StandStability(domain, {"enabled": True}).rows(stand_design(domain, FOUR_FEET))}
+    assert 18.0 < rows["stand_reserve"]["value"] <= 19.5 and rows["stand_reserve"]["g"] < 0
+    assert rows["stand_ground_z"]["value"] == pytest.approx(0.0, abs=0.01)
+    assert rows["stand_prop_clearance"]["value"] == pytest.approx(20.0 - COMPONENT_DEFAULTS["prop"]["thickness_mm"] / 2, abs=0.01)
+
+def test_stand_reserve_violated_on_one_sided_or_tilted_feet():
+    domain = stand_domain(True)
+    stability = StandStability(domain, {"enabled": True})
+    raised = stability.rows(stand_design(domain, [(sx * 18, 18, 0) for sx in (-1, 1)] + [(sx * 18, -18, 3) for sx in (-1, 1)]))[0]
+    assert raised["value"] < -15.0 and raised["g"] > 1
+    heavy = StandStability({**domain, "metadata": {"components": {"battery": {"center_of_mass_mm": [0.0, 30.0, 20.0], "mass_g": 200.0}}}}, {"enabled": True})
+    shifted = heavy.rows(stand_design(domain, FOUR_FEET))[0]
+    assert shifted["value"] < 0 and shifted["g"] > 1 and shifted["info"]["center_of_gravity_xy_mm"][1] > 20
+
+def test_stand_prop_clearance_and_gradients():
+    domain = stand_domain(True, components={"prop_a": {"center_of_mass_mm": [10.0, 0.0, 14.5], "mass_g": 1.0}})
+    stability = StandStability(domain, {"enabled": True, "prop_clearance_min_mm": 17.0})
+    design = stand_design(domain, [(sx * 18, sy * 18, 4) for sx in (-1, 1) for sy in (-1, 1)])
+    rows = stability.rows(design)
+    assert rows[1]["name"] == "stand_prop_clearance" and rows[1]["value"] == pytest.approx(8.0, abs=0.01) and rows[1]["g"] == pytest.approx(1 - 8.0 / 17.0, abs=1e-3)
+    random = np.random.default_rng(3)
+    design = np.clip(0.8 * design + random.uniform(0, 0.2, design.size), 0, 1)
+    direction, step = random.standard_normal(design.size), 1e-5
+    rows, plus, minus = stability.rows(design), stability.rows(design + step * direction), stability.rows(design - step * direction)
+    for row, high, low in zip(rows, plus, minus):
+        key = "value" if row["g"] is None else "g"
+        assert row["gradient"] @ direction == pytest.approx((high[key] - low[key]) / (2 * step), rel=1e-4)
+
+def test_stand_rows_in_the_shared_formulation():
+    domain = cantilever_domain((12, 3, 4), 1.0)
+    domain["metadata"] = {"components": {"prop_a": {"center_of_mass_mm": [6.0, 0.0, 30.0], "mass_g": 1.0}}}
+    problem = cantilever_problem(1.0)
+    off = TopologyProblem(domain, problem)
+    assert off.stability is None and not any(name.startswith("stand_") for name in off.evaluate(np.full(off.map.n, 0.5))["names"])
+    off.close()
+    on = TopologyProblem(domain, {**problem, "stability": {"enabled": True, "reserve_min_mm": 1.0, "prop_clearance_min_mm": 17.0}})
+    result = on.evaluate(np.full(on.map.n, 0.5))
+    assert result["names"][-2:] == ["stand_reserve", "stand_prop_clearance"] and any(row["name"] == "stand_ground_z" and row["status"] == "monitored" for row in result["rows"])
+    on.close()

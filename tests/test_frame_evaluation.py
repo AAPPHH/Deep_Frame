@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import trimesh
 
-from deep_frame.config import EVALUATION_CONFIG
+from deep_frame.config import EVALUATION_CONFIG, STAND_STABILITY
 from deep_frame.frame_evaluation import append_datasheet, assess, mass_properties, overhangs, printed, scaled, top_view, voxel_grid
 
 def test_mass_and_inertia_of_box_with_point_component():
@@ -108,3 +108,24 @@ def test_unit_couple_has_zero_resultant_and_gap_record_maps_to_sigma_order():
     diagonal, coupled = measure.gap_flexibility(record), measure.gap_flexibility(record, coupled=True)
     assert np.allclose(np.diag(diagonal), np.repeat(np.arange(1, 8), 6))
     assert coupled[0, 1] == pytest.approx(0.25) and coupled[1, 0] == pytest.approx(0.25) and coupled[6, 0] == 0
+
+def test_stand_stability_on_the_lowest_material():
+    from deep_frame.topology_stability import plan_reserve, stand_measure
+    settings = {**STAND_STABILITY, "prop_clearance_min_mm": 17.0}
+    plate = trimesh.creation.box(extents=(40, 40, 2))
+    plate.apply_translation([0, 0, 9])
+    feet = [trimesh.creation.box(extents=(4, 4, 8), transform=trimesh.transformations.translation_matrix((sx * 18, sy * 18, 4))) for sx in (-1, 1) for sy in (-1, 1)]
+    mesh = trimesh.util.concatenate([plate, *feet])
+    props = [{"name": "prop_a", "type": "prop", "mass_g": 1.0, "center_mm": [0.0, 0.0, 22.0], "size_mm": [60.0, 60.0, 4.0], "shape": "disc"}]
+    result = stand_measure(mesh, [0.0, 0.0, 10.0], props, settings)
+    assert result["ground_z_mm"] == pytest.approx(0.0) and result["reserve_mm"] == pytest.approx(20.0) and result["support_area_mm2"] == pytest.approx(1600.0)
+    assert result["prop_clearance_mm"] == pytest.approx(20.0) and result["reserve_passed"] and result["prop_clearance_passed"]
+    shifted = stand_measure(mesh, [8.0, 0.0, 10.0], props, {**settings, "prop_clearance_min_mm": 25.0})
+    assert shifted["reserve_mm"] == pytest.approx(12.0) and not shifted["reserve_passed"] and not shifted["prop_clearance_passed"]
+    assert stand_measure(mesh, [30.0, 0.0, 10.0], props, settings)["reserve_mm"] == pytest.approx(-10.0)
+    tilted = mesh.copy()
+    tilted.apply_transform(trimesh.transformations.rotation_matrix(np.radians(5), [1, 1, 0]))
+    one = stand_measure(tilted, [0.0, 0.0, 10.0], props, settings)
+    assert one["reserve_mm"] is None or one["reserve_mm"] < 0
+    assert not one["reserve_passed"]
+    assert plan_reserve([[0, 0], [1, 1], [2, 2]], [1, 1])[0] is None

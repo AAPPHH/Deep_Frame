@@ -1,0 +1,484 @@
+{
+ "statement": "stand stability rows (STAND_STABILITY): approximation error of the smooth reserve against the exact convex hull of the lowest solid cell layer (cell centres and cell faces) on voxel test cases, full and half (mirror) domains; central finite differences of the stand rows through the density map pullback (intermediate field) along one random direction on the coarse frame half domain; smooth rows on the converged fine fields against the exact evaluator measure of their v3 bodies",
+ "settings": {
+  "enabled": true,
+  "reserve_min_mm": 15.0,
+  "prop_clearance_min_mm": 17.0,
+  "prop_clearance_source": "ManaFly 3 measured with the same evaluator component model (prop disc underside 17.4 mm above its lowest point, docs/validation/stand_stability.json), rounded down to 17 mm; our rail v3b and free-battery frames 19.2 mm",
+  "reserve_source": "user 2026-10-04: centre of gravity at least 15 mm inside the support polygon",
+  "contact_tolerance_mm": 0.2,
+  "directions": 64,
+  "ground_sharpness_per_mm": 6.0,
+  "density_lift_mm": 20.0,
+  "contact_penalty": 2.0,
+  "support_sharpness_per_mm": 1.0,
+  "ks_per_mm": 4.0,
+  "definition": {
+   "exact": "evaluator: ground = lowest point of the body; contact set = body material with z <= ground + contact_tolerance_mm (vertices below plus the section at that height); support polygon = convex hull of its plan projection; reserve = signed distance of the plan projection of the craft centre of gravity (frame mesh + layout components) to the hull boundary (> 0 inside); prop clearance = lowest prop disc underside - ground",
+   "lifted_height": "zeta_e = z_bottom_e + L (1 - rho_e) (L = density_lift_mm): gray and void cells are lifted out of the contact zone, binary solid cells keep their bottom face height",
+   "ground": "z_g = sum(zeta w) / sum(w), w = exp(-p_g (zeta - min zeta)): softmin-weighted mean, >= min zeta, upward bias <= one cell layer x exp(-p_g h) share",
+   "contact": "log weight lambda_e = -c s D ((zeta_e - z_g) / h_z)^2 (c = contact_penalty, s = support_sharpness, D = plan diameter of the domain): one cell layer above the ground loses more than the largest support gain exp(s D), so only the lowest layer carries",
+   "support": "h_k = sum(a u) / sum(a) over contact cells and their mirror copies, u = n_k . x_e (cell centre), a = exp(s u + lambda): soft-argmax support distance along n_k, never above the max over the cells",
+   "reserve": "r_k = h_k - n_k . c (c = plan CoG of frame share sum(rho V density) at the density-weighted cell centres + layout components), K directions on the full circle; r = KS_min(r_k) = -1/ks log sum exp(-ks r_k) <= min_k r_k; exact for a convex polygon: dist(c, boundary) = min over all unit n of (h(n) - n . c), sampled directions overestimate by <= 1/cos(pi/K)",
+   "rows": "stand_reserve: g = 1 - r / reserve_min_mm; stand_prop_clearance: g = 1 - (z_prop_bottom - z_g) / prop_clearance_min_mm; stand_ground_z monitored; all on the intermediate field like volume and shadow"
+  }
+ },
+ "cases": {
+  "four_feet_full": {
+   "smooth_mm": 18.64518380984268,
+   "min_over_directions_mm": 18.992652734585757,
+   "smooth_ground_z_mm": 0.002484911656844586,
+   "cell_centres_mm": 19.499999999999996,
+   "cell_faces_mm": 19.999999999999996,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.8548161901573152,
+   "error_vs_cell_faces_mm": -1.3548161901573152
+  },
+  "four_feet_half": {
+   "smooth_mm": 18.64518380984268,
+   "min_over_directions_mm": 18.992652734585544,
+   "smooth_ground_z_mm": 0.002484911656844586,
+   "cell_centres_mm": 19.499999999999776,
+   "cell_faces_mm": 19.999999999999776,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.854816190157095,
+   "error_vs_cell_faces_mm": -1.354816190157095
+  },
+  "rear_feet_raised_3mm_full": {
+   "smooth_mm": -16.651673808502792,
+   "min_over_directions_mm": -16.651223443072382,
+   "smooth_ground_z_mm": 0.0024849573467831247,
+   "cell_centres_mm": -16.143876177658143,
+   "cell_faces_mm": -15.643876177658143,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.5077976308446495,
+   "error_vs_cell_faces_mm": -1.0077976308446495
+  },
+  "rear_feet_raised_3mm_half": {
+   "smooth_mm": -16.65167380850278,
+   "min_over_directions_mm": -16.651223443072368,
+   "smooth_ground_z_mm": 0.0024849573467831247,
+   "cell_centres_mm": -16.143876177658143,
+   "cell_faces_mm": -15.643876177658143,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.5077976308446353,
+   "error_vs_cell_faces_mm": -1.0077976308446353
+  },
+  "tripod_full": {
+   "smooth_mm": 9.32941637748645,
+   "min_over_directions_mm": 9.504188174419884,
+   "smooth_ground_z_mm": 0.0024849116568445863,
+   "cell_centres_mm": 10.276066847797097,
+   "cell_faces_mm": 10.946887241047035,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.9466504703106473,
+   "error_vs_cell_faces_mm": -1.6174708635605857
+  },
+  "tripod_half": {
+   "smooth_mm": 9.329416377486451,
+   "min_over_directions_mm": 9.504188174419525,
+   "smooth_ground_z_mm": 0.002484911656844586,
+   "cell_centres_mm": 10.276066847796736,
+   "cell_faces_mm": 10.946887241046674,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.9466504703102849,
+   "error_vs_cell_faces_mm": -1.6174708635602233
+  },
+  "front_pair_full": {
+   "smooth_mm": -16.025757162936536,
+   "min_over_directions_mm": -16.025301336395447,
+   "smooth_ground_z_mm": 0.0024849116568445863,
+   "cell_centres_mm": -15.517954070981208,
+   "cell_faces_mm": -15.017954070981208,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.5078030919553278,
+   "error_vs_cell_faces_mm": -1.0078030919553278
+  },
+  "front_pair_half": {
+   "smooth_mm": -16.02575716293652,
+   "min_over_directions_mm": -16.025301336395433,
+   "smooth_ground_z_mm": 0.0024849116568445863,
+   "cell_centres_mm": -15.517954070981208,
+   "cell_faces_mm": -15.017954070981208,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.5078030919553136,
+   "error_vs_cell_faces_mm": -1.0078030919553136
+  },
+  "stepped_feet_full": {
+   "smooth_mm": -16.890632970263052,
+   "min_over_directions_mm": -16.890184672428056,
+   "smooth_ground_z_mm": 0.00495753481347936,
+   "cell_centres_mm": -16.382837407013817,
+   "cell_faces_mm": -15.882837407013815,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.5077955632492355,
+   "error_vs_cell_faces_mm": -1.0077955632492372
+  },
+  "stepped_feet_half": {
+   "smooth_mm": -16.890632970263038,
+   "min_over_directions_mm": -16.890184672428042,
+   "smooth_ground_z_mm": 0.00495753481347936,
+   "cell_centres_mm": -16.382837407013817,
+   "cell_faces_mm": -15.882837407013815,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.5077955632492213,
+   "error_vs_cell_faces_mm": -1.007795563249223
+  },
+  "four_feet_gray_background_0.3_full": {
+   "smooth_mm": 18.64518380984268,
+   "min_over_directions_mm": 18.99265273458576,
+   "smooth_ground_z_mm": 0.002484911656844586,
+   "cell_centres_mm": 19.5,
+   "cell_faces_mm": 20.0,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.8548161901573188,
+   "error_vs_cell_faces_mm": -1.3548161901573188
+  },
+  "four_feet_gray_background_0.3_half": {
+   "smooth_mm": 18.64518380984268,
+   "min_over_directions_mm": 18.992652734585427,
+   "smooth_ground_z_mm": 0.002484911656844586,
+   "cell_centres_mm": 19.49999999999966,
+   "cell_faces_mm": 19.99999999999966,
+   "ground_z_mm": 0.0,
+   "error_vs_cell_centres_mm": -0.8548161901569777,
+   "error_vs_cell_faces_mm": -1.3548161901569777
+  }
+ },
+ "frame": {
+  "grid": {
+   "origin_mm": [
+    0.0,
+    -64.0,
+    -4.0
+   ],
+   "spacing_mm": [
+    2.0,
+    2.0,
+    1.3333333333333333
+   ],
+   "shape": [
+    34,
+    64,
+    27
+   ],
+   "axis_order": "xyz",
+   "order": "C"
+  },
+  "floor_z_mm": -4.0,
+  "lowest_preserve_z_mm": -5.551115123125783e-16,
+  "components": {
+   "aio15": {
+    "position_mm": [
+     0,
+     0,
+     5.5
+    ],
+    "center_of_mass_mm": [
+     9.404120364122206e-16,
+     -6.367373163207745e-17,
+     8.5
+    ],
+    "mass_g": 7.2,
+    "source": "user: HDZero AIO15 dimensions, M2 mounting pattern and mass"
+   },
+   "camera": {
+    "position_mm": [
+     0,
+     35.0,
+     4.5
+    ],
+    "center_of_mass_mm": [
+     1.166513031294608e-16,
+     35.0,
+     13.47198934878104
+    ],
+    "mass_g": 2.3,
+    "source": "user: HDZero Lux dimensions and mass"
+   },
+   "battery": {
+    "position_mm": [
+     0,
+     0.0,
+     28.0
+    ],
+    "center_of_mass_mm": [
+     -1.6781509643504353e-16,
+     -3.0144237274670914e-16,
+     33.5
+    ],
+    "mass_g": 37.0,
+    "source": "user: GNB5502S120A dimensions and mass"
+   },
+   "motor_front_left": {
+    "position_mm": [
+     -53.45466183516625,
+     39.13644884360386,
+     9.333333333333334
+    ],
+    "center_of_mass_mm": [
+     -53.45466183516625,
+     39.13644884360386,
+     14.283333333333333
+    ],
+    "mass_g": 4.5,
+    "source": "Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg (RCinPower GTS V3 1203 8000KV data sheet)"
+   },
+   "prop_front_left": {
+    "position_mm": [
+     -53.45466183516625,
+     39.13644884360386,
+     19.233333333333334
+    ],
+    "center_of_mass_mm": [
+     -53.45466183516625,
+     39.13644884360386,
+     21.733333333333334
+    ],
+    "mass_g": 1.2,
+    "source": "user decision: HQProp T2.5X2X3V2S (HQ Durable Prop T2.5X2X3 V2S), 2 CW + 2 CCW, polycarbonate, 1.5 mm shaft, no adaptor rings"
+   },
+   "motor_front_right": {
+    "position_mm": [
+     53.45466183516625,
+     39.13644884360386,
+     9.333333333333334
+    ],
+    "center_of_mass_mm": [
+     53.45466183516625,
+     39.13644884360386,
+     14.283333333333335
+    ],
+    "mass_g": 4.5,
+    "source": "Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg (RCinPower GTS V3 1203 8000KV data sheet)"
+   },
+   "prop_front_right": {
+    "position_mm": [
+     53.45466183516625,
+     39.13644884360386,
+     19.233333333333334
+    ],
+    "center_of_mass_mm": [
+     53.45466183516625,
+     39.13644884360386,
+     21.733333333333334
+    ],
+    "mass_g": 1.2,
+    "source": "user decision: HQProp T2.5X2X3V2S (HQ Durable Prop T2.5X2X3 V2S), 2 CW + 2 CCW, polycarbonate, 1.5 mm shaft, no adaptor rings"
+   },
+   "motor_rear_left": {
+    "position_mm": [
+     -53.45466183516625,
+     -39.13644884360386,
+     9.333333333333334
+    ],
+    "center_of_mass_mm": [
+     -53.45466183516625,
+     -39.13644884360386,
+     14.283333333333335
+    ],
+    "mass_g": 4.5,
+    "source": "Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg (RCinPower GTS V3 1203 8000KV data sheet)"
+   },
+   "prop_rear_left": {
+    "position_mm": [
+     -53.45466183516625,
+     -39.13644884360386,
+     19.233333333333334
+    ],
+    "center_of_mass_mm": [
+     -53.45466183516625,
+     -39.13644884360386,
+     21.733333333333334
+    ],
+    "mass_g": 1.2,
+    "source": "user decision: HQProp T2.5X2X3V2S (HQ Durable Prop T2.5X2X3 V2S), 2 CW + 2 CCW, polycarbonate, 1.5 mm shaft, no adaptor rings"
+   },
+   "motor_rear_right": {
+    "position_mm": [
+     53.45466183516625,
+     -39.13644884360386,
+     9.333333333333334
+    ],
+    "center_of_mass_mm": [
+     53.45466183516625,
+     -39.13644884360386,
+     14.283333333333333
+    ],
+    "mass_g": 4.5,
+    "source": "Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg (RCinPower GTS V3 1203 8000KV data sheet)"
+   },
+   "prop_rear_right": {
+    "position_mm": [
+     53.45466183516625,
+     -39.13644884360386,
+     19.233333333333334
+    ],
+    "center_of_mass_mm": [
+     53.45466183516624,
+     -39.13644884360386,
+     21.733333333333334
+    ],
+    "mass_g": 1.2,
+    "source": "user decision: HQProp T2.5X2X3V2S (HQ Durable Prop T2.5X2X3 V2S), 2 CW + 2 CCW, polycarbonate, 1.5 mm shaft, no adaptor rings"
+   }
+  },
+  "designs": {
+   "uniform": {
+    "rows": {
+     "stand_reserve": {
+      "value": 32.73454439203305,
+      "g": -1.18230295946887
+     },
+     "stand_prop_clearance": {
+      "value": 19.294033680751713,
+      "g": -0.13494315769127718
+     },
+     "stand_ground_z": {
+      "value": -0.060700347418380485,
+      "g": null
+     }
+    },
+    "finite_differences": {
+     "stand_reserve": {
+      "analytic": -397.2398220222961,
+      "finite_difference": {
+       "0.0001": -337.1062717520745,
+       "1e-05": -396.5469971208835,
+       "1e-06": -397.2328920480717
+      },
+      "relative_error": {
+       "0.0001": 0.17838158263174325,
+       "1e-05": 0.001747144490925044,
+       "1e-06": 1.7445620348027792e-05
+      }
+     },
+     "stand_prop_clearance": {
+      "analytic": 0.7739880427146125,
+      "finite_difference": {
+       "0.0001": 0.7739873491663385,
+       "1e-05": 0.7739880357626737,
+       "1e-06": 0.7739880425461365
+      },
+      "relative_error": {
+       "0.0001": 8.960718476605083e-07,
+       "1e-05": 8.981971918405243e-09,
+       "1e-06": 2.1767262755860658e-10
+      }
+     },
+     "stand_ground_z": {
+      "analytic": 13.157796726148414,
+      "finite_difference": {
+       "0.0001": 13.157784935817137,
+       "1e-05": 13.157796608017495,
+       "1e-06": 13.157796722770843
+      },
+      "relative_error": {
+       "0.0001": 8.960726546406763e-07,
+       "1e-05": 8.978016753098477e-09,
+       "1e-06": 2.566972491420955e-10
+      }
+     }
+    }
+   },
+   "sparse_preserve": {
+    "rows": {
+     "stand_reserve": {
+      "value": 12.443556210436428,
+      "g": 0.17042958597090474
+     },
+     "stand_prop_clearance": {
+      "value": 19.23288589973228,
+      "g": -0.1313462293960166
+     },
+     "stand_ground_z": {
+      "value": 0.00044743360105399565,
+      "g": null
+     }
+    },
+    "finite_differences": {
+     "stand_reserve": {
+      "analytic": 0.09591342890877742,
+      "finite_difference": {
+       "0.0001": 0.09591341838643963,
+       "1e-05": 0.09591342881587471,
+       "1e-06": 0.09591342881032361
+      },
+      "relative_error": {
+       "0.0001": 1.0970662885099179e-07,
+       "1e-05": 9.68610073136235e-10,
+       "1e-06": 1.026486236250918e-09
+      }
+     },
+     "stand_prop_clearance": {
+      "analytic": 1.0270693815802902e-38,
+      "finite_difference": {
+       "0.0001": 0.0,
+       "1e-05": 0.0,
+       "1e-06": 0.0
+      },
+      "relative_error": {
+       "0.0001": 1.0270693815802902e-08,
+       "1e-05": 1.0270693815802902e-08,
+       "1e-06": 1.0270693815802902e-08
+      }
+     },
+     "stand_ground_z": {
+      "analytic": 1.746017948686487e-37,
+      "finite_difference": {
+       "0.0001": 0.0,
+       "1e-05": 0.0,
+       "1e-06": 0.0
+      },
+      "relative_error": {
+       "0.0001": 1.7460179486864868e-07,
+       "1e-05": 1.7460179486864868e-07,
+       "1e-06": 1.7460179486864868e-07
+      }
+     }
+    }
+   }
+  }
+ },
+ "fields": {
+  "rail_v3b": {
+   "density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz",
+   "smooth": {
+    "stand_reserve": 25.165082217647072,
+    "stand_prop_clearance": 19.232741739143748,
+    "stand_ground_z": 0.0005915941895860503
+   },
+   "voxel_exact": {
+    "cell_centres_mm": 25.41309540963653,
+    "cell_faces_mm": 26.27139715574148,
+    "ground_z_mm": 0.0
+   },
+   "body_exact": {
+    "reserve_mm": 21.820657693504895,
+    "ground_z_mm": 0.0,
+    "prop_clearance_mm": 19.233333333333334,
+    "support_area_mm2": 3136.351000888037
+   }
+  },
+  "battery_free": {
+   "density": "C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz",
+   "smooth": {
+    "stand_reserve": 14.10510429763447,
+    "stand_prop_clearance": 19.232967595870292,
+    "stand_ground_z": 0.0003657374630412787
+   },
+   "voxel_exact": {
+    "cell_centres_mm": 15.333333333333274,
+    "cell_faces_mm": 15.99999999999994,
+    "ground_z_mm": 0.0
+   },
+   "body_exact": {
+    "reserve_mm": 15.549149606624066,
+    "ground_z_mm": 0.0,
+    "prop_clearance_mm": 19.233333333333334,
+    "support_area_mm2": 1875.9594241000718
+   }
+  }
+ },
+ "sha": "11c7fd2fb714aededc33c884770cbdb36629b33a"
+}

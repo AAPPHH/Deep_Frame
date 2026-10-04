@@ -20,6 +20,7 @@ from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge, embed_field
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import HexElasticity
+from deep_frame.topology_stability import STAND_CASES, FOUR_FEET, StandStability, stand_design, stand_domain, voxel_reserve
 from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
@@ -46,6 +47,9 @@ FORMULATION = {
     "camera_limits": {"spacing_mm": 4 / 3, "subdivision": 4, "stack_height_mm": 5.0, "tilts_deg": [20.0, 0.0], "linear_solver": "cpu_superlu", "output": "docs/validation/camera_limits_manafly.json"},
     "camera_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.02, "battery_support": "free", "output": "docs/validation/camera_support_fd.json", "limits": {}},
     "battery_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "output": "docs/validation/battery_support_fd.json"},
+    "stand_fd": {"shape": [68, 64, 24], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.05, "output": "docs/validation/stand_stability_fd.json", "exact": "docs/validation/stand_stability.json",
+                 "fields": {"rail_v3b": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/domain.json"],
+                            "battery_free": ["C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/domain.json"]}},
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
@@ -249,6 +253,8 @@ def frame_problem(half, references=None):
     if "camera" in half:
         problem["camera"] = deepcopy(config.CAMERA_SUPPORT)
     problem["shadow"].update(half["metadata"]["formulation"]["shadow"])
+    if config.STAND_STABILITY["enabled"]:
+        problem["stability"] = deepcopy(config.STAND_STABILITY)
     if references:
         problem["crash"].update(reference=references["crash_compliance_n_mm"], reference_source=references["source"])
         problem["shadow"].update(limit_mm=references["manafly_shadow_mm"], source=references["source"])
@@ -486,6 +492,65 @@ def battery_fd(cfg):
     Path(spec["output"]).write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
     print(record["table"], flush=True)
     print(json.dumps({name: [row["analytic"], row["finite_difference"], row["relative_error"]] for name, row in checks.items()}, indent=0, default=float), flush=True)
+
+def geometry_differences(problem, design, steps, seed):
+    direction = np.random.default_rng(seed).standard_normal(problem.map.n) * problem.map.free
+    def rows(x):
+        fields, _ = problem.map.fields(x)
+        field = fields[problem.problem["fields"]["volume"]]
+        return {row["name"]: row for row in problem.geometry(field[0]) if row["name"].startswith("stand_")}, field[1]
+    base, slope = rows(design)
+    key = lambda row: "value" if row["g"] is None else "g"
+    analytic = {name: float(problem.map.pullback(row["gradient"], slope) @ direction) for name, row in base.items()}
+    checks = {name: {"analytic": value, "finite_difference": {}, "relative_error": {}} for name, value in analytic.items()}
+    for step in steps:
+        plus, minus = rows(design + step * direction)[0], rows(design - step * direction)[0]
+        for name, row in base.items():
+            difference = float((plus[name][key(row)] - minus[name][key(row)]) / (2 * step))
+            checks[name]["finite_difference"][f"{step:g}"], checks[name]["relative_error"][f"{step:g}"] = difference, abs(analytic[name] - difference) / max(abs(difference), 1e-30)
+    return checks, {name: {"value": row["value"], "g": row["g"]} for name, row in base.items()}
+
+def stand_fd(cfg):
+    spec = cfg["stand_fd"]
+    cases = {}
+    for name, feet in {**STAND_CASES, "four_feet_gray_background_0.3": FOUR_FEET}.items():
+        for half in (False, True):
+            domain = stand_domain(half)
+            design = stand_design(domain, feet, 0.3 if "gray" in name else 0.02)
+            measure = StandStability(domain, {"enabled": True}).measure(design)
+            exact = voxel_reserve(domain, design, measure["center_of_gravity_xy_mm"])
+            cases[f"{name}_{'half' if half else 'full'}"] = {"smooth_mm": measure["reserve_mm"], "min_over_directions_mm": float(measure["reserves_mm"].min()), "smooth_ground_z_mm": measure["ground_z_mm"], **exact,
+                                                             "error_vs_cell_centres_mm": measure["reserve_mm"] - exact["cell_centres_mm"], "error_vs_cell_faces_mm": measure["reserve_mm"] - exact["cell_faces_mm"]}
+    config.STAND_STABILITY["enabled"] = True
+    half, problem = frame_setup(cfg, spec["shape"])
+    tp = TopologyProblem(half, problem, linear_solver=cfg["linear_solver"])
+    random = np.random.default_rng(spec["seed"])
+    preserve = np.asarray(half["preserve"]).ravel()
+    bottoms = cell_centers(half["grid"])[:, 2] - half["grid"]["spacing_mm"][2] / 2
+    designs = {"uniform": random.uniform(spec["low"], spec["high"], tp.map.n), "sparse_preserve": np.where(preserve, 1.0, random.uniform(spec["sparse"] / 5, spec["sparse"], tp.map.n))}
+    frame = {"grid": half["grid"], "floor_z_mm": half["grid"]["origin_mm"][2], "lowest_preserve_z_mm": float(bottoms[preserve].min()), "components": half["metadata"]["components"], "designs": {}}
+    for label, design in designs.items():
+        checks, rows = geometry_differences(tp, design, spec["steps"], spec["seed"])
+        frame["designs"][label] = {"rows": rows, "finite_differences": checks}
+        print(label, json.dumps(rows, default=float), json.dumps(checks, default=float), flush=True)
+    tp.close()
+    exact = json.loads(Path(spec["exact"]).read_text(encoding="utf-8"))
+    fields = {}
+    for name, (density, path) in spec["fields"].items():
+        stored = json.loads(Path(path).read_text(encoding="utf-8"))
+        physical = np.load(density)["density"].astype(float)
+        grid = {**stored["grid"], "origin_mm": [0.0, *stored["grid"]["origin_mm"][1:]], "shape": list(physical.shape)}
+        domain = {"grid": grid, "allowed": np.ones(physical.shape, dtype=bool), "symmetry": {"axis": 0, "plane_mm": 0.0}, "material": half["material"], "metadata": {"components": stored["components"]}}
+        rows = {row["name"]: row["value"] for row in StandStability(domain, {"enabled": True}).rows(physical.ravel())}
+        fields[name] = {"density": density, "smooth": rows, "voxel_exact": voxel_reserve(domain, physical, StandStability(domain, {"enabled": True}).measure(physical.ravel())["center_of_gravity_xy_mm"]),
+                        "body_exact": {key: exact[name][key] for key in ("reserve_mm", "ground_z_mm", "prop_clearance_mm", "support_area_mm2")}}
+        print(name, json.dumps(fields[name], default=float), flush=True)
+    record = {"statement": "stand stability rows (STAND_STABILITY): approximation error of the smooth reserve against the exact convex hull of the lowest solid cell layer (cell centres and cell faces) on voxel test cases, full and half (mirror) domains; "
+                           "central finite differences of the stand rows through the density map pullback (intermediate field) along one random direction on the coarse frame half domain; smooth rows on the converged fine fields against the exact evaluator measure of their v3 bodies",
+              "settings": config.STAND_STABILITY, "cases": cases, "frame": frame, "fields": fields, "sha": git_sha()}
+    Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
+    for name, case in cases.items():
+        print(f"{name}: smooth {case['smooth_mm']:.3f} centres {case['cell_centres_mm']} faces {case['cell_faces_mm']}", flush=True)
 
 def manafly_camera_domain(cfg, tilt):
     import trimesh
@@ -1217,7 +1282,7 @@ def main(argv=None):
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
                          "cov_compare": lambda overrides: cov_compare(configure(overrides)), "battery_fd": lambda overrides: battery_fd(configure(overrides)),
                          "battery_compare": lambda overrides: battery_compare(configure(overrides)), "camera_limits": lambda overrides: camera_limits(configure(overrides)), "camera_fd": lambda overrides: camera_fd(configure(overrides)),
-                         "solver_memory": lambda overrides: solver_memory(configure(overrides)), "setup_memory": lambda overrides: setup_memory(configure(overrides))}, argv)
+                         "solver_memory": lambda overrides: solver_memory(configure(overrides)), "setup_memory": lambda overrides: setup_memory(configure(overrides)), "stand_fd": lambda overrides: stand_fd(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())
