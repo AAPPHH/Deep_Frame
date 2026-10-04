@@ -712,7 +712,7 @@ def prepare_frame_case(parameters, fea_config=None, integration_config=None):
     arm_region = _box((x - pad_half, y - pad_half, frame["arm_height_mm"] - tolerance), (x + pad_half, y + pad_half, frame["arm_height_mm"] + tolerance))
     deck_half_width = frame["deck_width_mm"] / 2 + integration["battery_attachment_margin_mm"]
     band_half_width = integration["battery_attachment_band_width_mm"] / 2
-    band_y = integration["battery_attachment_y_mm"]
+    band_y = integration["battery_attachment_y_mm"] + frame.get("battery_y_mm", 0.0)
     deck_region = _box(
         (-deck_half_width, band_y - band_half_width, frame["deck_top_mm"] - tolerance),
         (deck_half_width, band_y + band_half_width, frame["deck_top_mm"] + tolerance),

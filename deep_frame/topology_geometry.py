@@ -240,16 +240,16 @@ def _component_regions(parameters, settings, grid):
         height = f["base_thickness_mm"] + f["aio_standoff_mm"]
         regions.append(_cylinder(f"aio_contact_{index}", "preserve", [x, y, height / 2], settings["aio_boss_radius_mm"], height, "AIO mounting boss; no prescribed central plate", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
         regions.append(_cylinder(f"aio_screw_{index}", "forbidden", [x, y, height / 2], (c["aio15"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2, height + 2, "AIO through screw and underside assembly access", rasterize=False))
-    battery_z = placements["battery"]["position"][2]
+    battery_y, battery_z = placements["battery"]["position"][1:]
     rail_width, rail_length = settings["battery_contact_width_mm"], settings["battery_contact_length_mm"]
     for sign in (-1, 1):
-        x, y = sign * (c["battery"]["width_mm"] / 2 - settings["battery_rail_edge_inset_mm"] - rail_width / 2), settings["battery_contact_y_mm"]
+        x, y = sign * (c["battery"]["width_mm"] / 2 - settings["battery_rail_edge_inset_mm"] - rail_width / 2), battery_y + settings["battery_contact_y_mm"]
         regions.append(_box(f"battery_rail_{sign}", "preserve", [x - rail_width / 2, y - rail_length / 2, battery_z - 3.0], [x + rail_width / 2, y + rail_length / 2, battery_z], "Longitudinal battery strap rail under the battery edge, ManaFly style; strap wraps battery and rail", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
     aio = placements["aio15"]["position"]
     aio_top = aio[2] + c["aio15"]["stack_height_mm"] + clearance
     regions.append(_box("elrs_antenna_clearance", "forbidden", [-c["aio15"]["width_mm"] / 2 - clearance, -c["aio15"]["length_mm"] / 2 - clearance, aio_top], [c["aio15"]["width_mm"] / 2 + clearance, c["aio15"]["length_mm"] / 2 + clearance, aio_top + c["aio15"]["elrs_antenna_clearance_mm"]], "ELRS wire antenna lifted at least 3 mm above the AIO board"))
     battery_half = c["battery"]["width_mm"] / 2 + clearance
-    regions.append(_box("battery_insertion", "forbidden", [-battery_half, -c["battery"]["length_mm"] / 2 - clearance, battery_z], [battery_half, c["battery"]["length_mm"] / 2 + clearance, max(battery_z + c["battery"]["height_mm"] + clearance, upper[2] + 1)], "Battery removal vertically above its contact pads"))
+    regions.append(_box("battery_insertion", "forbidden", [-battery_half, battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_z], [battery_half, battery_y + c["battery"]["length_mm"] / 2 + clearance, max(battery_z + c["battery"]["height_mm"] + clearance, upper[2] + 1)], "Battery removal vertically above its contact pads"))
     camera_width = c["camera"]["width_mm"] + 2 * f["camera_side_clearance_mm"]
     for sign in (-1, 1):
         x = sign * (camera_width / 2 + settings["camera_contact_width_mm"] / 2)

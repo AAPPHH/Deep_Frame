@@ -75,6 +75,11 @@ def datasheet(path):
     from deep_frame.frame_run import datasheet as write
     return write(path)
 
+def layout(path=None):
+    from deep_frame.frame_run import layout_study
+    layout_study(path)
+    return 0
+
 def _update(target, values):
     for key, value in values.items():
         if isinstance(value, dict) and isinstance(target.get(key), dict):
@@ -127,8 +132,8 @@ def stage(path):
         target.write_text(json.dumps(result, indent=1, default=_json), encoding="utf-8")
     return 0
 
-COMMANDS = {"frame": frame, "optimization": optimization, "smoke": smoke, "topology": topology, "build": build, "datasheet": datasheet, "stage": stage}
-ARGUMENTS = {"build": (0, 1), "datasheet": (1, 1), "stage": (1, 1)}
+COMMANDS = {"frame": frame, "optimization": optimization, "smoke": smoke, "topology": topology, "build": build, "datasheet": datasheet, "stage": stage, "layout": layout}
+ARGUMENTS = {"layout": (0, 1), "build": (0, 1), "datasheet": (1, 1), "stage": (1, 1)}
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv

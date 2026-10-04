@@ -226,7 +226,8 @@ FRAME_DEFAULTS = {'wheelbase_mm': 135.0,
  'antenna_y_mm': 56.0,
  'cable_slot_width_mm': 4.0,
  'cable_slot_height_mm': 3.0,
- 'prop_motor_gap_mm': 0.0}
+ 'prop_motor_gap_mm': 0.0,
+ 'battery_y_mm': 0.0}
 
 FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                   'kind': 'design_assumption',
@@ -656,7 +657,14 @@ FRAME_DEFAULT_SOURCES = {'wheelbase_mm': {'value': 135.0,
                                          'component_driven'],
                        'rationale': 'HQProp T2.5X2X3V2S ohne Adapterringe: die '
                                     '5-mm-Nabe sitzt direkt auf der Motorglocke, '
-                                    'die Propscheibe beginnt an der Motoroberkante.'}}
+                                    'die Propscheibe beginnt an der Motoroberkante.'},
+ 'battery_y_mm': {'value': 0.0,
+                  'kind': 'design_assumption',
+                  'frame_ids': ['tadpole_2_5'],
+                  'principle_ids': ['component_driven'],
+                  'rationale': 'Akku mittig über dem Stack; die Layoutoptimierung '
+                               '(LAYOUT_DEFAULT) verschiebt ihn für den '
+                               'Standardauftrag längs.'}}
 
 FEA_CONFIG = {
     "material": {
@@ -1100,8 +1108,64 @@ LAYOUT_RULES = {
     "neural": {"half_wavelength_per_width": 2.0},
 }
 
-LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float"},
-                    "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"},
+LAYOUT_OPTIMIZATION = {
+    "variables": {"battery_y_mm": [-25.0, 25.0], "deck_top_mm": [14.0, 32.0], "camera_y_mm": [16.0, 50.0], "camera_bottom_clearance_mm": [2.0, 16.0], "aio_standoff_mm": [3.0, 14.0]},
+    "variable_sources": {"battery_y_mm": "battery centre along y; |y| + length/2 inside the envelope", "deck_top_mm": "battery underside (deck top), at most the envelope top", "camera_y_mm": "camera centre along y",
+                         "camera_bottom_clearance_mm": "camera height: gap between base plate and the tilted camera envelope, at least the 2 mm camera bottom keep-out", "aio_standoff_mm": "stack height: grommet seat above the base plate, at least the 3 mm grommet"},
+    "thrust_n": COMPONENT_LIBRARY[DEFAULT_PROP]["data"]["thrust_n_estimate"],
+    "torque_rule": "tau_roll = 2 T |x_motor|, tau_pitch = 2 T |y_motor| (one side at full thrust, the other off); y points forward, so roll turns about y (alpha_roll = tau_roll / Iyy) and pitch about x (alpha_pitch = tau_pitch / Ixx); tau_yaw = 2 k_Q T (one diagonal pair at full thrust); k_Q = LOAD_COVARIANCE torque_per_thrust_mm (4.19 mm at 2.02 N)",
+    "objective": "lexicographic: maximise the smallest of alpha_roll/pitch/yaw, then the second smallest with the first held within rank_tolerance of its optimum, then the third",
+    "rank_tolerance": 1e-4,
+    "cg_horizontal_mm": 1.0,
+    "cg_band_mm": [0.0, 5.0],
+    "cg_band_source": "user: centre of gravity above the prop plane (lower edge 0 mm); upper edge 5 mm ASSUMPTION; prop plane = rotor plane at the prop hub mid-plane, as LOAD_COVARIANCE prop_height_mm",
+    "fov_deg": [145.0, 94.0],
+    "fov_source": "https://docs.hd-zero.com/camera-lux: H 126 / V 94 deg (4:3), H 145 / V 82 deg (16:9); per direction the larger value, equidistant fisheye model",
+    "fov_samples": [12, 72],
+    "battery_gap_mm": LAYOUT_RULES["camera"]["top_clearance_mm"],
+    "mount_gap_mm": 3.0,
+    "mount_gap_source": "camera envelope to AIO envelope: 2 mm minimum wall + 2 x 0.5 mm keep-out clearance",
+    "antennas": "ELRS wire 3 mm above the board is part of the stack top that the battery gap is measured from; VTX antenna strapped with a rubber band, no seat, nothing to check",
+    "frame_share": {"stl": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/frame.stl", "sha256": "81504ebdb07388a2", "mass_g": 17.6208, "center_mm": [0.1395, 5.2608, 12.9003],
+                    "inertia_g_mm2": [[13744.5, 94.2, 10.2], [94.2, 14022.9, -364.7], [10.2, -364.7, 25970.9]], "source": "load-model SIMP v3b frame (simp_mma_cov3_v3_2), mesh volume integrals x PA6-CF 1.09 g/cm3, about its own centre of mass",
+                    "layout": {"battery_y_mm": 0.0, "deck_top_mm": 28.0, "camera_y_mm": 35.0, "camera_bottom_clearance_mm": 2.0, "aio_standoff_mm": 3.0}},
+    "solver": {"popsize": 40, "maxiter": 400, "tol": 1e-10, "seed": 1},
+    "round_mm": 0.1,
+    "reach_solver": {"popsize": 15, "maxiter": 200, "seed": 1},
+    "unsatisfiable_rule": "each constraint is first maximised alone over the bounds; one that stays negative cannot be met by any layout of this frame and is reported as unsatisfiable (never relaxed); the alpha optimum is then taken over the remaining constraints and marked infeasible",
+}
+
+_LUX = {"mass_g": 2.3, "width_mm": 16.0, "length_mm": 14.0, "height_mm": 14.0, "tilt_deg": 20.0}
+_GNB = {"mass_g": 37.0, "width_mm": 30.0, "length_mm": 63.0, "height_mm": 11.0}
+_AIO15 = {"mass_g": 7.2, "width_mm": 31.3, "length_mm": 31.3, "stack_height_mm": 6.0, "elrs_mm": 3.0}
+LAYOUT_REFERENCES = {
+    "manafly3": {"motors_xy": [[-56.6, 56.6], [56.6, 56.6], [-56.6, -56.6], [56.6, -56.6]], "pad_z_mm": 10.0, "motor": {"mass_g": 5.9, "diameter_mm": 14.2, "height_mm": 14.6},
+                 "prop": {"mass_g": 0.7, "diameter_mm": 77.7, "thickness_mm": 0.8}, "battery": _GNB, "aio": _AIO15, "aio_y_mm": 11.0, "camera": _LUX, "base_mm": 2.0, "deck_thickness_mm": 3.4,
+                 "battery_prop_clearance_mm": 2.0, "envelope": {"half_y_mm": 65.0, "top_mm": 32.4}, "hoop": {"front_mm": 15.0, "top_mm": 32.4},
+                 "frame": {"mass_g": 29.3211, "center_mm": [-0.0039, -7.3534, 12.5236], "inertia_g_mm2": [[54414.9, 9.8, -4.0], [9.8, 27021.3, 450.1], [-4.0, 450.1, 76503.5]],
+                           "source": "Deep_Frame-neural/exports/manafly_ref/manafly3_repaired.stl (sha256 3d39cdc16bc84163), mesh volume integrals x PA6-CF 1.09 g/cm3"},
+                 "own": {"battery_y_mm": 0.0, "deck_top_mm": 27.8, "camera_y_mm": 50.0, "camera_bottom_clearance_mm": 5.02, "aio_standoff_mm": 3.0},
+                 "sources": {"motors_xy": "Examples/Frames/ManaFly3/datasheet.md field 1: motors at (+-56.6; +-56.6), true X", "base_mm": "datasheet field 3: lower chord z 0-2",
+                             "deck": "datasheet field 8: rails z 24.4-27.8 -> battery underside 27.8, deck thickness 3.4", "aio": "datasheet field 8: stack pattern around (0; 11); AIO15 centre z 8.0 as the evaluator placement (standoff 3 mm)",
+                             "camera": "evaluator placement (0, 50, 16) between the hoops y 40-65 (datasheet field 7): bottom clearance 16 - 2 - 8.98 = 5.02 mm; hoop front 65 -> 15 mm ahead of the camera centre, hoop apex z 32.4",
+                             "components": "(K) our hardware at ManaFly's mounts as in the nine-criteria reference evaluation (ref_manafly3): GEPRC GR1105 envelope 5.9 g, 3 inch prop rule 0.7 g (swept 77.7 mm), AIO15 7.2 g, Lux 2.3 g, GNB 2S 550 37 g; motor pad z 10.0 (motor centre 17.3 as the evaluator)",
+                             "not_modelled": "photo AUW 142.7 g (datasheet field 9) implies heavier real components (4S pack, 14xx motors); not used"}},
+    "tadpole": {"motors_xy": [[-47.1, 36.8], [47.1, 36.8], [-47.1, -36.8], [47.1, -36.8]], "pad_z_mm": 2.0, "motor": {"mass_g": 4.5, "diameter_mm": 15.76, "height_mm": 9.9},
+                "prop": {"mass_g": 1.2, "diameter_mm": 63.5, "thickness_mm": 5.0, "hub_diameter_mm": 9.8}, "battery": _GNB, "aio": _AIO15, "camera": _LUX, "base_mm": 2.0, "deck_thickness_mm": 2.5,
+                "battery_prop_clearance_mm": 2.0, "envelope": {"half_y_mm": 45.0, "top_mm": 20.0}, "hoop": {"front_mm": 17.0, "top_mm": 18.0},
+                "frame": {"parts": [{"mass_g": 5.0, "center_mm": [0.0, 0.0, 1.0], "size_mm": [35.0, 45.0, 2.0], "shape": "box"},
+                                    *[{"mass_g": 2.1, "center_mm": [sx * 47.1 * 0.62, sy * 36.8 * 0.62, 1.0], "size_mm": [9.0, 45.0, 2.0], "shape": "box"} for sx in (-1, 1) for sy in (-1, 1)],
+                                    {"mass_g": 4.1, "center_mm": [0.0, 5.0, 10.0], "size_mm": [30.0, 50.0, 16.0], "shape": "box"}],
+                          "source": "ASSUMPTION from Examples/Frames/Tad/datasheet.md (no STL): 17.5 g manufacturer mass = 2 mm carbon main plate 13.4 g (4200 mm2 x 2 mm x 1.6 g/cm3: body 35 x 45 mm 5.0 g + four arms 2.1 g, centred at 62 % of the motor radius, axis-aligned 9 x 45 x 2 mm boxes) + 4.1 g CNC aluminium side plates, top plate and hoops as a 30 x 50 x 16 mm box at (0, 5, 10)"},
+                "own": {"battery_y_mm": 0.0, "deck_top_mm": 19.0, "camera_y_mm": 28.0, "camera_bottom_clearance_mm": 0.0, "aio_standoff_mm": 3.0},
+                "sources": {"motors_xy": "datasheet field 1: diagonal 119.5 mm (manufacturer), compressed X approx. 96 x 75 mm from the photo, scaled to the diagonal -> 94.2 x 73.6 mm",
+                            "pad_z_mm": "datasheet fields 2-3: 2 mm carbon main plate, motors on its top face", "deck": "datasheet fields 3 and 8: box 15-18 mm -> top plate z 18, foam grip pad 1 mm -> battery underside 19",
+                            "camera": "ASSUMPTION: nano camera between the side plates at the body front, centre y 28, resting on the main plate (bottom clearance 0); hoops 17 mm ahead, side plates top z 18; envelope y +-45, top z 20",
+                            "components": "ASSUMPTION: Tadpole is a 2.5 inch toothpick like ours, so our hardware (GTS V3 1203, HQ T2.5, AIO15 standoff 3 mm, Lux, GNB 2S 550) with its 1203-class mounts"}},
+}
+
+LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float"},
+                    "battery": {"deck_top_mm": "float", "y_mm": "float"}, "stack": {"standoff_mm": "float"},
                     "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
                                   "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float"}}
 
@@ -1119,6 +1183,9 @@ DURABILITY = {
 FRAME_REQUEST = {"name": None, "style": "freestyle", "durability": "standard", "prop_size_in": 2.5, "layout": {"x_type": "compressed_x", "battery_mount": "top"},
                  "components": {"motor": "GTS V3 1203", "aio": "HDZero AIO15", "camera": "HDZero Lux", "battery": "GNB5502S120A", "antennas": "HDZero VTX + ELRS", "prop": "HQProp T2.5X2X3V2S"},
                  "material": "PA6-CF", "print": {"nozzle_mm": 0.4, "layer_mm": 0.2}, "overrides": {}, "grid": "coarse", "reconstruction": True}
+LAYOUT_DEFAULT = {"request": {"x_type": "compressed_x", "battery_mount": "top", "prop_size_in": 2.5, "components": FRAME_REQUEST["components"], "tilt_deg": 20.0, "motors": {}},
+                  "layout": {"battery_y_mm": -3.3, "deck_top_mm": 25.8, "camera_y_mm": 49.4, "camera_bottom_clearance_mm": 7.0, "aio_standoff_mm": 8.8},
+                  "source": "run.py layout 2026-10-04 (exports/layout/layout_optimization.json, frames.ours.rounded): lexicographic SciPy differential_evolution optimum rounded to 0.1 mm towards feasibility; alpha roll/pitch/yaw 2375/2072/111.5 rad/s2; frame share simp_mma_cov3_v3_2 frame.stl sha256 81504ebdb07388a2"}
 FRAME_REQUEST_KINDS = {"name": "text", "style": tuple(STYLES), "durability": tuple(DURABILITY), "prop_size_in": "float", "layout": "object", "components": "object",
                        "material": tuple(MATERIALS), "print": "object", "overrides": "object", "grid": ("coarse", "fine"), "reconstruction": "flag"}
 FRAME_LAYOUT_KINDS = {"x_type": tuple(LAYOUT_RULES["x_types"]), "battery_mount": tuple(LAYOUT_RULES["battery_mounts"])}

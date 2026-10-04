@@ -192,11 +192,12 @@ def structural_margins(config: dict) -> dict:
     }
 
 NONNEGATIVE_FRAME_KEYS = ("prop_motor_gap_mm",)
+SIGNED_FRAME_KEYS = ("battery_y_mm",)
 
 def build_frame(config: dict) -> Solid:
     f = config["frame"]
     c = config["components"]
-    if any(not isfinite(value) or value < 0 or (value == 0 and key not in NONNEGATIVE_FRAME_KEYS) for key, value in f.items()):
+    if any(not isfinite(value) or (key not in SIGNED_FRAME_KEYS and (value < 0 or (value == 0 and key not in NONNEGATIVE_FRAME_KEYS))) for key, value in f.items()):
         raise ValueError("Frame dimensions must be finite and positive.")
     wall = f["minimum_wall_mm"]
     base = f["base_thickness_mm"]
@@ -272,7 +273,7 @@ def assembly_placements(config: dict) -> dict:
     placements = {
         "aio15": {"prototype": "aio15", "position": (0, 0, f["base_thickness_mm"] + f["aio_standoff_mm"])},
         "camera": {"prototype": "camera", "position": (0, f["camera_y_mm"], f["base_thickness_mm"] + f["camera_bottom_clearance_mm"])},
-        "battery": {"prototype": "battery", "position": (0, 0, f["deck_top_mm"])},
+        "battery": {"prototype": "battery", "position": (0, f.get("battery_y_mm", 0.0), f["deck_top_mm"])},
     }
     for name, (x, y) in motor_positions(config).items():
         placements[f"motor_{name}"] = {"prototype": "motor", "position": (x, y, f["arm_height_mm"])}

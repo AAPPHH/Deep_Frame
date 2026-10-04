@@ -88,12 +88,17 @@ def component_inertia(component):
         return mass * np.diag([radius ** 2 / 4 + c ** 2 / 12] * 2 + [radius ** 2 / 2])
     return mass / 12 * np.diag([b * b + c * c, a * a + c * c, a * a + b * b])
 
+def rigid_assembly(bodies):
+    bodies = [(mass, np.asarray(position, dtype=float), own) for mass, position, own in bodies]
+    total = sum(mass for mass, _, _ in bodies)
+    center = sum(mass * position for mass, position, _ in bodies) / total
+    inertia = sum(np.asarray(own, dtype=float) + mass * (np.dot(position - center, position - center) * np.eye(3) - np.outer(position - center, position - center)) for mass, position, own in bodies)
+    return total, center, inertia
+
 def mass_properties(mesh, components, density):
     bodies = [(mesh.volume * density / 1000, np.asarray(mesh.center_mass), np.asarray(mesh.moment_inertia) * density / 1000)]
     bodies += [(item["mass_g"], np.asarray(item["center_mm"]), component_inertia(item)) for item in components]
-    total = sum(mass for mass, _, _ in bodies)
-    center = sum(mass * position for mass, position, _ in bodies) / total
-    inertia = sum(own + mass * (np.dot(position - center, position - center) * np.eye(3) - np.outer(position - center, position - center)) for mass, position, own in bodies)
+    total, center, inertia = rigid_assembly(bodies)
     return {"frame_mass_g": bodies[0][0], "frame_volume_mm3": float(mesh.volume), "total_mass_g": float(total), "component_mass_g": float(total - bodies[0][0]), "center_of_mass_mm": center.tolist(),
             "frame_center_of_mass_mm": bodies[0][1].tolist(), "inertia_g_mm2": inertia.tolist(), "principal_inertia_g_mm2": np.linalg.eigvalsh(inertia).tolist(), "components": components,
             "model": "frame: exact mesh volume integrals x density; components: homogeneous boxes (props: discs) with parallel-axis theorem about the total centre of mass"}
