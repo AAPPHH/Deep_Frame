@@ -557,16 +557,16 @@ def camera_limits(cfg):
     config.TOPOLOGY_CONFIG["camera_support"] = "free"
     half = frame_domain(cfg, cfg["shape"])
     tp = TopologyProblem(half, {**frame_problem(half), "crash": {**PROBLEM["crash"], "cases": []}}, linear_solver=spec["linear_solver"])
-    density = np.load(cfg["reference_density"])["density"].ravel()
+    density = embed_field(np.load(cfg["reference_density"])["density"], half["grid"]).ravel()
     tp.body_update(density)
     solved = tp.compliances(density)
     tp.close()
-    reference = {name: solved[name]["compliance_n_mm"] for name in tp.zones}
+    reference, shielding = {name: solved[name]["compliance_n_mm"] for name in tp.zones}, {name: zone.shielding(density) for name, zone in tp.zones.items()}
     record = {"statement": "ManaFly camera cage measured with the CAMERA_SUPPORT definitions (half model, binary 4/3 mm voxels at >= 50 % volume fraction, inertia relief over frame, AIO, motors, battery and camera), springs on the inner plate faces (gap camera side to plate bridged rigidly by the screw/spacer); "
-              "crash references for the zone cases = compliance of the formulation reference density in the free-camera domain under the zone loads", "manafly": results, "crash_reference_n_mm": reference, "reference_density": cfg["reference_density"], "sha": git_sha()}
+              "crash references for the zone cases = compliance of the formulation reference density in the free-camera domain under the zone loads", "manafly": results, "crash_reference_n_mm": reference, "reference_shielding": shielding, "reference_density": cfg["reference_density"], "sha": git_sha()}
     Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
     print(json.dumps({key: {name: value[name] for name in ("camera_shift_crash_front", "camera_shift_crash_camera_oblique", "camera_coverage", "camera_mount_area", "mount_fraction", "plate_face_x_mm", "camera_cells_cut")} for key, value in results.items()}, default=float), flush=True)
-    print(json.dumps(reference), flush=True)
+    print(json.dumps({"crash_reference_n_mm": reference, "reference_shielding": shielding}), flush=True)
 
 def camera_fd(cfg):
     spec = cfg["camera_fd"]

@@ -40,15 +40,17 @@
      31.47198934878104
     ]
    },
-   "crash_front": 2.8908945226047913,
-   "camera_shift_crash_front": 0.08663720579669777,
-   "camera_shift_crash_camera_oblique": 0.3816467222642241,
+   "crash_front": 3.712582487993151,
+   "camera_shift_crash_front": 0.11195036853285971,
+   "camera_shift_crash_camera_oblique": 0.2652354537725362,
    "camera_mount_area": 74.66666666666666,
+   "camera_shielding_crash_front": 0.4264641814487673,
+   "camera_shielding_crash_camera_oblique": 0.033643409289432435,
    "volume": 1.0,
-   "camera_coverage": 0.4227087081589153,
+   "camera_coverage": 0.42270870815891526,
    "mount_patch_area_mm2": 74.66666666666666,
    "mount_fraction": 1.0,
-   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| crash_front | 2.891 |  | N mm | monitored |  |\n| camera_shift_crash_front | 0.08664 |  | mm | monitored |  |\n| camera_shift_crash_camera_oblique | 0.3816 |  | mm | monitored |  |\n| camera_mount_area | 74.67 |  | mm2 | monitored |  |\n| volume | 1 | <= 0.1 | - | violated | -900.0 % |\n| camera_coverage | 0.4227 |  | - | monitored |  |",
+   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| crash_front | 3.713 | <= 15.13 | N mm | satisfied | +75.5 % |\n| camera_shift_crash_front | 0.112 | <= 0.0866 | mm | violated | -29.3 % |\n| camera_shift_crash_camera_oblique | 0.2652 | <= 0.3816 | mm | satisfied | +30.5 % |\n| camera_mount_area | 74.67 | >= 74.67 | mm2 | active | -0.0 % |\n| camera_shielding_crash_front | 0.4265 |  | - | monitored |  |\n| camera_shielding_crash_camera_oblique | 0.03364 |  | - | monitored |  |\n| volume | 1 | <= 0.1 | - | violated | -900.0 % |\n| camera_coverage | 0.4227 | >= 0.4227 | - | active | +0.0 % |",
    "spring_nodes": {
     "nodes": 42,
     "patch_area_mm2": 74.66666666666666,
@@ -106,15 +108,17 @@
      29.5
     ]
    },
-   "crash_front": 2.8984434312961276,
-   "camera_shift_crash_front": 0.08728805397688211,
-   "camera_shift_crash_camera_oblique": 0.3925526778756267,
+   "crash_front": 3.435794721175925,
+   "camera_shift_crash_front": 0.10739457743291711,
+   "camera_shift_crash_camera_oblique": 0.28100991775506834,
    "camera_mount_area": 74.66666666666666,
+   "camera_shielding_crash_front": 0.457359114166097,
+   "camera_shielding_crash_camera_oblique": 0.08543188827390447,
    "volume": 1.0,
-   "camera_coverage": 0.4070749438750278,
+   "camera_coverage": 0.40707494387502774,
    "mount_patch_area_mm2": 74.66666666666666,
    "mount_fraction": 1.0,
-   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| crash_front | 2.898 |  | N mm | monitored |  |\n| camera_shift_crash_front | 0.08729 |  | mm | monitored |  |\n| camera_shift_crash_camera_oblique | 0.3926 |  | mm | monitored |  |\n| camera_mount_area | 74.67 |  | mm2 | monitored |  |\n| volume | 1 | <= 0.1 | - | violated | -900.0 % |\n| camera_coverage | 0.4071 |  | - | monitored |  |",
+   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| crash_front | 3.436 | <= 15.13 | N mm | satisfied | +77.3 % |\n| camera_shift_crash_front | 0.1074 | <= 0.0866 | mm | violated | -24.0 % |\n| camera_shift_crash_camera_oblique | 0.281 | <= 0.3816 | mm | satisfied | +26.4 % |\n| camera_mount_area | 74.67 | >= 74.67 | mm2 | active | -0.0 % |\n| camera_shielding_crash_front | 0.4574 |  | - | monitored |  |\n| camera_shielding_crash_camera_oblique | 0.08543 |  | - | monitored |  |\n| volume | 1 | <= 0.1 | - | violated | -900.0 % |\n| camera_coverage | 0.4071 | >= 0.4227 | - | violated | -3.7 % |",
    "spring_nodes": {
     "nodes": 42,
     "patch_area_mm2": 74.66666666666666,
@@ -135,10 +139,15 @@
   }
  },
  "crash_reference_n_mm": {
-  "crash_front": 10.087518852814165,
-  "crash_below": 103.00262828939346,
-  "crash_camera_oblique": 66.94449736151529
+  "crash_front": 195.26631671596056,
+  "crash_below": 685.2149567024849,
+  "crash_camera_oblique": 202.03913179361473
+ },
+ "reference_shielding": {
+  "crash_front": 0.1544923644621108,
+  "crash_below": 0.45113411015363036,
+  "crash_camera_oblique": 0.05092788073775678
  },
  "reference_density": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1/density_half.npz",
- "sha": "6418d645e10328d0a28d18e77824a46881408aad"
+ "sha": "8dfbbb99b9622a2ddc1b09c8393047a2a2af311e"
 }
