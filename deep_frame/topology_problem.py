@@ -141,6 +141,7 @@ class TopologyProblem:
             self.battery = BatterySupport(self.system, problem["battery"], domain["battery"])
             self.battery.update(np.ones(self.system.nelem))
             self.battery_linear = self.battery.state(np.zeros(6), False)
+            self.battery_sigma = None
             self.battery_relief = [case for case in self.system.cases if case.get("inertia_relief", {}).get("bodies")]
             for case in self.battery_relief:
                 case["keep_fields"] = True
@@ -772,8 +773,9 @@ def battery_rows(problem):
     battery = problem.battery
     settings, rows = battery.settings, []
     limit = settings["limit_mm"]
-    value, gradient = battery.flight(problem.battery_linear, problem.battery_sigma)
-    rows.append({"name": "battery_shift_flight", "g": value / limit - 1, "gradient": gradient / limit, "value": value, "limit": limit, "unit": "mm", "sense": "<="})
+    if problem.battery_sigma is not None:
+        value, gradient = battery.flight(problem.battery_linear, problem.battery_sigma)
+        rows.append({"name": "battery_shift_flight", "g": value / limit - 1, "gradient": gradient / limit, "value": value, "limit": limit, "unit": "mm", "sense": "<="})
     for name, state in problem.battery_cases.items():
         if name.startswith("crash_"):
             delta, gradient = battery.crash(state)

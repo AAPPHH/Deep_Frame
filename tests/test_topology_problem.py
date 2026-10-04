@@ -2,7 +2,7 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
-from deep_frame.config import PRINT_MATERIAL
+from deep_frame.config import BATTERY_SUPPORT, PRINT_MATERIAL
 from deep_frame.topology_optimization import elasticity_matrix, hexahedron_matrices, orthotropic_matrix
 from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
@@ -282,3 +282,39 @@ def test_covariance_placeholder_limits_are_monitored():
     with pytest.raises(ValueError, match="interfaces"):
         TopologyProblem(cantilever_domain((12, 3, 4), 1.0), {**problem, "covariance": PROBLEM["covariance"]})
     placeholder.close()
+
+def battery_domain():
+    domain = tiny_domain()
+    keep = box([-2.0, -2.0, 3.0], [2.0, 2.0, 6.0])
+    centers = np.stack(np.meshgrid(np.arange(4) + 0.5, np.arange(8) - 3.5, np.arange(4) + 0.5, indexing="ij"), -1)
+    inside = (np.abs(centers[..., 0]) < 2) & (np.abs(centers[..., 1]) < 2) & (centers[..., 2] > 3)
+    domain.update(allowed=~inside, preserve=np.zeros(inside.shape, dtype=bool), forbidden=inside, point_masses=[])
+    body = {"name": "battery", "mass_g": 10.0, "position_mm": [0.0, 0.0, 4.5], "inertia_g_mm2": (np.eye(3) * 20.0).tolist(), "force_n": [0.0, 0.0, 0.0]}
+    for case in domain["load_cases"]:
+        if "inertia_relief" in case:
+            case["inertia_relief"] = {"point_masses": [], "preserve_mass_g": 0.0, "bodies": [{**body, "force_n": [0.0, 0.0, -1.0] if case["name"] == "crash_side_left" else [0.0, 0.0, 0.0]}]}
+    domain["battery"] = {"keep_out": keep, "reference_mm": [0.0, 0.0, 3.0], "center_mm": [0.0, 0.0, 4.5], "mass_g": 10.0}
+    problem = tiny_problem()
+    problem["battery"] = {**deepcopy(BATTERY_SUPPORT), "pad_normal_n_mm3": 50.0, "pad_shear_n_mm3": 20.0, "min_area_mm2": 4.0, "limit_mm": 0.01, "band_preload_n": 0.5}
+    problem["shadow"] = None
+    return domain, problem
+
+def test_free_battery_support_equilibrium_and_gradients():
+    tested = TopologyProblem(*battery_domain())
+    battery = tested.battery
+    assert battery.summary["bottom_nodes"] and battery.summary["side_nodes"] and battery.summary["bottom_area_mm2"] == pytest.approx(16.0)
+    random = np.random.default_rng(4)
+    design, direction = random.uniform(0.3, 0.7, tested.map.n), random.standard_normal(tested.map.n) * tested.map.free
+    tested.battery_sigma = np.diag([1.0, 2.0, 1.0, 3.0, 5.0, 1.0]) + 0.3
+    result, step = tested.evaluate(design), 1e-5
+    wrench = np.array([0.3, -0.2, -1.0, 0.1, 0.2, -0.1])
+    state = battery.state(wrench, False)
+    nodal = state["stiffness"] * np.einsum("ndi,i->nd", battery.rows, state["motion"])
+    assert np.allclose(np.einsum("ndi,nd->i", battery.rows, nodal), wrench)
+    assert {"battery_shift_flight", "battery_shift_crash_front", "battery_shift_crash_side_left", "battery_contact_area"} <= set(result["names"])
+    plus, minus = tested.evaluate(design + step * direction), tested.evaluate(design - step * direction)
+    for index, name in enumerate(result["names"]):
+        assert result["constraint_gradients"][index] @ direction == pytest.approx((plus["constraints"][index] - minus["constraints"][index]) / (2 * step), rel=1e-4, abs=1e-9), name
+    lumped = tested.modal.lumped - tested.modal.base_lumped
+    assert lumped.sum() / 3 == pytest.approx(10.0e-6 / 2)
+    tested.close()

@@ -39,7 +39,7 @@ FORMULATION = {
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
     "layout": None,
     "compare": {"bodies": {}, "output": "exports/layout/battery_vs_rails.png", "summary": "exports/layout/battery_vs_rails.json", "gap_mm": 25.0, "size": [1400, 900]},
-    "battery_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "output": "docs/validation/formulation_battery_fd.json"},
+    "battery_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "output": "docs/validation/battery_support_fd.json"},
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
@@ -421,7 +421,8 @@ def battery_compare(cfg):
     meshes, summary = {}, {}
     for label, body in spec["bodies"].items():
         meshes[label], summary[label] = body_properties(body["stl"], FrameLayout(body["request"]))
-        summary[label]["note"] = body.get("note")
+        run = Path(body["stl"]).parent
+        summary[label].update(note=body.get("note"), evaluation=body_summary(str(run), None, cfg["comparison"]) if (run / "evaluation.json").is_file() else None)
     labels = list(meshes)
     try:
         font = ImageFont.truetype("arial.ttf", 34)
@@ -437,6 +438,8 @@ def battery_compare(cfg):
             mesh.apply_translation(-mesh.bounds.mean(axis=0) + right * index * (width + spec["gap_mm"]))
             parts.append(mesh)
         image = render(trimesh.util.concatenate(parts), tuple(direction), tuple(up), size=tuple(spec["size"]))
+        low, top, high, bottom = image.convert("L").point(lambda v: 255 if v < 250 else 0).getbbox() or (0, 0, *image.size)
+        image = image.crop((0, max(top - 20, 0), image.width, min(bottom + 20, image.height)))
         canvas = Image.new("RGB", (image.width, image.height + 60), "white")
         canvas.paste(image, (0, 60))
         draw = ImageDraw.Draw(canvas)
