@@ -1,0 +1,55 @@
+{
+ "layout": {
+  "name": "free_layout",
+  "style": "freestyle",
+  "durability": "standard",
+  "prop_size_in": 2.5,
+  "layout": {
+   "x_type": "compressed_x",
+   "battery_mount": "top"
+  },
+  "components": {
+   "motor": "GTS V3 1203",
+   "aio": "HDZero AIO15",
+   "camera": "HDZero Lux",
+   "battery": "GNB5502S120A",
+   "antennas": "HDZero VTX + ELRS",
+   "prop": "HQProp T2.5X2X3V2S"
+  },
+  "material": "PA6-CF",
+  "print": {
+   "nozzle_mm": 0.4,
+   "layer_mm": 0.2
+  },
+  "overrides": {
+   "optimizer": {
+    "volume_fraction": 0.06,
+    "prop_discs": "soft",
+    "f1_min_hz": 300.0
+   },
+   "battery": {
+    "support": "free"
+   },
+   "camera": {
+    "support": "free"
+   }
+  },
+  "grid": "fine",
+  "reconstruction": false
+ },
+ "reference_density": "C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz",
+ "mma": {
+  "root": "exports/runs/free_layout4_opt",
+  "variant": "free_layout4",
+  "method": "free_layout4",
+  "linear_solver": "auto",
+  "stage_solvers": {
+   "fine": "multigrid"
+  },
+  "memory_s": 1.0,
+  "until": "coarse",
+  "stand": {
+   "enabled": false
+  }
+ }
+}

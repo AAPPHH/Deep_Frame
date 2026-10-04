@@ -1,0 +1,246 @@
+{
+ "stage": "coarse 2 mm (x, y) / 4/3 mm (z), auto solver",
+ "run": "exports/runs/free_layout4_opt/coarse",
+ "status": "not_converged_stalled",
+ "iterations": 529,
+ "runtime_s": 4313.10977960001,
+ "seconds_per_iteration": 8.153326615500966,
+ "levels": [
+  {
+   "beta": 1.0,
+   "iterations": 80,
+   "reason": "iteration_cap",
+   "mass_g": 19.842027671353442,
+   "max_violation": 0.2868811105646931
+  },
+  {
+   "beta": 2.0,
+   "iterations": 64,
+   "reason": "stalled",
+   "mass_g": 21.1494946546558,
+   "max_violation": 0.2868811169971395
+  },
+  {
+   "beta": 4.0,
+   "iterations": 80,
+   "reason": "iteration_cap",
+   "mass_g": 21.99070345436501,
+   "max_violation": 0.2868811079040233
+  },
+  {
+   "beta": 8.0,
+   "iterations": 58,
+   "reason": "stalled",
+   "mass_g": 21.147172251087714,
+   "max_violation": 0.28688112923018116
+  },
+  {
+   "beta": 16.0,
+   "iterations": 60,
+   "reason": "stalled",
+   "mass_g": 19.246008961344202,
+   "max_violation": 0.28688117626527154
+  },
+  {
+   "beta": 32.0,
+   "iterations": 74,
+   "reason": "stalled",
+   "mass_g": 17.745556052010276,
+   "max_violation": 0.2868811111863273
+  },
+  {
+   "beta": 64.0,
+   "iterations": 113,
+   "reason": "stalled",
+   "mass_g": 16.93654359593618,
+   "max_violation": 0.2868810418915777
+  }
+ ],
+ "mass_g": 16.93654359593618,
+ "linear_solver": "cuda_cudss",
+ "grid": {
+  "origin_mm": [
+   0.0,
+   -64.0,
+   -4.0
+  ],
+  "spacing_mm": [
+   2.0,
+   2.0,
+   1.3333333333333333
+  ],
+  "shape": [
+   34,
+   64,
+   27
+  ],
+  "axis_order": "xyz",
+  "order": "C"
+ },
+ "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| load_mean | 0.8871 | <= 0.9048 | N mm | satisfied | +2.0 % |\n| load_worst | 0.2582 | <= 0.3126 | N mm | satisfied | +17.4 % |\n| crash_front | 9.665 | <= 292.9 | N mm | satisfied | +96.7 % |\n| crash_side_left | 12.27 | <= 20.44 | N mm | satisfied | +39.9 % |\n| crash_side_right | 12.27 | <= 20.44 | N mm | satisfied | +39.9 % |\n| crash_arm_front_left | 100.1 | <= 211.6 | N mm | satisfied | +52.7 % |\n| crash_arm_front_right | 34 | <= 33.81 | N mm | violated | -0.6 % |\n| crash_arm_rear_left | 66.2 | <= 65.64 | N mm | violated | -0.8 % |\n| crash_arm_rear_right | 88.39 | <= 108.2 | N mm | satisfied | +18.3 % |\n| crash_below | 35.18 | <= 1028 | N mm | satisfied | +96.6 % |\n| crash_back | 5.9 | <= 10.41 | N mm | satisfied | +43.4 % |\n| f1 | 297.7 | >= 300 | Hz | violated | -1.6 % |\n| battery_shift_flight | 0.09801 | <= 0.5 | mm | satisfied | +80.4 % |\n| battery_shift_crash_front | 0.1302 | <= 0.5 | mm | satisfied | +74.0 % |\n| battery_shift_crash_side_left | 0.138 | <= 0.5 | mm | satisfied | +72.4 % |\n| battery_shift_crash_side_right | 0.138 | <= 0.5 | mm | satisfied | +72.4 % |\n| battery_shift_crash_arm_front_left | 0.08778 | <= 0.5 | mm | satisfied | +82.4 % |\n| battery_shift_crash_arm_front_right | 0.1245 | <= 0.5 | mm | satisfied | +75.1 % |\n| battery_shift_crash_arm_rear_left | 0.1344 | <= 0.5 | mm | satisfied | +73.1 % |\n| battery_shift_crash_arm_rear_right | 0.08558 | <= 0.5 | mm | satisfied | +82.9 % |\n| battery_shift_crash_below | 0.06242 | <= 0.5 | mm | satisfied | +87.5 % |\n| battery_shift_crash_back | 0.002846 | <= 0.5 | mm | satisfied | +99.4 % |\n| battery_shift_crash_camera_oblique | 0.1307 | <= 0.5 | mm | satisfied | +73.9 % |\n| battery_contact_area | 519.6 | >= 350 | mm2 | satisfied | +48.4 % |\n| camera_shift_crash_front | 0.09001 | <= 0.112 | mm | satisfied | +19.6 % |\n| camera_shift_crash_camera_oblique | 0.2651 | <= 0.2652 | mm | active | +0.1 % |\n| camera_shielding_crash_front | 0.3041 | >= 0.4265 | - | violated | -28.7 % |\n| camera_shielding_crash_camera_oblique | 0.0336 | >= 0.0336 | - | active | -0.0 % |\n| camera_mount_area | 106.7 | >= 106.7 | mm2 | active | -0.0 % |\n| volume | 0.03767 | <= 0.1 | - | satisfied | +62.3 % |\n| shadow | 0.2593 | <= 0.3137 | mm | satisfied | +17.4 % |\n| camera_coverage | 0.4552 | >= 0.4227 | - | satisfied | +7.7 % |\n| camera_shielding_crash_below | 0.1507 |  | - | monitored |  |\n| thrust_all | 1.829 |  | N mm | monitored |  |\n| torsion_yaw | 0.09209 |  | N mm | monitored |  |\n| twist | 9.481 |  | N mm | monitored |  |\n| f1_intermediate | 342.4 |  | Hz | monitored |  |",
+ "max_violation": 0.2868810418915777,
+ "memory": {
+  "interval_s": 1.0,
+  "idle_mean": {
+   "smi_used_gb": 1.025390625,
+   "rss_gb": 0.6139678955078125,
+   "pool_used_gb": 0.0,
+   "pool_total_gb": 4.76837158203125e-07,
+   "device_used_gb": 1.27294921875,
+   "dedicated_gb": 0.20456314086914062,
+   "shared_gb": 0.072265625
+  },
+  "peaks": {
+   "idle": {
+    "smi_used_gb": 1.025390625,
+    "rss_gb": 0.6139717102050781,
+    "pool_used_gb": 0.0,
+    "pool_total_gb": 4.76837158203125e-07,
+    "device_used_gb": 1.27294921875,
+    "dedicated_gb": 0.20456314086914062,
+    "shared_gb": 0.072265625
+   },
+   "fine_setup": {
+    "dedicated_gb": 0.20456314086914062,
+    "shared_gb": 0.072265625,
+    "rss_gb": 0.6407699584960938,
+    "pool_used_gb": 0.0,
+    "pool_total_gb": 4.76837158203125e-07,
+    "device_used_gb": 1.27294921875,
+    "smi_used_gb": 1.025390625
+   },
+   "coarse": {
+    "rss_gb": 4.288616180419922,
+    "pool_used_gb": 1.6594786643981934,
+    "pool_total_gb": 1.7771215438842773,
+    "device_used_gb": 7.14404296875,
+    "smi_used_gb": 6.9111328125,
+    "dedicated_gb": 6.0765838623046875,
+    "shared_gb": 0.521484375
+   }
+  },
+  "last": {
+   "idle": {
+    "smi_used_gb": 1.025390625,
+    "rss_gb": 0.6139717102050781,
+    "pool_used_gb": 0.0,
+    "pool_total_gb": 4.76837158203125e-07,
+    "device_used_gb": 1.27294921875,
+    "dedicated_gb": 0.20456314086914062,
+    "shared_gb": 0.072265625
+   },
+   "fine_setup": {
+    "dedicated_gb": 0.20456314086914062,
+    "shared_gb": 0.072265625,
+    "rss_gb": 0.6342697143554688,
+    "pool_used_gb": 0.0,
+    "pool_total_gb": 4.76837158203125e-07,
+    "device_used_gb": 1.27294921875,
+    "smi_used_gb": 1.025390625
+   },
+   "coarse": {
+    "rss_gb": 2.7654380798339844,
+    "pool_used_gb": 0.0,
+    "pool_total_gb": 1.7771215438842773,
+    "device_used_gb": 3.10302734375,
+    "smi_used_gb": 2.857421875,
+    "dedicated_gb": 2.0355453491210938,
+    "shared_gb": 0.521484375
+   }
+  },
+  "device_total_gb": 15.99169921875
+ },
+ "stand_posthoc": {
+  "stage": "exports\\runs\\free_layout4_opt\\coarse",
+  "smooth": [
+   {
+    "name": "stand_reserve",
+    "value": 11.155533802342466,
+    "limit": 15.0,
+    "g": 0.2562977465105022
+   },
+   {
+    "name": "stand_prop_clearance",
+    "value": 19.23263395601768,
+    "limit": 17.0,
+    "g": -0.13133140917751063
+   },
+   {
+    "name": "stand_ground_z",
+    "value": 0.0006993773156562253,
+    "limit": null,
+    "g": null
+   }
+  ],
+  "voxel_exact": {
+   "cell_centres_mm": 11.481544189451899,
+   "cell_faces_mm": 12.481544189451899,
+   "ground_z_mm": -5.551115123125783e-16
+  },
+  "cog_xy_mm": [
+   2.8482997000692437e-15,
+   1.5184558105481005
+  ],
+  "mass_g_with_components": 86.23654360513132
+ },
+ "camera_look": {
+  "keep_out_min_mm": [
+   -8.5,
+   31.628010651218958,
+   9.0
+  ],
+  "keep_out_max_mm": [
+   8.5,
+   50.57198934878104,
+   27.94397869756208
+  ],
+  "front_0_10mm": {
+   "material_mm3_full_model": 394.6666259765625,
+   "allowed_mm3_full_model": 394.66666666666663,
+   "solid_cells_rho_gt_0.5": 37,
+   "allowed_cells": 37
+  },
+  "above_0_6mm": {
+   "material_mm3_full_model": 0.0,
+   "allowed_mm3_full_model": 1792.0,
+   "solid_cells_rho_gt_0.5": 0,
+   "allowed_cells": 168
+  },
+  "beside_0_6mm": {
+   "material_mm3_full_model": 973.0949096679688,
+   "allowed_mm3_full_model": 2645.333333333333,
+   "solid_cells_rho_gt_0.5": 91,
+   "allowed_cells": 248
+  }
+ },
+ "camera_look_free_layout3": {
+  "keep_out_min_mm": [
+   -8.5,
+   31.628010651218958,
+   9.0
+  ],
+  "keep_out_max_mm": [
+   8.5,
+   50.57198934878104,
+   27.94397869756208
+  ],
+  "front_0_10mm": {
+   "material_mm3_full_model": 12.372896194458008,
+   "allowed_mm3_full_model": 394.66666666666663,
+   "solid_cells_rho_gt_0.5": 2,
+   "allowed_cells": 37
+  },
+  "above_0_6mm": {
+   "material_mm3_full_model": 69.9382553100586,
+   "allowed_mm3_full_model": 1792.0,
+   "solid_cells_rho_gt_0.5": 3,
+   "allowed_cells": 168
+  },
+  "beside_0_6mm": {
+   "material_mm3_full_model": 950.755615234375,
+   "allowed_mm3_full_model": 2645.333333333333,
+   "solid_cells_rho_gt_0.5": 90,
+   "allowed_cells": 248
+  }
+ }
+}
