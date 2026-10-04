@@ -1,0 +1,40 @@
+{
+ "statement": "upper bound of camera_shielding_<case> in the free-camera frame domain (free battery, free camera, floor z = -4): ShieldedImpact rays (same origin, window, silhouette, protection depth, step = min spacing x step_fraction) sampled on a field with every cell of the variant solid; allowed = design domain, allowed_or_fov = design domain plus the 4:3 FOV keep-out cells, all = every grid cell",
+ "manafly": {
+  "crash_front": 0.4265,
+  "crash_camera_oblique": 0.0336
+ },
+ "bounds": {
+  "coarse_crash_front": {
+   "allowed": 0.3041452402820406,
+   "allowed_or_fov": 0.8972532747176203,
+   "all": 0.9003461039909009
+  },
+  "coarse_crash_below": {
+   "allowed": 1.0,
+   "allowed_or_fov": 1.0,
+   "all": 1.0
+  },
+  "coarse_crash_camera_oblique": {
+   "allowed": 0.2817416336906239,
+   "allowed_or_fov": 0.7555400055440489,
+   "all": 0.8875416447836088
+  },
+  "fine_crash_front": {
+   "allowed": 0.3395154125333155,
+   "allowed_or_fov": 0.9000077254892668,
+   "all": 0.9003461039909009
+  },
+  "fine_crash_below": {
+   "allowed": 1.0,
+   "allowed_or_fov": 1.0,
+   "all": 1.0
+  },
+  "fine_crash_camera_oblique": {
+   "allowed": 0.2861125126003432,
+   "allowed_or_fov": 0.761931510086223,
+   "all": 0.8883577485780679
+  }
+ },
+ "script": "scratchpad fl4/headroom.py (Ray cpu job)"
+}

@@ -267,7 +267,10 @@ class TopologyProblem:
             limit = limits.get(name) if isinstance(limits, dict) else limits
             value, gradient, delta = self.camera_shift(name, solutions)
             rows.append({"name": "camera_shift_" + name, "g": None if limit is None else value / limit - 1, "gradient": gradient / (limit or 1.0), "value": value, "limit": limit, "unit": "mm", "sense": "<=", "info": {"delta_mm": delta.tolist()}})
-        rows += [{"name": "camera_shielding_" + name, "g": None, "gradient": None, "value": zone.shielding(self.physical), "limit": None, "unit": "-", "sense": ""} for name, zone in self.zones.items()]
+        for name, zone in self.zones.items():
+            value, slope = zone.protection(self.physical)
+            floor = (settings.get("min_shielding") or {}).get(name)
+            rows.append({"name": "camera_shielding_" + name, "g": None if floor is None else 1 - value / floor, "gradient": -slope / (floor or 1.0), "value": value, "limit": floor, "unit": "-", "sense": ">=" if floor else ""})
         area, slope = self.camera.contact_area()
         rows.append({"name": "camera_mount_area", "g": None if minimum is None else 1 - area / minimum, "gradient": -slope / (minimum or 1.0), "value": area, "limit": minimum, "unit": "mm2", "sense": ">="})
         return rows
@@ -997,6 +1000,10 @@ class ShieldedImpact:
         return density, opening, density * opening[:, :-1] / self.rays.rays, opening[:, -1] / self.rays.rays
     def shielding(self, physical):
         return 1 - float(np.sum(self.split(physical)[3]))
+    def protection(self, physical):
+        value, slope = self.rays.covered(physical)
+        scale = self.rays.step * self.rays.step * self.rays.rays
+        return value / scale, slope / scale
     def loads(self, physical):
         _, _, caught, passed = self.split(physical)
         direct_share, mirror_share = self.direct_map @ caught.ravel(), self.mirror_map @ caught.ravel()

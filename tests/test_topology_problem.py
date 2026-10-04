@@ -380,6 +380,22 @@ def test_shielded_impact_conserves_the_crash_force():
         assert np.allclose(total, 0.0, atol=1e-9)
     tested.close()
 
+def test_camera_shielding_rows_need_material_in_the_impact_ring():
+    domain, problem = camera_domain()
+    problem["camera"].update(window_mm={"side": 1.0, "top": 1.0}, protection_depth_mm=[0.0, 1.0], min_shielding={"crash_front": 0.5})
+    tested = TopologyProblem(domain, problem)
+    zone, allowed = tested.zones["crash_front"], np.asarray(domain["allowed"], dtype=float).ravel()
+    for physical in (np.zeros_like(allowed), allowed):
+        rows, monitor, _ = tested.physics(physical)
+        row = next(row for row in rows if row["name"] == "camera_shielding_crash_front")
+        assert row["value"] == pytest.approx(zone.shielding(physical)) and row["sense"] == ">=" and row["limit"] == 0.5
+        assert any(row["name"] == "camera_shielding_crash_camera_oblique" and row["g"] is None for row in monitor)
+        if physical.any():
+            assert row["g"] < 0
+        else:
+            assert row["g"] == 1 and np.all(row["gradient"][zone.elements] < 0)
+    tested.close()
+
 def test_front_coverage_counts_only_material_within_the_protection_depth():
     shape = (8, 20, 8)
     domain = {"grid": {"origin_mm": [-4.0, 0.0, 0.0], "spacing_mm": [1.0, 1.0, 1.0], "shape": list(shape)}, "allowed": np.ones(shape, dtype=bool)}
