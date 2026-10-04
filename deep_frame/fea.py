@@ -711,7 +711,8 @@ def prepare_frame_case(parameters, fea_config=None, integration_config=None):
     x, y = motors[integration["arm_tip_motor"]]
     arm_region = _box((x - pad_half, y - pad_half, frame["arm_height_mm"] - tolerance), (x + pad_half, y + pad_half, frame["arm_height_mm"] + tolerance))
     deck_half_width = frame["deck_width_mm"] / 2 + integration["battery_attachment_margin_mm"]
-    band_half_width = integration["battery_attachment_band_width_mm"] / 2
+    from deep_frame.config import TOPOLOGY_CONFIG
+    band_half_width = integration["battery_attachment_band_width_mm"] / 2 if TOPOLOGY_CONFIG.get("battery_support", "rails") == "rails" else parameters["components"]["battery"]["length_mm"] / 2 + integration["battery_attachment_margin_mm"]
     band_y = integration["battery_attachment_y_mm"] + frame.get("battery_y_mm", 0.0)
     deck_region = _box(
         (-deck_half_width, band_y - band_half_width, frame["deck_top_mm"] - tolerance),
