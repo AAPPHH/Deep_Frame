@@ -214,3 +214,21 @@ Abweichung MG + LOBPCG (max. über alle Nebenbedingungen bzw. Sensitivitätsvekt
 - Speicher fein: dediziert 11,49 → 4,71 GB (−59 %), geteilt 1,16 → 0,14 GB. Gegenüber Schritt 4 (8,35 GB) fallen die ≈ 3,6 GB der beiden f1-Faktoren weg.
 - Ziel Zeit weiter nicht erreicht: fein 17,0 statt 13,6 s je MMA-Iteration (+25 %; der explizite cuDSS-Kontrolllauf lag bei 16,0 s), grob 16,2 statt 7,8 s. Warme Auswertungen sind mit MG schneller (9,3 statt 11,7 s), die MMA-Schritte mit neuer Dichte kosten den Hierarchieaufbau und LOBPCG ab schlechterem Warmstart.
 - Belege: `exports/solver_memory/{multigrid_lobpcg,cudss_converged}/result.json`.
+
+## Schritt 7: Löserwahl nach Raster (`linear_solver="auto"`)
+
+`choose_solver` in `topology_optimization.py`: `auto` → `cuda_cudss` bei Elementgröße (max. Gitterabstand) ≥ `SOLVER_CHOICE["multigrid_below_mm"]` = 1,1 mm, sonst `multigrid`; explizite Namen bleiben unverändert. Der Schwellwert steht als Dict-Eintrag `solver_choice` in `PROBLEM` und in den OC-Standardeinstellungen und lässt sich je Lauf überschreiben.
+Die Wahl fällt in `HexElasticity.__init__` aus dem Gitter des jeweiligen Problems. Grob-zu-fein baut je Stufe ein eigenes `TopologyProblem`, also entscheidet jedes Raster selbst (z. B. 2 mm → cuDSS, 0,75 mm → MG). `diagnostics()` zeigt `requested_linear_solver` und `linear_solver`, das Stufenergebnis von `frame_mma` den gewählten Löser.
+Neuer Standard `auto` im Formulierungstreiber `tools/formulation_study.py` (`mma.linear_solver`, `covariance.frame_solver`). Die Bibliotheksvorgabe von `HexElasticity`/`TopologyProblem`/OC bleibt `cpu_superlu`, weil die Haupt-venv weder CuPy noch PyTorch hat und die 1-mm-Testfälle sonst auf MG fielen.
+Test `test_auto_linear_solver_by_spacing`: 2, 4/3 und 1,1 mm → cuDSS, 1,0 und 0,75 mm → MG, Schwellwertüberschreibung 0,9 mm → cuDSS bei 1,0 mm, explizites `cpu_superlu` bleibt, unbekannter Name → Fehler.
+
+Nachweis am Lastmodell-Setup 4/3 mm (`solver_memory`, `simp_mma_cov3_opt`, Ray `density_simp`):
+
+| Raster | `auto` wählt | Faktoren | s/MMA-Iter. auto / explizit | Abw. gegen expliziten cuDSS-Lauf (g / Werte / Sensitivitäten) | Werte gegen `simp_mma_cov3`-Ergebnis | bitgleich |
+|---|---|---|---|---|---|---|
+| grob 2 mm | cuda_cudss | 4, gleiche DOF | 7,8 / 9,2 | 2,0e-12 / 2,6e-12 / 2,2e-11 | max. rel. 2,8e-12, Masse identisch | Ziel, Zielgradient, Masse, Volumen, Schatten ja; Solver-Größen nein |
+| fein 4/3 mm | cuda_cudss | 4, gleiche DOF | 13,6 / 16,0 | 5,2e-12 / 5,2e-12 / 2,7e-11 | max. rel. 6,9e-12, Masse identisch | wie grob |
+
+- `auto` wählt auf beiden Rastern cuDSS mit identischem Faktorinventar wie der explizite Lauf.
+- Bitgleichheit nicht erreicht und auch nicht erreichbar: cuDSS ist von Lauf zu Lauf nicht bitweise deterministisch. Der explizite cuDSS-Lauf weicht von seinem Vorgänger `cudss_gmg` genauso ab (4e-12 / 2,6e-11), und innerhalb eines Laufs liegt der Rauschboden bei 1e-12 / 2e-11. Alles ohne Löser (Ziel, Masse, Volumen, Schatten) ist bitgleich.
+- Belege: `exports/solver_memory/{auto,cudss_explicit}/result.json`.

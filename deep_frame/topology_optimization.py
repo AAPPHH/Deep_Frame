@@ -309,10 +309,20 @@ def select_nodes(points, region):
         raise ValueError(f"Empty topology node selector: {region}")
     return selected
 
+LINEAR_SOLVERS = ("auto", "cpu_superlu", "cuda_cudss", "multigrid")
+SOLVER_CHOICE = {"multigrid_below_mm": 1.1}
+
+def choose_solver(linear_solver, spacing, choice=None):
+    if linear_solver not in LINEAR_SOLVERS:
+        raise ValueError("Unknown topology linear_solver")
+    if linear_solver != "auto":
+        return linear_solver
+    return "multigrid" if float(np.max(spacing)) < {**SOLVER_CHOICE, **(choice or {})}["multigrid_below_mm"] else "cuda_cudss"
+
 class HexElasticity:
-    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident", share_static=True, multigrid=None):
-        if linear_solver not in ("cpu_superlu", "cuda_cudss", "multigrid"):
-            raise ValueError("Unknown topology linear_solver")
+    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident", share_static=True, multigrid=None, solver_choice=None):
+        self.requested_solver = linear_solver
+        linear_solver = choose_solver(linear_solver, domain["grid"]["spacing_mm"], solver_choice)
         if gpu_solver_residency not in ("resident", "transient"):
             raise ValueError("Unknown topology gpu_solver_residency")
         self.linear_solver = linear_solver
@@ -765,7 +775,7 @@ class HexElasticity:
             errors.extend(self.multigrid.close())
         return errors
     def diagnostics(self):
-        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups) - len(self.shared or {}), "shared_static_groups": len(self.shared or {}), **({"multigrid": self.multigrid.diagnostics()} if self.multigrid is not None else {})})
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "requested_linear_solver": self.requested_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups) - len(self.shared or {}), "shared_static_groups": len(self.shared or {}), **({"multigrid": self.multigrid.diagnostics()} if self.multigrid is not None else {})})
 
 def volume_weights(points, discs):
     weights = np.ones(len(points))
@@ -918,6 +928,7 @@ DEFAULT_SETTINGS = {
     "gpu_solver_residency": "resident",
     "prop_discs": None,
     "modal": None,
+    "solver_choice": SOLVER_CHOICE,
 }
 
 def _settings(settings):
@@ -942,7 +953,7 @@ def _settings(settings):
         raise ValueError("max_runtime_s must be positive or None")
     if result["interface_node_policy"] not in ("allowed_adjacent", "preserve_adjacent"):
         raise ValueError("Invalid topology interface_node_policy")
-    if result["linear_solver"] not in ("cpu_superlu", "cuda_cudss", "multigrid"):
+    if result["linear_solver"] not in LINEAR_SOLVERS:
         raise ValueError("Invalid topology linear_solver")
     if result["gpu_solver_residency"] not in ("resident", "transient"):
         raise ValueError("Invalid topology gpu_solver_residency")
@@ -1148,7 +1159,7 @@ def optimize_topology(domain, settings, *, progress_callback=None):
         if np.count_nonzero(mapping.preserve) >= target:
             raise ValueError("The volume budget must exceed the preserve-cell volume")
         design = mapping.initial(target)
-        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
+        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"], solver_choice=settings["solver_choice"])
         modal = system.modal_constraint(settings["modal"]) if settings["modal"] else None
         modal_log = []
         scales = None

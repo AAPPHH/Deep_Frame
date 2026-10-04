@@ -39,7 +39,7 @@ FORMULATION = {
               "crash_source": "ASSUMPTION: all-up mass 125 g (INTEGRATION_CONFIG), impact speed 5 m/s, 50 mm combined stopping distance (props, battery, frame); E = m v^2 / 2, F = E / d per direction",
               "rotation": {"front_left": 1.0, "rear_right": 1.0, "front_right": 0.0, "rear_left": 0.0}},
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "coarse": True, "fine_start_level": 3,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
             "bodies": ["raw", "recon"], "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -50,7 +50,7 @@ FORMULATION = {
                    "old_fine": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/result.json", "previous": {}, "previous_fine": None, "gap": {}, "manafly_sigma": "exports/cov/eval/manafly3/sigma.json", "aether4_sigma": "exports/cov/eval/aether4/sigma.json",
                    "twist": {"motor_front_left": 1.0, "motor_rear_right": 1.0, "motor_front_right": -1.0, "motor_rear_left": -1.0}, "twist_dof": "Fz"},
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
-                   "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "cuda_cudss"},
+                   "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "auto"},
     "solver_memory": {"run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt", "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
                       "output": "exports/solver_memory/baseline", "reference": None, "multigrid": None, "share_static": True, "modal": {}},
 }
@@ -548,7 +548,7 @@ def optimize_stage(cfg, half, problem, design, out, start_level):
     np.savez_compressed(out / "density_half.npz", density=physical.reshape(half["grid"]["shape"]).astype(np.float32))
     record = {"status": result["status"], "iterations": result["iterations"], "runtime_s": result["runtime_s"], "seconds_per_iteration": result["seconds_per_iteration"], "levels": result["levels"],
               "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
-              "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"]}
+              "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"], "linear_solver": tp.system.linear_solver}
     tp.close()
     (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
     print(json.dumps({key: record[key] for key in ("status", "iterations", "seconds_per_iteration", "mass_g", "max_violation", "gray_fraction")}, default=float), flush=True)

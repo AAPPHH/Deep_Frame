@@ -710,3 +710,13 @@ def test_neural_stiffness_constraint_stays_out_of_the_objective_and_blocks_infea
     assert result["status"] == "ok" and "push" not in summary["normalization_compliances_n_mm"] and "push" not in summary["static_surrogate_metrics"]
     assert summary["stop_reason"] == "max_iterations" and summary["stiffness"]["active"] and summary["stiffness"]["case_stiffness_n_per_mm"] == pytest.approx(summary["stiffness"]["compliance_stiffness_n_per_mm"], rel=1e-9)
     assert all(entry["stiffness_penalty"] > 0 and entry["stiffness_n_per_mm"] > 0 for entry in result["history"][:-1])
+
+@pytest.mark.parametrize("spacing,choice,expected", [(2.0, None, "cuda_cudss"), (4 / 3, None, "cuda_cudss"), (1.1, None, "cuda_cudss"), (1.0, None, "multigrid"), (0.75, None, "multigrid"), (1.0, {"multigrid_below_mm": 0.9}, "cuda_cudss")])
+def test_auto_linear_solver_by_spacing(spacing, choice, expected):
+    from deep_frame.topology_problem import cantilever_domain
+    domain = cantilever_domain((8, 2, 3), spacing)
+    system = HexElasticity(domain, linear_solver="auto", solver_choice=choice)
+    assert system.linear_solver == expected and system.requested_solver == "auto"
+    assert HexElasticity(domain, linear_solver="cpu_superlu", solver_choice=choice).linear_solver == "cpu_superlu"
+    with pytest.raises(ValueError, match="linear_solver"):
+        HexElasticity(domain, linear_solver="unknown")
