@@ -1,0 +1,2366 @@
+{
+ "table": [
+  {
+   "frame": "ours_rule",
+   "constraint": "cg_y",
+   "meaning": "|Schwerpunkt y - Motormitte|",
+   "value": 1.9926128687264726,
+   "limit": "<= 1 mm",
+   "margin": -0.9926128687264726,
+   "unit": "mm",
+   "fov_4x3_margin_deg": null,
+   "image_fraction_4x3": null,
+   "robustness": "robust (Akku mittig, Kamera vorn: Schwerpunkt 2 mm vor der Motormitte); echtes Trimmproblem",
+   "sweep": []
+  },
+  {
+   "frame": "ours_rule",
+   "constraint": "camera_sees_no_prop",
+   "meaning": "Propscheiben ausserhalb Bildfeld 145/94 (Union), Abstand zum Bildrand",
+   "value": -17.858128975759595,
+   "limit": ">= 0 deg",
+   "margin": -17.858128975759595,
+   "unit": "deg",
+   "fov_4x3_margin_deg": -8.35812897575959,
+   "image_fraction_4x3": 0.017823386443424252,
+   "robustness": "abhaengig vom Bildmodus: Union -17,9 Grad, 4:3 -8,4 Grad (1,8 % Bild), 16:9 -17,9 Grad (5,5 %)",
+   "sweep": []
+  },
+  {
+   "frame": "manafly3",
+   "constraint": "cg_above_rotor_plane",
+   "meaning": "Schwerpunkt ueber Rotorebene",
+   "value": -3.7522605072514743,
+   "limit": ">= 0 mm",
+   "margin": -3.7522605072514743,
+   "unit": "mm",
+   "fov_4x3_margin_deg": null,
+   "image_fraction_4x3": null,
+   "robustness": "nicht robust: kippt mit realer Hardware (Abfluggewicht 142,7 g -> +0,3 mm; Akku >= 83 g bei unseren Motoren, >= 56 g bei 8,5-g-Motoren und 22 mm Akkuhoehe) und mit Motorsitz z 8 statt 10 (-2,3 mm); die Unterschreitung entsteht durch unseren leichten 2S-Akku auf einem 29-g-Rahmen",
+   "sweep": [
+    {
+     "case": "Modell (K)",
+     "margin": -3.7522605072514743
+    },
+    {
+     "case": "Motorsitz z 8 (Datenblatt Feld 3: 8-9,2)",
+     "margin": -2.2687879169545617
+    },
+    {
+     "case": "Akku 50 g",
+     "margin": -2.392445450857558
+    },
+    {
+     "case": "Akku 60 g, 22 hoch",
+     "margin": 1.0967784459823164
+    },
+    {
+     "case": "Akku 75 g 4S 650, 26 hoch",
+     "margin": 3.52543093344865
+    },
+    {
+     "case": "Motoren 8,5 g",
+     "margin": -4.116814669167713
+    },
+    {
+     "case": "Props 2,5 g",
+     "margin": -3.5053586240478616
+    },
+    {
+     "case": "Real 142,7 g (ANNAHME)",
+     "margin": 0.3064410264918003
+    },
+    {
+     "case": "Akku 3 mm tiefer",
+     "margin": -4.838141993559095
+    },
+    {
+     "case": "Kamera Neigung 30",
+     "margin": -3.7389811207184316
+    },
+    {
+     "case": "Kamera Neigung 40",
+     "margin": -3.732238999480842
+    }
+   ]
+  },
+  {
+   "frame": "manafly3",
+   "constraint": "camera_sees_no_prop",
+   "meaning": "Propscheiben ausserhalb Bildfeld 145/94 (Union), Abstand zum Bildrand",
+   "value": -26.686512458759733,
+   "limit": ">= 0 deg",
+   "margin": -26.686512458759733,
+   "unit": "deg",
+   "fov_4x3_margin_deg": -17.186512458759726,
+   "image_fraction_4x3": 0.03942749122333243,
+   "robustness": "robust: bei keiner Kameraposition im Rahmen erfuellbar (bestes 4:3 -15,1 Grad bei 20 Grad Neigung, -9,4 bei 40 Grad); 3-Zoll-True-X mit Kamera zwischen den Vorderprops; im Bild 3,9 % (4:3) bzw. 7,6 % (16:9) Propscheibe; der reale Frame fliegt so",
+   "sweep": [
+    {
+     "case": "Modell (K)",
+     "margin": -26.686512458759733
+    },
+    {
+     "case": "Motorsitz z 8 (Datenblatt Feld 3: 8-9,2)",
+     "margin": -26.135782349347433
+    },
+    {
+     "case": "Akku 50 g",
+     "margin": -26.686512458759733
+    },
+    {
+     "case": "Akku 60 g, 22 hoch",
+     "margin": -26.686512458759733
+    },
+    {
+     "case": "Akku 75 g 4S 650, 26 hoch",
+     "margin": -26.686512458759733
+    },
+    {
+     "case": "Motoren 8,5 g",
+     "margin": -26.686512458759733
+    },
+    {
+     "case": "Props 2,5 g",
+     "margin": -26.686512458759733
+    },
+    {
+     "case": "Real 142,7 g (ANNAHME)",
+     "margin": -26.686512458759733
+    },
+    {
+     "case": "Akku 3 mm tiefer",
+     "margin": -26.686512458759733
+    },
+    {
+     "case": "Kamera Neigung 30",
+     "margin": -26.178923925935855
+    },
+    {
+     "case": "Kamera Neigung 40",
+     "margin": -23.742781951756857
+    }
+   ]
+  },
+  {
+   "frame": "tadpole",
+   "constraint": "cg_above_rotor_plane",
+   "meaning": "Schwerpunkt ueber Rotorebene",
+   "value": -0.13783899191018278,
+   "limit": ">= 0 mm",
+   "margin": -0.13783899191018278,
+   "unit": "mm",
+   "fov_4x3_margin_deg": null,
+   "image_fraction_4x3": null,
+   "robustness": "unbestimmt: -0,14 mm liegt im Rauschen des Handmodells (Seitenteil-Box z 13 -> 0,0; Akku 1 mm hoeher -> +0,3)",
+   "sweep": [
+    {
+     "case": "Handmodell",
+     "margin": -0.13783899191018278
+    },
+    {
+     "case": "Seitenteile 2 g",
+     "margin": -0.03216557848647028
+    },
+    {
+     "case": "Seitenteile 6 g",
+     "margin": -0.22913669106881507
+    },
+    {
+     "case": "Seitenteil-Box z 7",
+     "margin": -0.2795440610346063
+    },
+    {
+     "case": "Seitenteil-Box z 13",
+     "margin": 0.0038660772142424804
+    },
+    {
+     "case": "Akku 1 mm tiefer",
+     "margin": -0.5641062730161739
+    },
+    {
+     "case": "Akku 1 mm hoeher",
+     "margin": 0.2884282891958083
+    },
+    {
+     "case": "Buegel 10 % hoeher (19,8)",
+     "margin": -0.13783899191018278
+    },
+    {
+     "case": "Kamera 2 mm hoeher",
+     "margin": -0.08484360020511161
+    },
+    {
+     "case": "Kamera y 33",
+     "margin": -0.13783899191018278
+    },
+    {
+     "case": "Kamera Neigung 30",
+     "margin": -0.12220035713215083
+    },
+    {
+     "case": "ohne ELRS-Draht (3 mm)",
+     "margin": -0.13783899191018278
+    },
+    {
+     "case": "Props 2,5 g",
+     "margin": -0.1300480923674332
+    }
+   ]
+  },
+  {
+   "frame": "tadpole",
+   "constraint": "battery_over_stack",
+   "meaning": "Spalt Deckunterseite - Stackoberkante inkl. ELRS-Draht",
+   "value": 2.5,
+   "limit": ">= 3 mm",
+   "margin": -0.5,
+   "unit": "mm",
+   "fov_4x3_margin_deg": null,
+   "image_fraction_4x3": null,
+   "robustness": "nicht robust: -0,5 mm verschwindet ohne den 3-mm-ELRS-Zuschlag oder mit Akku 1 mm hoeher; Boxhoehe 15-18 mm aus Fotos (+-10 %)",
+   "sweep": [
+    {
+     "case": "Handmodell",
+     "margin": -0.5
+    },
+    {
+     "case": "Seitenteile 2 g",
+     "margin": -0.5
+    },
+    {
+     "case": "Seitenteile 6 g",
+     "margin": -0.5
+    },
+    {
+     "case": "Seitenteil-Box z 7",
+     "margin": -0.5
+    },
+    {
+     "case": "Seitenteil-Box z 13",
+     "margin": -0.5
+    },
+    {
+     "case": "Akku 1 mm tiefer",
+     "margin": -1.5
+    },
+    {
+     "case": "Akku 1 mm hoeher",
+     "margin": 0.0
+    },
+    {
+     "case": "Buegel 10 % hoeher (19,8)",
+     "margin": -0.5
+    },
+    {
+     "case": "Kamera 2 mm hoeher",
+     "margin": -0.5
+    },
+    {
+     "case": "Kamera y 33",
+     "margin": -0.5
+    },
+    {
+     "case": "Kamera Neigung 30",
+     "margin": -0.5
+    },
+    {
+     "case": "ohne ELRS-Draht (3 mm)",
+     "margin": 0.0
+    },
+    {
+     "case": "Props 2,5 g",
+     "margin": -0.5
+    }
+   ]
+  },
+  {
+   "frame": "tadpole",
+   "constraint": "battery_over_camera",
+   "meaning": "Spalt Deckunterseite - Kameraoberkante (Kamera unter dem Akku)",
+   "value": -3.4439786975620805,
+   "limit": ">= 3 mm",
+   "margin": -6.4439786975620805,
+   "unit": "mm",
+   "fov_4x3_margin_deg": null,
+   "image_fraction_4x3": null,
+   "robustness": "Modellannahme: Kamera-y 28 und 0 mm Bodenabstand sind geschaetzt; die Pruefung verlangt 3 mm Luft unter dem Akku, die reale Kamera sitzt zwischen den Alu-Seitenteilen unter der Top-Platte",
+   "sweep": [
+    {
+     "case": "Handmodell",
+     "margin": -6.4439786975620805
+    },
+    {
+     "case": "Seitenteile 2 g",
+     "margin": -6.4439786975620805
+    },
+    {
+     "case": "Seitenteile 6 g",
+     "margin": -6.4439786975620805
+    },
+    {
+     "case": "Seitenteil-Box z 7",
+     "margin": -6.4439786975620805
+    },
+    {
+     "case": "Seitenteil-Box z 13",
+     "margin": -6.4439786975620805
+    },
+    {
+     "case": "Akku 1 mm tiefer",
+     "margin": -7.4439786975620805
+    },
+    {
+     "case": "Akku 1 mm hoeher",
+     "margin": -5.4439786975620805
+    },
+    {
+     "case": "Buegel 10 % hoeher (19,8)",
+     "margin": -6.4439786975620805
+    },
+    {
+     "case": "Kamera 2 mm hoeher",
+     "margin": -8.44397869756208
+    },
+    {
+     "case": "Kamera y 33",
+     "margin": -6.4439786975620805
+    },
+    {
+     "case": "Kamera Neigung 30",
+     "margin": -7.624355652982143
+    },
+    {
+     "case": "ohne ELRS-Draht (3 mm)",
+     "margin": -6.4439786975620805
+    },
+    {
+     "case": "Props 2,5 g",
+     "margin": -6.4439786975620805
+    }
+   ]
+  },
+  {
+   "frame": "tadpole",
+   "constraint": "camera_sees_no_prop",
+   "meaning": "Propscheiben ausserhalb Bildfeld 145/94 (Union), Abstand zum Bildrand",
+   "value": -27.55521015193833,
+   "limit": ">= 0 deg",
+   "margin": -27.55521015193833,
+   "unit": "deg",
+   "fov_4x3_margin_deg": -18.055210151938322,
+   "image_fraction_4x3": 0.030014274140658152,
+   "robustness": "robust fuer die angenommene Kameraposition (4:3 -18,1 Grad, 3,0 % Bild), aber nicht fuer den Frame: eine weiter vorn und hoeher sitzende Kamera erreicht +13 Grad (4:3, Erreichbarkeit)",
+   "sweep": [
+    {
+     "case": "Handmodell",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Seitenteile 2 g",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Seitenteile 6 g",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Seitenteil-Box z 7",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Seitenteil-Box z 13",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Akku 1 mm tiefer",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Akku 1 mm hoeher",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Buegel 10 % hoeher (19,8)",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Kamera 2 mm hoeher",
+     "margin": -27.07321995257249
+    },
+    {
+     "case": "Kamera y 33",
+     "margin": -21.555592703524905
+    },
+    {
+     "case": "Kamera Neigung 30",
+     "margin": -26.8233987451972
+    },
+    {
+     "case": "ohne ELRS-Draht (3 mm)",
+     "margin": -27.55521015193833
+    },
+    {
+     "case": "Props 2,5 g",
+     "margin": -27.55521015193833
+    }
+   ]
+  },
+  {
+   "frame": "tadpole",
+   "constraint": "camera_under_hoop",
+   "meaning": "Buegelscheitel - Kameraoberkante (geneigte Huellbox)",
+   "value": -1.9439786975620805,
+   "limit": ">= 0 mm",
+   "margin": -1.9439786975620805,
+   "unit": "mm",
+   "fov_4x3_margin_deg": null,
+   "image_fraction_4x3": null,
+   "robustness": "Modellartefakt: die 20 Grad geneigte 14-mm-Huellbox ist 17,9 mm hoch und passt fuer keine Lage unter den geschaetzten 18-mm-Buegel; mit Buegel +10 % (19,8 mm) -0,14 mm; reale Nano-Kamera mit Drehachse passt",
+   "sweep": [
+    {
+     "case": "Handmodell",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Seitenteile 2 g",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Seitenteile 6 g",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Seitenteil-Box z 7",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Seitenteil-Box z 13",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Akku 1 mm tiefer",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Akku 1 mm hoeher",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Buegel 10 % hoeher (19,8)",
+     "margin": -0.14397869756207982
+    },
+    {
+     "case": "Kamera 2 mm hoeher",
+     "margin": -3.9439786975620805
+    },
+    {
+     "case": "Kamera y 33",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Kamera Neigung 30",
+     "margin": -3.1243556529821426
+    },
+    {
+     "case": "ohne ELRS-Draht (3 mm)",
+     "margin": -1.9439786975620805
+    },
+    {
+     "case": "Props 2,5 g",
+     "margin": -1.9439786975620805
+    }
+   ]
+  }
+ ],
+ "lux": {
+  "spec": "https://docs.hd-zero.com/camera-lux (abgerufen 2026-10-04): Max FOV D 155 / H 126 / V 94 deg (4:3), D 170 / H 145 / V 82 deg (16:9), 1/2 inch sensor",
+  "modes": {
+   "model_union": [
+    145.0,
+    94.0
+   ],
+   "lux_4x3": [
+    126.0,
+    94.0
+   ],
+   "lux_16x9": [
+    145.0,
+    82.0
+   ]
+  }
+ },
+ "constraints": {
+  "ours": {
+   "rule": {
+    "layout": {
+     "battery_y_mm": 0.0,
+     "deck_top_mm": 28.0,
+     "camera_y_mm": 35.0,
+     "camera_bottom_clearance_mm": 2.0,
+     "aio_standoff_mm": 3.0
+    },
+    "mass_g": 86.9208,
+    "cg_above_rotor_plane_mm": 0.3605634294920925,
+    "rotor_z_mm": 21.733333333333334,
+    "alpha_rad_s2": {
+     "roll": 2305.789406470801,
+     "pitch": 2092.40676395502,
+     "yaw": 114.0995914005768
+    },
+    "violated": {
+     "cg_y": {
+      "margin": -0.9926128687264726
+     },
+     "camera_sees_no_prop": {
+      "margin": -17.858128975759595
+     }
+    },
+    "constraints": {
+     "cg_x": 0.9717202142640196,
+     "cg_y": -0.9926128687264726,
+     "cg_above_rotor_plane": 0.3605634294920925,
+     "cg_band_top": 4.6394365705079075,
+     "battery_over_stack": 8.0,
+     "battery_over_camera": 0.056021302437919474,
+     "camera_sees_no_prop": -17.858128975759595,
+     "camera_stack_gap": 7.378010651218959,
+     "camera_in_envelope": 14.9,
+     "camera_under_hoop": 5.0560213024379195,
+     "battery_clear_of_props": 5.455565520700887,
+     "battery_in_envelope": 32.5,
+     "deck_in_envelope": 4.0
+    },
+    "fov": {
+     "model_union": {
+      "margin_deg": -17.858128975759595,
+      "image_fraction_in_prop_discs": 0.047837660584082405
+     },
+     "lux_4x3": {
+      "margin_deg": -8.35812897575959,
+      "image_fraction_in_prop_discs": 0.017823386443424252
+     },
+     "lux_16x9": {
+      "margin_deg": -17.858128975759595,
+      "image_fraction_in_prop_discs": 0.05493615215462366
+     }
+    }
+   },
+   "default": {
+    "layout": {
+     "battery_y_mm": -3.3,
+     "deck_top_mm": 25.8,
+     "camera_y_mm": 49.4,
+     "camera_bottom_clearance_mm": 7.0,
+     "aio_standoff_mm": 8.8
+    },
+    "mass_g": 86.9208,
+    "cg_above_rotor_plane_mm": 0.03682043587031458,
+    "rotor_z_mm": 21.733333333333334,
+    "alpha_rad_s2": {
+     "roll": 2374.779847434258,
+     "pitch": 2072.090857118931,
+     "yaw": 111.49933438172656
+    },
+    "violated": {},
+    "constraints": {
+     "cg_x": 0.9717202142640196,
+     "cg_y": 0.031077663344102002,
+     "cg_above_rotor_plane": 0.03682043587031458,
+     "cg_band_top": 4.963179564129685,
+     "battery_over_stack": 0.0,
+     "battery_over_camera": 12.228010651218959,
+     "camera_sees_no_prop": 0.05841371103823324,
+     "camera_stack_gap": 21.778010651218956,
+     "camera_in_envelope": 0.5000000000000018,
+     "camera_under_hoop": 0.056021302437919474,
+     "battery_clear_of_props": 4.948395385728652,
+     "battery_in_envelope": 29.200000000000003,
+     "deck_in_envelope": 6.199999999999999
+    },
+    "fov": {
+     "model_union": {
+      "margin_deg": 0.05841371103823324,
+      "image_fraction_in_prop_discs": 0.0
+     },
+     "lux_4x3": {
+      "margin_deg": 9.55841371103824,
+      "image_fraction_in_prop_discs": 0.0
+     },
+     "lux_16x9": {
+      "margin_deg": 0.05841371103823324,
+      "image_fraction_in_prop_discs": 0.0
+     }
+    }
+   }
+  },
+  "manafly3": {
+   "own": {
+    "layout": {
+     "battery_y_mm": 0.0,
+     "deck_top_mm": 27.8,
+     "camera_y_mm": 50.0,
+     "camera_bottom_clearance_mm": 5.02,
+     "aio_standoff_mm": 3.0
+    },
+    "mass_g": 102.2211,
+    "cg_above_rotor_plane_mm": -3.7522605072514743,
+    "rotor_z_mm": 25.0,
+    "alpha_rad_s2": {
+     "roll": 1805.445595577708,
+     "pitch": 1331.7691999549475,
+     "yaw": 62.03273418345347
+    },
+    "violated": {
+     "cg_above_rotor_plane": {
+      "margin": -3.7522605072514743
+     },
+     "camera_sees_no_prop": {
+      "margin": -26.686512458759733
+     }
+    },
+    "constraints": {
+     "cg_x": 0.9988813240123614,
+     "cg_y": 0.7905542325410306,
+     "cg_above_rotor_plane": -3.7522605072514743,
+     "cg_band_top": 8.752260507251474,
+     "battery_over_stack": 7.400000000000002,
+     "battery_over_camera": 9.528010651218963,
+     "camera_sees_no_prop": -26.686512458759733,
+     "camera_stack_gap": 11.378010651218963,
+     "camera_in_envelope": 0.0,
+     "camera_under_hoop": 7.4360213024379185,
+     "battery_clear_of_props": 7.7356974839303945,
+     "battery_in_envelope": 33.5,
+     "deck_in_envelope": 4.599999999999998
+    },
+    "fov": {
+     "model_union": {
+      "margin_deg": -26.686512458759733,
+      "image_fraction_in_prop_discs": 0.06689556730064426
+     },
+     "lux_4x3": {
+      "margin_deg": -17.186512458759726,
+      "image_fraction_in_prop_discs": 0.03942749122333243
+     },
+     "lux_16x9": {
+      "margin_deg": -26.686512458759733,
+      "image_fraction_in_prop_discs": 0.07630878438331855
+     }
+    }
+   }
+  },
+  "tadpole": {
+   "own": {
+    "layout": {
+     "battery_y_mm": 0.0,
+     "deck_top_mm": 19.0,
+     "camera_y_mm": 28.0,
+     "camera_bottom_clearance_mm": 0.0,
+     "aio_standoff_mm": 3.0
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.13783899191018278,
+    "rotor_z_mm": 14.4,
+    "alpha_rad_s2": {
+     "roll": 2647.5390417501158,
+     "pitch": 2363.8769734231964,
+     "yaw": 143.2378660167347
+    },
+    "violated": {
+     "cg_above_rotor_plane": {
+      "margin": -0.13783899191018278
+     },
+     "battery_over_stack": {
+      "margin": -0.5
+     },
+     "battery_over_camera": {
+      "margin": -6.4439786975620805
+     },
+     "camera_sees_no_prop": {
+      "margin": -27.55521015193833
+     },
+     "camera_under_hoop": {
+      "margin": -1.9439786975620805
+     }
+    },
+    "constraints": {
+     "cg_x": 0.9999999999999999,
+     "cg_y": 0.021889400921659363,
+     "cg_above_rotor_plane": -0.13783899191018278,
+     "cg_band_top": 5.137838991910183,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_stack_gap": 0.3780106512189594,
+     "camera_in_envelope": 0.0,
+     "camera_under_hoop": -1.9439786975620805,
+     "battery_clear_of_props": 0.10000000000000142,
+     "battery_in_envelope": 13.5,
+     "deck_in_envelope": 1.0
+    },
+    "fov": {
+     "model_union": {
+      "margin_deg": -27.55521015193833,
+      "image_fraction_in_prop_discs": 0.05046101616449983
+     },
+     "lux_4x3": {
+      "margin_deg": -18.055210151938322,
+      "image_fraction_in_prop_discs": 0.030014274140658152
+     },
+     "lux_16x9": {
+      "margin_deg": -27.55521015193833,
+      "image_fraction_in_prop_discs": 0.05809961035453879
+     }
+    }
+   }
+  }
+ },
+ "robustness": {
+  "manafly3": [
+   {
+    "case": "Modell (K)",
+    "changes": {},
+    "mass_g": 102.2211,
+    "cg_above_rotor_plane_mm": -3.7522605072514743,
+    "violated": [
+     "cg_above_rotor_plane",
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -3.7522605072514743,
+     "camera_sees_no_prop": -26.686512458759733
+    }
+   },
+   {
+    "case": "Motorsitz z 8 (Datenblatt Feld 3: 8-9,2)",
+    "changes": {
+     "pad_z_mm": 8.0
+    },
+    "mass_g": 102.2211,
+    "cg_above_rotor_plane_mm": -2.2687879169545617,
+    "violated": [
+     "cg_above_rotor_plane",
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -2.2687879169545617,
+     "camera_sees_no_prop": -26.135782349347433
+    }
+   },
+   {
+    "case": "Akku 50 g",
+    "changes": {
+     "battery.mass_g": 50.0
+    },
+    "mass_g": 115.2211,
+    "cg_above_rotor_plane_mm": -2.392445450857558,
+    "violated": [
+     "cg_above_rotor_plane",
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -2.392445450857558,
+     "camera_sees_no_prop": -26.686512458759733
+    }
+   },
+   {
+    "case": "Akku 60 g, 22 hoch",
+    "changes": {
+     "battery.mass_g": 60.0,
+     "battery.height_mm": 22.0
+    },
+    "mass_g": 125.2211,
+    "cg_above_rotor_plane_mm": 1.0967784459823164,
+    "violated": [
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "camera_sees_no_prop": -26.686512458759733,
+     "cg_above_rotor_plane": 1.0967784459823164
+    }
+   },
+   {
+    "case": "Akku 75 g 4S 650, 26 hoch",
+    "changes": {
+     "battery.mass_g": 75.0,
+     "battery.height_mm": 26.0
+    },
+    "mass_g": 140.2211,
+    "cg_above_rotor_plane_mm": 3.52543093344865,
+    "violated": [
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "camera_sees_no_prop": -26.686512458759733,
+     "cg_above_rotor_plane": 3.52543093344865
+    }
+   },
+   {
+    "case": "Motoren 8,5 g",
+    "changes": {
+     "motor.mass_g": 8.5
+    },
+    "mass_g": 112.6211,
+    "cg_above_rotor_plane_mm": -4.116814669167713,
+    "violated": [
+     "cg_above_rotor_plane",
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -4.116814669167713,
+     "camera_sees_no_prop": -26.686512458759733
+    }
+   },
+   {
+    "case": "Props 2,5 g",
+    "changes": {
+     "prop.mass_g": 2.5
+    },
+    "mass_g": 109.4211,
+    "cg_above_rotor_plane_mm": -3.5053586240478616,
+    "violated": [
+     "cg_above_rotor_plane",
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -3.5053586240478616,
+     "camera_sees_no_prop": -26.686512458759733
+    }
+   },
+   {
+    "case": "Real 142,7 g (ANNAHME)",
+    "changes": {
+     "motor.mass_g": 8.5,
+     "prop.mass_g": 2.5,
+     "battery.mass_g": 59.0,
+     "battery.height_mm": 22.0,
+     "battery.length_mm": 60.0,
+     "battery.width_mm": 31.0
+    },
+    "mass_g": 141.8211,
+    "cg_above_rotor_plane_mm": 0.3064410264918003,
+    "violated": [
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "camera_sees_no_prop": -26.686512458759733,
+     "cg_above_rotor_plane": 0.3064410264918003
+    }
+   },
+   {
+    "case": "Akku 3 mm tiefer",
+    "changes": {
+     "layout.deck_top_mm": 24.8
+    },
+    "mass_g": 102.2211,
+    "cg_above_rotor_plane_mm": -4.838141993559095,
+    "violated": [
+     "cg_above_rotor_plane",
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -4.838141993559095,
+     "camera_sees_no_prop": -26.686512458759733
+    }
+   },
+   {
+    "case": "Kamera Neigung 30",
+    "changes": {
+     "camera.tilt_deg": 30.0
+    },
+    "mass_g": 102.2211,
+    "cg_above_rotor_plane_mm": -3.7389811207184316,
+    "violated": [
+     "cg_above_rotor_plane",
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -3.7389811207184316,
+     "camera_sees_no_prop": -26.178923925935855
+    }
+   },
+   {
+    "case": "Kamera Neigung 40",
+    "changes": {
+     "camera.tilt_deg": 40.0
+    },
+    "mass_g": 102.2211,
+    "cg_above_rotor_plane_mm": -3.732238999480842,
+    "violated": [
+     "cg_above_rotor_plane",
+     "camera_sees_no_prop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -3.732238999480842,
+     "camera_sees_no_prop": -23.742781951756857
+    }
+   }
+  ],
+  "tadpole": [
+   {
+    "case": "Handmodell",
+    "changes": {},
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.13783899191018278,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.13783899191018278,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805
+    }
+   },
+   {
+    "case": "Seitenteile 2 g",
+    "changes": {
+     "frame_part.5.mass_g": 2.0
+    },
+    "mass_g": 84.7,
+    "cg_above_rotor_plane_mm": -0.03216557848647028,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.03216557848647028,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805
+    }
+   },
+   {
+    "case": "Seitenteile 6 g",
+    "changes": {
+     "frame_part.5.mass_g": 6.0
+    },
+    "mass_g": 88.7,
+    "cg_above_rotor_plane_mm": -0.22913669106881507,
+    "violated": [
+     "cg_y",
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_y": -0.0642615558060875,
+     "cg_above_rotor_plane": -0.22913669106881507,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805
+    }
+   },
+   {
+    "case": "Seitenteil-Box z 7",
+    "changes": {
+     "frame_part.5.center_mm": [
+      0.0,
+      5.0,
+      7.0
+     ]
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.2795440610346063,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.2795440610346063,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805
+    }
+   },
+   {
+    "case": "Seitenteil-Box z 13",
+    "changes": {
+     "frame_part.5.center_mm": [
+      0.0,
+      5.0,
+      13.0
+     ]
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": 0.0038660772142424804,
+    "violated": [
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805,
+     "cg_above_rotor_plane": 0.0038660772142424804
+    }
+   },
+   {
+    "case": "Akku 1 mm tiefer",
+    "changes": {
+     "layout.deck_top_mm": 18.0
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.5641062730161739,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop",
+     "battery_clear_of_props"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.5641062730161739,
+     "battery_over_stack": -1.5,
+     "battery_over_camera": -7.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805,
+     "battery_clear_of_props": -0.8999999999999986
+    }
+   },
+   {
+    "case": "Akku 1 mm hoeher",
+    "changes": {
+     "layout.deck_top_mm": 20.0
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": 0.2884282891958083,
+    "violated": [
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "battery_over_camera": -5.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805,
+     "cg_above_rotor_plane": 0.2884282891958083
+    }
+   },
+   {
+    "case": "Buegel 10 % hoeher (19,8)",
+    "changes": {
+     "hoop.top_mm": 19.8
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.13783899191018278,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.13783899191018278,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -0.14397869756207982
+    }
+   },
+   {
+    "case": "Kamera 2 mm hoeher",
+    "changes": {
+     "layout.camera_bottom_clearance_mm": 2.0
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.08484360020511161,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.08484360020511161,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -8.44397869756208,
+     "camera_sees_no_prop": -27.07321995257249,
+     "camera_under_hoop": -3.9439786975620805
+    }
+   },
+   {
+    "case": "Kamera y 33",
+    "changes": {
+     "layout.camera_y_mm": 33.0
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.13783899191018278,
+    "violated": [
+     "cg_y",
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_in_envelope",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_y": -0.11059907834101335,
+     "cg_above_rotor_plane": -0.13783899191018278,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -21.555592703524905,
+     "camera_in_envelope": -5.0,
+     "camera_under_hoop": -1.9439786975620805
+    }
+   },
+   {
+    "case": "Kamera Neigung 30",
+    "changes": {
+     "camera.tilt_deg": 30.0
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.12220035713215083,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_stack_gap",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.12220035713215083,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -7.624355652982143,
+     "camera_sees_no_prop": -26.8233987451972,
+     "camera_stack_gap": -0.21217782649107342,
+     "camera_under_hoop": -3.1243556529821426
+    }
+   },
+   {
+    "case": "ohne ELRS-Draht (3 mm)",
+    "changes": {
+     "aio.elrs_mm": 0.0
+    },
+    "mass_g": 86.8,
+    "cg_above_rotor_plane_mm": -0.13783899191018278,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.13783899191018278,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805
+    }
+   },
+   {
+    "case": "Props 2,5 g",
+    "changes": {
+     "prop.mass_g": 2.5
+    },
+    "mass_g": 92.0,
+    "cg_above_rotor_plane_mm": -0.1300480923674332,
+    "violated": [
+     "cg_above_rotor_plane",
+     "battery_over_stack",
+     "battery_over_camera",
+     "camera_sees_no_prop",
+     "camera_under_hoop"
+    ],
+    "constraints": {
+     "cg_above_rotor_plane": -0.1300480923674332,
+     "battery_over_stack": -0.5,
+     "battery_over_camera": -6.4439786975620805,
+     "camera_sees_no_prop": -27.55521015193833,
+     "camera_under_hoop": -1.9439786975620805
+    }
+   }
+  ],
+  "crossover": {
+   "manafly3_battery_mass_g_at_cg_0": 83.21207187202465,
+   "manafly3_battery_mass_g_at_cg_0_with_8.5g_motors_2.5g_props": 92.86026464310876,
+   "manafly3_battery_mass_g_at_cg_0_with_8.5g_motors_2.5g_props_22mm": 55.85073887955096
+  }
+ },
+ "cg_band_references": {
+  "2inch": {
+   "source": "C:/clones/Deep_Frame/Examples/Frames/2inch/_eval/evaluation/evaluation.json",
+   "components": "unsere Hardware (K) auf den Aufnahmen der Referenz, wie Bewertungswerkzeug",
+   "mass_g": 82.89023974453843,
+   "cog_z_mm": 17.419576924179598,
+   "evaluator_cog_z_mm": 17.27480716555684,
+   "rotor_planes_z_mm": [
+    16.4
+   ],
+   "rotor_plane_mean_z_mm": 16.4,
+   "cg_above_rotor_plane_mm": 1.0195769241795993,
+   "rotor_rule": "Motoroberkante + halbe Propnabe (Konvention LayoutModel / LOAD_COVARIANCE prop_height_mm)",
+   "evaluator_prop_z_mm": [
+    13.9
+   ]
+  },
+  "tbs_source_one_v5": {
+   "source": "C:/clones/Deep_Frame/Examples/Frames/TBS_Source_One_V5/_eval/evaluation/evaluation.json",
+   "components": "unsere Hardware (K) auf den Aufnahmen der Referenz, wie Bewertungswerkzeug",
+   "mass_g": 127.51492498399936,
+   "cog_z_mm": 19.651919181809415,
+   "evaluator_cog_z_mm": 19.557812550750306,
+   "rotor_planes_z_mm": [
+    19.9
+   ],
+   "rotor_plane_mean_z_mm": 19.9,
+   "cg_above_rotor_plane_mm": -0.24808081819058359,
+   "rotor_rule": "Motoroberkante + halbe Propnabe (Konvention LayoutModel / LOAD_COVARIANCE prop_height_mm)",
+   "evaluator_prop_z_mm": [
+    17.4
+   ]
+  },
+  "aether4": {
+   "source": "C:/clones/Deep_Frame-eval/exports/evaluation/aether4/evaluation.json",
+   "components": "unsere Hardware (K) auf den Aufnahmen der Referenz, wie Bewertungswerkzeug",
+   "mass_g": 159.06849920043462,
+   "cog_z_mm": 32.666434811077174,
+   "evaluator_cog_z_mm": 32.66643481107717,
+   "rotor_planes_z_mm": [
+    22.63,
+    22.78,
+    40.7,
+    40.74
+   ],
+   "rotor_plane_mean_z_mm": 31.712500000000002,
+   "cg_above_rotor_plane_mm": 0.9539348110771719,
+   "rotor_rule": "Motoroberkante + halbe Propnabe (Konvention LayoutModel / LOAD_COVARIANCE prop_height_mm)",
+   "evaluator_prop_z_mm": [
+    21.03,
+    21.18,
+    42.3,
+    42.34
+   ]
+  },
+  "manafly3": {
+   "source": "C:/clones/Deep_Frame-eval/exports/evaluation/ref_manafly3/evaluation.json",
+   "components": "unsere Hardware (K) auf den Aufnahmen der Referenz, wie Bewertungswerkzeug",
+   "mass_g": 102.22108179922742,
+   "cog_z_mm": 21.24791731020433,
+   "evaluator_cog_z_mm": 21.29174388610379,
+   "rotor_planes_z_mm": [
+    25.0
+   ],
+   "rotor_plane_mean_z_mm": 25.0,
+   "cg_above_rotor_plane_mm": -3.752082689795671,
+   "rotor_rule": "Motoroberkante + halbe Propnabe (Konvention LayoutModel / LOAD_COVARIANCE prop_height_mm)",
+   "evaluator_prop_z_mm": [
+    26.6
+   ]
+  },
+  "manafly3_layout_model": {
+   "cg_above_rotor_plane_mm": -3.7522605072514743,
+   "rotor_planes_z_mm": [
+    25.0
+   ],
+   "source": "LayoutModel, LAYOUT_REFERENCES (K)"
+  },
+  "tadpole_layout_model": {
+   "cg_above_rotor_plane_mm": -0.13783899191018278,
+   "rotor_planes_z_mm": [
+    14.4
+   ],
+   "source": "LayoutModel, LAYOUT_REFERENCES (K)"
+  },
+  "ours_default": {
+   "cg_above_rotor_plane_mm": 0.03682043587031458,
+   "rotor_planes_z_mm": [
+    21.733333333333334
+   ],
+   "source": "LayoutModel, LAYOUT_DEFAULT"
+  },
+  "ours_rule": {
+   "cg_above_rotor_plane_mm": 0.3605634294920925,
+   "rotor_planes_z_mm": [
+    21.733333333333334
+   ],
+   "source": "LayoutModel, Regel-Layout (frame_share.layout)"
+  },
+  "tbs_5in_6s_real_estimate": {
+   "source": "ANNAHME typische 5-Zoll-Hardware: Rahmen Carbon 118 g (Herstellerangabe) im STL-Schwerpunkt z 9,5; 4 x 33 g 2207-Motoren, Sitz z 7,5, Hoehe 19 mm; 4 x 4,5 g 5-Zoll-Props, Nabe 7 mm; 6S 1100 185 g, 35 hoch, auf dem Deck z 34,85; Stack 20 g z 15,5; Kamera+VTX 20 g z 17",
+   "mass_g": 493.0,
+   "cg_above_rotor_plane_mm": -1.116125760649087,
+   "rotor_planes_z_mm": [
+    30.0
+   ]
+  },
+  "manafly3_142g_real_estimate": {
+   "source": "ANNAHME: Abfluggewicht 142,7 g (Foto, datasheet Feld 9) mit 3-Zoll-Hardware: 4 x 8,5 g 14xx-Motoren (Hoehe 14,6 mm wie Modell), 4 x 2,5 g Dreiblatt-3-Zoll, Akku = Rest 59 g (4S 450-550), 31 x 60 x 22 mm, Rest wie Modell",
+   "mass_g": 141.8211,
+   "cg_above_rotor_plane_mm": 0.3064410264918003,
+   "rotor_planes_z_mm": [
+    25.0
+   ]
+  }
+ },
+ "camera_tilt_sweep": {
+  "manafly3": {
+   "20": {
+    "layout": {
+     "model_union": {
+      "margin_deg": -26.686512458759733,
+      "image_fraction_in_prop_discs": 0.06689556730064426
+     },
+     "lux_4x3": {
+      "margin_deg": -17.186512458759726,
+      "image_fraction_in_prop_discs": 0.03942749122333243
+     },
+     "lux_16x9": {
+      "margin_deg": -26.686512458759733,
+      "image_fraction_in_prop_discs": 0.07630878438331855
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": -24.598135308863398,
+     "lux_4x3": -15.098135308863393,
+     "lux_16x9": -21.446159784219788
+    }
+   },
+   "30": {
+    "layout": {
+     "model_union": {
+      "margin_deg": -26.178923925935855,
+      "image_fraction_in_prop_discs": 0.05138690636935304
+     },
+     "lux_4x3": {
+      "margin_deg": -16.678923925935848,
+      "image_fraction_in_prop_discs": 0.02955132903823155
+     },
+     "lux_16x9": {
+      "margin_deg": -26.053469369810294,
+      "image_fraction_in_prop_discs": 0.058639712974036494
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": -19.080227727545342,
+     "lux_4x3": -14.076093061045084,
+     "lux_16x9": -14.975921564687214
+    }
+   },
+   "40": {
+    "layout": {
+     "model_union": {
+      "margin_deg": -23.742781951756857,
+      "image_fraction_in_prop_discs": 0.03850160101847923
+     },
+     "lux_4x3": {
+      "margin_deg": -15.887460678849003,
+      "image_fraction_in_prop_discs": 0.02137263222869488
+     },
+     "lux_16x9": {
+      "margin_deg": -21.194971664001482,
+      "image_fraction_in_prop_discs": 0.04428841479881177
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": -13.210807387212702,
+     "lux_4x3": -9.37391736172974,
+     "lux_16x9": -9.617960908109199
+    }
+   }
+  },
+  "tadpole": {
+   "20": {
+    "layout": {
+     "model_union": {
+      "margin_deg": -27.55521015193833,
+      "image_fraction_in_prop_discs": 0.05046101616449983
+     },
+     "lux_4x3": {
+      "margin_deg": -18.055210151938322,
+      "image_fraction_in_prop_discs": 0.030014274140658152
+     },
+     "lux_16x9": {
+      "margin_deg": -27.55521015193833,
+      "image_fraction_in_prop_discs": 0.05809961035453879
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": 3.76488065929539,
+     "lux_4x3": 13.264880658756866,
+     "lux_16x9": 3.7648806593765705
+    }
+   },
+   "30": {
+    "layout": {
+     "model_union": {
+      "margin_deg": -26.8233987451972,
+      "image_fraction_in_prop_discs": 0.04614019520851819
+     },
+     "lux_4x3": {
+      "margin_deg": -17.43576487228045,
+      "image_fraction_in_prop_discs": 0.026387870838316424
+     },
+     "lux_16x9": {
+      "margin_deg": -22.99923333791154,
+      "image_fraction_in_prop_discs": 0.05308437174491725
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": 5.697712535904941,
+     "lux_4x3": 15.197712536105476,
+     "lux_16x9": 5.697712535651196
+    }
+   },
+   "40": {
+    "layout": {
+     "model_union": {
+      "margin_deg": -19.336174943613244,
+      "image_fraction_in_prop_discs": 0.04012190887697234
+     },
+     "lux_4x3": {
+      "margin_deg": -16.450048934332006,
+      "image_fraction_in_prop_discs": 0.021758419814050384
+     },
+     "lux_16x9": {
+      "margin_deg": -15.009256644005077,
+      "image_fraction_in_prop_discs": 0.04637166775973149
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": 8.626139454692947,
+     "lux_4x3": 18.126139454692954,
+     "lux_16x9": 8.626139454692947
+    }
+   }
+  },
+  "ours": {
+   "20": {
+    "layout": {
+     "model_union": {
+      "margin_deg": 0.05841371103823324,
+      "image_fraction_in_prop_discs": 0.0
+     },
+     "lux_4x3": {
+      "margin_deg": 9.55841371103824,
+      "image_fraction_in_prop_discs": 0.0
+     },
+     "lux_16x9": {
+      "margin_deg": 0.05841371103823324,
+      "image_fraction_in_prop_discs": 0.0
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": 2.9604379506653813,
+     "lux_4x3": 12.460437950665389,
+     "lux_16x9": 2.9604379506653813
+    }
+   },
+   "30": {
+    "layout": {
+     "model_union": {
+      "margin_deg": 0.6551574436185075,
+      "image_fraction_in_prop_discs": 0.0
+     },
+     "lux_4x3": {
+      "margin_deg": 10.155157443618515,
+      "image_fraction_in_prop_discs": 0.0
+     },
+     "lux_16x9": {
+      "margin_deg": 0.6551574436185075,
+      "image_fraction_in_prop_discs": 0.0
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": 4.371920093799269,
+     "lux_4x3": 13.871920093799277,
+     "lux_16x9": 4.371920093799269
+    }
+   },
+   "40": {
+    "layout": {
+     "model_union": {
+      "margin_deg": 1.5754278921633231,
+      "image_fraction_in_prop_discs": 0.0
+     },
+     "lux_4x3": {
+      "margin_deg": 11.07542789216333,
+      "image_fraction_in_prop_discs": 0.0
+     },
+     "lux_16x9": {
+      "margin_deg": 1.5754278921633231,
+      "image_fraction_in_prop_discs": 0.0
+     }
+    },
+    "reachable_margin_deg": {
+     "model_union": 6.219016134792782,
+     "lux_4x3": 15.71901613479279,
+     "lux_16x9": 6.219016134792782
+    }
+   }
+  }
+ },
+ "variants": {
+  "baseline": {
+   "override": {},
+   "layout": {
+    "battery_y_mm": -3.3,
+    "deck_top_mm": 25.8,
+    "camera_y_mm": 49.4,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 8.8
+   },
+   "alpha_rad_s2": {
+    "roll": 2374.779847434258,
+    "pitch": 2072.090857118931,
+    "yaw": 111.49933438172656
+   },
+   "alpha_min_rad_s2": 111.49933438172656,
+   "cg_above_rotor_plane_mm": 0.03682043587031458,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_sees_no_prop",
+    "camera_under_hoop",
+    "cg_above_rotor_plane",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 0.0,
+    "deck_top_mm": 0.0,
+    "camera_y_mm": 0.0,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": 0.0
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_4x3": {
+     "margin_deg": 9.55841371103824,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_16x9": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    }
+   }
+  },
+  "cg_band_m5": {
+   "override": {
+    "cg_band_mm": [
+     -5.0,
+     5.0
+    ]
+   },
+   "layout": {
+    "battery_y_mm": -3.3,
+    "deck_top_mm": 20.0,
+    "camera_y_mm": 49.4,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 3.0
+   },
+   "alpha_rad_s2": {
+    "roll": 2448.4315449664814,
+    "pitch": 2149.136559145309,
+    "yaw": 111.49933438172656
+   },
+   "alpha_min_rad_s2": 111.49933438172656,
+   "cg_above_rotor_plane_mm": -2.9125311577643522,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_sees_no_prop",
+    "camera_under_hoop",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 0.0,
+    "deck_top_mm": -5.800000000000001,
+    "camera_y_mm": 0.0,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": -5.800000000000001
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_4x3": {
+     "margin_deg": 9.55841371103824,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_16x9": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    }
+   }
+  },
+  "cg_open": {
+   "override": {
+    "cg_band_mm": [
+     -15.0,
+     5.0
+    ]
+   },
+   "layout": {
+    "battery_y_mm": -3.3,
+    "deck_top_mm": 20.0,
+    "camera_y_mm": 49.4,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 3.0
+   },
+   "alpha_rad_s2": {
+    "roll": 2448.4315449664814,
+    "pitch": 2149.136559145309,
+    "yaw": 111.49933438172656
+   },
+   "alpha_min_rad_s2": 111.49933438172656,
+   "cg_above_rotor_plane_mm": -2.9125311577643522,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_sees_no_prop",
+    "camera_under_hoop",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 0.0,
+    "deck_top_mm": -5.800000000000001,
+    "camera_y_mm": 0.0,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": -5.800000000000001
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_4x3": {
+     "margin_deg": 9.55841371103824,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_16x9": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    }
+   }
+  },
+  "fov_4x3": {
+   "override": {
+    "fov_deg": [
+     126.0,
+     94.0
+    ]
+   },
+   "layout": {
+    "battery_y_mm": -2.8,
+    "deck_top_mm": 25.8,
+    "camera_y_mm": 41.1,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 8.8
+   },
+   "alpha_rad_s2": {
+    "roll": 2374.779847434258,
+    "pitch": 2123.27289160969,
+    "yaw": 112.86599962510707
+   },
+   "alpha_min_rad_s2": 112.86599962510707,
+   "cg_above_rotor_plane_mm": 0.03682043587031458,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_sees_no_prop",
+    "camera_under_hoop",
+    "cg_above_rotor_plane",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 0.5,
+    "deck_top_mm": 0.0,
+    "camera_y_mm": -8.299999999999997,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": 0.0
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": -9.432463631068707,
+     "image_fraction_in_prop_discs": 0.007715751707110065
+    },
+    "lux_4x3": {
+     "margin_deg": 0.06753636893130098,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_16x9": {
+     "margin_deg": -9.432463631068707,
+     "image_fraction_in_prop_discs": 0.009027429497318776
+    }
+   }
+  },
+  "fov_16x9": {
+   "override": {
+    "fov_deg": [
+     145.0,
+     82.0
+    ]
+   },
+   "layout": {
+    "battery_y_mm": -3.3,
+    "deck_top_mm": 25.8,
+    "camera_y_mm": 49.4,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 8.8
+   },
+   "alpha_rad_s2": {
+    "roll": 2374.779847434258,
+    "pitch": 2072.090857118931,
+    "yaw": 111.49933438172656
+   },
+   "alpha_min_rad_s2": 111.49933438172656,
+   "cg_above_rotor_plane_mm": 0.03682043587031458,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_sees_no_prop",
+    "camera_under_hoop",
+    "cg_above_rotor_plane",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 0.0,
+    "deck_top_mm": 0.0,
+    "camera_y_mm": 0.0,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": 0.0
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_4x3": {
+     "margin_deg": 9.55841371103824,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_16x9": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    }
+   }
+  },
+  "fov_4x3_edge5": {
+   "override": {
+    "fov_deg": [
+     116.0,
+     84.0
+    ]
+   },
+   "layout": {
+    "battery_y_mm": -2.5,
+    "deck_top_mm": 31.7,
+    "camera_y_mm": 37.0,
+    "camera_bottom_clearance_mm": 5.7,
+    "aio_standoff_mm": 14.0
+   },
+   "alpha_rad_s2": {
+    "roll": 2265.828795404336,
+    "pitch": 2026.0298656017928,
+    "yaw": 113.46982497573677
+   },
+   "alpha_min_rad_s2": 113.46982497573677,
+   "cg_above_rotor_plane_mm": 2.944639968134169,
+   "feasible": true,
+   "active": [
+    "battery_over_camera",
+    "camera_sees_no_prop",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 0.7999999999999998,
+    "deck_top_mm": 5.899999999999999,
+    "camera_y_mm": -12.399999999999999,
+    "camera_bottom_clearance_mm": -1.2999999999999998,
+    "aio_standoff_mm": 5.199999999999999
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": -14.428853638097802,
+     "image_fraction_in_prop_discs": 0.015585818448362331
+    },
+    "lux_4x3": {
+     "margin_deg": -4.928853638097796,
+     "image_fraction_in_prop_discs": 0.0036264033023417305
+    },
+    "lux_16x9": {
+     "margin_deg": -14.428853638097802,
+     "image_fraction_in_prop_discs": 0.01774622892635315
+    }
+   }
+  },
+  "fov_4x3_edge10": {
+   "override": {
+    "fov_deg": [
+     106.0,
+     74.0
+    ]
+   },
+   "layout": {
+    "battery_y_mm": -2.2,
+    "deck_top_mm": 31.7,
+    "camera_y_mm": 32.3,
+    "camera_bottom_clearance_mm": 5.7,
+    "aio_standoff_mm": 14.0
+   },
+   "alpha_rad_s2": {
+    "roll": 2265.828795404336,
+    "pitch": 2047.0637802410884,
+    "yaw": 114.08269283430052
+   },
+   "alpha_min_rad_s2": 114.08269283430052,
+   "cg_above_rotor_plane_mm": 2.944639968134169,
+   "feasible": true,
+   "active": [
+    "battery_over_camera",
+    "camera_sees_no_prop",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 1.0999999999999996,
+    "deck_top_mm": 5.899999999999999,
+    "camera_y_mm": -17.1,
+    "camera_bottom_clearance_mm": -1.2999999999999998,
+    "aio_standoff_mm": 5.199999999999999
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": -19.45921730829209,
+     "image_fraction_in_prop_discs": 0.023455885189614598
+    },
+    "lux_4x3": {
+     "margin_deg": -9.95921730829208,
+     "image_fraction_in_prop_discs": 0.009721847150958682
+    },
+    "lux_16x9": {
+     "margin_deg": -19.45921730829209,
+     "image_fraction_in_prop_discs": 0.026619343389529725
+    }
+   }
+  },
+  "cg_m5_fov_4x3": {
+   "override": {
+    "cg_band_mm": [
+     -5.0,
+     5.0
+    ],
+    "fov_deg": [
+     126.0,
+     94.0
+    ]
+   },
+   "layout": {
+    "battery_y_mm": -2.8,
+    "deck_top_mm": 20.0,
+    "camera_y_mm": 41.1,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 3.0
+   },
+   "alpha_rad_s2": {
+    "roll": 2448.4315449664814,
+    "pitch": 2204.2461307215613,
+    "yaw": 112.86599962510707
+   },
+   "alpha_min_rad_s2": 112.86599962510707,
+   "cg_above_rotor_plane_mm": -2.9125311577643522,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_sees_no_prop",
+    "camera_under_hoop",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 0.5,
+    "deck_top_mm": -5.800000000000001,
+    "camera_y_mm": -8.299999999999997,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": -5.800000000000001
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": -9.432463631068707,
+     "image_fraction_in_prop_discs": 0.007715751707110065
+    },
+    "lux_4x3": {
+     "margin_deg": 0.06753636893130098,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_16x9": {
+     "margin_deg": -9.432463631068707,
+     "image_fraction_in_prop_discs": 0.009027429497318776
+    }
+   }
+  },
+  "cg_m5_fov_4x3_edge5": {
+   "override": {
+    "cg_band_mm": [
+     -5.0,
+     5.0
+    ],
+    "fov_deg": [
+     116.0,
+     84.0
+    ]
+   },
+   "layout": {
+    "battery_y_mm": -2.5,
+    "deck_top_mm": 31.7,
+    "camera_y_mm": 37.0,
+    "camera_bottom_clearance_mm": 5.7,
+    "aio_standoff_mm": 14.0
+   },
+   "alpha_rad_s2": {
+    "roll": 2265.828795404336,
+    "pitch": 2026.0298656017928,
+    "yaw": 113.46982497573677
+   },
+   "alpha_min_rad_s2": 113.46982497573677,
+   "cg_above_rotor_plane_mm": 2.944639968134169,
+   "feasible": true,
+   "active": [
+    "battery_over_camera",
+    "camera_sees_no_prop",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": 0.7999999999999998,
+    "deck_top_mm": 5.899999999999999,
+    "camera_y_mm": -12.399999999999999,
+    "camera_bottom_clearance_mm": -1.2999999999999998,
+    "aio_standoff_mm": 5.199999999999999
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": -14.428853638097802,
+     "image_fraction_in_prop_discs": 0.015585818448362331
+    },
+    "lux_4x3": {
+     "margin_deg": -4.928853638097796,
+     "image_fraction_in_prop_discs": 0.0036264033023417305
+    },
+    "lux_16x9": {
+     "margin_deg": -14.428853638097802,
+     "image_fraction_in_prop_discs": 0.01774622892635315
+    }
+   }
+  },
+  "rank3": {
+   "override": {
+    "rank_tolerance": 0.03
+   },
+   "layout": {
+    "battery_y_mm": -3.4,
+    "deck_top_mm": 25.8,
+    "camera_y_mm": 49.4,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 8.8
+   },
+   "alpha_rad_s2": {
+    "roll": 2374.7798474342585,
+    "pitch": 2071.2276093779706,
+    "yaw": 111.47599570269699
+   },
+   "alpha_min_rad_s2": 111.47599570269699,
+   "cg_above_rotor_plane_mm": 0.03682043587031458,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_sees_no_prop",
+    "camera_under_hoop",
+    "cg_above_rotor_plane",
+    "cg_y"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": -0.10000000000000009,
+    "deck_top_mm": 0.0,
+    "camera_y_mm": 0.0,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": 0.0
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_4x3": {
+     "margin_deg": 9.55841371103824,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_16x9": {
+     "margin_deg": 0.05841371103823324,
+     "image_fraction_in_prop_discs": 0.0
+    }
+   }
+  },
+  "cg_m5_fov_4x3_rank3": {
+   "override": {
+    "cg_band_mm": [
+     -5.0,
+     5.0
+    ],
+    "fov_deg": [
+     126.0,
+     94.0
+    ],
+    "rank_tolerance": 0.03
+   },
+   "layout": {
+    "battery_y_mm": -4.0,
+    "deck_top_mm": 20.0,
+    "camera_y_mm": 42.1,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 3.0
+   },
+   "alpha_rad_s2": {
+    "roll": 2448.4315449664814,
+    "pitch": 2187.3553967189227,
+    "yaw": 112.45093178866313
+   },
+   "alpha_min_rad_s2": 112.45093178866313,
+   "cg_above_rotor_plane_mm": -2.9125311577643522,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_under_hoop"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": -0.7000000000000002,
+    "deck_top_mm": -5.800000000000001,
+    "camera_y_mm": -7.299999999999997,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": -5.800000000000001
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": -8.30246042410847,
+     "image_fraction_in_prop_discs": 0.006558388951043556
+    },
+    "lux_4x3": {
+     "margin_deg": 1.1975395758915386,
+     "image_fraction_in_prop_discs": 0.0
+    },
+    "lux_16x9": {
+     "margin_deg": -8.30246042410847,
+     "image_fraction_in_prop_discs": 0.007484279155896763
+    }
+   }
+  },
+  "cg_m5_fov_4x3_edge5_rank3": {
+   "override": {
+    "cg_band_mm": [
+     -5.0,
+     5.0
+    ],
+    "fov_deg": [
+     116.0,
+     84.0
+    ],
+    "rank_tolerance": 0.03
+   },
+   "layout": {
+    "battery_y_mm": -5.0,
+    "deck_top_mm": 20.0,
+    "camera_y_mm": 40.2,
+    "camera_bottom_clearance_mm": 7.0,
+    "aio_standoff_mm": 3.0
+   },
+   "alpha_rad_s2": {
+    "roll": 2448.4315449664814,
+    "pitch": 2187.5614626452707,
+    "yaw": 112.45601567845625
+   },
+   "alpha_min_rad_s2": 112.45601567845625,
+   "cg_above_rotor_plane_mm": -2.9125311577643522,
+   "feasible": true,
+   "active": [
+    "battery_over_stack",
+    "camera_under_hoop"
+   ],
+   "unsatisfiable": [],
+   "delta_to_default_mm": {
+    "battery_y_mm": -1.7000000000000002,
+    "deck_top_mm": -5.800000000000001,
+    "camera_y_mm": -9.199999999999996,
+    "camera_bottom_clearance_mm": 0.0,
+    "aio_standoff_mm": -5.800000000000001
+   },
+   "default_feasible": true,
+   "default_violated": [],
+   "rule_feasible": false,
+   "rule_violated": [
+    "cg_y",
+    "camera_sees_no_prop"
+   ],
+   "rule_alpha_rad_s2": {
+    "roll": 2305.789406470801,
+    "pitch": 2092.40676395502,
+    "yaw": 114.0995914005768
+   },
+   "fov": {
+    "model_union": {
+     "margin_deg": -10.473573472034532,
+     "image_fraction_in_prop_discs": 0.00933605956560318
+    },
+    "lux_4x3": {
+     "margin_deg": -0.9735734720345262,
+     "image_fraction_in_prop_discs": 0.0003086300682844026
+    },
+    "lux_16x9": {
+     "margin_deg": -10.473573472034532,
+     "image_fraction_in_prop_discs": 0.010493422321669688
+    }
+   }
+  }
+ },
+ "variant_settings": {
+  "baseline": {},
+  "cg_band_m5": {
+   "cg_band_mm": [
+    -5.0,
+    5.0
+   ]
+  },
+  "cg_open": {
+   "cg_band_mm": [
+    -15.0,
+    5.0
+   ]
+  },
+  "fov_4x3": {
+   "fov_deg": [
+    126.0,
+    94.0
+   ]
+  },
+  "fov_16x9": {
+   "fov_deg": [
+    145.0,
+    82.0
+   ]
+  },
+  "fov_4x3_edge5": {
+   "fov_deg": [
+    116.0,
+    84.0
+   ]
+  },
+  "fov_4x3_edge10": {
+   "fov_deg": [
+    106.0,
+    74.0
+   ]
+  },
+  "cg_m5_fov_4x3": {
+   "cg_band_mm": [
+    -5.0,
+    5.0
+   ],
+   "fov_deg": [
+    126.0,
+    94.0
+   ]
+  },
+  "cg_m5_fov_4x3_edge5": {
+   "cg_band_mm": [
+    -5.0,
+    5.0
+   ],
+   "fov_deg": [
+    116.0,
+    84.0
+   ]
+  },
+  "rank3": {
+   "rank_tolerance": 0.03
+  },
+  "cg_m5_fov_4x3_rank3": {
+   "cg_band_mm": [
+    -5.0,
+    5.0
+   ],
+   "fov_deg": [
+    126.0,
+    94.0
+   ],
+   "rank_tolerance": 0.03
+  },
+  "cg_m5_fov_4x3_edge5_rank3": {
+   "cg_band_mm": [
+    -5.0,
+    5.0
+   ],
+   "fov_deg": [
+    116.0,
+    84.0
+   ],
+   "rank_tolerance": 0.03
+  }
+ },
+ "code": "Deep_Frame-layout a37f1bb (git archive, sauberer Stand ohne die offenen Phase-2-Aenderungen)"
+}

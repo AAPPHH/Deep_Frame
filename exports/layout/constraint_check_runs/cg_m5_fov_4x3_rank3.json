@@ -1,0 +1,319 @@
+{
+ "variant": "cg_m5_fov_4x3_rank3",
+ "override": {
+  "cg_band_mm": [
+   -5.0,
+   5.0
+  ],
+  "fov_deg": [
+   126.0,
+   94.0
+  ],
+  "rank_tolerance": 0.03
+ },
+ "optimum": {
+  "layout": {
+   "battery_y_mm": -4.057593621569787,
+   "deck_top_mm": 20.00000000874397,
+   "camera_y_mm": 42.15060425191674,
+   "camera_bottom_clearance_mm": 7.056019942187608,
+   "aio_standoff_mm": 3.000000004283131
+  },
+  "mass_g": 86.9208,
+  "center_of_mass_mm": [
+   0.028279785735980414,
+   0.4546084529977444,
+   18.82228451606052
+  ],
+  "cg_above_rotor_plane_mm": -2.911048817272814,
+  "inertia_g_mm2": [
+   [
+    72312.98026658031,
+    82.38589286841005,
+    24.756839614103836
+   ],
+   [
+    82.38589286841005,
+    88202.02933256957,
+    1215.325816020235
+   ],
+   [
+    24.756839614103836,
+    1215.325816020235,
+    150646.5216077036
+   ]
+  ],
+  "torque_n_mm": {
+   "roll": 215.95683381407164,
+   "pitch": 158.1112533281596,
+   "yaw": 16.937096984441567
+  },
+  "alpha_rad_s2": {
+   "roll": 2448.4338449832835,
+   "pitch": 2186.485092237738,
+   "yaw": 112.42939301676819
+  },
+  "alpha_min_rad_s2": 112.42939301676819,
+  "limiting_axis": "yaw",
+  "constraints": {
+   "cg_x": 0.9717202142640196,
+   "cg_y": 0.5453915470022557,
+   "cg_above_rotor_plane": 2.088951182727186,
+   "cg_band_top": 7.911048817272814,
+   "battery_over_stack": 4.460840585807091e-09,
+   "battery_over_camera": 5.736208524705489,
+   "camera_sees_no_prop": 1.271553752758243,
+   "camera_stack_gap": 14.528614903135697,
+   "camera_in_envelope": 7.749395748083261,
+   "camera_under_hoop": 1.360250312387734e-06,
+   "battery_clear_of_props": 4.870839213529166,
+   "battery_in_envelope": 28.442406378430213,
+   "deck_in_envelope": 11.99999999125603
+  },
+  "violated": [],
+  "feasible": true,
+  "stages": [
+   {
+    "maximised": "yaw",
+    "alpha_rad_s2": 112.89563053350685,
+    "evaluations": 11320,
+    "feasible": true,
+    "message": "Optimization terminated successfully."
+   },
+   {
+    "maximised": "pitch",
+    "alpha_rad_s2": 2205.4596657101365,
+    "evaluations": 12919,
+    "feasible": true,
+    "message": "Maximum number of iterations has been exceeded."
+   },
+   {
+    "maximised": "roll",
+    "alpha_rad_s2": 2448.4338449832835,
+    "evaluations": 7247,
+    "feasible": true,
+    "message": "Maximum number of iterations has been exceeded."
+   }
+  ],
+  "reachable_margin": {
+   "cg_x": 0.9717202142640196,
+   "cg_y": 0.9998954640418246,
+   "cg_above_rotor_plane": 8.344889390596919,
+   "cg_band_top": 10.598884711804352,
+   "battery_over_stack": 12.0,
+   "battery_over_camera": 34.52801065121896,
+   "camera_sees_no_prop": 12.460437950665389,
+   "camera_stack_gap": 22.378010651218965,
+   "camera_in_envelope": 33.9,
+   "camera_under_hoop": 5.0560213024379195,
+   "battery_clear_of_props": 5.766666666666666,
+   "battery_in_envelope": 32.498980417036826,
+   "deck_in_envelope": 18.0
+  },
+  "unsatisfiable": [],
+  "constraints_used": [
+   "cg_x",
+   "cg_y",
+   "cg_above_rotor_plane",
+   "cg_band_top",
+   "battery_over_stack",
+   "battery_over_camera",
+   "camera_sees_no_prop",
+   "camera_stack_gap",
+   "camera_in_envelope",
+   "camera_under_hoop",
+   "battery_clear_of_props",
+   "battery_in_envelope",
+   "deck_in_envelope"
+  ]
+ },
+ "rounded": {
+  "layout": {
+   "battery_y_mm": -4.0,
+   "deck_top_mm": 20.0,
+   "camera_y_mm": 42.1,
+   "camera_bottom_clearance_mm": 7.0,
+   "aio_standoff_mm": 3.0
+  },
+  "mass_g": 86.9208,
+  "center_of_mass_mm": [
+   0.028279785735980414,
+   0.4777855776753088,
+   18.820802175568982
+  ],
+  "cg_above_rotor_plane_mm": -2.9125311577643522,
+  "inertia_g_mm2": [
+   [
+    72284.20839399472,
+    82.44286459566106,
+    24.753195870569364
+   ],
+   [
+    82.44286459566106,
+    88202.11218812248,
+    1206.4244429289542
+   ],
+   [
+    24.753195870569364,
+    1206.4244429289542,
+    150617.66687956516
+   ]
+  ],
+  "torque_n_mm": {
+   "roll": 215.95683381407164,
+   "pitch": 158.1112533281596,
+   "yaw": 16.937096984441567
+  },
+  "alpha_rad_s2": {
+   "roll": 2448.4315449664814,
+   "pitch": 2187.3553967189227,
+   "yaw": 112.45093178866313
+  },
+  "alpha_min_rad_s2": 112.45093178866313,
+  "limiting_axis": "yaw",
+  "constraints": {
+   "cg_x": 0.9717202142640196,
+   "cg_y": 0.5222144223246912,
+   "cg_above_rotor_plane": 2.0874688422356478,
+   "cg_band_top": 7.912531157764352,
+   "battery_over_stack": 0.0,
+   "battery_over_camera": 5.628010651218965,
+   "camera_sees_no_prop": 1.1975395758915386,
+   "camera_stack_gap": 14.478010651218959,
+   "camera_in_envelope": 7.799999999999999,
+   "camera_under_hoop": 0.056021302437919474,
+   "battery_clear_of_props": 4.876218777523896,
+   "battery_in_envelope": 28.5,
+   "deck_in_envelope": 12.0
+  },
+  "violated": [],
+  "feasible": true
+ },
+ "default": {
+  "layout": {
+   "battery_y_mm": -3.3,
+   "deck_top_mm": 25.8,
+   "camera_y_mm": 49.4,
+   "camera_bottom_clearance_mm": 7.0,
+   "aio_standoff_mm": 8.8
+  },
+  "mass_g": 86.9208,
+  "center_of_mass_mm": [
+   0.028279785735980414,
+   0.968922336655898,
+   21.77015376920365
+  ],
+  "cg_above_rotor_plane_mm": 0.03682043587031458,
+  "inertia_g_mm2": [
+   [
+    76305.17396713002,
+    83.65012864872949,
+    32.003001741845054
+   ],
+   [
+    83.65012864872949,
+    90937.62272212058,
+    1995.8627168630655
+   ],
+   [
+    32.003001741845054,
+    1995.8627168630655,
+    151903.12191870232
+   ]
+  ],
+  "torque_n_mm": {
+   "roll": 215.95683381407164,
+   "pitch": 158.1112533281596,
+   "yaw": 16.937096984441567
+  },
+  "alpha_rad_s2": {
+   "roll": 2374.779847434258,
+   "pitch": 2072.090857118931,
+   "yaw": 111.49933438172656
+  },
+  "alpha_min_rad_s2": 111.49933438172656,
+  "limiting_axis": "yaw",
+  "constraints": {
+   "cg_x": 0.9717202142640196,
+   "cg_y": 0.031077663344102002,
+   "cg_above_rotor_plane": 5.036820435870315,
+   "cg_band_top": 4.963179564129685,
+   "battery_over_stack": 0.0,
+   "battery_over_camera": 12.228010651218959,
+   "camera_sees_no_prop": 9.55841371103824,
+   "camera_stack_gap": 21.778010651218956,
+   "camera_in_envelope": 0.5000000000000018,
+   "camera_under_hoop": 0.056021302437919474,
+   "battery_clear_of_props": 4.948395385728652,
+   "battery_in_envelope": 29.200000000000003,
+   "deck_in_envelope": 6.199999999999999
+  },
+  "violated": [],
+  "feasible": true
+ },
+ "rule": {
+  "layout": {
+   "battery_y_mm": 0.0,
+   "deck_top_mm": 28.0,
+   "camera_y_mm": 35.0,
+   "camera_bottom_clearance_mm": 2.0,
+   "aio_standoff_mm": 3.0
+  },
+  "mass_g": 86.9208,
+  "center_of_mass_mm": [
+   0.028279785735980414,
+   1.9926128687264726,
+   22.093896762825427
+  ],
+  "cg_above_rotor_plane_mm": 0.3605634294920925,
+  "inertia_g_mm2": [
+   [
+    75564.30042756184,
+    86.16646398351672,
+    32.79879491245557
+   ],
+   [
+    86.16646398351672,
+    93658.5245851273,
+    1181.6054126043969
+   ],
+   [
+    32.79879491245557,
+    1181.6054126043969,
+    148441.34651612738
+   ]
+  ],
+  "torque_n_mm": {
+   "roll": 215.95683381407164,
+   "pitch": 158.1112533281596,
+   "yaw": 16.937096984441567
+  },
+  "alpha_rad_s2": {
+   "roll": 2305.789406470801,
+   "pitch": 2092.40676395502,
+   "yaw": 114.0995914005768
+  },
+  "alpha_min_rad_s2": 114.0995914005768,
+  "limiting_axis": "yaw",
+  "constraints": {
+   "cg_x": 0.9717202142640196,
+   "cg_y": -0.9926128687264726,
+   "cg_above_rotor_plane": 5.3605634294920925,
+   "cg_band_top": 4.6394365705079075,
+   "battery_over_stack": 8.0,
+   "battery_over_camera": 0.056021302437919474,
+   "camera_sees_no_prop": -8.35812897575959,
+   "camera_stack_gap": 7.378010651218959,
+   "camera_in_envelope": 14.9,
+   "camera_under_hoop": 5.0560213024379195,
+   "battery_clear_of_props": 5.455565520700887,
+   "battery_in_envelope": 32.5,
+   "deck_in_envelope": 4.0
+  },
+  "violated": [
+   "cg_y",
+   "camera_sees_no_prop"
+  ],
+  "feasible": false
+ }
+}
