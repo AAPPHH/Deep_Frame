@@ -59,7 +59,7 @@ FORMULATION = {
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
                    "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "auto"},
     "solver_memory": {"run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt", "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
-                      "output": "exports/solver_memory/baseline", "reference": None, "multigrid": None, "share_static": True, "modal": {}},
+                      "output": "exports/solver_memory/baseline", "reference": None, "start": None, "multigrid": None, "share_static": True, "modal": {}},
     "setup_memory": {"shape": None, "start": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine", "evaluate": True, "sample_s": 0.02, "min_free_gb": 5.0, "output": "exports/setup_memory/probe"},
 }
 
@@ -760,7 +760,7 @@ def deviation(a, b):
     scale = lambda x: np.maximum(np.abs(x), 1e-30)
     rows = [np.linalg.norm(x - y) / max(np.linalg.norm(y), 1e-30) for x, y in zip(a["constraint_gradients"], b["constraint_gradients"])]
     return {"objective_rel": float(abs(a["objective"] - b["objective"]) / scale(b["objective"])), "constraints_g_abs": float(np.max(np.abs(a["constraints"] - b["constraints"]))),
-            "values_rel": float(np.max(np.abs(a["values"] - b["values"]) / scale(b["values"]))), "f1_rel": float(abs(a["f1"] - b["f1"]) / b["f1"]),
+            "values_rel": float(np.max(np.abs(a["values"] - b["values"]) / scale(b["values"]))), "values_by_name": {str(name): {"value": float(y), "abs": float(abs(x - y)), "rel": float(abs(x - y) / scale(y))} for name, x, y in zip(b["names"], a["values"], b["values"])}, "f1_rel": float(abs(a["f1"] - b["f1"]) / b["f1"]),
             "gradients_rel_norm": float(max(rows)), "gradients_rel_norm_by_name": dict(zip([str(name) for name in b["names"]], map(float, rows))),
             "objective_gradient_rel_norm": float(np.linalg.norm(a["objective_gradient"] - b["objective_gradient"]) / np.linalg.norm(b["objective_gradient"]))}
 
@@ -774,8 +774,10 @@ def solver_grid(cfg, spec, grid, probe, out):
         built = perf_counter() - clock
     while tp.advance():
         pass
-    source = Path(spec["run"]) / grid / "design.npz"
+    source = Path(spec["start"] or Path(spec["run"]) / grid) / "design.npz"
     design = np.load(source)["design"]
+    if spec["start"]:
+        design = prolongate(design, read(source.parent / "result.json")["grid"], half)
     evaluations, arrays = [], []
     for index in range(spec["evaluations"]):
         if index == 1:

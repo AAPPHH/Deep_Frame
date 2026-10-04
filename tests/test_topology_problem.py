@@ -389,3 +389,17 @@ def test_shared_static_factorization_matches_own_supports():
         assert shared[name]["compliance_n_mm"] == pytest.approx(own[name]["compliance_n_mm"], rel=1e-10)
         assert np.linalg.norm(shared[name]["derivative"] - own[name]["derivative"]) <= 1e-10 * np.linalg.norm(own[name]["derivative"])
         assert shared[name]["max_displacement_mm"] == pytest.approx(own[name]["max_displacement_mm"], rel=1e-10)
+
+def test_shared_static_falls_back_to_own_factorization_when_inaccurate():
+    own, shared = (HexElasticity(tiny_domain(), share_static=share) for share in (False, True))
+    rng = np.random.default_rng(3)
+    density = rng.uniform(0.2, 1.0, own.nelem)
+    shared.shared = shared._share_plan()
+    for entry in shared.shared.values():
+        entry["modes"] = entry["modes"] * (1 + 1e-3 * rng.standard_normal(entry["modes"].shape))
+    exact, tested = own.solve(density), shared.solve(density)
+    assert len(shared.unshared) == 2 and shared.shared is None
+    for name in exact:
+        assert tested[name]["compliance_n_mm"] == pytest.approx(exact[name]["compliance_n_mm"], rel=1e-10)
+    shared.solve(density)
+    assert shared.diagnostics()["factorization_groups"] == 4 and shared.diagnostics()["unshared_static_groups"] == 2

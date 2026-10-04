@@ -327,7 +327,7 @@ class HexElasticity:
             raise ValueError("Unknown topology gpu_solver_residency")
         self.linear_solver = linear_solver
         self.gpu_solver_residency = gpu_solver_residency
-        self.share_static, self.shared = linear_solver != "multigrid" if share_static == "auto" else share_static, None
+        self.share_static, self.shared, self.unshared = linear_solver != "multigrid" if share_static == "auto" else share_static, None, set()
         self.multigrid_settings, self.multigrid = multigrid, None
         self.gpu_solvers = {}
         self.gpu_reanalyses = 0
@@ -470,7 +470,7 @@ class HexElasticity:
                 hosts.setdefault(members[0][1]["sign"], key)
         for key, members in self.groups.items():
             sign, fixed = members[0][1]["sign"], members[0][1]["fixed"]
-            if hosts.get(sign, key) == key:
+            if hosts.get(sign, key) == key or key in self.unshared:
                 continue
             host = self.groups[hosts[sign]][0][1]
             support = np.setdiff1d(np.intersect1d(host["fixed"], self.active_dofs), self._plane_dofs(sign) if self.symmetry is not None else [])
@@ -669,7 +669,14 @@ class HexElasticity:
                 full = modes @ multipliers[size:]
                 full[free] += direct + coupling @ multipliers[:size]
                 guest_free = rest[0][1]["free"]
-                self._collect(accumulated, rest, guest_free, None if stiffness is None else stiffness[guest_free, :][:, guest_free].tocsc(), full[guest_free])
+                guest_reduced, solved = None if stiffness is None else stiffness[guest_free, :][:, guest_free].tocsc(), full[guest_free]
+                if not self._accurate(rest, guest_free, guest_reduced, solved)[0]:
+                    self.unshared.add(guest)
+                    forces = np.column_stack([part["force"][guest_free] for _, part in rest])
+                    solved = self._multigrid_solve(guest, rest[0][1], forces) if guest_reduced is None else self._linear_solve(guest, guest_reduced, forces)
+                self._collect(accumulated, rest, guest_free, guest_reduced, solved)
+        if self.unshared & set(self.shared):
+            self.shared = None
         if stiffness is None:
             self.multigrid.torch.cuda.empty_cache()
         results = {}
@@ -685,11 +692,14 @@ class HexElasticity:
                 result.update(self._metrics([direct] if self.symmetry is None else [direct, mirror], moduli, entry["case"]))
             results[name] = result
         return results
-    def _collect(self, accumulated, members, free, reduced, solutions):
+    def _accurate(self, members, free, reduced, solutions):
         forces = np.column_stack([part["force"][free] for _, part in members])
-        residual = np.linalg.norm((reduced @ solutions if reduced is not None else self._multigrid_product(free, solutions)) - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
-        tolerance = 1e-4 if self.linear_solver == "cpu_superlu" else 1e-6
-        if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
+        norms = np.linalg.norm(forces, axis=0)
+        residual = np.linalg.norm((reduced @ solutions if reduced is not None else self._multigrid_product(free, solutions)) - forces, axis=0) / np.where(norms > 1e-12 * norms.max(initial=0.0), norms, max(norms.max(initial=0.0), 1e-30))
+        return bool(np.all(np.isfinite(solutions)) and np.all(residual <= (1e-4 if self.linear_solver == "cpu_superlu" else 1e-6))), residual
+    def _collect(self, accumulated, members, free, reduced, solutions):
+        accurate, residual = self._accurate(members, free, reduced, solutions)
+        if not accurate:
             raise RuntimeError(f"Topology linear solve failed residual check: {residual.tolist()}")
         factor = 1.0 if self.symmetry is None else 2.0
         for column, (case, part) in enumerate(members):
@@ -726,7 +736,7 @@ class HexElasticity:
     def _linear_solve(self, key, reduced, forces):
         if self.linear_solver == "cpu_superlu":
             return splu(reduced, permc_spec="MMD_AT_PLUS_A", options={"SymmetricMode": True}).solve(forces)
-        if key in self.gpu_solvers and not self.gpu_solvers[key].same_structure(reduced):
+        if key in self.gpu_solvers and (not self.gpu_solvers[key].same_structure(reduced) or self.gpu_solvers[key].rhs_device.shape != forces.shape):
             previous = self.gpu_solvers.pop(key)
             self.gpu_solver_history.append(previous.diagnostics())
             cleanup = previous.close()
@@ -791,7 +801,7 @@ class HexElasticity:
             errors.extend(self.multigrid.close())
         return errors
     def diagnostics(self):
-        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "requested_linear_solver": self.requested_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups) - len(self.shared or {}), "shared_static_groups": len(self.shared or {}), **({"multigrid": self.multigrid.diagnostics()} if self.multigrid is not None else {})})
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "requested_linear_solver": self.requested_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups) - len(self.shared or {}), "shared_static_groups": len(self.shared or {}), "unshared_static_groups": len(self.unshared), **({"multigrid": self.multigrid.diagnostics()} if self.multigrid is not None else {})})
 
 def volume_weights(points, discs):
     weights = np.ones(len(points))

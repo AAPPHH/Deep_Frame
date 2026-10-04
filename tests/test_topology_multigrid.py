@@ -174,3 +174,15 @@ def test_multigrid_carries_body_springs_and_design_dependent_loads(builder):
     assert np.max(np.abs(tested["constraints"] - exact["constraints"])) < 1e-6
     for name, left, right in zip(exact["names"], tested["constraint_gradients"], exact["constraint_gradients"]):
         assert np.linalg.norm(left - right) <= 1e-6 * max(np.linalg.norm(right), 1e-12), name
+
+@gpu
+def test_zero_load_columns_skip_pcg():
+    system, moduli, mg = setup(tiny_domain())
+    part = next(iter(system.groups.values()))[0][1]
+    forces = np.zeros((system.ndof, 2))
+    forces[part["free"], 0] = part["force"][part["free"]]
+    forces[part["free"], 1] = 1e-20 * part["force"][part["free"]]
+    flat, report = mg.solve("zero", part["fixed"], forces)
+    single, _ = mg.solve("zero", part["fixed"], forces[:, :1])
+    assert report["converged"] and report["zero_rhs_columns"] == 1 and report["iterations"][1] == 0
+    assert not np.any(flat[:, 1]) and np.linalg.norm(flat[:, 0] - single[:, 0]) <= 1e-12 * np.linalg.norm(single[:, 0])

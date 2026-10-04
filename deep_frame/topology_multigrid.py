@@ -6,7 +6,7 @@ from scipy.sparse import coo_matrix
 from deep_frame.topology_optimization import _CORNERS, CudaDirectSolver, ModalConstraint, regular_grid
 
 MULTIGRID = {"coarse": "galerkin", "coarsest_dofs": 80000, "max_levels": 8, "smoother": "chebyshev", "sweeps": 2, "damping": 1.0, "chebyshev_degree": 3, "chebyshev_ratio": 20.0, "growth": 2.0, "cycle": "V",
-             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "batch": 12, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "device": "cuda",
+             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "batch": 12, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "zero_rhs": 1e-12, "retries": 2, "device": "cuda",
              "eigen_tolerance": 1e-8, "eigen_iterations": 300, "eigen_guard": 2, "eigen_refresh": 10, "eigen_drop": 1e-12, "eigen_seed": 0}
 PRECISIONS = {"float64": ("float64", None), "float32": ("float32", None), "bfloat16": ("float32", "bfloat16"), "float16": ("float32", "float16")}
 _CHILDREN = np.array(list(np.ndindex(2, 2, 2)))
@@ -347,19 +347,24 @@ class GeometricMultigrid:
             rigid = self.flat(torch.as_tensor(rigid, device=self.device) * fine.mask64).cpu().numpy()
             support = np.asarray(support)
             forces[support] += np.linalg.lstsq(rigid[support].T, -(rigid.T @ forces), rcond=None)[0]
+        norms = np.linalg.norm(forces, axis=0)
+        live = np.flatnonzero(norms > self.settings["zero_rhs"] * max(norms.max(initial=0.0), 1e-300))
         pieces, reports, consistency = [], [], []
-        for start in range(0, forces.shape[1], self.settings["batch"]):
-            rhs = self.grid(forces[:, start:start + self.settings["batch"]]) * fine.mask64
+        for start in range(0, len(live), self.settings["batch"]):
+            rhs = self.grid(forces[:, live[start:start + self.settings["batch"]]]) * fine.mask64
             if fine.kernel is not None:
                 basis = fine.kernel.reshape(fine.kernel.shape[0], -1)
                 consistency += (torch.linalg.vector_norm(rhs.reshape(rhs.shape[0], -1) @ basis.T, dim=1) / torch.linalg.vector_norm(rhs.reshape(rhs.shape[0], -1), dim=1).clamp_min(1e-300)).cpu().tolist()
                 rhs = self._remove(fine.kernel, rhs)
-            solution, part = self._pcg(hierarchy, rhs)
+            solution, part = self._retried(hierarchy, rhs)
             pieces.append(self.flat(solution).cpu().numpy())
             reports.append(part)
             del rhs, solution
-        flat = np.hstack(pieces)
-        report = {"iterations": sum((part["iterations"] for part in reports), []), "relative_residual": sum((part["relative_residual"] for part in reports), []), "converged": all(part["converged"] for part in reports), "history": [part["history"] for part in reports], "batches": len(reports)}
+        flat, iterations, relative = np.zeros_like(forces), np.zeros(forces.shape[1], dtype=int), np.zeros(forces.shape[1])
+        if len(live):
+            flat[:, live] = np.hstack(pieces)
+            iterations[live], relative[live] = sum((part["iterations"] for part in reports), []), sum((part["relative_residual"] for part in reports), [])
+        report = {"iterations": iterations.tolist(), "relative_residual": relative.tolist(), "converged": all(part["converged"] for part in reports), "history": [part["history"] for part in reports], "batches": len(reports), "retried_columns": sum(part["retried"] for part in reports), "zero_rhs_columns": int(forces.shape[1] - len(live))}
         if floating:
             shift = np.linalg.lstsq(rigid[support], flat[support], rcond=None)[0]
             flat = flat - rigid @ shift
@@ -368,17 +373,48 @@ class GeometricMultigrid:
                       kernel=int(hierarchy["coefficients"].shape[1]) if floating else 0, rhs_kernel_component=consistency or None, kernel_check=hierarchy["kernel_check"], lambda_max=[level.lambda_max for level in hierarchy["levels"][:-1]])
         self.statistics.append(report)
         return flat, report
-    def _pcg(self, hierarchy, rhs):
+    def _precise(self, hierarchy):
+        if "precise" not in hierarchy:
+            levels = []
+            for level in hierarchy["levels"]:
+                copy = Level(level.shape, level.spacing)
+                copy.__dict__.update({name: value.double() if name in ("mask", "inverse", "moduli", "blocks") and value is not None else value for name, value in level.__dict__.items()})
+                levels.append(copy)
+            hierarchy["precise"] = {**hierarchy, "levels": levels}
+        return hierarchy["precise"]
+    def _retried(self, hierarchy, rhs):
+        solution, part = self._pcg(hierarchy, rhs)
+        part["retried"] = 0
+        for _ in range(self.settings["retries"]):
+            failed = np.flatnonzero(~(np.asarray(part["relative_residual"]) < self.settings["tolerance"]))
+            if not len(failed):
+                break
+            index = self.torch.as_tensor(failed, device=self.device)
+            start = self.torch.where(self.torch.as_tensor(np.asarray(part["relative_residual"])[failed] < 1, device=self.device)[:, None, None, None, None], solution[index], 0)
+            work, transfer, autocast = self.work, self.transfer, self.autocast
+            self.work, self.transfer, self.autocast = self.torch.float64, transfer.double(), None
+            try:
+                solution[index], again = self._pcg(self._precise(hierarchy), rhs[index], start)
+            finally:
+                self.work, self.transfer, self.autocast = work, transfer, autocast
+            for row, column in enumerate(failed):
+                part["iterations"][column] += again["iterations"][row]
+                part["relative_residual"][column] = again["relative_residual"][row]
+            part["history"] += again["history"]
+            part["retried"] += len(failed)
+        part["converged"] = bool(np.all(np.asarray(part["relative_residual"]) < self.settings["tolerance"]))
+        return solution, part
+    def _pcg(self, hierarchy, rhs, initial=None):
         torch = self.torch
         fine = hierarchy["levels"][0]
         tolerance, limit = self.settings["tolerance"], self.settings["max_iterations"]
         apply = lambda grid: self.operator(grid, mask=fine.mask64)
         norm = torch.linalg.vector_norm(rhs.flatten(1), dim=1)
-        solution = torch.zeros_like(rhs)
+        solution = torch.zeros_like(rhs) if initial is None else initial.clone()
         count = rhs.shape[0]
         iterations, relative = np.zeros(count, dtype=int), np.ones(count)
         active = torch.arange(count, device=self.device)
-        residual = rhs.clone()
+        residual = rhs.clone() if initial is None else self._remove(fine.kernel, rhs - apply(solution))
         preconditioned = self.precondition(hierarchy, residual)
         direction = preconditioned.clone()
         product = (residual * preconditioned).flatten(1).sum(1)
