@@ -674,6 +674,11 @@ def datasheet(manifest_path):
     limit = IMPLICIT_CONFIG["surface_deviation_mm"]
     surface = (f"Ersatzoberfläche weicht {_number(trials[-1]['deviation_mm'], 2)} mm vom STL ab (Grenze {_number(limit, 2)} mm): " + ("innerhalb" if trials[-1]["deviation_mm"] <= limit else "WARNUNG, überschritten; betrifft nur das FEA-Rechenmodell, nicht die Druckgeometrie (Nutzerentscheid: Warnung statt Abbruch)")) if trials else "FEA direkt auf dem STL, keine Ersatzoberfläche" if (evaluation.get("fea") or {}).get("status") else "keine FEA"
     rows.append(("11 FEA-Oberfläche", surface, "evaluation.json fea.fea_surface"))
+    stand = (((evaluation.get("geometry") or {}).get("mass") or {}).get("standing") or {}).get("stability")
+    verdict = lambda passed: {True: "erfüllt", False: "NICHT erfüllt", None: "ohne Vorgabe"}[passed]
+    rows.append(("12 Standsicherheit", (f"Standfläche {_number(stand['support_area_mm2'], 0)} mm² (konvexe Hülle der tiefsten Materialstellen, ≤ {_number(stand['contact_tolerance_mm'], 1)} mm über dem tiefsten Punkt), Schwerpunkt {_number(stand['reserve_mm'])} mm innerhalb "
+                 f"(Vorgabe ≥ {_number(stand['reserve_min_mm'], 0)} mm: {verdict(stand['reserve_passed'])}), Props {_number(stand['prop_clearance_mm'])} mm über Boden (Vorgabe ≥ {_number(stand['prop_clearance_min_mm'])} mm: {verdict(stand['prop_clearance_passed'])})")
+                 if stand and stand.get("reserve_mm") is not None else "nicht gemessen" if not stand else "keine Standfläche (weniger als drei nicht kollineare Kontaktpunkte)", "evaluation.json geometry.mass.standing.stability"))
     renders = [path for path in ("iso", "top", "side", "front") if (run_dir / "renders" / f"{path}.png").is_file() or manifest["stages"].get("renders", {}).get("status") == "running"]
     stages = ", ".join(f"{name}: {entry['status']}" for name, entry in manifest["stages"].items() if name != "datasheet")
     line = evaluation.get("line") or f"Neun-Kriterien-Bewertung: {evaluation.get('status', 'pending')} ({evaluation.get('reason', 'siehe evaluation.json')})"
