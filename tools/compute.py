@@ -36,7 +36,7 @@ JOB_TYPES = {
 def encode(data):
     return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
 
-def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=sys.executable):
+def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=getattr(sys, "_base_executable", sys.executable)):
     need = JOB_TYPES[kind]
     if not need["gpu_gb"] and any("gpu-venv" in str(part) or "Deep_Frame-gpu/" in str(part) for part in command):
         need = dict(need, gpu_gb=JOB_TYPES["gpu"]["gpu_gb"])
@@ -48,11 +48,54 @@ def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=sys.ex
             "entrypoint_resources": {"gpu_gb": need["gpu_gb"]} if need["gpu_gb"] else None,
             "metadata": {"type": kind, "cwd": payload["cwd"], "command": subprocess.list2cmdline(command)[:500]}}
 
+def contain():
+    if os.name != "nt":
+        return None
+    import ctypes
+    from ctypes import wintypes
+    class Basic(ctypes.Structure):
+        _fields_ = [("PerProcessUserTimeLimit", ctypes.c_int64), ("PerJobUserTimeLimit", ctypes.c_int64), ("LimitFlags", wintypes.DWORD),
+                    ("MinimumWorkingSetSize", ctypes.c_size_t), ("MaximumWorkingSetSize", ctypes.c_size_t), ("ActiveProcessLimit", wintypes.DWORD),
+                    ("Affinity", ctypes.c_size_t), ("PriorityClass", wintypes.DWORD), ("SchedulingClass", wintypes.DWORD)]
+    class Extended(ctypes.Structure):
+        _fields_ = [("BasicLimitInformation", Basic), ("IoInfo", ctypes.c_uint64 * 6), ("ProcessMemoryLimit", ctypes.c_size_t),
+                    ("JobMemoryLimit", ctypes.c_size_t), ("PeakProcessMemoryUsed", ctypes.c_size_t), ("PeakJobMemoryUsed", ctypes.c_size_t)]
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateJobObjectW.restype = wintypes.HANDLE
+    job = kernel.CreateJobObjectW(None, None)
+    info = Extended()
+    info.BasicLimitInformation.LimitFlags = 0x2000
+    ok = kernel.SetInformationJobObject(wintypes.HANDLE(job), 9, ctypes.byref(info), ctypes.sizeof(info))
+    ok = ok and kernel.AssignProcessToJobObject(wintypes.HANDLE(job), wintypes.HANDLE(-1))
+    print("contain", ok, ctypes.get_last_error(), file=sys.stderr) if not ok else None
+    return job
+
 def execute(token):
     payload = json.loads(base64.urlsafe_b64decode(token))
     command = payload["command"]
-    return subprocess.call(command[0] if len(command) == 1 else command, shell=len(command) == 1,
-                           cwd=payload["cwd"], env={**os.environ, **payload["env"]})
+    job = contain()
+    watch(supervisor())
+    process = subprocess.Popen(command[0] if len(command) == 1 else command, shell=len(command) == 1,
+                               cwd=payload["cwd"], env={**os.environ, **payload["env"]})
+    return process.wait()
+
+def supervisor():
+    if os.name != "nt":
+        return None
+    query = f"(Get-CimInstance Win32_Process -Filter 'ProcessId={os.getppid()}').ParentProcessId"
+    output = subprocess.run(["powershell", "-NoProfile", "-Command", query], capture_output=True, text=True).stdout.strip()
+    return int(output) if output.isdigit() else None
+
+def watch(pid):
+    if pid is None:
+        return
+    import ctypes
+    import threading
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.OpenProcess.restype = ctypes.c_void_p
+    handle = kernel.OpenProcess(0x00100000, False, pid)
+    if handle:
+        threading.Thread(target=lambda: (kernel.WaitForSingleObject(ctypes.c_void_p(handle), 0xFFFFFFFF), os._exit(1)), daemon=True).start()
 
 async def follow(client, job):
     async for lines in client.tail_job_logs(job):
