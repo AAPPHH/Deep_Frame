@@ -186,7 +186,7 @@ def free_camera(half):
     half["camera"] = {"keep_out": deepcopy(keep_out), "reference_mm": [0.0, *screw["center_mm"][1:]], "center_mm": center.tolist(), "size_mm": size.tolist(), "mass_g": part["mass_g"], "inertia_g_mm2": inertia.tolist(),
                       "screw_axis_yz_mm": list(screw["center_mm"][1:]), "zone": zone, "zones": zones, "displacement_cases": [name for name in spec["displacement_cases"] if name in zones],
                       "reference_regions": [deepcopy(region) for name, region in regions.items() if name.startswith("aio_contact_")],
-                      "coverage": {"axes": [axis.tolist(), [1.0, 0.0, 0.0], up.tolist()], "front_mm": front.tolist(), "window_mm": window, "step_mm": step, "length_mm": float(np.linalg.norm(upper - np.asarray(grid["origin_mm"]))), "frontal_area_mm2": float(size[0] * size[2])},
+                      "coverage": {"axes": [axis.tolist(), [1.0, 0.0, 0.0], up.tolist()], "front_mm": front.tolist(), "window_mm": window, "silhouette_mm": [[-size[0] / 2, size[0] / 2], [-size[2] / 2, size[2] / 2]], "step_mm": step, "depth_mm": list(spec["protection_depth_mm"]), "frontal_area_mm2": float(size[0] * size[2])},
                       "fov_cells": int(np.count_nonzero(blocked)), "fov_preserve_cells_removed": lost, "tilt_deg": part["tilt_deg"]}
     half["metadata"]["formulation"]["camera_support"] = {"mode": "free", **{key: half["camera"][key] for key in ("reference_mm", "center_mm", "zone", "zones", "fov_cells", "fov_preserve_cells_removed")},
                                                          "statement": "camera rigid body on density-dependent screw springs (CAMERA_SUPPORT), no hoops or lugs; 4:3 field of view as keep-out; frontal, below and oblique crash as design-dependent loads on the impact zone"}
@@ -534,7 +534,7 @@ def manafly_camera_domain(cfg, tilt):
               "point_masses": [], "optimizer_settings": {"interface_node_policy": "allowed_adjacent"},
               "camera": {"keep_out": keep_out, "reference_mm": center.tolist(), "center_mm": center.tolist(), "mass_g": part["mass_g"], "screw_axis_yz_mm": center[1:].tolist(), "zone": zone, "zones": zones,
                          "displacement_cases": list(zones), "reference_regions": [raise_box(box, 0.0, spec["stack_height_mm"]) for box in selectors["center_fixtures"]],
-                         "coverage": {"axes": [axis.tolist(), [1.0, 0.0, 0.0], up.tolist()], "front_mm": front.tolist(), "window_mm": window, "step_mm": h * s["step_fraction"], "length_mm": float(np.linalg.norm(shape * h)), "frontal_area_mm2": float(size[0] * size[2])}}}
+                         "coverage": {"axes": [axis.tolist(), [1.0, 0.0, 0.0], up.tolist()], "front_mm": front.tolist(), "window_mm": window, "silhouette_mm": [[-size[0] / 2, size[0] / 2], [-size[2] / 2, size[2] / 2]], "step_mm": h * s["step_fraction"], "depth_mm": list(s["protection_depth_mm"]), "frontal_area_mm2": float(size[0] * size[2])}}}
     return domain, {"plate_face_x_mm": face, "camera_cells_cut": int(cut.sum()), "island_cells_dropped": dropped, "solid_cells_half": int(allowed.sum()), "frame_mass_g": relief["point_masses"][0]["mass_g"], "grid": grid, "tilt_deg": tilt, "zone": zone}
 
 def camera_measure(domain, linear_solver):
