@@ -1,10 +1,12 @@
 import hashlib
 import io
 import json
+import os
 import shutil
 import subprocess
 import sys
 import tarfile
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from pathlib import Path
@@ -49,6 +51,8 @@ FORMULATION = {
                    "twist": {"motor_front_left": 1.0, "motor_rear_right": 1.0, "motor_front_right": -1.0, "motor_rear_left": -1.0}, "twist_dof": "Fz"},
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
                    "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "cuda_cudss"},
+    "solver_memory": {"run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt", "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
+                      "output": "exports/solver_memory/baseline", "reference": None},
 }
 
 def configure(overrides):
@@ -344,6 +348,160 @@ def covariance_frame(cfg):
     print(json.dumps({key: record[key] for key in ("rank", "build_s", "evaluate_s", "peak_rss_gb", "mass_g")}, default=float), flush=True)
     print(record["table"], flush=True)
 
+class MemoryProbe:
+    def __init__(self, interval):
+        import cupy
+        import psutil
+        self.cp, self.process, self.interval, self.samples, self.phases, self.running = cupy, psutil.Process(), interval, [], [], True
+        self.cp.cuda.runtime.memGetInfo()
+        self.cp.zeros(1)
+        paths = ",".join(f"'\\GPU Process Memory(pid_{os.getpid()}_*)\\{name} Usage'" for name in ("Dedicated", "Shared"))
+        script = (f"Get-Counter -Counter {paths} -SampleInterval 1 -Continuous -ErrorAction SilentlyContinue | ForEach-Object {{ $c = $_.CounterSamples; "
+                  "$d = ($c | Where-Object Path -like '*dedicated*' | Measure-Object CookedValue -Sum).Sum; $s = ($c | Where-Object Path -like '*shared*' | Measure-Object CookedValue -Sum).Sum; "
+                  "[Console]::Out.WriteLine(\"$d $s\"); [Console]::Out.Flush() }")
+        self.readers = [subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True) for command in
+                        (["powershell", "-NoProfile", "-Command", script], ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits", "-lms", str(int(interval * 1000))])]
+        self.threads = [threading.Thread(target=self.read, args=(reader, kind), daemon=True) for reader, kind in zip(self.readers, ("counter", "smi"))] + [threading.Thread(target=self.poll, daemon=True)]
+        for thread in self.threads:
+            thread.start()
+    def read(self, reader, kind):
+        for line in reader.stdout:
+            try:
+                values = [float(item) for item in line.split()]
+            except ValueError:
+                continue
+            if kind == "counter" and len(values) == 2:
+                self.samples.append((perf_counter(), {"dedicated_bytes": values[0], "shared_bytes": values[1]}))
+            elif kind == "smi" and len(values) == 1:
+                self.samples.append((perf_counter(), {"smi_used_bytes": values[0] * 2 ** 20}))
+    def poll(self):
+        pool = self.cp.get_default_memory_pool()
+        while self.running:
+            free, total = self.cp.cuda.runtime.memGetInfo()
+            self.samples.append((perf_counter(), {"rss_bytes": self.process.memory_info().rss, "pool_used_bytes": pool.used_bytes(), "pool_total_bytes": pool.total_bytes(), "device_used_bytes": total - free}))
+            threading.Event().wait(self.interval)
+    def phase(self, name):
+        probe = self
+        class Phase:
+            def __enter__(self):
+                self.started = perf_counter()
+                return self
+            def __exit__(self, *error):
+                threading.Event().wait(1.5)
+                probe.phases.append((name, self.started, perf_counter()))
+        return Phase()
+    def peaks(self, name):
+        _, started, ended = next(phase for phase in self.phases if phase[0] == name)
+        peaks = {}
+        for clock, values in list(self.samples):
+            if started <= clock <= ended:
+                for key, value in values.items():
+                    peaks[key] = max(peaks.get(key, 0.0), value)
+        return {key.replace("_bytes", "_gb"): value / 2 ** 30 for key, value in peaks.items()}
+    def close(self):
+        self.running = False
+        for reader in self.readers:
+            reader.kill()
+
+def factorizations(system):
+    return sum(len(solver.timings) for solver in system.gpu_solvers.values()) + sum(len(entry["solves"]) for entry in system.gpu_solver_history)
+
+def factor_inventory(tp):
+    system, rows = tp.system, []
+    for key, members in system.groups.items():
+        part = members[0][1]
+        rows.append({"solver": "static", "sign": part["sign"], "cases": [case["name"] for case, _ in members], "rhs": len(members), "fixed_dofs": len(part["fixed"]), "free_dofs": len(part["free"]), "key": key,
+                     **({"factorized_with": [case["name"] for case, _ in system.groups[system.shared[key]["host"]]][:1], "constraint_columns": len(system.shared[key]["constrained"])} if key in (system.shared or {}) else {})})
+    for part in tp.modal.parts if tp.modal is not None else []:
+        rows.append({"solver": "modal", "sign": part["sign"], "cases": [tp.problem["modal"]["case"]], "rhs": tp.problem["modal"]["modes"], "fixed_dofs": len(system.active_dofs) - len(part["free"]), "free_dofs": len(part["free"]), "key": part["key"]})
+    for row in rows:
+        solver = system.gpu_solvers.get(row.pop("key"))
+        if solver is not None:
+            row.update(nnz=len(solver.indices), analysis_s=solver.analysis_s, **(solver.memory_estimates or {}))
+    cases = [{"name": case["name"], "analysis": case["analysis"], "support": "inertia_relief" if "inertia_relief" in case else "fixed", "fixed_dofs": len(case["fixed"]), "parts": len(case["parts"])} for case in system.cases]
+    return rows, cases
+
+def evaluation_arrays(result):
+    values = {row["name"]: row["value"] for row in result["rows"]}
+    return {"objective": np.float64(result["objective"]), "objective_gradient": result["objective_gradient"], "constraints": result["constraints"], "constraint_gradients": result["constraint_gradients"],
+            "names": np.array(result["names"]), "values": np.array([values[name] for name in result["names"]]), "f1": np.float64(values["f1"]), "mass_g": np.float64(result["mass_g"]), "beta": np.float64(result["beta"])}
+
+def deviation(a, b):
+    scale = lambda x: np.maximum(np.abs(x), 1e-30)
+    rows = [np.linalg.norm(x - y) / max(np.linalg.norm(y), 1e-30) for x, y in zip(a["constraint_gradients"], b["constraint_gradients"])]
+    return {"objective_rel": float(abs(a["objective"] - b["objective"]) / scale(b["objective"])), "constraints_g_abs": float(np.max(np.abs(a["constraints"] - b["constraints"]))),
+            "values_rel": float(np.max(np.abs(a["values"] - b["values"]) / scale(b["values"]))), "f1_rel": float(abs(a["f1"] - b["f1"]) / b["f1"]),
+            "gradients_rel_norm": float(max(rows)), "gradients_rel_norm_by_name": dict(zip([str(name) for name in b["names"]], map(float, rows))),
+            "objective_gradient_rel_norm": float(np.linalg.norm(a["objective_gradient"] - b["objective_gradient"]) / np.linalg.norm(b["objective_gradient"]))}
+
+def solver_grid(cfg, spec, grid, probe, out):
+    half, problem = frame_setup(cfg, cfg["shape"] if grid == "fine" else cfg["coarse_shape"])
+    free, total = probe.cp.cuda.runtime.memGetInfo()
+    with probe.phase(grid + "_build"):
+        clock = perf_counter()
+        tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["linear_solver"])
+        built = perf_counter() - clock
+    while tp.advance():
+        pass
+    source = Path(spec["run"]) / grid / "design.npz"
+    design = np.load(source)["design"]
+    evaluations, arrays = [], []
+    for index in range(spec["evaluations"]):
+        if index == 1:
+            for part in tp.modal.parts:
+                part["vectors"] = None
+        counted = factorizations(tp.system)
+        with probe.phase(f"{grid}_evaluation_{index}"):
+            clock = perf_counter()
+            result = tp.evaluate(design)
+            seconds = perf_counter() - clock
+        arrays.append(evaluation_arrays(result))
+        evaluations.append({"index": index, "modal": "cold" if index < 2 else "warm", "seconds": seconds, "factorizations": factorizations(tp.system) - counted, **probe.peaks(f"{grid}_evaluation_{index}")})
+    inventory, cases = factor_inventory(tp)
+    np.savez_compressed(out / f"{grid}.npz", **arrays[0])
+    optimizer, iterations = MMAOptimizer(tp, cfg["mma"]["settings"]), []
+    x = optimizer.start(design)
+    state = optimizer.fresh(x)
+    with probe.phase(grid + "_mma"):
+        for index in range(spec["mma_iterations"]):
+            clock, counted = perf_counter(), factorizations(tp.system)
+            x = optimizer.step(x, tp.evaluate(x), state)
+            iterations.append({"seconds": perf_counter() - clock, "factorizations": factorizations(tp.system) - counted})
+    tp.close()
+    probe.cp.get_default_memory_pool().free_all_blocks()
+    record = {"grid": half["grid"], "design": str(source), "design_sha256_16": digest(source), "dofs": tp.system.ndof, "active_dofs": len(tp.system.active_dofs), "build_s": built,
+              "gpu_before_build": {"device_free_gb": free / 2 ** 30, "device_total_gb": total / 2 ** 30}, "build": probe.peaks(grid + "_build"), "evaluations": evaluations,
+              "noise_floor": deviation(arrays[1], arrays[0]), "mma": {"iterations": iterations, "seconds_per_iteration": float(np.mean([row["seconds"] for row in iterations])), **probe.peaks(grid + "_mma")},
+              "factors": inventory, "cases": cases, "names": result["names"], "f1_hz": float(arrays[0]["f1"]), "mass_g": float(arrays[0]["mass_g"])}
+    if spec["reference"]:
+        reference = np.load(Path(spec["reference"]) / f"{grid}.npz")
+        record["deviation"] = deviation(arrays[0], {key: reference[key] for key in reference.files})
+    return record
+
+def solver_memory(cfg):
+    spec = cfg["solver_memory"]
+    out = Path(spec["output"])
+    out.mkdir(parents=True, exist_ok=True)
+    probe = MemoryProbe(spec["sample_s"])
+    record = {"sha": git_sha(), "config": spec, "grids": {}}
+    try:
+        for grid in spec["grids"]:
+            record["grids"][grid] = solver_grid(cfg, spec, grid, probe, out)
+    finally:
+        probe.close()
+    record["peak_wset_gb"] = probe.process.memory_info().peak_wset / 2 ** 30 if hasattr(probe.process.memory_info(), "peak_wset") else None
+    lines = ["| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi total GB | CuPy pool GB | host RSS GB |", "|---|---|---|---|---|---|---|---|---|"]
+    for grid, item in record["grids"].items():
+        phases = item["evaluations"] + [item["mma"]]
+        peak = lambda key: max(phase.get(key, 0.0) for phase in phases)
+        lines.append(f"| {grid} | {item['evaluations'][-1]['factorizations']} | {item['evaluations'][0]['seconds']:.1f}, {item['evaluations'][-1]['seconds']:.1f} | {item['mma']['seconds_per_iteration']:.1f} | "
+                     f"{peak('dedicated_gb'):.2f} | {peak('shared_gb'):.2f} | {peak('smi_used_gb'):.2f} | {peak('pool_total_gb'):.2f} | {peak('rss_gb'):.2f} |")
+    record["table"] = "\n".join(lines)
+    (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(record["table"], flush=True)
+    for grid, item in record["grids"].items():
+        print(json.dumps({grid: {"noise_floor": item["noise_floor"], "deviation": item.get("deviation")}}, default=float), flush=True)
+
 def checkpoint(path):
     def save(x, history, levels):
         np.savez_compressed(path, design=x, level=history[-1]["level"], iteration=len(history))
@@ -588,7 +746,7 @@ def main(argv=None):
                          "frame_runs": lambda overrides: frame_runs(configure(overrides)), "manafly_check": lambda overrides: manafly_check(configure(overrides)), "compose": lambda overrides: compose(configure(overrides)),
                          "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
-                         "cov_compare": lambda overrides: cov_compare(configure(overrides))}, argv)
+                         "cov_compare": lambda overrides: cov_compare(configure(overrides)), "solver_memory": lambda overrides: solver_memory(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())
