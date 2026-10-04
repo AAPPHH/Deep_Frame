@@ -1,6 +1,13 @@
 {
  "optimizer": {
-  "new": {
+  "old": {
+   "mass_g": 17.176432794360416,
+   "status": "converged",
+   "iterations": 123,
+   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| arm_tip_stiffness | 10.02 | >= 10 | N/mm | active | +0.2 % |\n| crash_front | 4.698 | <= 9.268 | N mm | satisfied | +49.3 % |\n| crash_side_left | 13.4 | <= 20.44 | N mm | satisfied | +34.4 % |\n| crash_side_right | 13.4 | <= 20.44 | N mm | satisfied | +34.4 % |\n| crash_arm_front_left | 198.6 | <= 211.6 | N mm | satisfied | +6.2 % |\n| crash_arm_front_right | 33.72 | <= 33.81 | N mm | active | +0.3 % |\n| crash_arm_rear_left | 53.7 | <= 65.64 | N mm | satisfied | +18.2 % |\n| crash_arm_rear_right | 108 | <= 108.2 | N mm | active | +0.2 % |\n| crash_below | 7.562 | <= 41.28 | N mm | satisfied | +81.7 % |\n| crash_back | 7.143 | <= 10.41 | N mm | satisfied | +31.4 % |\n| f1 | 301.2 | >= 300 | Hz | active | +0.0 % |\n| volume | 0.04345 | <= 0.1 | - | satisfied | +56.5 % |\n| shadow | 0.2168 | <= 0.3137 | mm | satisfied | +30.9 % |\n| thrust_all | 2.766 |  | N mm | monitored |  |\n| torsion_yaw | 0.1297 |  | N mm | monitored |  |\n| twist | 8.486 |  | N mm | monitored |  |\n| f1_intermediate | 332.4 |  | Hz | monitored |  |",
+   "load_worst_info": null
+  },
+  "previous": {
    "mass_g": 29.356639408100804,
    "status": "converged",
    "iterations": 91,
@@ -45,37 +52,92 @@
     ]
    }
   },
-  "old": {
-   "mass_g": 17.176432794360416,
-   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| arm_tip_stiffness | 10.02 | >= 10 | N/mm | active | +0.2 % |\n| crash_front | 4.698 | <= 9.268 | N mm | satisfied | +49.3 % |\n| crash_side_left | 13.4 | <= 20.44 | N mm | satisfied | +34.4 % |\n| crash_side_right | 13.4 | <= 20.44 | N mm | satisfied | +34.4 % |\n| crash_arm_front_left | 198.6 | <= 211.6 | N mm | satisfied | +6.2 % |\n| crash_arm_front_right | 33.72 | <= 33.81 | N mm | active | +0.3 % |\n| crash_arm_rear_left | 53.7 | <= 65.64 | N mm | satisfied | +18.2 % |\n| crash_arm_rear_right | 108 | <= 108.2 | N mm | active | +0.2 % |\n| crash_below | 7.562 | <= 41.28 | N mm | satisfied | +81.7 % |\n| crash_back | 7.143 | <= 10.41 | N mm | satisfied | +31.4 % |\n| f1 | 301.2 | >= 300 | Hz | active | +0.0 % |\n| volume | 0.04345 | <= 0.1 | - | satisfied | +56.5 % |\n| shadow | 0.2168 | <= 0.3137 | mm | satisfied | +30.9 % |\n| thrust_all | 2.766 |  | N mm | monitored |  |\n| torsion_yaw | 0.1297 |  | N mm | monitored |  |\n| twist | 8.486 |  | N mm | monitored |  |\n| f1_intermediate | 332.4 |  | Hz | monitored |  |"
+  "new": {
+   "mass_g": 18.22115195100823,
+   "status": "converged",
+   "iterations": 87,
+   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| load_mean | 0.9467 | <= 0.9508 | N mm | active | +0.4 % |\n| load_worst | 0.3081 | <= 0.3146 | N mm | satisfied | +2.1 % |\n| crash_front | 4.085 | <= 9.268 | N mm | satisfied | +55.9 % |\n| crash_side_left | 13.78 | <= 20.44 | N mm | satisfied | +32.6 % |\n| crash_side_right | 13.78 | <= 20.44 | N mm | satisfied | +32.6 % |\n| crash_arm_front_left | 102.1 | <= 211.6 | N mm | satisfied | +51.8 % |\n| crash_arm_front_right | 33.84 | <= 33.81 | N mm | active | -0.1 % |\n| crash_arm_rear_left | 65.64 | <= 65.64 | N mm | active | +0.0 % |\n| crash_arm_rear_right | 96.69 | <= 108.2 | N mm | satisfied | +10.6 % |\n| crash_below | 14.07 | <= 41.28 | N mm | satisfied | +65.9 % |\n| crash_back | 7.693 | <= 10.41 | N mm | satisfied | +26.1 % |\n| f1 | 310.6 | >= 300 | Hz | satisfied | +7.1 % |\n| volume | 0.0446 | <= 0.1 | - | satisfied | +55.4 % |\n| shadow | 0.2552 | <= 0.3137 | mm | satisfied | +18.7 % |\n| thrust_all | 4.251 |  | N mm | monitored |  |\n| torsion_yaw | 0.08163 |  | N mm | monitored |  |\n| twist | 5.185 |  | N mm | monitored |  |\n| f1_intermediate | 375 |  | Hz | monitored |  |",
+   "load_worst_info": {
+    "eigenvalues_n_mm": [
+     0.30807706093382614,
+     0.196273192992799,
+     0.12293575627614572,
+     0.10172707783859071,
+     0.08141795706693702,
+     0.06177601565933135
+    ],
+    "ks_n_mm": 0.30807706105486216,
+    "ks": 50.0,
+    "rank": 26,
+    "worst_wrench": [
+     [
+      "motor_front_right/Mz",
+      -4.67628262152492
+     ],
+     [
+      "motor_front_left/Mz",
+      4.676282621524882
+     ],
+     [
+      "motor_rear_left/Mz",
+      -4.297530551655152
+     ],
+     [
+      "motor_rear_right/Mz",
+      4.297530551655133
+     ],
+     [
+      "motor_front_left/My",
+      4.104753484121017
+     ],
+     [
+      "motor_front_right/My",
+      -4.104753484120995
+     ]
+    ]
+   }
   },
   "monitored": {
    "thrust_all": [
     2.7656407887073433,
-    0.963085934189349
+    0.963085934189349,
+    4.25126393806427
    ],
    "torsion_yaw": [
     0.12967326644977104,
-    0.03894419944989487
+    0.03894419944989487,
+    0.0816325799932249
    ],
    "twist": [
     8.486365686810373,
-    1.6420914014790464
+    1.6420914014790464,
+    5.18473649707778
    ],
    "f1_intermediate": [
     332.35302897260647,
-    336.8259835293557
+    336.8259835293557,
+    374.96470928399503
    ],
    "arm_tip_stiffness": [
     10.016292228113457,
+    null,
     null
    ]
   }
  },
  "limits": {
-  "evaluator_diagonal": [
-   0.3901,
-   0.1682
+  "evaluator_full": [
+   0.687,
+   0.229
+  ],
+  "source": "user decision 03.10.: ManaFly 3 x 0.8 (20 % reserve), evaluator full-coupled 42 x 42 measure, limit_group stack_fixed, unscaled (ManaFly arm 80.0 mm, ours 66.25 mm): 0.8 x 0.8590 / 0.2858 N mm; Aether4 comparison only",
+  "calibration": {
+   "mean_n_mm": 1.384,
+   "worst_n_mm": 1.374
+  },
+  "optimizer": [
+   0.950808,
+   0.31464600000000004
   ],
   "evaluator_full_aether4_scaled": [
    0.2957380839375053,
@@ -244,8 +306,8 @@
    "datasheet": "C:\\clones\\Deep_Frame-mma\\exports\\runs\\simp_mma_recon_1\\datasheet.md",
    "sigma_peak_memory_gb": 11.53165054321289
   },
-  "new_raw": {
-   "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov_raw_1",
+  "previous_raw": {
+   "run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_raw_1",
    "mass_g": 26.56213832969652,
    "arm_tip_n_per_mm": 57.696277689267035,
    "f1_hz": 332.4302,
@@ -331,8 +393,8 @@
    "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov_raw_1\\datasheet.md",
    "sigma_peak_memory_gb": 3.364776611328125
   },
-  "new_recon": {
-   "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov_recon_1",
+  "previous_recon_1to1": {
+   "run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_recon_1",
    "mass_g": 26.344963181334904,
    "arm_tip_n_per_mm": 36.03811134083495,
    "f1_hz": 208.576,
@@ -420,6 +482,130 @@
    "line": "| simp_mma_cov_recon_1 | 26,3 g | SP z 20,4 mm; Ixx/Iyy/Izz 89/105/167 kg\u00b7mm\u00b2 (K) | 8,0 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug nein | \u00dcberh. 13,5 %, \u00d6ffn. r=1 0,29 %/10,1 mm\u00b3/Motorzonen 4,St\u00fctze 16,08 cm\u00b3, 300 min | Strebe 2,0/2,8/4,7 mm, H/B 1,15, offen 70 %, H\u00f6he 29,4 mm, K\u00f6rper 1, Schlaufen 12, Sym. 0,31 mm, Rauh. 0,147/mm | 36,0 N/mm; \u03a3 tr 0,255/\u03bbmax 0,069 N\u00b7mm (A) | f1 209 Hz; 430/476/510 (A) | front 5,5/1,6 MPa; arm 21,3/1,7 MPa; back 1,9/0,6 MPa (SF 2,0, A) | tools_reachable, wall_deep_component, wall_motor_zones, target:f1; Warnung: loops, cog_offset |",
    "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov_recon_1\\datasheet.md",
    "sigma_peak_memory_gb": 4.020687103271484
+  },
+  "new_raw": {
+   "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1",
+   "mass_g": 15.716924130112192,
+   "arm_tip_n_per_mm": 10.88217418166711,
+   "f1_hz": 406.9983,
+   "sigma_full": [
+    0.6869528018194226,
+    0.2196738312840407
+   ],
+   "sigma_diagonal": [
+    0.8087954170548496,
+    0.30504032592211683
+   ],
+   "worst_load": {
+    "motor_front_left My": -5.000282290114076,
+    "motor_front_left Mz": -4.491588748846203,
+    "motor_front_right My": 5.00193491120293,
+    "motor_front_right Mz": 4.540664729933258,
+    "motor_rear_left My": 4.985949141825836,
+    "motor_rear_left Mz": 4.173265469830554,
+    "motor_rear_right My": -4.985789245984644,
+    "motor_rear_right Mz": -4.140647333291659,
+    "battery Fz": 1.1925386843972883
+   },
+   "stiffness": {
+    "motor_front_left Fx": 59.30735495911571,
+    "motor_front_left Fy": 11.683695950659226,
+    "motor_front_left Fz": 9.72408884621018,
+    "motor_front_left Mx": 3431.8494046908536,
+    "motor_front_left My": 4238.490609220404,
+    "motor_front_left Mz": 7713.881239759658,
+    "motor_front_right Fx": 57.691652105021625,
+    "motor_front_right Fy": 11.413746205476244,
+    "motor_front_right Fz": 9.325008749302288,
+    "motor_front_right Mx": 3267.1806716716746,
+    "motor_front_right My": 4002.3831355184716,
+    "motor_front_right Mz": 7433.0316353889175,
+    "motor_rear_left Fx": 29.89499302917557,
+    "motor_rear_left Fy": 9.271038383896578,
+    "motor_rear_left Fz": 19.21130294015456,
+    "motor_rear_left Mx": 3737.2498598649645,
+    "motor_rear_left My": 4709.421447263004,
+    "motor_rear_left Mz": 6207.602100436969,
+    "motor_rear_right Fx": 31.077968568127357,
+    "motor_rear_right Fy": 9.386679887783519,
+    "motor_rear_right Fz": 20.23560571369162,
+    "motor_rear_right Mx": 3951.8765166524504,
+    "motor_rear_right My": 4764.588481817905,
+    "motor_rear_right Mz": 6326.210916831295,
+    "stack Fx": 407.0368230173373,
+    "stack Fy": 162.60508529890552,
+    "stack Fz": 209.7530746793154,
+    "stack Mx": 40117.977088174106,
+    "stack My": 58387.115555778124,
+    "stack Mz": 72832.47184647241,
+    "battery Fx": 117.5353209966974,
+    "battery Fy": 193.68680691678082,
+    "battery Fz": 439.12075657459394,
+    "battery Mx": 24907.489410351496,
+    "battery My": 88681.13473274144,
+    "battery Mz": 71595.3153395617,
+    "camera Fx": 48.6011655661763,
+    "camera Fy": 210.07987524753662,
+    "camera Fz": 148.15119421314168,
+    "camera Mx": 14000.788248599434,
+    "camera My": 29043.169473420076,
+    "camera Mz": 58435.43694521209
+   },
+   "twist": {
+    "compliance_n_mm": 0.3279387981878314,
+    "stiffness_n_per_mm": 12.197397874553854
+   },
+   "missed": [
+    "bolt_patterns",
+    "keep_outs_free",
+    "wall_deep_fraction",
+    "wall_deep_component",
+    "target:symmetry"
+   ],
+   "warnings": [
+    "loops",
+    "cog_offset"
+   ],
+   "line": "| simp_mma_cov3_raw_1 | 15,7 g | SP z 22,4 mm; Ixx/Iyy/Izz 74/92/146 kg\u00b7mm\u00b2 (K) | 5,5 % (64 mm) | Bohrb. 4/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 21,7 %, \u00d6ffn. r=1 1,14 %/49,3 mm\u00b3/Motorzonen 0,St\u00fctze 16,66 cm\u00b3, 231 min | Strebe 1,9/2,8/4,7 mm, H/B 1,00, offen 76 %, H\u00f6he 28,8 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,33 mm, Rauh. 0,119/mm | 10,9 N/mm; \u03a3 tr 0,687/\u03bbmax 0,220 N\u00b7mm (A) | f1 407 Hz; 408/502/504 (A) | front 6,5/3,9 MPa; arm 14,2/3,8 MPa; back 1,8/0,6 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, target:symmetry; Warnung: loops, cog_offset |",
+   "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\datasheet.md",
+   "sigma_peak_memory_gb": 11.540779113769531
+  },
+  "new_recon": {
+   "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_recon_1",
+   "mass_g": 16.27772937409481,
+   "arm_tip_n_per_mm": null,
+   "f1_hz": null,
+   "sigma_full": [
+    null,
+    null
+   ],
+   "sigma_diagonal": [
+    null,
+    null
+   ],
+   "worst_load": null,
+   "stiffness": {},
+   "twist": null,
+   "missed": [
+    "fea_solved",
+    "wall_deep_fraction",
+    "wall_deep_component",
+    "wall_motor_zones",
+    "crash_front_strength",
+    "crash_arm_strength",
+    "crash_back_strength",
+    "target:arm_tip_slope",
+    "target:f1",
+    "target:sigma_mean",
+    "target:sigma_worst"
+   ],
+   "warnings": [
+    "loops",
+    "cog_offset"
+   ],
+   "line": "| simp_mma_cov3_recon_1 | 16,3 g | SP z 22,2 mm; Ixx/Iyy/Izz 76/94/149 kg\u00b7mm\u00b2 (K) | 6,2 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 20,3 %, \u00d6ffn. r=1 1,72 %/128,0 mm\u00b3/Motorzonen 1,St\u00fctze 16,27 cm\u00b3, 243 min | Strebe 2,0/2,8/4,4 mm, H/B 1,00, offen 75 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 15, Sym. 0,16 mm, Rauh. 0,151/mm | \u2013 (A) | \u2013 | \u2013 | fea_solved, wall_deep_fraction, wall_deep_component, wall_motor_zones, crash_front_strength, crash_arm_strength, crash_back_strength, target:arm_tip_slope, target:f1, target:sigma_mean, target:sigma_worst; Warnung: loops, cog_offset |",
+   "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_recon_1\\datasheet.md",
+   "sigma_peak_memory_gb": null
   },
   "manafly3": {
    "run": null,
@@ -564,5 +750,5 @@
    "sigma_peak_memory_gb": 7.368350982666016
   }
  },
- "stiffness_table": "| interface/dof | old_raw | old_recon_1to1 | new_raw | new_recon | manafly3 | aether4 | old_recon_1to1/old_raw | new_raw/old_raw | new_recon/old_raw | manafly3/old_raw | aether4/old_raw |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n| motor_front_left Fx | 44.48 | 46.07 | 137.8 | 86.86 | 64.89 | 88.82 | 1.04 | 3.10 | 1.95 | 1.46 | 2.00 |\n| motor_front_left Fy | 3.589 | 3.03 | 20 | 12.89 | 54.81 | 62.9 | 0.84 | 5.57 | 3.59 | 15.27 | 17.53 |\n| motor_front_left Fz | 8.466 | 8.094 | 51.77 | 34.28 | 6.564 | 12.43 | 0.96 | 6.12 | 4.05 | 0.78 | 1.47 |\n| motor_front_left Mx | 1503 | 1414 | 1.173e+04 | 7577 | 2917 | 2.004e+04 | 0.94 | 7.80 | 5.04 | 1.94 | 13.34 |\n| motor_front_left My | 2953 | 3198 | 1.777e+04 | 1.545e+04 | 4710 | 2.105e+04 | 1.08 | 6.02 | 5.23 | 1.60 | 7.13 |\n| motor_front_left Mz | 2307 | 1980 | 1.354e+04 | 8700 | 2.147e+04 | 1.267e+05 | 0.86 | 5.87 | 3.77 | 9.31 | 54.93 |\n| motor_front_right Fx | 41.88 | 43.71 | 133.3 | 84.02 | 65.05 | 88.73 | 1.04 | 3.18 | 2.01 | 1.55 | 2.12 |\n| motor_front_right Fy | 3.346 | 2.854 | 18.39 | 12.63 | 55.9 | 62.99 | 0.85 | 5.49 | 3.77 | 16.71 | 18.82 |\n| motor_front_right Fz | 7.936 | 7.826 | 48.82 | 34.96 | 6.762 | 12.52 | 0.99 | 6.15 | 4.41 | 0.85 | 1.58 |\n| motor_front_right Mx | 1448 | 1390 | 1.141e+04 | 7215 | 2928 | 2.021e+04 | 0.96 | 7.88 | 4.98 | 2.02 | 13.95 |\n| motor_front_right My | 2829 | 3306 | 1.701e+04 | 1.492e+04 | 4733 | 2.102e+04 | 1.17 | 6.01 | 5.27 | 1.67 | 7.43 |\n| motor_front_right Mz | 2215 | 1941 | 1.263e+04 | 8412 | 2.156e+04 | 1.234e+05 | 0.88 | 5.70 | 3.80 | 9.73 | 55.69 |\n| motor_rear_left Fx | 32.2 | 32.56 | 75.96 | 64.39 | 31.8 | 125.6 | 1.01 | 2.36 | 2.00 | 0.99 | 3.90 |\n| motor_rear_left Fy | 10.33 | 9.412 | 19.11 | 16.5 | 14.72 | 135 | 0.91 | 1.85 | 1.60 | 1.43 | 13.08 |\n| motor_rear_left Fz | 7.431 | 7.527 | 44.69 | 35.29 | 6.295 | 21.79 | 1.01 | 6.01 | 4.75 | 0.85 | 2.93 |\n| motor_rear_left Mx | 2310 | 2305 | 1.266e+04 | 9054 | 5673 | 3.513e+04 | 1.00 | 5.48 | 3.92 | 2.46 | 15.21 |\n| motor_rear_left My | 2920 | 2755 | 1.978e+04 | 1.655e+04 | 8700 | 2.915e+04 | 0.94 | 6.77 | 5.67 | 2.98 | 9.98 |\n| motor_rear_left Mz | 5087 | 4454 | 1.089e+04 | 9100 | 1.387e+04 | 6.96e+04 | 0.88 | 2.14 | 1.79 | 2.73 | 13.68 |\n| motor_rear_right Fx | 32.62 | 34.45 | 78.94 | 55.91 | 31.56 | 125 | 1.06 | 2.42 | 1.71 | 0.97 | 3.83 |\n| motor_rear_right Fy | 10.41 | 9.846 | 20.21 | 14.31 | 14.5 | 135.4 | 0.95 | 1.94 | 1.37 | 1.39 | 13.00 |\n| motor_rear_right Fz | 7.874 | 7.324 | 46.3 | 33.22 | 6.094 | 21.55 | 0.93 | 5.88 | 4.22 | 0.77 | 2.74 |\n| motor_rear_right Mx | 2403 | 2321 | 1.29e+04 | 8479 | 5612 | 3.5e+04 | 0.97 | 5.37 | 3.53 | 2.34 | 14.56 |\n| motor_rear_right My | 2996 | 2770 | 1.995e+04 | 1.555e+04 | 8593 | 2.918e+04 | 0.92 | 6.66 | 5.19 | 2.87 | 9.74 |\n| motor_rear_right Mz | 5249 | 4508 | 1.154e+04 | 8392 | 1.382e+04 | 6.987e+04 | 0.86 | 2.20 | 1.60 | 2.63 | 13.31 |\n| stack Fx | 308.7 | 351.6 | 2581 | 1665 | 433.7 | 2606 | 1.14 | 8.36 | 5.39 | 1.41 | 8.44 |\n| stack Fy | 208.4 | 218.8 | 1526 | 1084 | 683.5 | 1874 | 1.05 | 7.32 | 5.20 | 3.28 | 9.00 |\n| stack Fz | 113.3 | 133.7 | 459.2 | 313.4 | 94.32 | 310.4 | 1.18 | 4.05 | 2.77 | 0.83 | 2.74 |\n| stack Mx | 2.137e+04 | 3.834e+04 | 1.939e+05 | 1.447e+05 | 3.434e+04 | 9.273e+04 | 1.79 | 9.07 | 6.77 | 1.61 | 4.34 |\n| stack My | 2.439e+04 | 3.385e+04 | 2.759e+05 | 1.665e+05 | 1.898e+04 | 1.131e+05 | 1.39 | 11.31 | 6.82 | 0.78 | 4.64 |\n| stack Mz | 1.041e+05 | 1.716e+05 | 5.008e+05 | 3.647e+05 | 4.051e+05 | 1.943e+06 | 1.65 | 4.81 | 3.50 | 3.89 | 18.66 |\n| battery Fx | 50.14 | 61.65 | 446.1 | 340.6 | 49.73 | 123.7 | 1.23 | 8.90 | 6.79 | 0.99 | 2.47 |\n| battery Fy | 89.83 | 97.82 | 692.4 | 686.4 | 88.2 | 132.4 | 1.09 | 7.71 | 7.64 | 0.98 | 1.47 |\n| battery Fz | 229.7 | 213.6 | 1405 | 1153 | 406.9 | 246.1 | 0.93 | 6.12 | 5.02 | 1.77 | 1.07 |\n| battery Mx | 2.149e+04 | 1.481e+04 | 3.764e+04 | 3.626e+04 | 2.192e+04 | 8273 | 0.69 | 1.75 | 1.69 | 1.02 | 0.38 |\n| battery My | 4.949e+04 | 4.366e+04 | 2.809e+05 | 2.997e+05 | 4.391e+04 | 7.455e+04 | 0.88 | 5.68 | 6.06 | 0.89 | 1.51 |\n| battery Mz | 4.048e+04 | 4.334e+04 | 3.019e+05 | 3.017e+05 | 1.409e+05 | 1.307e+05 | 1.07 | 7.46 | 7.45 | 3.48 | 3.23 |\n| camera Fx | 88.83 | 101.5 | 19.84 | 26.41 | 27.62 | 46.88 | 1.14 | 0.22 | 0.30 | 0.31 | 0.53 |\n| camera Fy | 113.4 | 123.3 | 387.4 | 422.9 | 60.16 | 42.03 | 1.09 | 3.42 | 3.73 | 0.53 | 0.37 |\n| camera Fz | 92.69 | 112.4 | 78.67 | 87.17 | 42.01 | 41.06 | 1.21 | 0.85 | 0.94 | 0.45 | 0.44 |\n| camera Mx | 2.931e+04 | 4.695e+04 | 1.308e+04 | 1.789e+04 | 2.529e+04 | 3.057e+04 | 1.60 | 0.45 | 0.61 | 0.86 | 1.04 |\n| camera My | 2.73e+04 | 3.144e+04 | 1.046e+04 | 1.141e+04 | 1.913e+04 | 5.811e+04 | 1.15 | 0.38 | 0.42 | 0.70 | 2.13 |\n| camera Mz | 4.232e+04 | 4.671e+04 | 9.944e+04 | 1.096e+05 | 5.587e+04 | 8.693e+04 | 1.10 | 2.35 | 2.59 | 1.32 | 2.05 |"
+ "stiffness_table": "| interface/dof | old_raw | old_recon_1to1 | previous_raw | previous_recon_1to1 | new_raw | manafly3 | aether4 | old_raw/manafly3 | old_recon_1to1/manafly3 | previous_raw/manafly3 | previous_recon_1to1/manafly3 | new_raw/manafly3 | aether4/manafly3 |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| motor_front_left Fx | 44.48 | 46.07 | 137.8 | 86.86 | 59.31 | 64.89 | 88.82 | 0.69 | 0.71 | 2.12 | 1.34 | 0.91 | 1.37 |\n| motor_front_left Fy | 3.589 | 3.03 | 20 | 12.89 | 11.68 | 54.81 | 62.9 | 0.07 | 0.06 | 0.36 | 0.24 | 0.21 | 1.15 |\n| motor_front_left Fz | 8.466 | 8.094 | 51.77 | 34.28 | 9.724 | 6.564 | 12.43 | 1.29 | 1.23 | 7.89 | 5.22 | 1.48 | 1.89 |\n| motor_front_left Mx | 1503 | 1414 | 1.173e+04 | 7577 | 3432 | 2917 | 2.004e+04 | 0.52 | 0.48 | 4.02 | 2.60 | 1.18 | 6.87 |\n| motor_front_left My | 2953 | 3198 | 1.777e+04 | 1.545e+04 | 4238 | 4710 | 2.105e+04 | 0.63 | 0.68 | 3.77 | 3.28 | 0.90 | 4.47 |\n| motor_front_left Mz | 2307 | 1980 | 1.354e+04 | 8700 | 7714 | 2.147e+04 | 1.267e+05 | 0.11 | 0.09 | 0.63 | 0.41 | 0.36 | 5.90 |\n| motor_front_right Fx | 41.88 | 43.71 | 133.3 | 84.02 | 57.69 | 65.05 | 88.73 | 0.64 | 0.67 | 2.05 | 1.29 | 0.89 | 1.36 |\n| motor_front_right Fy | 3.346 | 2.854 | 18.39 | 12.63 | 11.41 | 55.9 | 62.99 | 0.06 | 0.05 | 0.33 | 0.23 | 0.20 | 1.13 |\n| motor_front_right Fz | 7.936 | 7.826 | 48.82 | 34.96 | 9.325 | 6.762 | 12.52 | 1.17 | 1.16 | 7.22 | 5.17 | 1.38 | 1.85 |\n| motor_front_right Mx | 1448 | 1390 | 1.141e+04 | 7215 | 3267 | 2928 | 2.021e+04 | 0.49 | 0.47 | 3.90 | 2.46 | 1.12 | 6.90 |\n| motor_front_right My | 2829 | 3306 | 1.701e+04 | 1.492e+04 | 4002 | 4733 | 2.102e+04 | 0.60 | 0.70 | 3.59 | 3.15 | 0.85 | 4.44 |\n| motor_front_right Mz | 2215 | 1941 | 1.263e+04 | 8412 | 7433 | 2.156e+04 | 1.234e+05 | 0.10 | 0.09 | 0.59 | 0.39 | 0.34 | 5.72 |\n| motor_rear_left Fx | 32.2 | 32.56 | 75.96 | 64.39 | 29.89 | 31.8 | 125.6 | 1.01 | 1.02 | 2.39 | 2.02 | 0.94 | 3.95 |\n| motor_rear_left Fy | 10.33 | 9.412 | 19.11 | 16.5 | 9.271 | 14.72 | 135 | 0.70 | 0.64 | 1.30 | 1.12 | 0.63 | 9.17 |\n| motor_rear_left Fz | 7.431 | 7.527 | 44.69 | 35.29 | 19.21 | 6.295 | 21.79 | 1.18 | 1.20 | 7.10 | 5.61 | 3.05 | 3.46 |\n| motor_rear_left Mx | 2310 | 2305 | 1.266e+04 | 9054 | 3737 | 5673 | 3.513e+04 | 0.41 | 0.41 | 2.23 | 1.60 | 0.66 | 6.19 |\n| motor_rear_left My | 2920 | 2755 | 1.978e+04 | 1.655e+04 | 4709 | 8700 | 2.915e+04 | 0.34 | 0.32 | 2.27 | 1.90 | 0.54 | 3.35 |\n| motor_rear_left Mz | 5087 | 4454 | 1.089e+04 | 9100 | 6208 | 1.387e+04 | 6.96e+04 | 0.37 | 0.32 | 0.79 | 0.66 | 0.45 | 5.02 |\n| motor_rear_right Fx | 32.62 | 34.45 | 78.94 | 55.91 | 31.08 | 31.56 | 125 | 1.03 | 1.09 | 2.50 | 1.77 | 0.98 | 3.96 |\n| motor_rear_right Fy | 10.41 | 9.846 | 20.21 | 14.31 | 9.387 | 14.5 | 135.4 | 0.72 | 0.68 | 1.39 | 0.99 | 0.65 | 9.34 |\n| motor_rear_right Fz | 7.874 | 7.324 | 46.3 | 33.22 | 20.24 | 6.094 | 21.55 | 1.29 | 1.20 | 7.60 | 5.45 | 3.32 | 3.54 |\n| motor_rear_right Mx | 2403 | 2321 | 1.29e+04 | 8479 | 3952 | 5612 | 3.5e+04 | 0.43 | 0.41 | 2.30 | 1.51 | 0.70 | 6.24 |\n| motor_rear_right My | 2996 | 2770 | 1.995e+04 | 1.555e+04 | 4765 | 8593 | 2.918e+04 | 0.35 | 0.32 | 2.32 | 1.81 | 0.55 | 3.40 |\n| motor_rear_right Mz | 5249 | 4508 | 1.154e+04 | 8392 | 6326 | 1.382e+04 | 6.987e+04 | 0.38 | 0.33 | 0.83 | 0.61 | 0.46 | 5.06 |\n| stack Fx | 308.7 | 351.6 | 2581 | 1665 | 407 | 433.7 | 2606 | 0.71 | 0.81 | 5.95 | 3.84 | 0.94 | 6.01 |\n| stack Fy | 208.4 | 218.8 | 1526 | 1084 | 162.6 | 683.5 | 1874 | 0.30 | 0.32 | 2.23 | 1.59 | 0.24 | 2.74 |\n| stack Fz | 113.3 | 133.7 | 459.2 | 313.4 | 209.8 | 94.32 | 310.4 | 1.20 | 1.42 | 4.87 | 3.32 | 2.22 | 3.29 |\n| stack Mx | 2.137e+04 | 3.834e+04 | 1.939e+05 | 1.447e+05 | 4.012e+04 | 3.434e+04 | 9.273e+04 | 0.62 | 1.12 | 5.65 | 4.21 | 1.17 | 2.70 |\n| stack My | 2.439e+04 | 3.385e+04 | 2.759e+05 | 1.665e+05 | 5.839e+04 | 1.898e+04 | 1.131e+05 | 1.29 | 1.78 | 14.53 | 8.77 | 3.08 | 5.96 |\n| stack Mz | 1.041e+05 | 1.716e+05 | 5.008e+05 | 3.647e+05 | 7.283e+04 | 4.051e+05 | 1.943e+06 | 0.26 | 0.42 | 1.24 | 0.90 | 0.18 | 4.80 |\n| battery Fx | 50.14 | 61.65 | 446.1 | 340.6 | 117.5 | 49.73 | 123.7 | 1.01 | 1.24 | 8.97 | 6.85 | 2.36 | 2.49 |\n| battery Fy | 89.83 | 97.82 | 692.4 | 686.4 | 193.7 | 88.2 | 132.4 | 1.02 | 1.11 | 7.85 | 7.78 | 2.20 | 1.50 |\n| battery Fz | 229.7 | 213.6 | 1405 | 1153 | 439.1 | 406.9 | 246.1 | 0.56 | 0.52 | 3.45 | 2.83 | 1.08 | 0.60 |\n| battery Mx | 2.149e+04 | 1.481e+04 | 3.764e+04 | 3.626e+04 | 2.491e+04 | 2.192e+04 | 8273 | 0.98 | 0.68 | 1.72 | 1.65 | 1.14 | 0.38 |\n| battery My | 4.949e+04 | 4.366e+04 | 2.809e+05 | 2.997e+05 | 8.868e+04 | 4.391e+04 | 7.455e+04 | 1.13 | 0.99 | 6.40 | 6.83 | 2.02 | 1.70 |\n| battery Mz | 4.048e+04 | 4.334e+04 | 3.019e+05 | 3.017e+05 | 7.16e+04 | 1.409e+05 | 1.307e+05 | 0.29 | 0.31 | 2.14 | 2.14 | 0.51 | 0.93 |\n| camera Fx | 88.83 | 101.5 | 19.84 | 26.41 | 48.6 | 27.62 | 46.88 | 3.22 | 3.68 | 0.72 | 0.96 | 1.76 | 1.70 |\n| camera Fy | 113.4 | 123.3 | 387.4 | 422.9 | 210.1 | 60.16 | 42.03 | 1.88 | 2.05 | 6.44 | 7.03 | 3.49 | 0.70 |\n| camera Fz | 92.69 | 112.4 | 78.67 | 87.17 | 148.2 | 42.01 | 41.06 | 2.21 | 2.68 | 1.87 | 2.07 | 3.53 | 0.98 |\n| camera Mx | 2.931e+04 | 4.695e+04 | 1.308e+04 | 1.789e+04 | 1.4e+04 | 2.529e+04 | 3.057e+04 | 1.16 | 1.86 | 0.52 | 0.71 | 0.55 | 1.21 |\n| camera My | 2.73e+04 | 3.144e+04 | 1.046e+04 | 1.141e+04 | 2.904e+04 | 1.913e+04 | 5.811e+04 | 1.43 | 1.64 | 0.55 | 0.60 | 1.52 | 3.04 |\n| camera Mz | 4.232e+04 | 4.671e+04 | 9.944e+04 | 1.096e+05 | 5.844e+04 | 5.587e+04 | 8.693e+04 | 0.76 | 0.84 | 1.78 | 1.96 | 1.05 | 1.56 |"
 }

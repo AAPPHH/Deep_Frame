@@ -1,135 +1,175 @@
-# Frame-Lauf mit Lastmodell als Verteilung (SIMP+MMA, 4/3 mm)
+# Frame mit Lastmodell als Verteilung, Kalibrierschleife (SIMP+MMA, 4/3 mm)
 
-Stand: Optimierung, Rohkörper und 1:1-Vergleich fertig. **Rekonstruktion v3 steht noch aus**: `feature/recon-v3` (/c/clones/Deep_Frame-recon3) hat ihren Nachweis noch nicht committet (HEAD 216db36, Nachweis läuft; SIMP+MMA v3 liegt dort aktuell bei f1 -54 %, Armspitze -31 % gegen roh). Nach Regel wird gewartet; der 1:1-Körper ist **nicht** das Ergebnis, nur Vergleich.
+Stand 04.10. 04:10. Kalibrierschleife abgeschlossen und stabil (3 Läufe). Ergebnis ist der **Rohkörper 15,7 g** (`simp_mma_cov3_raw_1`). **Rekonstruktion v3 steht aus:** recon3 hat um 02:13 den Nachweis 879713d committet, aber SIMP+MMA liegt dort nicht innerhalb 10 % vom Rohkörper (Masse +12,4 %, Armspitze −19,0 %, f1 −9,4 %; nur neural_v06_f1 besteht). Nach Regel wird gewartet; der 1:1-Körper ist **nicht** das Ergebnis, nur Vergleich. Bilder mit v3 und das v3-STL fehlen deshalb.
 
-Stand 03.10. 22:20: v3 weiter nicht bereit. recon3 arbeitet (neuer Commit fa0e475 um 22:07, Knoten/Splines in Hülle und Keep-outs gesetzt), Nachweis (Glieder als Splines, SIMP+MMA und neural_v06_f1 innerhalb 10 % vom Rohkörper) aber noch nicht committet; letzte Nachweisdateien dort: `within_10_percent` false für beide. Polls 21:53 / 22:03 / 22:13. **Infrastruktur-Blocker:** Der Ray-Head wurde um 21:49 neu gestartet; sein Dashboard-Agent konnte Port 52365 nicht binden (liegt im Windows-Ausschlussbereich 52292-52391), daher scheitert jede Job-Einreichung mit "No available agent to submit job". Damit kann weder recon3 seinen Nachweis noch dieser Lauf v3/Evaluator rechnen. Abhilfe (nicht durch mich, kein `ray stop`): Head mit Agent-Port außerhalb der Ausschlussbereiche neu starten. Ein Neulauf von Evaluator/Datenblatt für raw und 1:1 (Statuszeile "evaluation: failed" wegen des cp1252-Drucks) scheiterte daran ebenfalls; datasheet.md und evaluation.json sind unverändert, Hinweis im manifest.
+## Zur Frage "wieso sind die Halter noch dran?"
 
-## Lauf
+Der 26,6-g-Rahmen stammt aus Lauf baff3e1. Der wurde vor dem Merge 2bafe8f gestartet und hatte die Sitze für XT30, Balancer und VTX-Antenne noch als feste Bereiche. Alle Läufe hier laufen ohne Sitze:
 
-- Genau ein Lauf, Start vom heutigen SIMP+MMA-Feld (`Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz`, 17,2 g), grob 68x64x24 (152 It., 5,1 s/It.) -> fein 102x96x24 (91 It., 13,2 s/It.), beide `converged`, 34 min gesamt, Ray-Typ `density_simp` (4 Kerne, 8 GB, 10 GPU-GB).
-- Neuer Standard-Satz: tr(ΣF) und λmax(Σ^1/2 F Σ^1/2) (KS) statt Armspitze und Richtungsfällen; behalten: f1 >= 300 Hz, Radialabschattung <= ManaFly, Volumen <= 10 %, robuste Mindestbreite 2,5 mm, Spiegelsymmetrie, Crash-Nachgiebigkeiten.
-- Kalibrierung (fcfb875): Grenzen stammen aus dem Evaluator-/Gap-Maß (diagonal). Optimierer-Maß / Evaluator-Maß am selben 17,2-g-Entwurf: Mittel 0,8551/1,4366 = 0,5952, Worst 0,1967/0,5007 = 0,3928 -> Optimierergrenzen 0,232 / 0,066 N mm. Gegenprobe mit dem vollen 42x42-Maß (Aether4 voll skaliert 0,296 / 0,107; Faktoren 0,735 / 0,686) ergibt 0,218 / 0,073 N mm, also dieselbe Größenordnung.
+- Freie Zellen grob 33 908 statt 32 524.
+- In den Renders gibt es kein Antennenauge hinten in der Mitte und keine Steckersitze mehr.
+
+Nebenwirkung: Das Antennenauge war der einzige feste Bereich auf der Symmetrieebene. Daran hing die Lagerung der Inertia-Relief-Fälle. Ohne Auge brach der Aufbau ab (leeres argmin).
+
+- Ein Ausweichen auf Knoten im Leerbereich lief zwar, der cuDSS-Lauf scheiterte aber an der Residuenprüfung (Residuum 1e-6).
+- Ersetzt durch eine Lagerung abseits der Ebene: drei Preserve-Knoten mit eigenen Freiheitsgraden für den symmetrischen und den antisymmetrischen Teil (aa782ed, 86b9480).
+- Getestet: Halb- und Vollmodell stimmen auf 1e-8 überein, Reaktionen ≈ 0, unter `preserve_adjacent`.
+- Die zusätzliche Invarianzprüfung am ganzen Rahmen (Ray-Job `relief_check`) wurde vom Hintergrund-Zeitlimit abgebrochen. Sie prüfte noch die verworfene Leerbereichsvariante.
+
+## Kalibrierschleife
+
+Grenzen im Evaluator (volles Maß, ManaFly 3 × 0,8): tr ≤ 0,687 N mm, λmax ≤ 0,229 N mm. Faktor = Optimierer-Maß / Evaluator-Maß am selben Entwurf. Alle Läufe starten vom 26,6-g-Feld (baff3e1). Gleicher Start in jeder Iteration, damit sich nur die Grenze ändert. Das 26,6-g-Feld ist zulässig und liegt über dem Ziel, MMA trägt also nur Material ab.
+
+| Lauf | Faktor im Lauf tr / λmax | Optimierergrenze N mm | Feld / roh | Optimierer tr / λmax | Evaluator voll tr / λmax | neuer Faktor | Änderung |
+|---|---|---|---|---|---|---|---|
+| baff3e1 (mit Sitzen) | 0,5952 / 0,3928 (diag.) | 0,232 / 0,066 | 29,4 / 26,6 g | 0,2322 / 0,0585 | 0,1862 / 0,0474 | 1,247 / 1,235 | +70 % / +80 % |
+| 2: simp_mma_cov2 | 1,247 / 1,235 | 0,857 / 0,283 | 18,45 / 15,9 g | 0,8563 / 0,2574 | 0,6189 / 0,1873 | 1,384 / 1,374 | +11,0 % / +11,2 % |
+| **3: simp_mma_cov3** | 1,384 / 1,374 | 0,951 / 0,315 | **18,22 / 15,7 g** | 0,9467 / 0,3081 | **0,6870 / 0,2197** | 1,378 / 1,402 | **−0,4 % / +2,1 %: stabil** |
+
+Lauf 2 lag knapp über der 10-%-Schwelle, daher Lauf 3. Lauf 3 bestätigt den Faktor; im Code bleibt 1,384 / 1,374 (er hat den Endlauf erzeugt). Der Rohkörper trifft tr mit 100,0 % der Grenze (0,6870 bei 0,6872) und λmax mit 96 %. Damit ist die Kalibrierung geschlossen.
+
+- Lauf 3: grob 68x64x24, 183 Iterationen; fein 102x96x24, 87 Iterationen, beide `converged`, Graufraktion 0,09 %.
+- Laufzeit Lauf 3 etwa 1 h 50 min. Fein 45 s/It. statt 13 s/It. im 26,6-g-Lauf, weil der Rechner während der Läufe 0 GB freien Arbeitsspeicher hatte (Ray-Typ `density_simp`, 4 Kerne, 8 GB, 10 GPU-GB).
+- Dazu kamen zwei gescheiterte Starts wegen der Lagerung (siehe oben). Der Zeitrahmen von 3,5 h (bis 02:50) wurde deshalb um gut 1 h überschritten.
 
 ## Masse
 
-| | alt (SIMP+MMA heute) | neu (Lastmodell) |
-|---|---|---|
-| Optimierer (Feld) | 17,18 g | 29,36 g |
-| Rohkörper (STL) | 14,56 g | 26,56 g |
-| 1:1 (nur Vergleich) | 16,39 g | 26,34 g |
-| recon v3 | ausstehend (recon3) | ausstehend |
+| | SIMP+MMA 17,2 g (heute früh) | Lastmodell 1 (baff3e1, mit Sitzen) | Iteration 2 | **Endlauf (Iteration 3)** |
+|---|---|---|---|---|
+| Optimierer (Feld) | 17,18 g | 29,36 g | 18,45 g | **18,22 g** |
+| Rohkörper (STL) | 14,56 g | 26,56 g | 15,88 g | **15,72 g** |
+| 1:1 (nur Vergleich) | 16,39 g | 26,34 g | – | 16,28 g |
+| recon v3 | – | – | – | ausstehend |
 
-Erwartung 20-25 g: Rohkörper liegt mit 26,6 g knapp darüber.
-
-## Nebenbedingungen (Optimierer, fein, Endstand)
+## Nebenbedingungen Endlauf (Optimierer, fein)
 
 | constraint | value | limit | unit | status | margin |
 |---|---|---|---|---|---|
-| load_mean | 0.2322 | <= 0.2322 | N mm | active | -0.0 % |
-| load_worst | 0.05851 | <= 0.06607 | N mm | satisfied | +11.4 % |
-| crash_front | 3.364 | <= 9.268 | N mm | satisfied | +63.7 % |
-| crash_side_left | 6.938 | <= 20.44 | N mm | satisfied | +66.1 % |
-| crash_side_right | 6.938 | <= 20.44 | N mm | satisfied | +66.1 % |
-| crash_arm_front_left | 41.32 | <= 211.6 | N mm | satisfied | +80.5 % |
-| crash_arm_front_right | 19.62 | <= 33.81 | N mm | satisfied | +42.0 % |
-| crash_arm_rear_left | 19.51 | <= 65.64 | N mm | satisfied | +70.3 % |
-| crash_arm_rear_right | 39.79 | <= 108.2 | N mm | satisfied | +63.2 % |
-| crash_below | 13.82 | <= 41.28 | N mm | satisfied | +66.5 % |
-| crash_back | 1.726 | <= 10.41 | N mm | satisfied | +83.4 % |
-| f1 | 304.1 | >= 300 | Hz | satisfied | +2.7 % |
-| volume | 0.07426 | <= 0.1 | - | satisfied | +25.7 % |
-| shadow | 0.2807 | <= 0.3137 | mm | satisfied | +10.5 % |
+| load_mean (tr) | 0.9467 | <= 0.9508 | N mm | active | +0.4 % |
+| load_worst (λmax) | 0.3081 | <= 0.3146 | N mm | satisfied | +2.1 % |
+| crash_front | 4.085 | <= 9.268 | N mm | satisfied | +55.9 % |
+| crash_side_left/right | 13.78 | <= 20.44 | N mm | satisfied | +32.6 % |
+| crash_arm_front_left | 102.1 | <= 211.6 | N mm | satisfied | +51.8 % |
+| crash_arm_front_right | 33.84 | <= 33.81 | N mm | active | -0.1 % |
+| crash_arm_rear_left | 65.64 | <= 65.64 | N mm | active | +0.0 % |
+| crash_arm_rear_right | 96.69 | <= 108.2 | N mm | satisfied | +10.6 % |
+| crash_below | 14.07 | <= 41.28 | N mm | satisfied | +65.9 % |
+| crash_back | 7.693 | <= 10.41 | N mm | satisfied | +26.1 % |
+| f1 | 310.6 | >= 300 | Hz | satisfied | +7.1 % |
+| volume | 0.0446 | <= 0.1 | - | satisfied | +55.4 % |
+| shadow | 0.2552 | <= 0.3137 | mm | satisfied | +18.7 % |
 
-Aktiv ist nur die mittlere Nachgiebigkeit. Der Worst-Case-Modus ist jetzt das alternierende Pad-Mz (Gegenmoment, Diagonalpaare +/-) mit Pad-My-Anteil; beim alten Entwurf war es alternierendes Pad-Mx.
+Aktiv sind tr und zwei Arm-Crash-Fälle. f1 hat 7 % Reserve; die robuste Mindestbreite 2,5 mm und die Spiegelsymmetrie sind im Feld erzwungen. Die Arm-Crash-Fälle bremsen die Massenabnahme: Lauf 2 → 3 hebt die tr-Grenze um 11 %, die Masse sinkt aber nur um 0,2 g.
 
-Überwacht (alte Lastfälle, nur Information), alt -> neu: thrust_all 2,77 -> 0,96 N mm, torsion_yaw 0,130 -> 0,039 N mm, twist 8,49 -> 1,64 N mm, f1 intermediär 332 -> 337 Hz.
+Überwacht (alte Lastfälle), 17,2 g → 26,6 g → Endlauf: thrust_all 2,77 → 0,96 → 4,25 N mm, torsion_yaw 0,130 → 0,039 → 0,082 N mm, twist 8,49 → 1,64 → 5,18 N mm, f1 intermediär 332 → 337 → 375 Hz.
 
-## Lastmodell-Maße im Evaluator (gleicher Evaluator, Gruppe stack_fixed)
+## Lastmodell-Maße gegen die ManaFly-Grenzen (Evaluator, Gruppe stack_fixed)
 
-| Körper | tr voll | λmax voll | tr diagonal | λmax diagonal | Status gegen Grenze diag. 0,390 / 0,168 | Status gegen Grenze voll 0,296 / 0,107 |
+| Körper | Masse | tr voll | λmax voll | tr diag. | λmax diag. | gegen 0,687 / 0,229 |
 |---|---|---|---|---|---|---|
-| alt roh | 1,163 | 0,287 | 1,437 | 0,501 | verfehlt (3,7x / 3,0x) | verfehlt (3,9x / 2,7x) |
-| alt 1:1 | 1,191 | 0,300 | 1,446 | 0,520 | verfehlt | verfehlt |
-| **neu roh** | **0,186** | **0,047** | **0,232** | **0,086** | erfüllt (-41 % / -49 %) | erfüllt (-37 % / -56 %) |
-| neu 1:1 (Vergleich) | 0,255 | 0,069 | 0,312 | 0,119 | erfüllt (-20 % / -29 %) | erfüllt (-14 % / -35 %) |
-| neu recon v3 | ausstehend | | | | | |
-| ManaFly 3 | 0,859 | 0,286 | 1,248 | 0,579 | Referenz | |
-| Aether4 (unskaliert) | 0,391 | 0,143 | 0,528 | 0,242 | Referenz | |
+| SIMP+MMA 17,2 g roh | 14,6 g | 1,163 | 0,287 | 1,437 | 0,501 | verfehlt (169 % / 125 %) |
+| Lastmodell 26,6 g roh | 26,6 g | 0,186 | 0,047 | 0,232 | 0,086 | erfüllt (27 % / 21 %) |
+| Iteration 2 roh | 15,9 g | 0,619 | 0,187 | 0,728 | 0,266 | erfüllt (90 % / 82 %) |
+| **Endlauf roh** | **15,7 g** | **0,687** | **0,220** | **0,809** | **0,305** | **erfüllt (100,0 % / 96 %)** |
+| Endlauf 1:1 (Vergleich) | 16,3 g | – | – | – | – | nicht gerechnet: Tet-Vernetzung scheiterte in allen 6 Versuchen |
+| Endlauf recon v3 | | ausstehend | | | | |
+| ManaFly 3 | | 0,859 | 0,286 | 1,248 | 0,579 | Referenz (Grenze = × 0,8) |
+| Aether4 (unskaliert) | | 0,391 | 0,143 | 0,528 | 0,242 | nur Vergleich |
 
-Der Rohkörper erfüllt beide Grenzen im Evaluator deutlich, obwohl tr im Optimierer aktiv ist: das Optimierer-Maß (erodiertes Feld, Voxel) ist über die Kalibrierung konservativ. Hinweis: Primärwert der Neun-Kriterien-Zeile ist das volle Maß, die Zielgrenze im Evaluator (0,390 / 0,168) stammt aus dem diagonalen Maß; die volle Kopplung senkt tr um 18-31 % und λmax um 41-51 % (limits.md).
+## Steifigkeit je Schnittstelle und Richtung gegen ManaFly
 
-## Steifigkeit je Schnittstelle und Richtung
+Quelle ist der Evaluator-Teil `sigma`, also dieselben Einheitslasten und dieselbe Lagerung wie der Gap-Finder. Er liefert bitgleich die Gap-Finder-Werte; der Gap-Finder selbst wurde nicht neu gestartet. Einheiten: F in N/mm, M in N mm/rad. Die rechten Motoren sind spiegelgleich. Die volle Tabelle mit allen Körpern steht in `comparison.json` → `stiffness_table`.
 
-Quelle: Evaluator-Teil `sigma` (Einheitslasten je Schnittstelle, 6 Freiheitsgrade, Lagerung wie Gap-Finder). Er liefert bitgleich die Gap-Finder-Werte (simp_mma_raw_1, motor_front_left Fz: 8.466052669697811 N/mm in beiden), deshalb wurde der Gap-Finder nicht zusätzlich gestartet (RAM-Priorität). F in N/mm, M in N mm/rad.
+| Schnittstelle/Richtung | SIMP 17,2 g roh | Lastmodell 26,6 g roh | Endlauf 15,7 g roh | ManaFly 3 | Aether4 | Endlauf/ManaFly |
+|---|---|---|---|---|---|---|
+| motor_front_left Fx | 44.48 | 137.8 | 59.31 | 64.89 | 88.82 | 0.91 |
+| motor_front_left Fy | 3.589 | 20 | 11.68 | 54.81 | 62.9 | 0.21 |
+| motor_front_left Fz | 8.466 | 51.77 | 9.724 | 6.564 | 12.43 | 1.48 |
+| motor_front_left Mx | 1503 | 11730 | 3432 | 2917 | 20040 | 1.18 |
+| motor_front_left My | 2953 | 17770 | 4238 | 4710 | 21050 | 0.90 |
+| motor_front_left Mz | 2307 | 13540 | 7714 | 21470 | 126700 | 0.36 |
+| motor_rear_left Fx | 32.2 | 75.96 | 29.89 | 31.8 | 125.6 | 0.94 |
+| motor_rear_left Fy | 10.33 | 19.11 | 9.271 | 14.72 | 135 | 0.63 |
+| motor_rear_left Fz | 7.431 | 44.69 | 19.21 | 6.295 | 21.79 | 3.05 |
+| motor_rear_left Mx | 2310 | 12660 | 3737 | 5673 | 35130 | 0.66 |
+| motor_rear_left My | 2920 | 19780 | 4709 | 8700 | 29150 | 0.54 |
+| motor_rear_left Mz | 5087 | 10890 | 6208 | 13870 | 69600 | 0.45 |
+| stack Fx | 308.7 | 2581 | 407 | 433.7 | 2606 | 0.94 |
+| stack Fy | 208.4 | 1526 | 162.6 | 683.5 | 1874 | 0.24 |
+| stack Fz | 113.3 | 459.2 | 209.8 | 94.32 | 310.4 | 2.22 |
+| stack Mx | 21370 | 193900 | 40120 | 34340 | 92730 | 1.17 |
+| stack My | 24390 | 275900 | 58390 | 18980 | 113100 | 3.08 |
+| stack Mz | 104100 | 500800 | 72830 | 405100 | 1943000 | 0.18 |
+| battery Fx | 50.14 | 446.1 | 117.5 | 49.73 | 123.7 | 2.36 |
+| battery Fy | 89.83 | 692.4 | 193.7 | 88.2 | 132.4 | 2.20 |
+| battery Fz | 229.7 | 1405 | 439.1 | 406.9 | 246.1 | 1.08 |
+| battery Mx | 21490 | 37640 | 24910 | 21920 | 8273 | 1.14 |
+| battery My | 49490 | 280900 | 88680 | 43910 | 74550 | 2.02 |
+| battery Mz | 40480 | 301900 | 71600 | 140900 | 130700 | 0.51 |
+| camera Fx | 88.83 | 19.84 | 48.6 | 27.62 | 46.88 | 1.76 |
+| camera Fy | 113.4 | 387.4 | 210.1 | 60.16 | 42.03 | 3.49 |
+| camera Fz | 92.69 | 78.67 | 148.2 | 42.01 | 41.06 | 3.53 |
+| camera Mx | 29310 | 13080 | 14000 | 25290 | 30570 | 0.55 |
+| camera My | 27300 | 10460 | 29040 | 19130 | 58110 | 1.52 |
+| camera Mz | 42320 | 99440 | 58440 | 55870 | 86930 | 1.05 |
 
-| Schnittstelle/Richtung | alt roh | alt 1:1 | neu roh | neu 1:1 | ManaFly | Aether4 | neu roh / alt roh |
-|---|---|---|---|---|---|---|---|
-| motor_front_left Fx | 44.5 | 46.1 | 137.8 | 86.9 | 64.9 | 88.8 | 3.10 |
-| motor_front_left Fy | 3.59 | 3.03 | 20.0 | 12.9 | 54.8 | 62.9 | 5.57 |
-| motor_front_left Fz | 8.47 | 8.09 | 51.8 | 34.3 | 6.56 | 12.4 | 6.12 |
-| motor_front_left Mx | 1503 | 1414 | 11730 | 7577 | 2917 | 20040 | 7.80 |
-| motor_front_left My | 2953 | 3198 | 17770 | 15450 | 4710 | 21050 | 6.02 |
-| motor_front_left Mz | 2307 | 1980 | 13540 | 8700 | 21470 | 126700 | 5.87 |
-| motor_rear_left Fx | 32.2 | 32.6 | 76.0 | 64.4 | 31.8 | 125.6 | 2.36 |
-| motor_rear_left Fy | 10.3 | 9.41 | 19.1 | 16.5 | 14.7 | 135.0 | 1.85 |
-| motor_rear_left Fz | 7.43 | 7.53 | 44.7 | 35.3 | 6.30 | 21.8 | 6.01 |
-| motor_rear_left Mx | 2310 | 2305 | 12660 | 9054 | 5673 | 35130 | 5.48 |
-| motor_rear_left My | 2920 | 2755 | 19780 | 16550 | 8700 | 29150 | 6.77 |
-| motor_rear_left Mz | 5087 | 4454 | 10890 | 9100 | 13870 | 69600 | 2.14 |
-| stack Fx | 309 | 352 | 2581 | 1665 | 434 | 2606 | 8.36 |
-| stack Fy | 208 | 219 | 1526 | 1084 | 684 | 1874 | 7.32 |
-| stack Fz | 113 | 134 | 459 | 313 | 94.3 | 310 | 4.05 |
-| stack Mx | 21370 | 38340 | 193900 | 144700 | 34340 | 92730 | 9.07 |
-| stack My | 24390 | 33850 | 275900 | 166500 | 18980 | 113100 | 11.31 |
-| stack Mz | 104100 | 171600 | 500800 | 364700 | 405100 | 1943000 | 4.81 |
-| battery Fx | 50.1 | 61.7 | 446 | 341 | 49.7 | 124 | 8.90 |
-| battery Fy | 89.8 | 97.8 | 692 | 686 | 88.2 | 132 | 7.71 |
-| battery Fz | 230 | 214 | 1405 | 1153 | 407 | 246 | 6.12 |
-| battery Mx | 21490 | 14810 | 37640 | 36260 | 21920 | 8273 | 1.75 |
-| battery My | 49490 | 43660 | 280900 | 299700 | 43910 | 74550 | 5.68 |
-| battery Mz | 40480 | 43340 | 301900 | 301700 | 140900 | 130700 | 7.46 |
-| camera Fx | 88.8 | 101.5 | 19.8 | 26.4 | 27.6 | 46.9 | 0.22 |
-| camera Fy | 113 | 123 | 387 | 423 | 60.2 | 42.0 | 3.42 |
-| camera Fz | 92.7 | 112.4 | 78.7 | 87.2 | 42.0 | 41.1 | 0.85 |
-| camera Mx | 29310 | 46950 | 13080 | 17890 | 25290 | 30570 | 0.45 |
-| camera My | 27300 | 31440 | 10460 | 11410 | 19130 | 58110 | 0.38 |
-| camera Mz | 42320 | 46710 | 99440 | 109600 | 55870 | 86930 | 2.35 |
+Die Lasten, die Σ stark gewichtet, liegen bei oder über ManaFly:
 
-Rechte Motoren spiegelgleich (vollständige Tabelle mit allen Pads in `comparison.json`, Feld `stiffness_table`). Motor-Fy bleibt weit unter ManaFly/Aether4 (Σ gewichtet Fy an den Pads kaum), die Kamera wird weicher (Σ enthält dort nur Masse x Fluglast).
+- Motor-Fz 1,5–3,1×.
+- Akku Fx/Fy/My mindestens 2×.
 
-## Verwindung (Diagonalpaare +/-)
+Weit unter ManaFly bleiben die Richtungen, die Σ kaum gewichtet:
 
-Lastmuster Fz = +1 N vorne links und hinten rechts, -1 N vorne rechts und hinten links (Stack fest), aus der vollen Evaluator-Flexibilität: k = |w|^2 / (w^T F w).
+- Motor-Fy 0,2–0,6×.
+- Motor-Mz 0,4×.
+- Stack Fy/Mz 0,2×.
+- Akku Mz 0,5×.
+
+## Verwindung (Diagonalpaare ±1 N Fz, Stack fest)
 
 | Körper | Nachgiebigkeit N mm | Steifigkeit N/mm |
 |---|---|---|
-| alt roh | 0,589 | 6,8 |
-| alt 1:1 | 0,575 | 7,0 |
-| **neu roh** | **0,086** | **46,3** |
-| neu 1:1 (Vergleich) | 0,128 | 31,3 |
-| neu recon v3 | ausstehend | |
+| SIMP 17,2 g roh | 0,589 | 6,8 |
+| Lastmodell 26,6 g roh | 0,086 | 46,3 |
+| Iteration 2 roh | 0,282 | 14,2 |
+| **Endlauf roh** | **0,328** | **12,2** |
 | ManaFly 3 | 0,236 | 16,9 |
 | Aether4 (unskaliert) | 0,120 | 33,2 |
 
-Faktor 6,8 gegenüber heute, 2,7x ManaFly.
+Der Endlauf ist um den Faktor 1,8 verwindungssteifer als der 17,2-g-Rahmen, liegt aber bei 72 % von ManaFly. Verwindung ist im Σ-Modell nur ein Teil der Differenzlast; die Grenze gilt für tr und λmax, nicht für diese Einzelzahl.
 
-## Neun Kriterien (Rohkörper; 1:1 nur zum Vergleich)
+## Neun Kriterien (Rohkörper = Ergebnis; 1:1 nur Vergleich)
 
-- neu roh: 26,6 g; Armspitze 57,7 N/mm (alt 8,6); Σ tr 0,186 / λmax 0,047 N mm; f1 332 Hz; verfehlt: bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, wall_motor_zones, target:symmetry; Warnung: loops. Wandregel: tiefer Anteil 0,86 % (alt 3,09 %), 20 Komponenten, größte 19,3 mm³ (alt 230 mm³). FEA-Oberfläche: Warnung 0,25 mm > 0,20 mm.
-- neu 1:1 (Vergleich): 26,3 g; 36,0 N/mm; Σ 0,255 / 0,069; f1 209 Hz; verfehlt: tools_reachable, wall_deep_component, wall_motor_zones, target:f1; FEA-Oberfläche: Warnung 0,34 mm.
-- Datenblätter (10 Felder + Neun-Kriterien-Zeile + Oberflächenwarnung): `exports/runs/simp_mma_cov_raw_1/datasheet.md`, `exports/runs/simp_mma_cov_recon_1/datasheet.md`. Die Stufe `evaluation` steht dort als `failed`, weil der Evaluator nach dem Schreiben von evaluation.json beim Ausgeben des Σ-Zeichens auf der cp1252-Konsole abbrach; evaluation.json ist vollständig, behoben in 70921dc.
+- **Endlauf roh** (`exports/runs/simp_mma_cov3_raw_1`):
+  - Werte: 15,7 g; Armspitze 10,9 N/mm (17,2 g: 8,6); Σ tr 0,687 / λmax 0,220 N mm; f1 407 Hz; Spannungen front 6,5 / arm 14,2 / back 1,8 MPa (SF 2).
+  - Verfehlt: bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, target:symmetry.
+  - Warnungen: loops, cog_offset.
+  - Wandregel: tiefer Anteil 1,14 %, größte Komponente 49,3 mm³, Motorzonen 0 (17,2 g: 3,09 % / 230 mm³; 26,6 g: 0,86 % / 19,3 mm³).
+  - FEA-Oberfläche: Warnung, 0,27 mm > 0,20 mm.
+  - Die Fehlpunkte sind dieselben wie beim 26,6-g-Rohkörper. Bohrbilder und Keep-outs verfehlt der Rohkörper grundsätzlich; das soll die Rekonstruktion (v3) liefern.
+- **Endlauf 1:1** (`simp_mma_cov3_recon_1`, nur Vergleich):
+  - 16,3 g; Bohrbilder 20/20.
+  - FEA nicht lösbar: gmsh scheiterte in allen 6 Vernetzungsversuchen. Deshalb fehlen fea_solved, die Crash-Festigkeiten und die Zielwerte (Armspitze, f1, Σ).
+- **Datenblätter** (10 Felder + Neun-Kriterien-Zeile + Oberflächenwarnung): `exports/runs/simp_mma_cov3_raw_1/datasheet.md`, `exports/runs/simp_mma_cov3_recon_1/datasheet.md`. Das v3-Datenblatt steht aus.
 
-## Form
+## Form (Sichtprüfung der Renders, Rohkörper)
 
-Sichtprüfung der Renders: Die Arme sind jetzt zweigurtige Fachwerkträger (Ober- und Untergurt mit Fenstern im Steg), in der Seitenansicht schließt sich ein Rahmen aus Untergurt, Obergurt (Deckschienen) und Pfosten mit Schrägstreben zum Bügel. Datenblatt Feld 2: "Raumfachwerk: Untergurt und Obergurt in der Rumpfmitte". Geschlossene Querschnitte im Sinne von Kastenträgern/Ringen: ja. Diagonalen: in der Seitenebene ja, in der Draufsicht kein durchgehendes X über die Rumpfmitte; die Arme laufen in einen Ring um den Akkubereich.
+- **Seitenansicht:** geschlossener Rahmen aus Untergurt, Deckschienen als Obergurt, Pfosten und Schrägstreben vorn und hinten. Ein geschlossener Querschnitt in der Seitenebene, also ein Fachwerkträger mit Diagonalen.
+- **Draufsicht:** Die Arme laufen in einen Leiterrahmen aus den zwei Akkuschienen mit drei Querriegeln (vorn, Mitte, hinten). Es gibt kein durchgehendes X über die Rumpfmitte; Torsion übernimmt der geschlossene Ring um den Akkuschacht.
+- **Rückseite:** keine Sitze mehr; das Antennenauge und die Steckersitze sind weg.
+- **Arme:** einzelne, im Querschnitt gefüllte Holme; die Fenster im Steg des 26,6-g-Laufs sind verschwunden.
 
 ## Bilder und STLs
 
-- `exports/cov/cov_4views.png` (roh | recon v3 | ManaFly): ausstehend bis v3 steht.
-- `exports/cov/recon_1to1_vs_v3.png`: ausstehend.
-- STL roh: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov/geometry.stl`; v3: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov_recon/geometry.stl` (ausstehend); 1:1 nur als Vergleich unter `simp_mma_cov_1to1`.
+- Rohkörper-STL: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov2/geometry.stl` (= `simp_mma_cov3_raw_1/frame.stl`, Endlauf).
+- 1:1 nur als Vergleich: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov2_1to1/geometry.stl`.
+- v3: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov2_recon/geometry.stl`, **ausstehend**.
+- `exports/cov/cov_4views.png` (roh | v3 | ManaFly) und `exports/cov/recon_1to1_vs_v3.png`: **ausstehend** bis v3 bewiesen ist. Es gibt bewusst kein Ersatzbild mit 1:1 an der v3-Stelle.
+- Renders des Rohkörpers: `exports/runs/simp_mma_cov3_raw_1/renders/{iso,top,side,front}.png`.
 
-## Abschluss, sobald v3 committet ist
+## Abschluss, sobald recon3 einen bestandenen Nachweis committet hat
 
-1. `frame_runs` mit `"bodies": ["raw", "recon", "v3"]` (nutzt die fertigen raw/1:1-Läufe, baut v3 aus einem git-archive des recon3-Commits, Evaluator inkl. Σ, Datenblatt, Renders, STL nach `simp_mma_cov_recon`).
-2. `compose` (beide Bilder), `cov_compare`, diese Datei ergänzen.
+Bedingung: SIMP+MMA und neural_v06_f1 beide innerhalb 10 % vom Rohkörper.
+
+1. Override `cov3_post.json` (wie hier, `mma.bodies` = `["raw", "recon", "v3"]`, `v3.ref` = SHA des Nachweis-Commits) und `python tools/formulation_study.py frame_runs <override>`. Fertige raw- und 1:1-Läufe werden wiederverwendet. v3 entsteht aus einem git archive des recon3-Commits mit Evaluator inkl. Σ, Datenblatt und Renders; das STL geht nach `simp_mma_cov2_recon`.
+2. Danach `compose` mit derselben Override-Datei (beide Bilder) und `cov_compare`; dann v3 hier eintragen, auch die Abweichung v3 zu roh bei f1 und Armspitze.
