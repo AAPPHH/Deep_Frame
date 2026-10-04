@@ -5,8 +5,8 @@ from scipy.sparse import coo_matrix
 
 from deep_frame.topology_optimization import _CORNERS, CudaDirectSolver, regular_grid
 
-MULTIGRID = {"coarse": "galerkin", "coarsest_dofs": 20000, "max_levels": 8, "smoother": "chebyshev", "sweeps": 2, "damping": 1.0, "chebyshev_degree": 3, "chebyshev_ratio": 20.0, "growth": 2.0, "cycle": "V",
-             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "projection": True, "dead_ratio": 1e-12, "device": "cuda"}
+MULTIGRID = {"coarse": "galerkin", "coarsest_dofs": 80000, "max_levels": 8, "smoother": "chebyshev", "sweeps": 2, "damping": 1.0, "chebyshev_degree": 3, "chebyshev_ratio": 20.0, "growth": 2.0, "cycle": "V",
+             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "device": "cuda"}
 PRECISIONS = {"float64": ("float64", None), "float32": ("float32", None), "bfloat16": ("float32", "bfloat16"), "float16": ("float32", "float16")}
 _CHILDREN = np.array(list(np.ndindex(2, 2, 2)))
 
@@ -236,7 +236,7 @@ class GeometricMultigrid:
         live = np.flatnonzero(level.mask64.permute(1, 2, 3, 0).reshape(-1).cpu().numpy() > 0)
         pins = np.zeros(0, dtype=int)
         kernel = None
-        if level.kernel is not None:
+        if level.kernel is not None and self.settings["coarsest_projection"]:
             kernel = level.kernel.permute(2, 3, 4, 1, 0).reshape(-1, level.kernel.shape[0]).cpu().numpy()[live]
             pins = qr(kernel.T, pivoting=True)[2][:kernel.shape[1]]
         keep = np.setdiff1d(np.arange(len(live)), pins)
@@ -335,7 +335,7 @@ class GeometricMultigrid:
         flat = self.flat(solution).cpu().numpy()
         if floating:
             rigid = np.einsum("mk,m...->k...", hierarchy["coefficients"], _rigid(fine.shape, fine.spacing, self.center))
-            rigid = self.flat(torch.as_tensor(rigid, device=self.device)).cpu().numpy()
+            rigid = self.flat(torch.as_tensor(rigid, device=self.device) * fine.mask64).cpu().numpy()
             support = np.asarray(support)
             shift = np.linalg.lstsq(rigid[support], flat[support], rcond=None)[0]
             flat = flat - rigid @ shift

@@ -122,8 +122,10 @@ TRUSS = {"output": "docs/validation/multigrid_truss.json", "spacing_mm": 1.25, "
                       "rediscretize": {"precision": "float32", "coarse": "rediscretize"}, "galerkin_pinned": {"precision": "float32", "projection": False}, "jacobi": {"precision": "float32", "smoother": "jacobi", "growth": 1.0},
                       "galerkin_deep": {"precision": "float32", "coarsest_dofs": 1000}, "rediscretize_deep": {"precision": "float32", "coarse": "rediscretize", "coarsest_dofs": 1000},
                       "pinned_deep": {"precision": "float32", "projection": False, "coarsest_dofs": 1000}, "w_cycle_deep": {"precision": "float32", "cycle": "W", "coarsest_dofs": 1000},
-                      "power100_deep": {"precision": "float32", "coarsest_dofs": 1000, "power_iterations": 100}},
-         "frame_variants": ["galerkin", "galerkin_float64", "galerkin_float16", "rediscretize", "galerkin_pinned", "galerkin_deep"],
+                      "power100_deep": {"precision": "float32", "coarsest_dofs": 1000, "power_iterations": 100}, "galerkin_levels3": {"precision": "float32", "max_levels": 3, "coarsest_dofs": 1},
+                      "rediscretize_levels3": {"precision": "float32", "coarse": "rediscretize", "max_levels": 3, "coarsest_dofs": 1},
+                      "chebyshev6": {"precision": "float32", "chebyshev_degree": 6}, "unprojected_coarsest": {"precision": "float32", "coarsest_projection": False, "max_iterations": 500}},
+         "frame_variants": ["galerkin", "galerkin_float64", "galerkin_float16", "rediscretize", "galerkin_pinned", "galerkin_levels3", "rediscretize_levels3", "galerkin_deep", "unprojected_coarsest"],
          "sweep": {"min_stiffness": [1e-6, 1e-4, 1e-2], "levels": [2, 3, 4, 5], "settings": {"precision": "float32", "coarsest_dofs": 1}}}
 TRUSS_KINDS = {"output": "text", "spacing_mm": "float", "shape": ["int"] * 3, "panel_cells": "int", "member_mm": "float", "frame_density": "text", "problems": ["text"], "frame_cases": ["text"], "variants": "object",
                "frame_variants": ["text"], "sweep": "object"}
@@ -161,6 +163,8 @@ def compare(system, density, variants, label, fields=False, e_min=INTERPOLATION[
     for case in system.cases:
         case["keep_fields"] = fields
     reference, row = reference_solve(system, density, e_min)
+    solid = np.zeros(system.ndof, dtype=bool)
+    solid[system.dofs[np.asarray(density) >= 0.5].ravel()] = True
     rows = [{"problem": label, **row}]
     for name, settings in variants.items():
         mg = multigrid_of(system, settings)
@@ -168,7 +172,14 @@ def compare(system, density, variants, label, fields=False, e_min=INTERPOLATION[
         torch.cuda.reset_peak_memory_stats()
         base, allocated = device_used(), torch.cuda.memory_allocated()
         started = perf_counter()
-        results = solve_elasticity(system, mg, density, INTERPOLATION["penalization"], e_min)
+        try:
+            results = solve_elasticity(system, mg, density, INTERPOLATION["penalization"], e_min)
+        except Exception as error:
+            rows.append({"problem": label, "solver": name, "settings": settings, "error": f"{type(error).__name__}: {error}"[:500], "solves": mg.statistics})
+            mg.close()
+            torch.cuda.empty_cache()
+            print(json.dumps({key: rows[-1][key] for key in ("problem", "solver", "error")}), flush=True)
+            continue
         torch.cuda.synchronize()
         seconds = perf_counter() - started
         peak, used = (torch.cuda.max_memory_allocated() - allocated) / 2 ** 20, device_used() - base
@@ -180,13 +191,15 @@ def compare(system, density, variants, label, fields=False, e_min=INTERPOLATION[
                            "sensitivity_rel_diff": relative(value["derivative"], expected["derivative"])}
             if fields:
                 cases[case]["displacement_rel_diff"] = max(relative(value["fields"][sign], field) for sign, field in expected["fields"].items())
+                cases[case]["displacement_solid_rel_diff"] = max(relative(value["fields"][sign][solid], field[solid]) for sign, field in expected["fields"].items())
         statistics = mg.statistics
         rows.append({"problem": label, "solver": name, "settings": settings, "seconds": seconds, "setup_s": sum(entry["setup_s"] for entry in statistics), "torch_peak_mib": peak, "device_mib": used,
                      "levels": statistics[0]["levels"], "coarsest_dofs": statistics[0]["coarsest_dofs"], "max_iterations": max(max(entry["iterations"]) for entry in statistics),
                      "converged": all(entry["converged"] for entry in statistics), "max_relative_residual": max(max(entry["relative_residual"]) for entry in statistics),
-                     "kernel_check": max([value for entry in statistics for value in entry["kernel_check"]] or [0.0]), "lambda_max": statistics[0]["lambda_max"], "kernel_checks": statistics[-1]["kernel_check"],
+                     "kernel_check": max([value for entry in statistics for value in entry["kernel_check"]] or [0.0]), "lambda_max": statistics[0]["lambda_max"], "kernel_checks": next((entry["kernel_check"] for entry in statistics if entry["kernel_check"]), []),
                      "max_compliance_rel_diff": max(value["compliance_rel_diff"] for value in cases.values()), "max_sensitivity_rel_diff": max(value["sensitivity_rel_diff"] for value in cases.values()),
-                     "max_displacement_rel_diff": max(value["displacement_rel_diff"] for value in cases.values()) if fields else None, "cases": cases,
+                     "max_displacement_rel_diff": max(value["displacement_rel_diff"] for value in cases.values()) if fields else None,
+                     "max_displacement_solid_rel_diff": max(value["displacement_solid_rel_diff"] for value in cases.values()) if fields else None, "cases": cases,
                      "solves": [{key: entry[key] for key in ("iterations", "relative_residual", "floating", "kernel", "setup_s", "seconds", "rhs_kernel_component")} for entry in statistics]})
         mg.close()
         del mg, results

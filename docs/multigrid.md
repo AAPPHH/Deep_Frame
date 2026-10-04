@@ -56,3 +56,61 @@ Autocast lohnt auf der RTX 4080 nicht: FP16 kostet bis 4×, BF16 bis 80× Iterat
 Zeit MG = Aufbau + Lösen beider Lastrichtungen; Speicher MG = PyTorch-Spitze, cuDSS = Gerätespeicher (memGetInfo-Differenz; für MG unbrauchbar, da Pool-Freigaben negative Werte liefern).
 \* cuDSS s4 glatt: 597 s Faktorisierung bei 14 GB auf der geteilten 16-GB-Karte (Speicherdruck); derselbe Fall im Lauf davor 15,0 s.
 Beleg `docs/validation/multigrid_cantilever.json`.
+
+## Schritt 3: dünnes Fachwerk und reales SIMP-Feld
+
+Fachwerk: 128×16×32 Zellen à 1,25 mm (Halbmodell, 217 107 DOF), Stäbe 2,5 mm (2 Zellen), sonst Leerraum mit E_min=1e-6 (SIMP p=3), eingespannt bzw. frei schwebend mit Trägheitsentlastung.
+Frame: Lastmodell-Feld `simp_mma_cov3_opt/fine/density_half.npz`, 4/3 mm, 51×96×24 (279 618 DOF), Fälle thrust_all, crash_front, crash_side_left (frei schwebend) und stiffness_arm_tip (eingespannt).
+
+Ursache der Iterationszunahme (Fachwerk eingespannt, FP32, Iterationen bis 1e-8):
+
+| E_min | 2 Ebenen | 3 | 4 | 5 | Rediskretisierung 3 / 4 / 5 |
+|---|---|---|---|---|---|
+| 1e-6 | 34 | 74 | 104 | 105 | 103 / 113 / 116 |
+| 1e-4 | 30 | 63 | 85 | 85 | 87 / 94 / 95 |
+| 1e-2 | 18 | 23 | 24 | 25 | 26 / 26 / 26 |
+
+Bei E_min=1e-2 ist die Tiefe egal, bei 1e-6 wachsen die Iterationen bis zur Ebene, deren Zellen breiter als der Stab sind (5 mm > 2,5 mm), danach nicht mehr.
+Ursache ist die Grobgitterkorrektur: die feste trilineare Interpolation kann die Verformung eines Stabs im Leerraum nicht abbilden, sobald eine Grobzelle Stab und Leerraum überspannt; Galerkin mildert das (74 statt 103 bei 3 Ebenen), ersetzt die Interpolation aber nicht.
+Ausgeschlossen: λ_max-Schätzung (100 statt 20 Potenziterationen: 104 = 104), Glätter (Chebyshev Grad 6: −15 bis −25 %, Jacobi +25 %, Wachstum ×4: −10 %, alle ohne Zeitgewinn), W-Zyklus (−35 % Iterationen, 1,7× Zeit).
+Abhilfe innerhalb der Vorgabe: Tiefe über die Größe des gröbsten Gitters begrenzen. Standard `coarsest_dofs` jetzt 80 000 (Schritt 2 lief mit 20 000; Ebenen stehen je Zeile im Beleg).
+
+Fachwerk (FP32, Standard = 2 Ebenen):
+
+| Variante | eingespannt Iter. / Zeit | schwebend Iter. / Zeit | Kernprüfung je Ebene |
+|---|---|---|---|
+| Galerkin, Projektion | 34 / 1,65 s | 33 / 1,73 s | 5e-10, 6e-10 |
+| Galerkin FP64 / FP16 / BF16 | 34 / 39 / 97 | 33 / 46 / 124 | FP64 7e-18, 2e-17 |
+| Rediskretisierung | 37 | 35 | |
+| Galerkin 3 Ebenen / Rediskr. 3 Ebenen | 74 / 102 | 70 / 99 | |
+| Galerkin 4 Ebenen / Rediskr. / W-Zyklus | 104 / 113 / 66 | 99 / 115 / 65 | 5e-10 … 2e-9 |
+| statisch bestimmte Lager statt Projektion | 34 | 33 | – |
+| Projektion nur auf feinen Ebenen | 34 | cuDSS-Fehler 29833 (gröbstes Gitter singulär) | |
+| cuDSS | 5,5 s, 4,5 GB | 5,5 s, 4,5 GB | |
+
+Frame 4/3 mm (vier Fälle, 6 rechte Seiten, Zeit inkl. Aufbau):
+
+| Variante | Ebenen / gröbstes DOF | Iter. schwebend / eingespannt | Zeit | PyTorch-Spitze | rel. Diff. Compliance / Sensitivität / u (Material) |
+|---|---|---|---|---|---|
+| Galerkin FP32 (Standard) | 2 / 42 501 | 18 / 19 | 4,5 s | 580 MiB | 6e-11 / 2e-10 / 3e-10 |
+| Galerkin FP64 | 2 / 42 501 | 18 / 19 | 5,2 s | 326 MiB | 6e-11 / 2e-10 / 3e-10 |
+| Galerkin FP16-Autocast | 2 / 42 501 | 76 / 19 | 7,1 s | 580 MiB | 7e-11 / 2e-10 / 3e-10 |
+| statisch bestimmte Lager | 2 / 42 504 | 19 / 19 | 4,3 s | 560 MiB | 6e-12 / 1e-10 / 5e-11 |
+| Galerkin 3 Ebenen | 3 / 6 768 | 63 / 63 | 4,3 s | 423 MiB | 1e-10 / 2e-9 / 2e-9 |
+| Galerkin 5 Ebenen | 5 / 312 | 113 / 107 | 12,4 s | 646 MiB | 2e-10 / 6e-10 / 1e-9 |
+| Rediskretisierung 2 / 3 Ebenen | 2 / 3 | 2000 n. konv. / 302 bzw. 362 | 70 / 95 s | | 6e-5 / 2e-4 |
+| Projektion nur feine Ebenen | 2 | cuDSS-Fehler 42495 | | | |
+| cuDSS | direkt | – | 12,3 s (5,1 s Faktor.+Lösen) | 13,0 GB Gerät | Referenz |
+
+Warum Galerkin: rediskretisierte Grobgitter (gemittelte Dichte, neue K_e) haben die Starrkörpermoden nicht mehr im Kern (Kernprüfung 2e-3/8e-3 statt 1e-9), die Projektion wird inkonsistent, schwebende Fälle konvergieren nicht; auch eingespannt 300–360 statt 19–63 Iterationen.
+Starrkörperprojektion: auf jeder Ebene orthonormierte Starrkörpermoden (3 im Halbmodell), am gröbsten Gitter zusätzlich gepinnte Freiheitsgrade per pivotisierter QR; ohne Projektion am gröbsten Gitter scheitert die Cholesky-Zerlegung.
+Gefundener Fehler: die Starrkörperverschiebung nach dem Lösen wurde auch auf tote Knoten (nur inaktive Elemente) angewandt → u-Abweichung 0,59 bei exakter Compliance; jetzt maskiert, Abweichung 1,4e-8 (Material 2,5e-10).
+FP16-Autocast verdoppelt bis vervierfacht die Iterationen auf dem Frame, BF16 ist unbrauchbar; Standard bleibt FP32 im Vorkonditionierer, FP64 im äußeren CG.
+Offen: bei 2 Ebenen kostet eine Iteration auf dem Frame ≈ 55 ms (3 Ebenen: 11 ms); vermutete Ursache ist die Host-Rundreise zum gröbsten cuDSS-Gitter je V-Zyklus plus die Substitution mit 42k DOF (nicht gemessen). GPU-residente Übergabe per DLPack ist der nächste Schritt.
+Beleg `docs/validation/multigrid_truss.json` (Befehl `tools/multigrid_study.py truss`).
+
+## API
+
+`mg = GeometricMultigrid(shape, spacing, ke, settings)`; `mg.update(moduli)` je Optimierungsschritt (baut Hierarchie und gröbstes cuDSS-Gitter neu, Frame 1,0 s bei 2 Ebenen);
+`u, report = mg.solve(key, fixed, forces[ndof, nrhs], support=None)` – gebündeltes PCG: alle rechten Seiten teilen sich einen V-Zyklus-Aufruf, α/β je Spalte, konvergierte Spalten fallen heraus (kein Block-Krylov).
+`solve_elasticity(system, mg, density, p, e_min)` liefert pro Lastfall Compliance und Ableitung wie `HexElasticity.solve`.

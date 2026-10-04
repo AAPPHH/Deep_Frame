@@ -65,6 +65,7 @@ def test_pcg_matches_direct_solution(projection):
         assert report["converged"]
         from scipy.sparse.linalg import spsolve
         for column, (_, p) in enumerate(members):
-            expected = spsolve(matrix[free][:, free].tocsc(), p["force"][free])
-            assert np.linalg.norm(solution[free, column] - expected) < 1e-6 * np.linalg.norm(expected)
+            expected = np.zeros(system.ndof)
+            expected[free] = spsolve(matrix[free][:, free].tocsc(), p["force"][free])
+            assert np.linalg.norm(solution[:, column] - expected) < 1e-6 * np.linalg.norm(expected)
     mg.close()
