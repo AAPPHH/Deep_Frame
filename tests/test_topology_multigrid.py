@@ -95,7 +95,7 @@ def test_multigrid_problem_evaluation_matches_cudss():
         results.append([tp.evaluate(design) for design in (np.full(tp.map.n, 0.6), np.random.default_rng(5).uniform(0.4, 0.8, tp.map.n))])
         factors = len(tp.system.gpu_solvers)
         tp.close()
-    assert type(tp.modal).__name__ == "MultigridModal" and factors == 0 and all(report["converged"] for report in tp.modal.reports)
+    assert type(tp.modal).__name__ == "MultigridModal" and factors == 0 and all(report["converged"] for report in tp.modal.reports) and tp.system._assembly is None
     for direct, multigrid in zip(*results):
         assert multigrid["names"] == direct["names"]
         assert np.allclose(multigrid["constraints"], direct["constraints"], rtol=1e-7, atol=1e-9)
@@ -135,3 +135,21 @@ def test_lobpcg_modes_match_shift_invert():
     assert abs(result[2]["f1_hz"] / expected[2]["f1_hz"] - 1) < 1e-9
     assert np.linalg.norm(result[1] - expected[1]) < 1e-6 * np.linalg.norm(expected[1])
     mg.close()
+
+@gpu
+def test_convolution_filter_matches_sparse_filter():
+    from deep_frame.topology_optimization import DensityMap, _settings
+    from tests.test_topology_optimization import beam_domain
+    shape = (14, 11, 9)
+    domain = beam_domain(shape, (0.747, 0.753, 0.667))
+    allowed = np.random.default_rng(3).uniform(size=shape) > 0.2
+    allowed[0] = allowed[-1] = True
+    domain.update(allowed=allowed, forbidden=~allowed)
+    sparse, convolution = (DensityMap(domain, _settings({"filter_radius_mm": 2.84, "projection_beta": 4.0, "density_filter": name})) for name in ("sparse", "convolution"))
+    rng = np.random.default_rng(5)
+    design, sensitivity = rng.uniform(size=allowed.size), rng.normal(size=allowed.size)
+    physical, projection = sparse.physical(design)
+    assert sparse.filter is not None and convolution.convolution is not None
+    assert np.max(np.abs(convolution.sums - sparse.sums) / sparse.sums) < 1e-12
+    assert np.max(np.abs(convolution.filtered(design) - sparse.filtered(design))) < 1e-12
+    assert np.max(np.abs(convolution.pullback(sensitivity, projection) - sparse.pullback(sensitivity, projection))) < 1e-12 * np.max(np.abs(sparse.pullback(sensitivity, projection)))

@@ -320,14 +320,14 @@ def choose_solver(linear_solver, spacing, choice=None):
     return "multigrid" if float(np.max(spacing)) < {**SOLVER_CHOICE, **(choice or {})}["multigrid_below_mm"] else "cuda_cudss"
 
 class HexElasticity:
-    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident", share_static=True, multigrid=None, solver_choice=None):
+    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident", share_static="auto", multigrid=None, solver_choice=None):
         self.requested_solver = linear_solver
         linear_solver = choose_solver(linear_solver, domain["grid"]["spacing_mm"], solver_choice)
         if gpu_solver_residency not in ("resident", "transient"):
             raise ValueError("Unknown topology gpu_solver_residency")
         self.linear_solver = linear_solver
         self.gpu_solver_residency = gpu_solver_residency
-        self.share_static, self.shared = share_static, None
+        self.share_static, self.shared = linear_solver != "multigrid" if share_static == "auto" else share_static, None
         self.multigrid_settings, self.multigrid = multigrid, None
         self.gpu_solvers = {}
         self.gpu_reanalyses = 0
@@ -364,8 +364,7 @@ class HexElasticity:
         else:
             self.constitutive = elasticity_matrix(material["poisson_ratio"])
         self.ke, self.me, self.strain = hexahedron_matrices(self.spacing, material["poisson_ratio"], self.constitutive)
-        self.rows = np.repeat(self.dofs[self.active_elements], 24, axis=1).ravel()
-        self.columns = np.tile(self.dofs[self.active_elements], (1, 24)).ravel()
+        self._assembly = None
         self.groups = defaultdict(list)
         self.cases = []
         self.selector_expansions = []
@@ -419,10 +418,17 @@ class HexElasticity:
             self.cases.append(compiled)
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
+    @property
+    def assembly(self):
+        if self._assembly is None:
+            elements = self.dofs[self.active_elements]
+            self._assembly = np.repeat(elements, 24, axis=1).ravel(), np.tile(elements, (1, 24)).ravel()
+        return self._assembly
     def _register(self, compiled, fixed, force, mirrored, split=None):
         compiled["force"], self.shared = force, None
         for fixed_part, part_force, sign in self._parts(fixed, force, mirrored, split):
-            part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
+            known = self.groups.get(fixed_part.tobytes())
+            part_free = known[0][1]["free"] if known else np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
             if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
                 base = fixed if split is None else split[sign]
                 part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign, "support": base if self.symmetry is None else np.setdiff1d(base, self._plane_dofs(sign))}
@@ -603,7 +609,7 @@ class HexElasticity:
         if len(moduli) != self.nelem or np.any(moduli <= 0) or not np.all(np.isfinite(moduli)):
             raise ValueError("Every element needs a finite positive modulus")
         values = (moduli[self.active_elements, None] * self.ke.ravel()[None, :]).ravel()
-        stiffness = coo_matrix((values, (self.rows, self.columns)), shape=(self.ndof, self.ndof)).tocsc()
+        stiffness = coo_matrix((values, self.assembly), shape=(self.ndof, self.ndof)).tocsc()
         if self.linear_solver != "cpu_superlu":
             transpose = stiffness.T.tocsc()
             if not np.array_equal(stiffness.indptr, transpose.indptr) or not np.array_equal(stiffness.indices, transpose.indices):
@@ -759,7 +765,7 @@ class HexElasticity:
             raise ValueError("Voxel modal verification requires strictly positive densities")
         stiffness = self.matrix(self.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization))
         mass_values = (self.density * 1e-9 * density[self.active_elements, None] * self.me.ravel()[None, :]).ravel()
-        mass = coo_matrix((mass_values, (self.rows, self.columns)), shape=(self.ndof, self.ndof)).tocsc()
+        mass = coo_matrix((mass_values, self.assembly), shape=(self.ndof, self.ndof)).tocsc()
         free = case["free"]
         if not 0 < number < len(free):
             raise ValueError("Invalid mode count")
@@ -843,7 +849,7 @@ class ModalConstraint(AugmentedLagrangian):
         stiffness = system.matrix(system.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization))
         mass, _ = self.interpolation(density)
         values = (system.density * 1e-9 * mass[system.active_elements, None] * system.me.ravel()[None, :]).ravel()
-        return stiffness, (coo_matrix((values, (system.rows, system.columns)), shape=(system.ndof, system.ndof)) + diags(self.lumped)).tocsc()
+        return stiffness, (coo_matrix((values, system.assembly), shape=(system.ndof, system.ndof)) + diags(self.lumped)).tocsc()
     def eigenpairs(self, part, stiffness, mass, iterations):
         free = part["free"]
         reduced, reduced_mass = stiffness[free, :][:, free].tocsc(), mass[free, :][:, free].tocsc()
@@ -929,6 +935,7 @@ DEFAULT_SETTINGS = {
     "prop_discs": None,
     "modal": None,
     "solver_choice": SOLVER_CHOICE,
+    "density_filter": "auto",
 }
 
 def _settings(settings):
@@ -957,6 +964,8 @@ def _settings(settings):
         raise ValueError("Invalid topology linear_solver")
     if result["gpu_solver_residency"] not in ("resident", "transient"):
         raise ValueError("Invalid topology gpu_solver_residency")
+    if result["density_filter"] not in DENSITY_FILTERS:
+        raise ValueError("Invalid topology density_filter")
     if result["projection"] not in ("single", "robust"):
         raise ValueError("Invalid topology projection")
     delta = result["robust_delta"]
@@ -996,6 +1005,29 @@ def validate_masks(domain):
         raise ValueError("The design domain has no free material cells")
     return allowed, preserve, forbidden
 
+DENSITY_FILTERS = ("auto", "sparse", "convolution")
+
+def choose_filter(name):
+    if name != "auto":
+        return name
+    try:
+        import torch
+    except ImportError:
+        return "sparse"
+    return "convolution" if torch.cuda.is_available() else "sparse"
+
+class ConeFilter:
+    def __init__(self, allowed, shape, spacing, radius):
+        import torch
+        self.torch, self.shape, device = torch, shape, torch.device("cuda")
+        self.padding = tuple(int(np.floor(radius / h)) for h in spacing)
+        offsets = np.meshgrid(*[np.arange(-k, k + 1) * h for k, h in zip(self.padding, spacing)], indexing="ij")
+        self.kernel = torch.as_tensor(np.maximum(radius - np.sqrt(sum(offset ** 2 for offset in offsets)), 0.0)[None, None], dtype=torch.float64, device=device)
+        self.mask = torch.as_tensor(allowed.reshape(shape), dtype=torch.float64, device=device)
+    def __call__(self, vector):
+        field = self.torch.as_tensor(np.asarray(vector, dtype=float).reshape(self.shape), device=self.mask.device) * self.mask
+        return (self.torch.nn.functional.conv3d(field[None, None], self.kernel, padding=self.padding)[0, 0] * self.mask).cpu().numpy().ravel()
+
 class DensityMap:
     def __init__(self, domain, settings):
         self.settings = settings
@@ -1009,14 +1041,19 @@ class DensityMap:
         shape = tuple(domain["grid"]["shape"])
         spacing = np.asarray(domain["grid"]["spacing_mm"], dtype=float)
         coordinates = np.indices(shape).reshape(3, -1).T * spacing
-        active = np.flatnonzero(self.allowed)
-        tree = cKDTree(coordinates[active])
         radius = settings["filter_radius_mm"]
-        distances = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")
-        weights = radius - distances.data
-        self.filter = coo_matrix((weights, (active[distances.row], active[distances.col])), shape=(self.n, self.n)).tocsr()
-        self.filter.eliminate_zeros()
-        self.sums = np.asarray(self.filter.sum(axis=1)).ravel()
+        self.filter, self.convolution = None, None
+        if choose_filter(settings["density_filter"]) == "convolution":
+            self.convolution = ConeFilter(self.allowed, shape, spacing, radius)
+            self.sums = self.convolution(self.allowed)
+        else:
+            active = np.flatnonzero(self.allowed)
+            tree = cKDTree(coordinates[active])
+            distances = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")
+            weights = radius - distances.data
+            self.filter = coo_matrix((weights, (active[distances.row], active[distances.col])), shape=(self.n, self.n)).tocsr()
+            self.filter.eliminate_zeros()
+            self.sums = np.asarray(self.filter.sum(axis=1)).ravel()
         self.sums[self.forbidden] = 1
         if np.any(self.sums <= 0):
             raise ValueError("Density filter contains an empty allowed-cell neighborhood")
@@ -1026,7 +1063,7 @@ class DensityMap:
         design = np.asarray(design, dtype=float).ravel()
         if design.size != self.n or not np.all(np.isfinite(design)) or np.any(design < 0) or np.any(design > 1):
             raise ValueError("Design densities must be finite and within [0, 1]")
-        return np.asarray(self.filter @ design).ravel() / self.sums
+        return (self.convolution(design) if self.convolution else np.asarray(self.filter @ design).ravel()) / self.sums
     def physical(self, design):
         return self.project(self.filtered(design), self.settings["projection_eta"])
     def fields(self, design):
@@ -1056,7 +1093,8 @@ class DensityMap:
         derivative[~self.free] = 0
         return np.clip(physical, 0, 1), derivative
     def pullback(self, sensitivity, projection_derivative):
-        result = np.asarray(self.filter.T @ (np.asarray(sensitivity).ravel() * projection_derivative / self.sums)).ravel()
+        scaled = np.asarray(sensitivity).ravel() * projection_derivative / self.sums
+        result = self.convolution(scaled) if self.convolution else np.asarray(self.filter.T @ scaled).ravel()
         result[~self.free] = 0
         return result
     def initial(self, target):

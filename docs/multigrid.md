@@ -232,3 +232,46 @@ Nachweis am Lastmodell-Setup 4/3 mm (`solver_memory`, `simp_mma_cov3_opt`, Ray `
 - `auto` wählt auf beiden Rastern cuDSS mit identischem Faktorinventar wie der explizite Lauf.
 - Bitgleichheit nicht erreicht und auch nicht erreichbar: cuDSS ist von Lauf zu Lauf nicht bitweise deterministisch. Der explizite cuDSS-Lauf weicht von seinem Vorgänger `cudss_gmg` genauso ab (4e-12 / 2,6e-11), und innerhalb eines Laufs liegt der Rauschboden bei 1e-12 / 2e-11. Alles ohne Löser (Ziel, Masse, Volumen, Schatten) ist bitgleich.
 - Belege: `exports/solver_memory/{auto,cudss_explicit}/result.json`.
+
+## Schritt 8: Host-RAM im Aufbau (0,75 mm)
+
+Vermessung mit `tools/formulation_study.py setup_memory` (Ray `density_simp` bzw. `density_simp_1mm`): RSS vor/nach/Spitze je Schritt (Abtastung 20 ms), Domäne, Filter, Elastizität, Lastfälle, Kovarianz, Modal/MG, dann eine Auswertung auf dem prolongierten Entwurf `simp_mma_cov3_opt/fine`. Abbruch, sobald weniger als 5 GB Host-RAM frei sind. Vorher = `c522263` mit demselben Probe-Werkzeug.
+
+| Schritt (RSS-Zuwachs GB) | 4/3 cuDSS vorher | 4/3 cuDSS nachher | 4/3 MG vorher | 4/3 MG nachher | 0,75 MG vorher | 0,75 MG nachher |
+|---|---|---|---|---|---|---|
+| Domäne | +0,02 | +0,02 | +0,02 | +0,02 | +0,02 | +0,02 |
+| Filter (Spitze) | +0,03 (0,77) | +0,52¹ (1,15) | +0,03 (0,77) | +0,52¹ (1,15) | +1,34 (**7,70**) | +0,55¹ (1,18) |
+| Elastizität (inkl. Montageindizes und der darin registrierten Lastfälle) | +0,88 | +0,17 | +0,89 | +0,17 | +5,69 | +1,03 |
+| Lastfälle gesamt (39 × `_register`, in Elastizität und Kovarianz enthalten) | +0,49 | +0,35 | +0,49 | +0,35 | +2,98 | +2,15 |
+| MG-Aufbau | – | – | +0,47¹ | 0,00 | +0,48 | 0,00 |
+| RSS nach Aufbau | 1,79 | 1,47 | 2,27 | 1,47 | 9,61 | 3,09 |
+| Montageindizes (nur cuDSS, bei Bedarf) | – | +0,68 | – | – | – | – |
+| statischer Löseschritt | +1,53 | +2,17 | +1,42 | +1,06 | **+18,0 bis Abbruch** | +2,28 |
+| RSS-Spitze Aufbau + 1. Auswertung | 5,07 | 5,42 | 6,28 | 2,90 | **> 28,3 (Abbruch bei < 5 GB frei)** | **7,39** |
+| GPU belegt nach Aufbau / nach 1. Auswertung (gerätweit, Leerlauf 1,27) | 1,27 / 12,85 | 1,32 / 12,83 | 1,27 / 4,45 | 1,32 / 4,97 | – | 1,35 / **14,51** (PyTorch 11,0) |
+
+¹ Import von PyTorch/CUDA-Kontext (≈ 0,5 GB), vorher im MG-Aufbau, jetzt im Filter.
+
+Ursachen (gemessen):
+- Hauptursache war nicht der Aufbau, sondern der erste statische Löseschritt im MG-Pfad: `share_static` (für cuDSS gedacht) hängt an jede Gastgruppe die Einheitsspalten der Stack-DOF als dichte rechte Seiten an (`ndof × Spalten`, mehrere Kopien in `solve`, `_multigrid_solve`, `GeometricMultigrid.solve`). Bei 0,75 mm wuchs das in 12 s von 9,8 auf 27,4 GB.
+- Filtermatrix aus `cKDTree.sparse_distance_matrix`: 7,7 GB Spitze bei 0,75 mm.
+- CPU-Montageindizes `rows`/`columns` (int64, aktive Elemente × 576): ≈ 4,7 GB bei 0,75 mm (Elastizitätsschritt 5,69 → 1,03 GB), im MG-Pfad ungenutzt.
+
+Änderungen:
+- `share_static="auto"` (neuer Standard in `HexElasticity` und `TopologyProblem`): an für cuDSS/SuperLU, aus für `multigrid`; explizite Werte bleiben. Für MG war das schon in Schritt 4 empfohlen.
+- Montageindizes nur noch auf Abruf (`HexElasticity.assembly`, gecacht), also nur für Pfade mit assemblierter Matrix (cuDSS/SuperLU, Modal-cuDSS, Voxel-Eigenfrequenzen). Die gröbsten MG-Systeme bauen ihre Matrix wie bisher selbst.
+- Dichtefilter als PyTorch-`conv3d` auf der GPU (`ConeFilter`): Kegelkern `max(r − |o·h|, 0)` aus den anisotropen Gitterabständen, Nullrand, Maske der erlaubten Zellen vor und nach der Faltung, Normierung über die gefaltete Maske; die Rückführung ist dieselbe Faltung, weil der Operator symmetrisch ist. `density_filter: "auto"` wählt die Faltung, wenn PyTorch mit CUDA da ist, sonst die bisherige dünne Matrix (Haupt-venv). Test `test_convolution_filter_matches_sparse_filter`: Summen, Filterwerte und Rückführung ≤ 1e-12 gegen die dünne Matrix bei 0,747/0,753/0,667 mm und Lücken in der Maske.
+- `free` je Lagerung nur einmal anlegen (gleiche Fixierung → gleiches Array).
+
+Nachweis 4/3 mm (`solver_memory`, 2 Auswertungen + 1 MMA-Iteration, feste Entwürfe `simp_mma_cov3_opt`, Referenz = gleicher Lauf auf `c522263`):
+
+| Pfad | g abs. | Werte rel. | Sensitivitäten rel. (max.) | f1 rel. | Rauschboden Sensitivitäten | s/MMA-Iter. vorher → nachher | dediziert GB vorher → nachher |
+|---|---|---|---|---|---|---|---|
+| auto = cuDSS | 5,3e-12 | 5,9e-12 | 2,5e-11 | 4,5e-13 | 2,3e-11 | 13,5 → 14,7 | 11,49 → 11,50 |
+| MG (`share_static` auto = aus) | 8,4e-12 | 8,6e-12 | 5,0e-10 (load_mean) | 7,7e-15 | 2,4e-11 | 26,2 → 11,9 | 3,90 → 4,44 |
+| MG mit `share_static: true` (nur Filter/Indizes geändert) | 9,7e-13 | 1,1e-12 | 2,3e-11 | 2,1e-13 | 2,4e-11 | 26,2 → 26,4 | 3,90 → 3,90 |
+
+- Alles ≤ 1e-9. Ziel, Zielgradient, Masse, Volumen und Schatten sind bitgleich (Ziel-Abweichung 0).
+- 0,75 mm: Aufbau 3,1 GB, Spitze inkl. erster Auswertung 7,4 GB statt > 28 GB. Der Lauf passt damit in `density_simp_1mm` (28 GB).
+- Offen: GPU nach der ersten 0,75-mm-Auswertung 14,5 GB gerätweit (PyTorch reserviert 11,0 GB für 6 gecachte Hierarchien und PCG-Arbeitsfelder) bei 16 GB Karte. Ob die MMA-Iterationen ohne Auslagern in den geteilten Speicher laufen, zeigt erst die Probe `exports/run075/probe.json`. Die erste Auswertung dauerte kalt 352 s (statisch 145 s, LOBPCG kalt 203 s).
+- Belege: `exports/setup_memory/{setup_*,eval_*}/result.json`, `steps.jsonl`.

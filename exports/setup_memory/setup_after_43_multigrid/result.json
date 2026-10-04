@@ -1,0 +1,211 @@
+{
+ "sha": "c52226380249583b2a992226d52829c8d50b11cf",
+ "config": {
+  "shape": null,
+  "start": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine",
+  "evaluate": true,
+  "sample_s": 0.02,
+  "min_free_gb": 5.0,
+  "output": "C:/Users/jfham/AppData/Local/Temp/claude/c--clones-Deep-Frame/2bec171b-ba58-44fe-ab0f-61ff45688b18/scratchpad/ram/setup_after_43_multigrid"
+ },
+ "linear_solver": "multigrid",
+ "rss_idle_gb": 0.6123085021972656,
+ "gpu_idle": {
+  "device_used_gb": 1.27099609375,
+  "smi_used_gb": 1.048828125,
+  "cupy_pool_gb": 0.0,
+  "torch_reserved_gb": 0.0,
+  "torch_peak_reserved_gb": 0.0
+ },
+ "grid": {
+  "origin_mm": [
+   0.0,
+   -64.0,
+   0.0
+  ],
+  "spacing_mm": [
+   1.3333333333333333,
+   1.3333333333333333,
+   1.3333333333333333
+  ],
+  "shape": [
+   51,
+   96,
+   24
+  ],
+  "axis_order": "xyz",
+  "order": "C"
+ },
+ "dofs": 378300,
+ "active_elements": 79059,
+ "chosen_solver": "multigrid",
+ "rss_after_problem_gb": 1.4668464660644531,
+ "gpu_after_problem": {
+  "device_used_gb": 1.31591796875,
+  "smi_used_gb": 1.09375,
+  "cupy_pool_gb": 0.0,
+  "torch_reserved_gb": 0.00390625,
+  "torch_peak_reserved_gb": 0.00390625
+ },
+ "mass_g": 18.22115195100823,
+ "max_violation": 0.0009120846421775131,
+ "rss_after_evaluation_gb": 2.356494903564453,
+ "gpu_after_evaluation": {
+  "device_used_gb": 4.97412109375,
+  "smi_used_gb": 4.751953125,
+  "cupy_pool_gb": 0.24375629425048828,
+  "torch_reserved_gb": 1.84375,
+  "torch_peak_reserved_gb": 1.84375
+ },
+ "steps": {
+  "domain": {
+   "calls": 1,
+   "seconds": 0.9324337000070955,
+   "rss_added_gb": 0.019336700439453125,
+   "rss_peak_gb": 0.6606788635253906,
+   "rss_after_first_gb": 0.6316452026367188
+  },
+  "filter": {
+   "calls": 1,
+   "seconds": 1.8514993999997387,
+   "rss_added_gb": 0.5183868408203125,
+   "rss_peak_gb": 1.1500320434570312,
+   "rss_after_first_gb": 1.1500320434570312
+  },
+  "elasticity.grid": {
+   "calls": 7,
+   "seconds": 0.05149379999056691,
+   "rss_added_gb": 0.046009063720703125,
+   "rss_peak_gb": 2.6787757873535156,
+   "rss_after_first_gb": 1.1773796081542969
+  },
+  "load_cases": {
+   "calls": 39,
+   "seconds": 0.2546966000154498,
+   "rss_added_gb": 0.3495140075683594,
+   "rss_peak_gb": 1.4644050598144531,
+   "rss_after_first_gb": 1.1978111267089844
+  },
+  "elasticity": {
+   "calls": 1,
+   "seconds": 0.8367199000058463,
+   "rss_added_gb": 0.17155838012695312,
+   "rss_peak_gb": 1.3563613891601562,
+   "rss_after_first_gb": 1.3215904235839844
+  },
+  "covariance": {
+   "calls": 1,
+   "seconds": 0.2011590000038268,
+   "rss_added_gb": 0.13561630249023438,
+   "rss_peak_gb": 1.4644050598144531,
+   "rss_after_first_gb": 1.4572067260742188
+  },
+  "multigrid": {
+   "calls": 1,
+   "seconds": 0.0023808999976608902,
+   "rss_added_gb": 5.340576171875e-05,
+   "rss_peak_gb": 1.4572601318359375,
+   "rss_after_first_gb": 1.4572601318359375
+  },
+  "modal": {
+   "calls": 1,
+   "seconds": 0.014587000005121808,
+   "rss_added_gb": 0.006999969482421875,
+   "rss_peak_gb": 1.4642066955566406,
+   "rss_after_first_gb": 1.4642066955566406
+  },
+  "problem": {
+   "calls": 1,
+   "seconds": 2.9615273000017623,
+   "rss_added_gb": 0.8352012634277344,
+   "rss_peak_gb": 1.4668464660644531,
+   "rss_after_first_gb": 1.4668464660644531
+  },
+  "projections": {
+   "calls": 1,
+   "seconds": 0.010622700006933883,
+   "rss_added_gb": 0.001903533935546875,
+   "rss_peak_gb": 1.4759140014648438,
+   "rss_after_first_gb": 1.4759140014648438
+  },
+  "evaluation.static.share_plan": {
+   "calls": 1,
+   "seconds": 4.0099999750964344e-05,
+   "rss_added_gb": 0.0,
+   "rss_peak_gb": 1.4811172485351562,
+   "rss_after_first_gb": 1.4811172485351562
+  },
+  "multigrid.hierarchy": {
+   "calls": 6,
+   "seconds": 1.6260215000074822,
+   "rss_added_gb": 0.523651123046875,
+   "rss_peak_gb": 2.903766632080078,
+   "rss_after_first_gb": 1.9160118103027344
+  },
+  "cudss_factor": {
+   "calls": 6,
+   "seconds": 3.2242894999944838,
+   "rss_added_gb": 0.16116714477539062,
+   "rss_peak_gb": 2.89324951171875,
+   "rss_after_first_gb": 2.0893173217773438
+  },
+  "multigrid.coarsest_cudss": {
+   "calls": 184,
+   "seconds": 3.5480368000280578,
+   "rss_added_gb": 0.2100982666015625,
+   "rss_peak_gb": 2.89324951171875,
+   "rss_after_first_gb": 2.1572036743164062
+  },
+  "evaluation.static.pcg": {
+   "calls": 4,
+   "seconds": 8.850993000000017,
+   "rss_added_gb": 1.0457725524902344,
+   "rss_peak_gb": 2.903766632080078,
+   "rss_after_first_gb": 2.2717933654785156
+  },
+  "evaluation.static.collect": {
+   "calls": 4,
+   "seconds": 1.3882998000044608,
+   "rss_added_gb": 0.23379898071289062,
+   "rss_peak_gb": 2.7311439514160156,
+   "rss_after_first_gb": 2.2507705688476562
+  },
+  "evaluation.static": {
+   "calls": 1,
+   "seconds": 10.456225499998254,
+   "rss_added_gb": 1.0556907653808594,
+   "rss_peak_gb": 2.903766632080078,
+   "rss_after_first_gb": 2.531604766845703
+  },
+  "evaluation.covariance": {
+   "calls": 1,
+   "seconds": 0.3205567000040901,
+   "rss_added_gb": 4.57763671875e-05,
+   "rss_peak_gb": 2.8154945373535156,
+   "rss_after_first_gb": 2.5316505432128906
+  },
+  "evaluation.modal": {
+   "calls": 1,
+   "seconds": 5.070310899995093,
+   "rss_added_gb": 0.00104522705078125,
+   "rss_peak_gb": 2.7188644409179688,
+   "rss_after_first_gb": 2.532695770263672
+  },
+  "evaluation.pullback": {
+   "calls": 15,
+   "seconds": 0.030661800010420848,
+   "rss_added_gb": -0.003231048583984375,
+   "rss_peak_gb": 2.5363616943359375,
+   "rss_after_first_gb": 2.533611297607422
+  },
+  "evaluation": {
+   "calls": 1,
+   "seconds": 15.901728700002423,
+   "rss_added_gb": 0.8824806213378906,
+   "rss_peak_gb": 2.903766632080078,
+   "rss_after_first_gb": 2.3564910888671875
+  }
+ },
+ "rss_peak_gb": 2.903766632080078,
+ "table": "| step | calls | s | RSS added GB | RSS peak GB |\n|---|---|---|---|---|\n| domain | 1 | 0.9 | +0.02 | 0.66 |\n| filter | 1 | 1.9 | +0.52 | 1.15 |\n| elasticity.grid | 7 | 0.1 | +0.05 | 2.68 |\n| load_cases | 39 | 0.3 | +0.35 | 1.46 |\n| elasticity | 1 | 0.8 | +0.17 | 1.36 |\n| covariance | 1 | 0.2 | +0.14 | 1.46 |\n| multigrid | 1 | 0.0 | +0.00 | 1.46 |\n| modal | 1 | 0.0 | +0.01 | 1.46 |\n| problem | 1 | 3.0 | +0.84 | 1.47 |\n| projections | 1 | 0.0 | +0.00 | 1.48 |\n| evaluation.static.share_plan | 1 | 0.0 | +0.00 | 1.48 |\n| multigrid.hierarchy | 6 | 1.6 | +0.52 | 2.90 |\n| cudss_factor | 6 | 3.2 | +0.16 | 2.89 |\n| multigrid.coarsest_cudss | 184 | 3.5 | +0.21 | 2.89 |\n| evaluation.static.pcg | 4 | 8.9 | +1.05 | 2.90 |\n| evaluation.static.collect | 4 | 1.4 | +0.23 | 2.73 |\n| evaluation.static | 1 | 10.5 | +1.06 | 2.90 |\n| evaluation.covariance | 1 | 0.3 | +0.00 | 2.82 |\n| evaluation.modal | 1 | 5.1 | +0.00 | 2.72 |\n| evaluation.pullback | 15 | 0.0 | -0.00 | 2.54 |\n| evaluation | 1 | 15.9 | +0.88 | 2.90 |"
+}

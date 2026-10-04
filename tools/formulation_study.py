@@ -54,6 +54,7 @@ FORMULATION = {
                    "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "auto"},
     "solver_memory": {"run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt", "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
                       "output": "exports/solver_memory/baseline", "reference": None, "multigrid": None, "share_static": True, "modal": {}},
+    "setup_memory": {"shape": None, "start": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine", "evaluate": True, "sample_s": 0.02, "min_free_gb": 5.0, "output": "exports/setup_memory/probe"},
 }
 
 def configure(overrides):
@@ -542,6 +543,112 @@ def solver_memory(cfg):
     for grid, item in record["grids"].items():
         print(json.dumps({grid: {"noise_floor": item["noise_floor"], "deviation": item.get("deviation")}}, default=float), flush=True)
 
+SETUP_STEPS = [("deep_frame.topology_optimization", "DensityMap", "__init__", "filter"), ("deep_frame.topology_optimization", "DensityMap", "fields", "projections"),
+               ("deep_frame.topology_optimization", "HexElasticity", "__init__", "elasticity"), ("deep_frame.topology_optimization", None, "regular_grid", "elasticity.grid"),
+               ("deep_frame.topology_optimization", "HexElasticity", "assembly", "elasticity.assembly_indices"), ("deep_frame.topology_optimization", "HexElasticity", "_register", "load_cases"),
+               ("deep_frame.topology_problem", "InterfaceCovariance", "__init__", "covariance"), ("deep_frame.topology_optimization", "HexElasticity", "modal_constraint", "modal"),
+               ("deep_frame.topology_multigrid", "GeometricMultigrid", "__init__", "multigrid"), ("deep_frame.topology_multigrid", "GeometricMultigrid", "hierarchy", "multigrid.hierarchy"),
+               ("deep_frame.topology_multigrid", "GeometricMultigrid", "_coarsest_solver", "multigrid.coarsest_cudss"), ("deep_frame.topology_optimization", "CudaDirectSolver", "__init__", "cudss_factor"),
+               ("deep_frame.topology_problem", "TopologyProblem", "evaluate", "evaluation"), ("deep_frame.topology_optimization", "HexElasticity", "solve", "evaluation.static"),
+               ("deep_frame.topology_optimization", "HexElasticity", "_share_plan", "evaluation.static.share_plan"), ("deep_frame.topology_optimization", "HexElasticity", "_collect", "evaluation.static.collect"),
+               ("deep_frame.topology_multigrid", "GeometricMultigrid", "solve", "evaluation.static.pcg"), ("deep_frame.topology_problem", "InterfaceCovariance", "measure", "evaluation.covariance"),
+               ("deep_frame.topology_multigrid", "MultigridModal", "measure", "evaluation.modal"), ("deep_frame.topology_optimization", "ModalConstraint", "measure", "evaluation.modal"),
+               ("deep_frame.topology_optimization", "DensityMap", "pullback", "evaluation.pullback")]
+
+class SetupTrace:
+    def __init__(self, spec, log):
+        import psutil
+        self.psutil, self.process, self.spec, self.log = psutil, psutil.Process(), spec, open(log, "w")
+        self.samples, self.events, self.depth, self.running, self.started = [], [], 0, True, perf_counter()
+        self.thread = threading.Thread(target=self.poll, daemon=True)
+        self.thread.start()
+    def rss(self):
+        return self.process.memory_info().rss / 2 ** 30
+    def poll(self):
+        while self.running:
+            self.samples.append((perf_counter(), self.rss()))
+            if self.psutil.virtual_memory().available / 2 ** 30 < self.spec["min_free_gb"]:
+                self.log.write(json.dumps({"aborted": "free host RAM below " + str(self.spec["min_free_gb"]) + " GB", "t": perf_counter() - self.started, "rss_gb": self.samples[-1][1]}) + "\n")
+                self.log.close()
+                os._exit(3)
+            threading.Event().wait(self.spec["sample_s"])
+    def step(self, label, function):
+        trace = self
+        def wrapped(*args, **kwargs):
+            clock, before, trace.depth = perf_counter(), trace.rss(), trace.depth + 1
+            try:
+                return function(*args, **kwargs)
+            finally:
+                trace.depth -= 1
+                end, after = perf_counter(), trace.rss()
+                peak = max([value for moment, value in list(trace.samples) if clock <= moment <= end] + [before, after])
+                event = {"step": label, "depth": trace.depth, "t": clock - trace.started, "seconds": end - clock, "rss_before_gb": before, "rss_after_gb": after, "rss_peak_gb": peak}
+                trace.events.append(event)
+                trace.log.write(json.dumps(event) + "\n")
+                trace.log.flush()
+        return wrapped
+    def install(self, steps=SETUP_STEPS):
+        import importlib
+        for module, owner, name, label in steps:
+            target = importlib.import_module(module)
+            target = getattr(target, owner) if owner else target
+            original = target.__dict__.get(name)
+            if isinstance(original, property):
+                setattr(target, name, property(self.step(label, original.fget)))
+            elif original is not None:
+                setattr(target, name, self.step(label, original))
+    def summary(self):
+        steps = {}
+        for event in self.events:
+            row = steps.setdefault(event["step"], {"calls": 0, "seconds": 0.0, "rss_added_gb": 0.0, "rss_peak_gb": 0.0, "rss_after_first_gb": event["rss_after_gb"]})
+            row["calls"] += 1
+            row["seconds"] += event["seconds"]
+            row["rss_added_gb"] += event["rss_after_gb"] - event["rss_before_gb"]
+            row["rss_peak_gb"] = max(row["rss_peak_gb"], event["rss_peak_gb"])
+        return steps
+    def close(self):
+        self.running = False
+        self.thread.join()
+        self.log.close()
+
+def gpu_state():
+    import cupy
+    free, total = cupy.cuda.runtime.memGetInfo()
+    smi = subprocess.run(["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"], capture_output=True, text=True).stdout.split()
+    torch = sys.modules.get("torch")
+    live = torch is not None and torch.cuda.is_initialized()
+    return {"device_used_gb": (total - free) / 2 ** 30, "smi_used_gb": float(smi[0]) / 1024 if smi else None, "cupy_pool_gb": cupy.get_default_memory_pool().total_bytes() / 2 ** 30,
+            "torch_reserved_gb": torch.cuda.memory_reserved() / 2 ** 30 if live else 0.0, "torch_peak_reserved_gb": torch.cuda.max_memory_reserved() / 2 ** 30 if live else 0.0}
+
+def setup_memory(cfg):
+    spec = cfg["setup_memory"]
+    out = Path(spec["output"])
+    out.mkdir(parents=True, exist_ok=True)
+    idle = gpu_state()
+    trace = SetupTrace(spec, out / "steps.jsonl")
+    trace.install()
+    record = {"sha": git_sha(), "config": spec, "linear_solver": cfg["mma"]["linear_solver"], "rss_idle_gb": trace.rss(), "gpu_idle": idle}
+    try:
+        half, problem = trace.step("domain", frame_setup)(cfg, spec["shape"] or cfg["shape"])
+        tp = trace.step("problem", TopologyProblem)(half, problem, linear_solver=cfg["mma"]["linear_solver"])
+        record.update(grid=half["grid"], dofs=tp.system.ndof, active_elements=int(np.count_nonzero(tp.system.active_elements)), chosen_solver=tp.system.linear_solver, rss_after_problem_gb=trace.rss(), gpu_after_problem=gpu_state())
+        while tp.advance():
+            pass
+        if spec["evaluate"]:
+            source = Path(spec["start"])
+            design = prolongate(np.load(source / "design.npz")["design"], read(source / "result.json")["grid"], half)
+            result = tp.evaluate(design)
+            record.update(mass_g=result["mass_g"], max_violation=result["max_violation"], rss_after_evaluation_gb=trace.rss(), gpu_after_evaluation=gpu_state())
+        tp.close()
+    finally:
+        trace.close()
+    record.update(steps=trace.summary(), rss_peak_gb=max(value for _, value in trace.samples), events=trace.events)
+    lines = ["| step | calls | s | RSS added GB | RSS peak GB |", "|---|---|---|---|---|"] + [f"| {name} | {row['calls']} | {row['seconds']:.1f} | {row['rss_added_gb']:+.2f} | {row['rss_peak_gb']:.2f} |" for name, row in record["steps"].items()]
+    record["table"] = "\n".join(lines)
+    (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(record["table"], flush=True)
+    print(json.dumps({key: record.get(key) for key in ("grid", "dofs", "chosen_solver", "rss_after_problem_gb", "rss_after_evaluation_gb", "rss_peak_gb", "gpu_after_problem", "gpu_after_evaluation")}, default=float), flush=True)
+
 def checkpoint(path):
     def save(x, history, levels):
         np.savez_compressed(path, design=x, level=history[-1]["level"], iteration=len(history))
@@ -803,7 +910,7 @@ def main(argv=None):
                          "frame_runs": lambda overrides: frame_runs(configure(overrides)), "manafly_check": lambda overrides: manafly_check(configure(overrides)), "compose": lambda overrides: compose(configure(overrides)),
                          "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
-                         "cov_compare": lambda overrides: cov_compare(configure(overrides)), "solver_memory": lambda overrides: solver_memory(configure(overrides))}, argv)
+                         "cov_compare": lambda overrides: cov_compare(configure(overrides)), "solver_memory": lambda overrides: solver_memory(configure(overrides)), "setup_memory": lambda overrides: setup_memory(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

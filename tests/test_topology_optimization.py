@@ -142,7 +142,7 @@ def random_design(mapping, seed, low=0.2, high=0.8):
 @pytest.mark.parametrize("beta", [0.0, 1.0, 4.0])
 def test_single_projection_reproduces_legacy_formula_bitwise(beta):
     domain = beam_domain((6, 4, 4), (1.0, 1.0, 1.0))
-    mapping = DensityMap(domain, _settings({"filter_radius_mm": 2.6, "projection_beta": beta, "projection_eta": 0.45}))
+    mapping = DensityMap(domain, _settings({"filter_radius_mm": 2.6, "projection_beta": beta, "projection_eta": 0.45, "density_filter": "sparse"}))
     design = random_design(mapping, 3)
     filtered = np.asarray(mapping.filter @ design).ravel() / mapping.sums
     if beta:

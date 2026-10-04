@@ -131,7 +131,7 @@ class TopologyProblem:
         self.map = DensityMap(domain, _settings({"projection": "robust", "projection_eta": width["eta"], "robust_delta": width["delta"], "filter_radius_mm": self.radius,
                                                  "beta_schedule": problem["continuation"]["beta_schedule"]}))
         self.level = 0
-        self.system = HexElasticity(domain, interface_node_policy=domain.get("optimizer_settings", {}).get("interface_node_policy", "allowed_adjacent"), linear_solver=linear_solver, share_static=problem.get("share_static", True), multigrid=problem.get("multigrid"), solver_choice=problem.get("solver_choice"))
+        self.system = HexElasticity(domain, interface_node_policy=domain.get("optimizer_settings", {}).get("interface_node_policy", "allowed_adjacent"), linear_solver=linear_solver, share_static=problem.get("share_static", "auto"), multigrid=problem.get("multigrid"), solver_choice=problem.get("solver_choice"))
         self.factor = 1.0 if self.system.symmetry is None else 2.0
         self.cell = float(np.prod(self.system.spacing))
         self.allowed = int(np.count_nonzero(self.map.allowed))
