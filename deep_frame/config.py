@@ -1076,6 +1076,14 @@ SPLINE_RECONSTRUCTION_CONFIG = {
     "minimum_shell_mm": 2.0,
     "section_reach_mm": 6.0,
     "section_smooth_mm": 2.0,
+    "web_split_mm": 3.0,
+    "web_length_mm": 20.0,
+    "web_fill": 0.7,
+    "web_minimum_mm": 2.0,
+    "web_angle_deg": 120.0,
+    "web_margin_mm": 1.0,
+    "raw_margin_mm": 0.0,
+    "rod_raw_margin_mm": 0.5,
 }
 
 SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if isinstance(value, float) else "int" for key, value in SPLINE_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},

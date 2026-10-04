@@ -344,38 +344,50 @@ class Reconstruction:
             np.maximum(values[window], value.astype(np.float32), out=values[window])
         return values
 
+    def _fit(self, axes, values, core, key="raw_margin_mm"):
+        margin = self.config.get(key, -1.0)
+        return values if self.density is None or margin < 0 else np.maximum(np.minimum(values, self.raw_values(axes)+margin), core)
+
     def add_member(self, member, h, blend=0.0):
-        k = self.config["transition_radius_mm"]
+        k, r = self.config["transition_radius_mm"], self.config["minimum_radius_mm"]
         if member["kind"] == "shell":
             shell = dict(member["shell"], h=h)
             window = self.field.window(_box(*shell["bounds"]), k)
             if window is not None:
-                self._blend(window, np.maximum(shell_values(self.field.axes(window), shell), sweep_values(self.field.axes(window), member["points"], member["b"], member["b"], member["axis"])), blend)
+                axes = self.field.axes(window)
+                values = np.maximum(shell_values(axes, shell), sweep_values(axes, member["points"], member["b"], member["b"], member["axis"]))
+                self._blend(window, self._fit(axes, values, sweep_values(axes, member["points"], np.full(len(member["b"]), r), np.full(len(member["b"]), r), member["axis"])), blend)
             return
         reach = float(np.max(member["a"]))+2*self.field.spacing[0]
         window = self.field.window(_box(member["points"].min(axis=0), member["points"].max(axis=0)), reach+k)
         if window is None:
             return
-        values = np.full(tuple(s.stop-s.start for s in window), -np.inf, dtype=np.float32)
         flat = [isinstance(node, int) for node in member["nodes"]]
-        for i in range(max(len(member["points"])-1, 1)):
-            j = min(i+1, len(member["points"])-1)
-            pair = member["points"][[i, j]]
-            local = self.field.window(_box(pair.min(axis=0), pair.max(axis=0)), max(member["a"][i], member["a"][j])+2*self.field.spacing[0])
-            if local is None:
-                continue
-            local = tuple(slice(max(l.start, w.start), min(l.stop, w.stop)) for l, w in zip(local, window))
-            if any(s.stop <= s.start for s in local):
-                continue
-            target = tuple(slice(l.start-w.start, l.stop-w.start) for l, w in zip(local, window))
-            np.maximum(values[target], sweep_values(self.field.axes(local), member["points"][[i, j]], member["a"][[i, j]], member["b"][[i, j]], member["axis"][[i, j]], (i == 0 and flat[0], j == len(member["points"])-1 and flat[1])), out=values[target])
+        def swept(a, b):
+            values = np.full(tuple(s.stop-s.start for s in window), -np.inf, dtype=np.float32)
+            for i in range(max(len(member["points"])-1, 1)):
+                j = min(i+1, len(member["points"])-1)
+                pair = member["points"][[i, j]]
+                local = self.field.window(_box(pair.min(axis=0), pair.max(axis=0)), max(a[i], a[j])+2*self.field.spacing[0])
+                if local is None:
+                    continue
+                local = tuple(slice(max(l.start, w.start), min(l.stop, w.stop)) for l, w in zip(local, window))
+                if any(s.stop <= s.start for s in local):
+                    continue
+                target = tuple(slice(l.start-w.start, l.stop-w.start) for l, w in zip(local, window))
+                np.maximum(values[target], sweep_values(self.field.axes(local), pair, a[[i, j]], b[[i, j]], member["axis"][[i, j]], (i == 0 and flat[0], j == len(member["points"])-1 and flat[1])), out=values[target])
+            return values
+        values = swept(member["a"], member["b"])
+        if self.density is not None and self.config.get("rod_raw_margin_mm", -1.0) >= 0:
+            values = self._fit(self.field.axes(window), values, swept(*[np.full(len(member["a"]), r)]*2), "rod_raw_margin_mm")
         self._blend(window, values, blend)
 
     def add_node(self, node, blend):
         region = {"kind": "sphere", "center_mm": node["center"], "radius_mm": node["radius"]}
         window = self.field.window(region, 2*blend)
         if window is not None:
-            self._blend(window, primitive_distance(self.field.axes(window), region).astype(np.float32), blend)
+            axes = self.field.axes(window)
+            self._blend(window, self._fit(axes, primitive_distance(axes, region), primitive_distance(axes, dict(region, radius_mm=min(node["radius"], self.config["minimum_radius_mm"])))).astype(np.float32), blend)
 
     def finish(self):
         h = self.field.spacing[0]
@@ -698,6 +710,74 @@ def spline_member(graph, member, area, config, domain=None):
     control, curve, shift = seat_curve(domain, control, curve, a, b, major, count, config) if domain is not None else (control, curve, 0.0)
     return {"kind": "rod", "points": curve, "a": a, "b": b, "axis": frame_axes(curve, major)[0], "nodes": ["joined", "joined"], "control": control, "profile": profile, "t": t, "keep": keep, "length": arc, "path_length": length, "aspect": float(np.median(aspect)), "stretch": length/arc, "seat_shift_mm": shift}
 
+def _from_end(rod, side, step):
+    points, b = (rod["points"], rod["b"]) if side == 0 else (rod["points"][::-1], rod["b"][::-1])
+    arc = np.r_[0, np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1))]
+    s = np.arange(0, arc[-1], step)
+    return np.stack([np.interp(s, arc, points[:, k]) for k in range(3)], axis=1), np.interp(s, arc, b)
+
+def _raw(graph, points):
+    return map_coordinates(graph.weights, ((np.atleast_2d(points)-graph.origin)/graph.h-0.5).T, order=1, mode="constant")
+
+def _run(values, centre):
+    inside = values > 0.5
+    if not inside[centre]:
+        return 0
+    low, high = centre, centre
+    while low > 0 and inside[low-1]:
+        low -= 1
+    while high < len(inside)-1 and inside[high+1]:
+        high += 1
+    return high-low+1
+
+def fork_webs(graph, rods, config):
+    step, webs = graph.h/2, []
+    ends = [(number, side, rod["points"][-side]) for number, rod in enumerate(rods) if rod is not None and len(rod["points"]) > 2 for side in (0, 1)]
+    for x, (i, si, ei) in enumerate(ends):
+        for j, sj, ej in ends[x+1:]:
+            if i == j or np.linalg.norm(ei-ej) > config["web_split_mm"]:
+                continue
+            (pi, bi), (pj, bj) = _from_end(rods[i], si, step), _from_end(rods[j], sj, step)
+            count = min(len(pi), len(pj), int(config["web_length_mm"]/step))
+            if count < 3 or np.degrees(np.arccos(np.clip(np.dot(*[(p[2]-p[0])/max(np.linalg.norm(p[2]-p[0]), 1e-9) for p in (pi, pj)]), -1, 1))) > config["web_angle_deg"]:
+                continue
+            last, open_, thickness = 0, 0, []
+            for k in range(count):
+                span = pj[k]-pi[k]
+                width = float(np.linalg.norm(span))
+                gap = width-bi[k]-bj[k]
+                if gap > graph.h:
+                    direction = span/width
+                    inner = pi[k]+direction*np.arange(bi[k], width-bj[k], step)[:, None]
+                    if np.mean(_raw(graph, inner) > 0.5) < config["web_fill"]:
+                        break
+                    open_ += 1
+                    middle = (pi[k]+pj[k])/2
+                    normal = np.cross(span, (pi[min(k+1, count-1)]+pj[min(k+1, count-1)])/2-(pi[max(k-1, 0)]+pj[max(k-1, 0)])/2)
+                    if np.linalg.norm(normal) > 1e-9:
+                        line = np.arange(-6.0, 6.0+step/4, step/2)
+                        thickness.append(_run(_raw(graph, middle+line[:, None]*normal/np.linalg.norm(normal)), len(line)//2)*step/2)
+                last = k
+            if open_*step < config["web_minimum_mm"] or not thickness:
+                continue
+            sheet = np.concatenate([pi[k]+(pj[k]-pi[k])*np.linspace(0, 1, max(int(np.linalg.norm(pj[k]-pi[k])/step), 1)+1)[:, None] for k in range(last+1)])
+            webs.append({"members": [i, j], "length_mm": round((last+1)*step, 2), "open_mm": round(open_*step, 2), "thickness_mm": float(max(np.median(thickness), 2*config["minimum_radius_mm"])), "sheet": sheet})
+    return webs
+
+def add_webs(builder, webs, blend):
+    from scipy.spatial import cKDTree
+    core = builder.config["minimum_radius_mm"]
+    for web in webs:
+        half = web["thickness_mm"]/2+builder.config["web_margin_mm"]
+        window = builder.field.window(_box(web["sheet"].min(axis=0), web["sheet"].max(axis=0)), half+blend)
+        if window is None:
+            continue
+        axes = builder.field.axes(window)
+        points = np.stack(np.broadcast_arrays(*axes), axis=-1)
+        distance = cKDTree(web["sheet"]).query(points.reshape(-1, 3))[0].reshape(points.shape[:3])
+        values = half-distance if builder.density is None else np.maximum(np.minimum(builder.raw_values(axes), half-distance), core-distance)
+        builder._blend(window, values.astype(np.float32), blend)
+
 def bumps(graph, domain, rods, areas, config):
     loads = [(case["name"], load["region"]) for key in ("load_cases", "comparison_load_cases") for case in domain.get(key, []) for load in case.get("loads", [])]
     preserves = [region for region in domain["regions"] if region["role"] == "preserve"]
@@ -742,11 +822,13 @@ def reconstruct_splines(domain, density, config, body=None):
     rods = [spline_member(graph, member, area, config, domain) if member["kind"] == "rod" else None for member, area in zip(graph.members, areas)]
     rods = [None if rod is not None and member["nodes"][0] == member["nodes"][1] and rod["length"] < config["loop_factor"]*float(np.mean(rod["b"])) else rod for member, rod in zip(graph.members, rods)]
     times["skeleton_s"] = perf_counter()-started
-    builder, k = Reconstruction(domain, config, density if config["bridge_gap_mm"] > 0 else None), config["transition_radius_mm"]
+    builder, k = Reconstruction(domain, {**config, **({} if body is not None else {"raw_margin_mm": -1.0, "rod_raw_margin_mm": -1.0})}, (density if body is None else graph.weights) if config["bridge_gap_mm"] > 0 else None), config["transition_radius_mm"]
     for rod in rods:
         if rod is not None:
             builder.add_member(rod, graph.h, k)
     add_shells(builder, graph, domain, config, 1.0, k, True)
+    webs = fork_webs(graph, rods, config) if config["web_fill"] <= 1 else []
+    add_webs(builder, webs, k)
     items = joints(graph, rods)
     radii = [max([node["radius"]]+[item["b"] for item in items if item["node"] == number+1]) for number, node in enumerate(graph.nodes)]
     for node, radius in zip(graph.nodes, radii):
@@ -761,7 +843,7 @@ def reconstruct_splines(domain, density, config, body=None):
     budget = {"measured_members_mm3": float(sum(m["target_volume"] for m in graph.members)), "built_rods_mm3": float(sum(np.sum(np.pi*rod["a"]*rod["b"])*rod["length"]/len(rod["a"]) for rod in built)),
               "node_bodies_mm3": float(sum(4/3*np.pi*r**3 for r in radii)), "preserves_mm3": float(np.count_nonzero(domain["preserve"])*np.prod(spacing)), "section_source_mm3": float(graph.weights.sum()*np.prod(spacing)), "result_mm3": final["volume_mm3"]}
     report = {**graph.report(), **final, "method": "spline", "fragments_dropped": fragments, "splines": members, "control_points": {str(n): sum(1 for m in members if m["control_points"] == n) for n in (3, 4, 5)}, "mass_budget": budget, "seating": {"nodes": seating, "members_shifted": sum(1 for rod in built if rod["seat_shift_mm"] > 0), "maximum_member_shift_mm": max([rod["seat_shift_mm"] for rod in built], default=0.0)},
-              "joint_sections": sections_report, "preserve_bridges": getattr(builder, "bridges", 0), "bumps": bumps(graph, domain, rods, areas, config), "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "voxel_mm": config["voxel_mm"], "transition_radius_mm": k,
+              "joint_sections": sections_report, "preserve_bridges": getattr(builder, "bridges", 0), "webs": [{key: web[key] for key in ("members", "length_mm", "open_mm", "thickness_mm")} for web in webs], "bumps": bumps(graph, domain, rods, areas, config), "extraction": {key: extraction[key] for key in ("mesh", "runtime_s")}, "voxel_mm": config["voxel_mm"], "transition_radius_mm": k,
               "section_source": "raw body occupancy" if body is not None else "thresholded density", "runtime_s": {**times, "total_s": perf_counter()-started}}
     return mesh, graph, rods, report
 

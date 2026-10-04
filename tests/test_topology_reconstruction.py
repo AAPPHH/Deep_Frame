@@ -206,3 +206,21 @@ def test_spline_sections_follow_the_raw_section_orientation_along_the_member():
     assert abs(rod["axis"][middle, 2]) > 0.9 and abs(rod["axis"][flank, 1]) > 0.9
     assert rod["a"][middle]/rod["b"][middle] > 1.5 and rod["a"][flank]/rod["b"][flank] > 1.5
     assert mesh.is_watertight and report["bodies"] == 1
+
+def test_fork_web_is_found_where_the_raw_body_fills_between_diverging_members():
+    from types import SimpleNamespace
+    from deep_frame.topology_reconstruction import fork_webs
+    h, shape = 0.5, (80, 64, 24)
+    centers = (np.stack(np.meshgrid(*[np.arange(n) for n in shape], indexing="ij"), axis=-1)+0.5)*h
+    node, left, right = np.array([4.0, 16.0, 6.0]), np.array([36.0, 4.0, 6.0]), np.array([36.0, 28.0, 6.0])
+    rod = lambda end: {"points": node+np.linspace(0, 1, 40)[:, None]*(end-node), "b": np.full(40, 1.5)}
+    rods = [rod(left), rod(right)]
+    x, y, z = centers[..., 0], centers[..., 1], centers[..., 2]
+    bars = (_segment_distance(centers, node, left) <= 1.5) | (_segment_distance(centers, node, right) <= 1.5)
+    web = (x <= 16.0) & (np.abs(y-16.0) <= (x-node[0])*12/32+1.0) & (np.abs(z-6.0) <= 1.5)
+    config = {**SPLINE_RECONSTRUCTION_CONFIG, "minimum_radius_mm": 1.25}
+    found = fork_webs(SimpleNamespace(weights=(bars | web).astype(np.float32), origin=np.zeros(3), h=h), rods, config)
+    assert len(found) == 1 and found[0]["members"] == [0, 1]
+    assert 10.0 <= found[0]["length_mm"] <= 15.0 and found[0]["open_mm"] >= 5.0
+    assert found[0]["thickness_mm"] == pytest.approx(3.0, abs=0.6)
+    assert not fork_webs(SimpleNamespace(weights=bars.astype(np.float32), origin=np.zeros(3), h=h), rods, config)
