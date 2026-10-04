@@ -14,6 +14,8 @@ COMPONENT_LIBRARY = {
         "keep_out": {"clearance_mm": 0.5},
         "mounting": "screws",
         "data": {"kv": 8000, "thrust_n": 1.80},
+        "cable": {"conductors": 3, "conductor_diameter_mm": 1.02, "bundle_diameter_mm": 2.2,
+                  "source": "ASSUMPTION (user: motor cable ca. 2.2 mm; data sheet gives no gauge): 2.2 mm is the bundle of the three phase leads twisted in a tight triangle, circumscribed d (1 + 2/sqrt 3) = 2.155 d, i.e. about 1.0 mm per silicone lead (30 AWG class); if 2.2 mm were per lead the bundle would be 4.7 mm"},
         "source": "Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg (RCinPower GTS V3 1203 8000KV data sheet)",
         "model": "RCinPower GTS V3 1203 8000KV (user decision)",
         "parameter_sources": {
@@ -86,6 +88,7 @@ COMPONENT_LIBRARY = {
         "hole_pattern": {"layout": "side_pair", "count": 2, "screw_diameter_mm": 2.0, "clearance_diameter_mm": 2.2},
         "keep_out": {"clearance_mm": 0.5, "side_mm": 2.0, "bottom_mm": 2.0},
         "mounting": "screws",
+        "cable": {"conductors": 1, "conductor_diameter_mm": 1.6, "bundle_diameter_mm": 1.6, "source": "PROVISIONAL: HDZero camera MIPI cable treated as one round 1.6 mm cable; not measured"},
         "source": "user: HDZero Lux dimensions and mass",
         "parameter_sources": {"clearance_diameter_mm": "frame v0: 2.2 mm side screw bore", "keep_out": "frame v0: 2 mm side and bottom camera clearance"},
     },
@@ -1090,6 +1093,35 @@ SPLINE_RECONSTRUCTION_CONFIG = {
 
 SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if isinstance(value, float) else "int" for key, value in SPLINE_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},
                                "section_body": "path", "spline_lengths_mm": ["float"], "contact_regions": ["text"]}
+
+CABLES = {
+    "cables": {"motor": {"part": "GTS V3 1203", "regions": "_motor_contact", "count": 4}, "camera": {"part": "HDZero Lux", "regions": "camera_mount_", "count": 1}},
+    "stack_regions": "aio_contact_",
+    "clearance_mm": 0.2,
+    "slot_interference_mm": 0.35,
+    "lip_mm": 0.8,
+    "wall_mm": 1.0,
+    "teardrop_deg": 45.0,
+    "guide_mm": 3.0,
+    "guide_flare_mm": 0.6,
+    "pad_extension_mm": 1.0,
+    "slot_margin_mm": 0.3,
+    "slot_depth_max_mm": 8.0,
+    "sample_mm": 0.5,
+    "smooth_mm": 1.5,
+    "profile_segments": 48,
+    "length_weight": 1.0,
+    "prop_weight": 2.0,
+    "prop_margin_mm": 2.0,
+    "prop_exponent": 2.0,
+    "bend_mm_per_rad": 10.0,
+    "check_step_mm": 2.0,
+    "closure_rays": 8,
+    "print_axis": [0.0, 0.0, 1.0],
+    "packing": {"1": 1.0, "2": 2.0, "3": 2.155, "4": 2.414, "5": 2.701, "6": 3.0},
+    "source": "user: C channel open downward, closed toward the props, clip slot 0.3-0.4 mm narrower than the bundle, inner size bundle + 0.2 mm, lips >= 0.8 mm, teardrop interior, short exit guides; wall_mm 1.0 is a design choice (2.5 perimeters at 0.4 mm), below the 2 mm wall rule",
+}
+CABLES_KINDS = {key: "float" for key, value in CABLES.items() if isinstance(value, float)} | {"cables": "object", "stack_regions": "text", "profile_segments": "int", "closure_rays": "int", "print_axis": ["float"], "packing": "object", "source": "text"}
 
 MATERIALS = {
     "PA6-CF": {
