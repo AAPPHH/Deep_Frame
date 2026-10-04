@@ -888,6 +888,8 @@ TOPOLOGY_CONFIG = {
     "motor_contact_radius_mm": 7.7,
     "aio_contact_radius_mm": 3.2,
     "aio_boss_radius_mm": 3.1,
+    "aio_eye_height_mm": 8 / 3,
+    "aio_tool_radius_mm": 2.0,
     "camera_mount_radius_mm": 4.1,
     "flush_overlap_mm": 0.5,
     "prescribed_wall_margin_mm": 0.1,

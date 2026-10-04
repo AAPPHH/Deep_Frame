@@ -10,7 +10,7 @@ from scipy.ndimage import label
 from deep_frame.config import FEA_CONFIG, IMPLICIT_CONFIG, TOPOLOGY_CONFIG
 from deep_frame.fea import evaluate
 from deep_frame.frame import reference_parameters
-from deep_frame.topology_geometry import build_design_domain, grid_centers, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
+from deep_frame.topology_geometry import build_design_domain, grid_centers, region_bounds, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
 
 @pytest.fixture(scope="module")
 def domain():
@@ -97,9 +97,10 @@ def test_loads_mass_and_fair_local_fixture_contract(domain):
     assert domain["point_masses"][0]["mass_g"] == 37
     assert domain["point_masses"][0]["position_mm"] == pytest.approx([0, 0, 33.5])
     assert {name for name in cases if name.startswith("connection_")} == {f"connection_aio_contact_{index}" for index in range(4)} | {"connection_battery_rail_-1", "connection_battery_rail_1", "connection_camera_mount_-1", "connection_camera_mount_1"}
+    eyes = [[float(region_bounds(eye)[0][2]) - 0.01, float(region_bounds(eye)[1][2]) + 0.01] for eye in _aio_eyes(domain)[1]]
     for case in cases.values():
         for fixture in case["fixed_regions"]:
-            assert fixture["max_mm"][2] < 0.1
+            assert fixture["max_mm"][2] < 0.1 or [fixture["min_mm"][2], fixture["max_mm"][2]] in eyes
     weights = domain["optimizer_settings"]["case_weights"]
     primary = sum(value for name, value in weights.items() if not name.startswith("connection_"))
     auxiliary = sum(value for name, value in weights.items() if name.startswith("connection_"))
@@ -158,6 +159,38 @@ def test_battery_rails_and_deck_loads_resolve_on_every_study_grid(spacing):
     deck = next(case for case in built["load_cases"] if case["name"] == "battery_impact")["loads"][0]["region"]
     assert deck["min_mm"][2] < parameters["frame"]["deck_top_mm"] < deck["max_mm"][2] and len(model._select(deck, "battery_impact", "load")) > 0
     assert model.selector_expansions == []
+
+def _aio_eyes(domain):
+    regions = {region["name"]: region for region in domain["regions"]}
+    return regions, [regions[f"aio_contact_{index}"] for index in range(4)]
+
+def _check_eyes(domain, seat, low_z):
+    regions, eyes = _aio_eyes(domain)
+    floor, tolerance = domain["grid"]["origin_mm"][2], reference_parameters()["integration"]["selection_tolerance_mm"]
+    centers = grid_centers(domain["grid"])
+    for index, eye in enumerate(eyes):
+        low, high = region_bounds(eye)
+        assert eye["radius_mm"] == pytest.approx(3.1) and low[2] == pytest.approx(low_z) and high[2] == pytest.approx(seat + TOPOLOGY_CONFIG["flush_overlap_mm"])
+        assert np.any(region_contains(centers, eye) & domain["preserve"]) and not (domain["preserve"] & (centers[..., 2] < low[2]) & region_contains(centers, {**eye, "height_mm": 100.0})).any()
+        if low_z > floor:
+            tool = regions[f"aio_tool_access_{index}"]
+            tool_low, tool_high = region_bounds(tool)
+            assert tool["role"] == "forbidden" and tool.get("rasterize", True) and tool["radius_mm"] == pytest.approx(TOPOLOGY_CONFIG["aio_tool_radius_mm"])
+            assert tool["center_mm"][:2] == eye["center_mm"][:2] and tool_high[2] == pytest.approx(low[2]) and tool_low[2] == pytest.approx(floor - 1)
+            assert not (domain["allowed"] & region_contains(centers, tool)).any()
+    for case in ("arm_tip", "crash_front"):
+        boxes = next(item for item in domain["comparison_load_cases"] if item["name"] == case)["fixed_regions"]
+        assert len(boxes) == 4 and all(box["min_mm"][2] == pytest.approx(low_z - tolerance) and box["max_mm"][2] == pytest.approx(seat + TOPOLOGY_CONFIG["flush_overlap_mm"] + tolerance) for box in boxes)
+    assert domain["metadata"]["prescribed_clearance"]["passed"]
+
+def test_aio_contacts_are_grid_snapped_seat_eyes_with_tool_access_and_eye_fixtures(domain):
+    _check_eyes(domain, 5.5, 0.0)
+
+def test_aio_seat_eyes_on_fine_grids_leave_the_floor_free():
+    parameters = reference_parameters()
+    parameters["frame"]["aio_standoff_mm"] = 8.8
+    parameters["topology"] = {"grid": {"shape": [102, 96, 24], "spacing_mm": [4 / 3] * 3}}
+    _check_eyes(build_design_domain(parameters), 11.3, 8.0)
 
 def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain):
     clearance = domain["metadata"]["prescribed_clearance"]

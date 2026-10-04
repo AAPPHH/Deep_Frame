@@ -11,7 +11,7 @@ from scipy import ndimage
 
 from deep_frame.config import COMPONENT_DEFAULTS, EVALUATION_CONFIG, LOAD_COVARIANCE_LIMITS, EVALUATION_KINDS, FEA_CONFIG, FRAME_DEFAULTS, IMPLICIT_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG, configure
 from deep_frame.fea import MESH_KEYS, clean_slivers, evaluate, print_axes, robust_surface
-from deep_frame.topology_geometry import region_contains
+from deep_frame.topology_geometry import region_bounds, region_contains
 
 MOTORS = ("front_left", "front_right", "rear_left", "rear_right")
 CRASH = ("crash_front", "crash_arm", "crash_back")
@@ -54,7 +54,7 @@ def ours(spec):
     pitch = COMPONENT_DEFAULTS["motor"]["mount_pitch_mm"]
     patterns = [{"name": f"motor_{name}", "center_mm": xyz[:2], "z_mm": xyz[2] - 1.0, "radius_mm": pitch / 2, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]} for name, xyz in motors.items()]
     aio = [regions[f"aio_screw_{index}"]["center_mm"] for index in range(4)]
-    patterns.append({"name": "stack_25.5", "center_mm": np.mean(aio, axis=0)[:2].tolist(), "z_mm": 1.5, "radius_mm": float(np.hypot(*np.subtract(aio[0], np.mean(aio, axis=0))[:2])), "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]})
+    patterns.append({"name": "stack_25.5", "center_mm": np.mean(aio, axis=0)[:2].tolist(), "z_mm": float(region_bounds(regions["aio_contact_0"])[0][2]) + 1.5, "radius_mm": float(np.hypot(*np.subtract(aio[0], np.mean(aio, axis=0))[:2])), "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]})
     components = [{"type": entry["prototype"] if "prototype" in entry else name.split("_")[0], "name": name, "center_mm": entry["center_of_mass_mm"]} for name, entry in placements.items() if entry["mass_g"] > 0]
     connectors = [{"name": name, "position_mm": placements[name]["center_of_mass_mm"], "direction": [0, 0, 1]} for name in ("xt30", "balancer") if name + "_contact" in regions]
     keep_outs = [region for region in domain["regions"] if region["role"] == "forbidden"]
