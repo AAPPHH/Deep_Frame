@@ -6,7 +6,7 @@ from scipy.sparse import coo_matrix
 from deep_frame.topology_optimization import _CORNERS, CudaDirectSolver, regular_grid
 
 MULTIGRID = {"coarse": "galerkin", "coarsest_dofs": 80000, "max_levels": 8, "smoother": "chebyshev", "sweeps": 2, "damping": 1.0, "chebyshev_degree": 3, "chebyshev_ratio": 20.0, "growth": 2.0, "cycle": "V",
-             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "device": "cuda"}
+             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "batch": 12, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "device": "cuda"}
 PRECISIONS = {"float64": ("float64", None), "float32": ("float32", None), "bfloat16": ("float32", "bfloat16"), "float16": ("float32", "float16")}
 _CHILDREN = np.array(list(np.ndindex(2, 2, 2)))
 
@@ -74,7 +74,7 @@ class GeometricMultigrid:
         self.transfer = tensor(np.broadcast_to(stencil, (3, 1, 3, 3, 3)), self.work)
         self.local = tensor(_interpolation(), torch.float64)
         self.moduli = None
-        self.hierarchies, self.coarsest_solvers, self.statistics = {}, {}, []
+        self.hierarchies, self.coarsest_solvers, self.factored, self.statistics = {}, {}, set(), []
     def grid(self, flat, dtype=None):
         torch = self.torch
         flat = torch.as_tensor(flat, device=self.device, dtype=dtype or torch.float64)
@@ -95,9 +95,7 @@ class GeometricMultigrid:
     def update(self, moduli):
         self.moduli = self.element_field(moduli)
         self.hierarchies.clear()
-        for solver in self.coarsest_solvers.values():
-            solver.close()
-        self.coarsest_solvers.clear()
+        self.factored.clear()
     def _scatter(self, values, dtype):
         return self.F.conv_transpose3d(values, self.select[dtype])
     def _gather(self, grid, dtype):
@@ -242,29 +240,43 @@ class GeometricMultigrid:
         keep = np.setdiff1d(np.arange(len(live)), pins)
         reduced = matrix[live[keep]][:, live[keep]]
         reduced = ((reduced + reduced.T) / 2).tocsr()
-        hierarchy["coarsest"] = {"matrix": reduced, "live": live, "keep": keep, "kernel": kernel, "dofs": len(keep), "pins": len(pins)}
+        index = lambda array: self.torch.as_tensor(array, dtype=self.torch.int64, device=self.device)
+        hierarchy["coarsest"] = {"matrix": reduced, "live": index(live), "keep": index(keep), "kernel": None if kernel is None else self.torch.as_tensor(kernel, device=self.device), "dofs": len(keep), "pins": len(pins)}
+    def _coarsest_solver(self, hierarchy):
+        key, matrix = hierarchy["key"], hierarchy["coarsest"]["matrix"]
+        solver = self.coarsest_solvers.get(key)
+        if key in self.factored:
+            return solver
+        zeros = np.zeros((matrix.shape[0], self.settings["batch"]))
+        if solver is not None and not solver.same_structure(matrix):
+            solver.close()
+            solver = None
+        if solver is None:
+            solver = CudaDirectSolver(matrix, zeros)
+        solver.solve(matrix, zeros)
+        self.coarsest_solvers[key] = solver
+        self.factored.add(key)
+        return solver
     def _solve_coarsest(self, hierarchy, grid):
         torch = self.torch
         info, level = hierarchy["coarsest"], hierarchy["levels"][-1]
-        values = grid.to(torch.float64).permute(0, 2, 3, 4, 1).reshape(grid.shape[0], -1).T.cpu().numpy()[info["live"]]
+        count = grid.shape[0]
+        values = grid.to(torch.float64).permute(0, 2, 3, 4, 1).reshape(count, -1)[:, info["live"]]
         if info["kernel"] is not None:
-            values = values - info["kernel"] @ (info["kernel"].T @ values)
-        count = values.shape[1]
-        key = (hierarchy["key"], count)
-        rhs = values[info["keep"]]
-        if key not in self.coarsest_solvers:
-            solver = CudaDirectSolver(info["matrix"], rhs)
-            solution = solver.solve(info["matrix"], rhs)
-            self.coarsest_solvers[key] = solver
-        else:
-            solution = self.coarsest_solvers[key].substitute(rhs)
-        result = np.zeros_like(values)
-        result[info["keep"]] = solution
+            values = values - (values @ info["kernel"]) @ info["kernel"].T
+        solver = self._coarsest_solver(hierarchy)
+        rhs = torch.zeros((self.settings["batch"], len(info["keep"])), dtype=torch.float64, device=self.device)
+        rhs[:count] = values[:, info["keep"]]
+        torch.cuda.current_stream().synchronize()
+        solver.rhs_device[...] = solver.cp.from_dlpack(rhs).T
+        solver._execute(1008)
+        result = torch.zeros_like(values)
+        result[:, info["keep"]] = torch.from_dlpack(solver.solution_device.T)[:count]
         if info["kernel"] is not None:
-            result = result - info["kernel"] @ (info["kernel"].T @ result)
-        full = np.zeros((3 * int(np.prod(level.nodes)), count))
-        full[info["live"]] = result
-        return torch.as_tensor(full.T.reshape((count,) + level.nodes + (3,)), device=self.device).permute(0, 4, 1, 2, 3).to(grid.dtype).contiguous()
+            result = result - (result @ info["kernel"]) @ info["kernel"].T
+        full = torch.zeros((count, 3 * int(np.prod(level.nodes))), dtype=torch.float64, device=self.device)
+        full[:, info["live"]] = result
+        return full.reshape((count,) + level.nodes + (3,)).permute(0, 4, 1, 2, 3).to(grid.dtype).contiguous()
     def _smooth(self, level, rhs, solution, index):
         count = max(1, int(round((self.settings["sweeps"] if self.settings["smoother"] == "jacobi" else self.settings["chebyshev_degree"]) * self.settings["growth"] ** index)))
         if self.settings["smoother"] == "jacobi":
@@ -325,23 +337,31 @@ class GeometricMultigrid:
         dirichlet = np.setdiff1d(fixed, support) if floating else np.asarray(fixed)
         hierarchy = self.hierarchy((key, floating), dirichlet)
         fine = hierarchy["levels"][0]
-        rhs = self.grid(forces) * fine.mask64
-        consistency = None
-        if fine.kernel is not None:
-            basis = fine.kernel.reshape(fine.kernel.shape[0], -1)
-            consistency = (torch.linalg.vector_norm(rhs.reshape(rhs.shape[0], -1) @ basis.T, dim=1) / torch.linalg.vector_norm(rhs.reshape(rhs.shape[0], -1), dim=1)).cpu().numpy()
-            rhs = self._remove(fine.kernel, rhs)
-        solution, report = self._pcg(hierarchy, rhs)
-        flat = self.flat(solution).cpu().numpy()
+        forces = np.array(forces, dtype=float).reshape(len(forces), -1)
         if floating:
             rigid = np.einsum("mk,m...->k...", hierarchy["coefficients"], _rigid(fine.shape, fine.spacing, self.center))
             rigid = self.flat(torch.as_tensor(rigid, device=self.device) * fine.mask64).cpu().numpy()
             support = np.asarray(support)
+            forces[support] += np.linalg.lstsq(rigid[support].T, -(rigid.T @ forces), rcond=None)[0]
+        pieces, reports, consistency = [], [], []
+        for start in range(0, forces.shape[1], self.settings["batch"]):
+            rhs = self.grid(forces[:, start:start + self.settings["batch"]]) * fine.mask64
+            if fine.kernel is not None:
+                basis = fine.kernel.reshape(fine.kernel.shape[0], -1)
+                consistency += (torch.linalg.vector_norm(rhs.reshape(rhs.shape[0], -1) @ basis.T, dim=1) / torch.linalg.vector_norm(rhs.reshape(rhs.shape[0], -1), dim=1).clamp_min(1e-300)).cpu().tolist()
+                rhs = self._remove(fine.kernel, rhs)
+            solution, part = self._pcg(hierarchy, rhs)
+            pieces.append(self.flat(solution).cpu().numpy())
+            reports.append(part)
+            del rhs, solution
+        flat = np.hstack(pieces)
+        report = {"iterations": sum((part["iterations"] for part in reports), []), "relative_residual": sum((part["relative_residual"] for part in reports), []), "converged": all(part["converged"] for part in reports), "history": [part["history"] for part in reports], "batches": len(reports)}
+        if floating:
             shift = np.linalg.lstsq(rigid[support], flat[support], rcond=None)[0]
             flat = flat - rigid @ shift
         torch.cuda.synchronize() if self.device.type == "cuda" else None
         report.update(seconds=perf_counter() - started, setup_s=hierarchy.pop("setup_s", 0.0), floating=floating, levels=len(hierarchy["levels"]), coarsest_dofs=hierarchy["coarsest"]["dofs"],
-                      kernel=int(hierarchy["coefficients"].shape[1]) if floating else 0, rhs_kernel_component=None if consistency is None else consistency.tolist(), kernel_check=hierarchy["kernel_check"], lambda_max=[level.lambda_max for level in hierarchy["levels"][:-1]])
+                      kernel=int(hierarchy["coefficients"].shape[1]) if floating else 0, rhs_kernel_component=consistency or None, kernel_check=hierarchy["kernel_check"], lambda_max=[level.lambda_max for level in hierarchy["levels"][:-1]])
         self.statistics.append(report)
         return flat, report
     def _pcg(self, hierarchy, rhs):
@@ -392,6 +412,9 @@ class GeometricMultigrid:
             relative[active.cpu().numpy()] = (torch.linalg.vector_norm(final.flatten(1), dim=1) / norm[active]).cpu().numpy()
             iterations[active.cpu().numpy()] = step
         return solution, {"iterations": iterations.tolist(), "relative_residual": relative.tolist(), "converged": bool(np.all(relative < tolerance)), "history": history}
+    def product(self, flat):
+        batch = self.settings["batch"]
+        return np.hstack([self.flat(self.operator(self.grid(flat[:, start:start + batch]))).cpu().numpy() for start in range(0, flat.shape[1], batch)])
     def element_energy(self, grid):
         return (self.F.conv3d(grid, self.weight[grid.dtype]) * self._gather(grid, grid.dtype)).sum(1)
     def diagnostics(self):

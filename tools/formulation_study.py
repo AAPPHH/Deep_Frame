@@ -52,7 +52,7 @@ FORMULATION = {
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
                    "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "cuda_cudss"},
     "solver_memory": {"run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt", "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
-                      "output": "exports/solver_memory/baseline", "reference": None},
+                      "output": "exports/solver_memory/baseline", "reference": None, "multigrid": None, "share_static": True},
 }
 
 def configure(overrides):
@@ -406,6 +406,16 @@ class MemoryProbe:
 def factorizations(system):
     return sum(len(solver.timings) for solver in system.gpu_solvers.values()) + sum(len(entry["solves"]) for entry in system.gpu_solver_history)
 
+def multigrid_state(system):
+    if system.multigrid is None:
+        return {}
+    torch, mg = system.multigrid.torch, system.multigrid
+    return {"multigrid_solves": len(mg.statistics), "multigrid_coarsest_factorizations": sum(len(solver.timings) for solver in mg.coarsest_solvers.values()), "torch_peak_reserved_gb": torch.cuda.max_memory_reserved() / 2 ** 30}
+
+def multigrid_summary(statistics):
+    return [{"columns": len(row["iterations"]), "batches": row["batches"], "floating": row["floating"], "levels": row["levels"], "coarsest_dofs": row["coarsest_dofs"], "iterations_max": max(row["iterations"]), "iterations_mean": float(np.mean(row["iterations"])),
+             "relative_residual_max": max(row["relative_residual"]), "seconds": row["seconds"], "setup_s": row["setup_s"], "rhs_kernel_component_max": max(row["rhs_kernel_component"] or [0.0])} for row in statistics]
+
 def factor_inventory(tp):
     system, rows = tp.system, []
     for key, members in system.groups.items():
@@ -436,6 +446,7 @@ def deviation(a, b):
 
 def solver_grid(cfg, spec, grid, probe, out):
     half, problem = frame_setup(cfg, cfg["shape"] if grid == "fine" else cfg["coarse_shape"])
+    problem = {**problem, "multigrid": spec["multigrid"], "share_static": spec["share_static"]}
     free, total = probe.cp.cuda.runtime.memGetInfo()
     with probe.phase(grid + "_build"):
         clock = perf_counter()
@@ -456,7 +467,7 @@ def solver_grid(cfg, spec, grid, probe, out):
             result = tp.evaluate(design)
             seconds = perf_counter() - clock
         arrays.append(evaluation_arrays(result))
-        evaluations.append({"index": index, "modal": "cold" if index < 2 else "warm", "seconds": seconds, "factorizations": factorizations(tp.system) - counted, **probe.peaks(f"{grid}_evaluation_{index}")})
+        evaluations.append({"index": index, "modal": "cold" if index < 2 else "warm", "seconds": seconds, "factorizations": factorizations(tp.system) - counted, **multigrid_state(tp.system), **probe.peaks(f"{grid}_evaluation_{index}")})
     inventory, cases = factor_inventory(tp)
     np.savez_compressed(out / f"{grid}.npz", **arrays[0])
     optimizer, iterations = MMAOptimizer(tp, cfg["mma"]["settings"]), []
@@ -467,9 +478,13 @@ def solver_grid(cfg, spec, grid, probe, out):
             clock, counted = perf_counter(), factorizations(tp.system)
             x = optimizer.step(x, tp.evaluate(x), state)
             iterations.append({"seconds": perf_counter() - clock, "factorizations": factorizations(tp.system) - counted})
+    multigrid = {**multigrid_state(tp.system), "settings": tp.system.multigrid.settings, "solves": multigrid_summary(tp.system.multigrid.statistics)} if tp.system.multigrid is not None else None
     tp.close()
     probe.cp.get_default_memory_pool().free_all_blocks()
-    record = {"grid": half["grid"], "design": str(source), "design_sha256_16": digest(source), "dofs": tp.system.ndof, "active_dofs": len(tp.system.active_dofs), "build_s": built,
+    if multigrid is not None:
+        tp.system.multigrid.torch.cuda.empty_cache()
+        tp.system.multigrid.torch.cuda.reset_peak_memory_stats()
+    record = {"multigrid": multigrid, "grid": half["grid"], "design": str(source), "design_sha256_16": digest(source), "dofs": tp.system.ndof, "active_dofs": len(tp.system.active_dofs), "build_s": built,
               "gpu_before_build": {"device_free_gb": free / 2 ** 30, "device_total_gb": total / 2 ** 30}, "build": probe.peaks(grid + "_build"), "evaluations": evaluations,
               "noise_floor": deviation(arrays[1], arrays[0]), "mma": {"iterations": iterations, "seconds_per_iteration": float(np.mean([row["seconds"] for row in iterations])), **probe.peaks(grid + "_mma")},
               "factors": inventory, "cases": cases, "names": result["names"], "f1_hz": float(arrays[0]["f1"]), "mass_g": float(arrays[0]["mass_g"])}

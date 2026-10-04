@@ -114,3 +114,36 @@ Beleg `docs/validation/multigrid_truss.json` (Befehl `tools/multigrid_study.py t
 `mg = GeometricMultigrid(shape, spacing, ke, settings)`; `mg.update(moduli)` je Optimierungsschritt (baut Hierarchie und gröbstes cuDSS-Gitter neu, Frame 1,0 s bei 2 Ebenen);
 `u, report = mg.solve(key, fixed, forces[ndof, nrhs], support=None)` – gebündeltes PCG: alle rechten Seiten teilen sich einen V-Zyklus-Aufruf, α/β je Spalte, konvergierte Spalten fallen heraus (kein Block-Krylov).
 `solve_elasticity(system, mg, density, p, e_min)` liefert pro Lastfall Compliance und Ableitung wie `HexElasticity.solve`.
+
+## Schritt 4: MG-PCG als wählbarer Löser der Formulierung
+
+Schalter: `TopologyProblem(domain, problem, linear_solver="multigrid")` bzw. `HexElasticity(..., linear_solver="multigrid", multigrid=<dict über MULTIGRID>)`; Problem-Dict-Schlüssel `multigrid` (Einstellungen) und `share_static`. Standard bleibt `cuda_cudss`.
+Alle statischen rechten Seiten (9 Crash, thrust_all, twist, torsion_yaw, 49 sigma_k, Armspitze) laufen gebündelt durch das MG-PCG; f1 bleibt cuDSS (`_linear_solve`, eigene Lagerung `modes`).
+Residuumsprüfung je Fall (≤ 1e-6 gegen die reduzierte Matrix) bleibt, jetzt matrixfrei in FP64 (`mg.product`); bei MG wird keine CSR-Matrix mehr assembliert.
+
+Änderungen im Mehrgitter:
+- Trägheitsentlastung schwebend mit Projektion; nicht ausgeglichene rechte Seiten (Einheitsspalten der Stack-DOF) bekommen vorab die statisch bestimmten Lagerreaktionen `R_Sᵀ r = −Rᵀ f`. Danach ist f im Bild von K, und die Verschiebung mit u_S = 0 ist exakt die gelagerte Lösung (K_IR⁻¹ f). Damit gilt die dichte Stack-Korrektur aus `dc22ddc` unverändert.
+- Spalten in Paketen (`batch`, Standard 12). Das gröbste cuDSS-System hat eine feste Breite (Nullen auffüllen), also eine Zerlegung je Hierarchie. Vorher kam bei jeder neuen Zahl aktiver Spalten eine Zerlegung hinzu. Die Übergabe läuft GPU-resident per DLPack (keine Host-Rundreise). Bei `update` folgt nur eine numerische Neuzerlegung, die Symbolik bleibt.
+
+Benchmark `tools/formulation_study.py solver_memory` (Ray `density_simp`, feste Entwürfe `simp_mma_cov3_opt`, 3 Auswertungen + 5 MMA-Iterationen). Referenz für die Abweichungen ist cuDSS `dc22ddc` (`Deep_Frame-solver/exports/solver_memory/shared`). Toleranz 1e-8 ist in allen Spalten erreicht.
+
+| Variante | Raster | Zerlegungen / Auswertung | MG-RHS / max. Iter. | s/Auswertung kalt, warm | s/MMA-Iter. | dediziert GB | geteilt GB | nvidia-smi GB | PyTorch-Spitze GB | Host-RSS GB | max. Abw. g / Werte / Sensitivitäten / f1 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| cuDSS (frisch, gleicher Stand) | grob | 4 | – | 8,2, 4,2 | 7,5 | 4,56 | 0,40 | 5,24 | – | 2,63 | 3e-12 / 3e-12 / 1e-11 / 2e-13 |
+| cuDSS | fein | 4 | – | 21,1, 11,4 | 13,6 | 11,49 | 1,16 | 12,16 | – | 5,49 | 5e-12 / 5e-12 / 3e-11 / 1e-14 |
+| MG, Stack über IR + 96 Einheitsspalten (batch 32) | grob | 2 f1 + 2 MG | 178 / 34 | 18,1, 12,5 | 16,9 | 4,20 | 0,30 | 4,88 | 1,69 | 3,92 | 2e-10 / 2e-10 / 9e-10 / 7e-14 |
+| MG, Stack über IR + 96 Einheitsspalten (batch 32) | fein | 2 f1 + 2 MG | 262 / 20 | 35,6, 27,3 | 32,2 | 9,72 | 0,60 | 10,39 | 3,84 | 7,88 | 1e-10 / 1e-10 / 4e-10 / 1e-13 |
+| MG, Stack eigene Hierarchie (batch 32) | grob | 2 f1 + 4 MG | 70 / 34 | 12,7, 6,8 | 11,3 | 4,15 | 0,30 | 4,82 | 1,35 | 3,60 | 2e-10 / 2e-10 / 7e-10 / 5e-15 |
+| MG, Stack eigene Hierarchie (batch 32) | fein | 2 f1 + 4 MG | 70 / 20 | 22,2, 13,0 | 17,9 | 9,83 | 0,60 | 10,50 | 3,31 | 6,39 | 1e-10 / 1e-10 / 4e-10 / 9e-13 |
+| **MG, Stack eigene Hierarchie (batch 12, Standard)** | fein | 2 f1 + 4 MG | 70 / 20 | 24,4, 13,1 | 17,8 | **8,35** | 0,51 | 9,02 | 1,85 | 6,08 | 1e-10 / 1e-10 / 4e-10 / – |
+| MG, Stack eigene Hierarchie (batch 64) | fein | 2 f1 + 4 MG | 70 / 20 | 24,4, 13,4 | 18,0 | 9,77 | 0,54 | 10,44 | 3,10 | 5,85 | 1e-10 / 1e-10 / 4e-10 / – |
+
+„Max. Iter.“ ist das Maximum über die Spalten einer Auswertung. Die grobe Zeile mit 34 Iterationen hat 2 Ebenen und ein gröbstes System mit 19k DOF.
+
+- Nachweis erfüllt: Ziel identisch; alle Nebenbedingungen und alle 14 Sensitivitätsvektoren liegen höchstens 9,5e-10 relativ von cuDSS entfernt (Grenze 1e-6), f1 höchstens 9e-13.
+- Wie in `dc22ddc` laufen die Stack-Fälle über die Trägheitsentlastung und die Korrektur. Das ist korrekt, aber für MG teuer: Die 96 Einheitsspalten je Vorzeichen verdreifachen die RHS-Zahl (262 statt 70). Fein kostet das 20 s MG je Auswertung. Bei MG ist eine eigene Hierarchie billig (0,25 s Aufbau, gröbstes System 42k DOF), deshalb `share_static: false` für MG verwenden.
+- Ziel nicht erreicht, Zeit: MG ist auf diesem Problem langsamer als cuDSS. Fein 17,8 statt 13,6 s je MMA-Iteration (+31 %), warm 13,1 statt 11,4 s je Auswertung, grob 11,3 statt 7,5 s. Die MG-Lösungen kosten fein ≈ 9 s je Auswertung, also ≈ 5 ms je Spalte und Iteration bei 20 Iterationen. cuDSS zerlegt nur 2 statische Matrizen; danach sind viele rechte Seiten fast gratis.
+- Speicher dediziert: fein 8,35 statt 11,49 GB (−27 %), grob 4,15 statt 4,56 GB. Der Rest kommt überwiegend von den beiden f1-cuDSS-Faktoren (≈ 4,4 GB) und dem PyTorch-Pool (1,85 GB bei batch 12). Geteilt: 0,51 statt 1,16 GB.
+- Host-RSS steigt (6,1 statt 5,5 GB): volle Lösungsfelder je Spalte (ndof × RHS) für Korrektur, Residuumsprüfung und Energie.
+- Tests: `test_multigrid_linear_solver_matches_direct` (Halbdomäne mit Stack-Korrektur, schwebend und gelagert, Pakete mit 3 Spalten, rel. 1e-7) und `test_multigrid_problem_evaluation_matches_cudss` (ganze Auswertung inkl. f1). 98 Topologie- und MG-Tests sind grün (Ray `gpu`).
+- Belege: `exports/solver_memory/{cudss_gmg,multigrid,multigrid_own,multigrid_own_b12,multigrid_own_b64}/result.json`.

@@ -69,3 +69,33 @@ def test_pcg_matches_direct_solution(projection):
             expected[free] = spsolve(matrix[free][:, free].tocsc(), p["force"][free])
             assert np.linalg.norm(solution[:, column] - expected) < 1e-6 * np.linalg.norm(expected)
     mg.close()
+
+@gpu
+@pytest.mark.parametrize("share,projection", [(True, True), (True, False), (False, True)])
+def test_multigrid_linear_solver_matches_direct(share, projection):
+    density = np.random.default_rng(3).uniform(0.2, 1.0, HexElasticity(tiny_domain()).nelem)
+    reference = HexElasticity(tiny_domain(), share_static=False).solve(density, metrics=True)
+    system = HexElasticity(tiny_domain(), linear_solver="multigrid", share_static=share, multigrid={"device": DEVICE, "coarsest_dofs": 200, "batch": 3, "projection": projection})
+    result = system.solve(density, metrics=True)
+    assert system.diagnostics()["factorization_groups"] == (2 if share else 4)
+    for name in reference:
+        assert result[name]["compliance_n_mm"] == pytest.approx(reference[name]["compliance_n_mm"], rel=1e-7)
+        assert np.linalg.norm(result[name]["derivative"] - reference[name]["derivative"]) <= 1e-7 * np.linalg.norm(reference[name]["derivative"])
+        assert result[name]["max_displacement_mm"] == pytest.approx(reference[name]["max_displacement_mm"], rel=1e-7)
+    assert not system.close()
+
+@gpu
+def test_multigrid_problem_evaluation_matches_cudss():
+    from tests.test_topology_problem import tiny_problem
+    from deep_frame.topology_problem import TopologyProblem
+    problem = {**tiny_problem(), "multigrid": {"device": DEVICE, "coarsest_dofs": 200, "batch": 4}}
+    results = []
+    for solver in ("cuda_cudss", "multigrid"):
+        tp = TopologyProblem(tiny_domain(), problem, linear_solver=solver)
+        results.append(tp.evaluate(np.full(tp.map.n, 0.6)))
+        tp.close()
+    direct, multigrid = results
+    assert multigrid["names"] == direct["names"]
+    assert np.allclose(multigrid["constraints"], direct["constraints"], rtol=1e-7, atol=1e-9)
+    for a, b in zip(multigrid["constraint_gradients"], direct["constraint_gradients"]):
+        assert np.linalg.norm(a - b) <= 1e-7 * max(np.linalg.norm(b), 1e-30)
