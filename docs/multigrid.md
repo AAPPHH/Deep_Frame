@@ -114,6 +114,7 @@ Beleg `docs/validation/multigrid_truss.json` (Befehl `tools/multigrid_study.py t
 `mg = GeometricMultigrid(shape, spacing, ke, settings)`; `mg.update(moduli)` je Optimierungsschritt (baut Hierarchie und gröbstes cuDSS-Gitter neu, Frame 1,0 s bei 2 Ebenen);
 `u, report = mg.solve(key, fixed, forces[ndof, nrhs], support=None)` – gebündeltes PCG: alle rechten Seiten teilen sich einen V-Zyklus-Aufruf, α/β je Spalte, konvergierte Spalten fallen heraus (kein Block-Krylov).
 `solve_elasticity(system, mg, density, p, e_min)` liefert pro Lastfall Compliance und Ableitung wie `HexElasticity.solve`.
+`GeometricMultigrid(..., settings, me)` aktiviert den Massenoperator; `MultigridModal(system, modal_settings, mg).measure(density, p, e_min)` liefert (Verletzung, Gradient, Info) wie `ModalConstraint.measure`.
 
 ## Schritt 4: MG-PCG als wählbarer Löser der Formulierung
 
@@ -147,3 +148,39 @@ Benchmark `tools/formulation_study.py solver_memory` (Ray `density_simp`, feste 
 - Host-RSS steigt (6,1 statt 5,5 GB): volle Lösungsfelder je Spalte (ndof × RHS) für Korrektur, Residuumsprüfung und Energie.
 - Tests: `test_multigrid_linear_solver_matches_direct` (Halbdomäne mit Stack-Korrektur, schwebend und gelagert, Pakete mit 3 Spalten, rel. 1e-7) und `test_multigrid_problem_evaluation_matches_cudss` (ganze Auswertung inkl. f1). 98 Topologie- und MG-Tests sind grün (Ray `gpu`).
 - Belege: `exports/solver_memory/{cudss_gmg,multigrid,multigrid_own,multigrid_own_b12,multigrid_own_b64}/result.json`.
+
+## Schritt 5: f1 per LOBPCG mit MG-Vorkonditionierer
+
+`GeometricMultigrid.eigenpairs` ist ein eigenes Block-LOBPCG (torch.lobpcg nimmt nur Tensoren, keine Operatoren) für K φ = λ M φ, alles in FP64. K ist der matrixfreie Operator, M ist matrixfrei als Faltung mit der konsistenten Hex8-Massenmatrix plus diagonalen Punktmassen. Vorkonditionierer ist der V-Zyklus aus Schritt 2–3 (FP32, Galerkin, eingespannt, ohne Projektion).
+Basis [X, W=T(R), P], B-Orthonormierung je Block per SVQB mit Verwerfen kleiner Gram-Eigenwerte, Rayleigh-Ritz über die Gram-Matrizen, weiches Locking (W nur aus nicht konvergierten Spalten; der V-Zyklus läuft immer auf dem ganzen Block, damit der cuDSS-Faktor des gröbsten Gitters nicht je Blockgröße neu entsteht), Produkte alle 10 Schritte neu berechnet. Blockgröße = `modes` + 2 Wächter, Abbruch, wenn alle `modes` das relative Residuum ‖Kx−λMx‖/‖Kx‖ < 1e-8 erreichen.
+Formulierung unverändert übernommen (`MultigridModal(ModalConstraint)`): getrennte Interpolation Steifigkeit SIMP p=3 / Masse linear mit ρ⁶/c⁵ unter c=0,1, Punktmassen aus `ModalConstraint.lumped`, je Symmetrieteil (symmetrisch/antisymmetrisch) eigene Hierarchie, KS (s=40) über die `tracked` Moden beider Teile und Sensitivität φᵀ(dK−λ dM)φ mit M-normierten Vektoren über die gemeinsame Methode `ModalConstraint.aggregate`.
+Beide Studienwege nutzen dasselbe Dichtefeld für Steifigkeit und Masse.
+Referenz: Shift-Invert-Lanczos (`eigsh`, tol 0) mit dem cuDSS-Faktor (Residuum ≤ 3,6e-9); zusätzlich der bisherige cuDSS-Pfad der Formulierung (Unterraumiteration, 30 = Standard bzw. 300 Iterationen).
+Kragträger: Lastfall `modes` an der Einspannung, 2 g Spitzenmasse, glattes Feld wie Schritt 2 (s1–s3). Frame: Lastmodell-Feld `simp_mma_cov3_opt` 4/3 mm, Fall `modes` (Motorsitz-Unterseiten fest), 8 Punktmassen (Akku, AIO, Kamera), 6 Moden, 3 verfolgt.
+
+| Fall | DOF | f1 | LOBPCG-Iter. sym/anti | Eigenwerte (alle 6×2) rel. | f1 / KS rel. | Sensitivität rel. | Zeit MG / Lanczos / Unterraum 30 | Speicher MG Spitze / Gerät; cuDSS Gerät |
+|---|---|---|---|---|---|---|---|---|
+| s1 | 9 009 | 39,98 Hz | 14 / 13 | 3,4e-11 | 1e-13 / 1e-12 | 5,9e-11 | 0,52 / 0,17 / 0,28 s | 36 / 160 MiB; 168 MiB |
+| s2 | 63 375 | 41,12 Hz | 30 / 27 | 6,2e-11 | 1e-12 | 1,1e-10 | 1,29 / 1,58 / 2,43 s | 207 / 412 MiB; 1 040 MiB |
+| s3 | 204 573 | 39,54 Hz | 21 / 29 | 2,4e-10 | 4e-12 | 2,2e-10 | 3,04 / 6,07 / 9,49 s | 663 / 1 322 MiB; 4 468 MiB |
+| Frame 4/3 mm | 378 300 (277 579 / 275 876 frei) | 374,96 Hz | 21 / 21 | 2,1e-11 | 1e-12 | 1,1e-11 | 5,18 / 6,38 / 11,17 s | 1 258 / 2 308 MiB; 5 010 MiB |
+
+Ziel 1e-6 für f1 und die tiefsten Moden um mehr als vier Größenordnungen erfüllt; FP64-Vorkonditionierer liefert dieselben Iterationen (21/21 am Frame) bei 14 % mehr Zeit.
+Fast gleiche Moden: Kragträger s3 sym. 59,51 / 60,74 / 61,72 Hz, Frame 534,12 Hz (sym.) gegen 534,73 Hz (anti.) – die KS-Sensitivität stimmt trotzdem auf 1e-11 bis 2e-10.
+Nebenbefund: der Standardpfad der Formulierung (30 Unterraumiterationen) trifft die Eigenwerte, die Sensitivität aber nur auf 5e-6 (s2) bzw. 1,5e-5 (s3), weil die Eigenvektoren noch nicht konvergiert sind; mit 300 Iterationen 1e-11, dann aber 54 s (s3) bzw. 64 s (Frame).
+Grenzen: kleine Gitter sind mit MG langsamer (s1); Zeit inkl. Hierarchieaufbau und cuDSS-Faktor des gröbsten Gitters je Teil (Frame 0,5 s); Warmstart über `part["vectors"]` vorhanden, aber nicht gemessen (jede Zeile kalt, Zufallsstart mit Seed 0).
+Beleg `docs/validation/multigrid_modal.json` (Befehl `tools/multigrid_study.py modal`), Test `test_lobpcg_modes_match_shift_invert`.
+
+## Zusammenführung und Bilanz Schritte 1–5
+
+`feature/gmg-f1` (Schritt 5) in `feature/gmg` (Schritt 4) gemergt. Konflikte: `MULTIGRID` hat jetzt `batch` und die `eigen_*`-Schlüssel, beide Testgruppen bleiben. Da das gröbste cuDSS-System seit Schritt 4 eine feste Breite `batch` hat, teilt `_solve_coarsest` größere Blöcke jetzt in Pakete auf (LOBPCG-Block = `modes` + 2; am Frame 8 ≤ 12, also ohne Wirkung). Tests nach dem Merge: `test_topology_multigrid.py`, `test_topology_problem.py`, `test_topology_optimization.py` 99 grün (Ray `gpu`).
+
+| Schritt | Nachweis | Zeit vorher → nachher | Speicher vorher → nachher | offen |
+|---|---|---|---|---|
+| 1 Operator conv3d | gegen assemblierte Matrix 3,7e-16 (FP64), Ziel 1e-12 | SpMV 1,03 ms (CSR FP64) → 0,19 ms (FP32) bzw. 11,4 ms (FP64), Frame 4/3 mm | 234 MiB CSR → 0,91 MiB | FP64-Faltung auf RTX 4080 langsam (1/64 FP64-Durchsatz) |
+| 2 MG-PCG Kragträger | Compliance 3,8e-10, Sensitivitäten 7,8e-10 gegen cuDSS; Iterationen konstant 8–12 von 9k bis 474k DOF | 19,6 s → 0,69 s (474k DOF) | 14,4 GB → 342 MiB | BF16/FP16-Autocast kostet bis 80× bzw. 4× Iterationen, Standard FP32 |
+| 3 Fachwerk, Frame-SIMP-Feld | Frame: Compliance 6e-11, Sensitivitäten 2e-10; schwebend nur mit Galerkin + Projektion auch am gröbsten Gitter | 12,3 s → 4,5 s (6 RHS) | 13,0 GB → 580 MiB | Iterationen wachsen mit Tiefe bei E_min 1e-6 (Grobgittertransfer), Tiefe per `coarsest_dofs` 80 000 begrenzt |
+| 4 Formulierung `linear_solver="multigrid"` | Ziel identisch, Werte 2e-10, alle 14 Sensitivitätsvektoren 9,5e-10, Residuum 1e-8 in jeder Spalte | MMA-Iter. fein 13,6 → 17,8 s (+31 %), warm 11,4 → 13,1 s | dediziert 11,49 → 8,35 GB, geteilt 1,16 → 0,51 GB | **Ziel Zeit nicht erreicht**: MG langsamer als cuDSS, da cuDSS viele RHS nach 2 Zerlegungen fast gratis löst |
+| 5 f1 per LOBPCG + V-Zyklus | f1 4e-12, alle 12 Moden ≤ 2,4e-10, f1-Sensitivitäten ≤ 2,2e-10 (Ziel 1e-6) | Frame 6,4 s (Lanczos) bzw. 11,2 s (Formulierungspfad) → 5,2 s | Gerät 5,0 GB → 2,3 GB | `MultigridModal` noch nicht in die Formulierung eingehängt (f1 läuft dort weiter über cuDSS); Warmstart nicht gemessen |
+
+Offen gesamt: `MultigridModal` als f1-Pfad für `linear_solver="multigrid"` verdrahten (entfernt die ≈ 4,4 GB der zwei f1-cuDSS-Faktoren aus Schritt 4); Zeit je MG-Spalte (≈ 5 ms/Iteration am Frame) senken; Autocast bringt auf der RTX 4080 nichts.
