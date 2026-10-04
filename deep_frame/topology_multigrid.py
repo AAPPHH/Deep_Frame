@@ -421,15 +421,23 @@ class GeometricMultigrid:
         return np.hstack([self.flat(self.operator(self.grid(flat[:, start:start + batch]))).cpu().numpy() for start in range(0, flat.shape[1], batch)])
     def element_energy(self, grid):
         return (self.F.conv3d(grid, self.weight[grid.dtype]) * self._gather(grid, grid.dtype)).sum(1)
-    def _svqb(self, blocks):
+    def _norms(self, blocks):
+        return (blocks[0].flatten(1) * blocks[2].flatten(1)).sum(1)
+    def _svqb(self, blocks, reference=None):
         torch = self.torch
         vector, applied, mass = blocks
         gram = vector.flatten(1) @ mass.flatten(1).T
         gram = (gram + gram.T) / 2
-        scale = 1 / torch.sqrt(torch.diagonal(gram).clamp_min(1e-300))
-        values, rotation = torch.linalg.eigh(scale[:, None] * gram * scale[None, :])
-        keep = values > self.settings["eigen_drop"] * values.max()
-        return self._combine(blocks, scale[:, None] * rotation[:, keep] / torch.sqrt(values[keep]))
+        diagonal = torch.diagonal(gram)
+        live = diagonal > self.settings["eigen_drop"] * (diagonal.max() if reference is None else reference)
+        coefficients = torch.zeros((len(diagonal), 0), dtype=gram.dtype, device=gram.device)
+        if bool(live.any()):
+            scale = 1 / torch.sqrt(diagonal[live])
+            values, rotation = torch.linalg.eigh(scale[:, None] * gram[live][:, live] * scale[None, :])
+            keep = values > self.settings["eigen_drop"] * values.max()
+            coefficients = torch.zeros((len(diagonal), int(keep.sum())), dtype=gram.dtype, device=gram.device)
+            coefficients[live] = scale[:, None] * rotation[:, keep] / torch.sqrt(values[keep])
+        return self._combine(blocks, coefficients)
     def _combine(self, blocks, coefficients):
         return [(coefficients.T @ block.flatten(1)).reshape((coefficients.shape[1],) + block.shape[1:]) for block in blocks]
     def _project(self, blocks, basis):
@@ -472,11 +480,11 @@ class GeometricMultigrid:
             if bool((relative[:count] < tolerance).all()) or step >= settings["eigen_iterations"]:
                 break
             search = apply(self.precondition(hierarchy, residual)[relative >= tolerance] * mask)
-            search = self._svqb(self._project(self._project(search, current), current))
+            search = self._svqb(self._project(self._project(search, current), current), self._norms(search))
             parts = [current, search]
             if previous is not None:
-                previous = self._project(self._project(self._project(previous, current), search), search)
-                previous = self._svqb(previous)
+                reference = self._norms(previous)
+                previous = self._svqb(self._project(self._project(self._project(previous, current), search), search), reference)
                 parts.append(previous) if previous[0].shape[0] else None
             blocks = [torch.cat(group) for group in zip(*parts)]
             values, rotation = self._rayleigh(blocks, size)

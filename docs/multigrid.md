@@ -184,3 +184,33 @@ Beleg `docs/validation/multigrid_modal.json` (Befehl `tools/multigrid_study.py m
 | 5 f1 per LOBPCG + V-Zyklus | f1 4e-12, alle 12 Moden ≤ 2,4e-10, f1-Sensitivitäten ≤ 2,2e-10 (Ziel 1e-6) | Frame 6,4 s (Lanczos) bzw. 11,2 s (Formulierungspfad) → 5,2 s | Gerät 5,0 GB → 2,3 GB | `MultigridModal` noch nicht in die Formulierung eingehängt (f1 läuft dort weiter über cuDSS); Warmstart nicht gemessen |
 
 Offen gesamt: `MultigridModal` als f1-Pfad für `linear_solver="multigrid"` verdrahten (entfernt die ≈ 4,4 GB der zwei f1-cuDSS-Faktoren aus Schritt 4); Zeit je MG-Spalte (≈ 5 ms/Iteration am Frame) senken; Autocast bringt auf der RTX 4080 nichts.
+
+## Schritt 6: f1 per LOBPCG in der Formulierung
+
+Bei `linear_solver="multigrid"` liefert `HexElasticity.modal_constraint` jetzt `MultigridModal` (sonst `ModalConstraint`); so in `TopologyProblem`, `optimize_topology` und `optimize_neural`. Das Mehrgitter bekommt die konsistente Hex8-Massenmatrix (`GeometricMultigrid(..., me)`).
+Formulierung unverändert: Steifigkeit SIMP p=3, Masse linear mit ρ⁶/c⁵ unter c=0,1, Punktmassen, KS (s=40) über die 3 verfolgten Moden je Symmetrieteil, Sensitivität über `ModalConstraint.aggregate`. LOBPCG rechnet bis zum Residuum 1e-8, `iterations` wird ignoriert, Warmstart über die Vektoren der letzten Auswertung.
+Fehler gefunden: beim Warmstart nach einer MMA-Änderung lief `eigh` in der SVQB auf, weil eine Suchrichtung nach der Projektion gegen X fast null war und die Diagonalskalierung explodierte. Jetzt verwirft die SVQB Spalten, deren M-Norm nach der Projektion unter `eigen_drop` × M-Norm vor der Projektion fällt. Test `test_multigrid_problem_evaluation_matches_cudss` prüft jetzt zusätzlich eine zweite (warme) Auswertung und dass kein Formulierungs-cuDSS-Faktor entsteht.
+
+Benchmark `tools/formulation_study.py solver_memory` (Ray `density_simp`, feste Entwürfe `simp_mma_cov3_opt`, 3 Auswertungen + 5 MMA-Iterationen, MG mit `share_static: false`, batch 12). Referenz für f1: cuDSS mit 300 Unterraumiterationen (`cudss_converged`, nur für die Abweichungen, Zeiten dort nicht vergleichbar); zusätzlich gegen den cuDSS-Standardpfad `cudss_gmg`.
+
+| Variante | Raster | cuDSS-Zerlegungen fein / Auswertung | cuDSS-Faktoren (DOF) | s/Auswertung kalt, warm | s/MMA-Iter. | dediziert GB | geteilt GB | nvidia-smi GB | PyTorch-Spitze GB | Host-RSS GB |
+|---|---|---|---|---|---|---|---|---|---|---|
+| cuDSS (Standard, `auto`-Lauf) | grob | 4 | 124k, 123k, 124k, 123k | 8,9, 4,3 | 7,8 | 4,56 | 0,40 | 5,25 | – | 2,57 |
+| cuDSS (Standard, `auto`-Lauf) | fein | 4 | 278k, 276k, 278k, 276k | 21,2, 11,7 | 13,6 (16,0 im expliziten Lauf) | 11,49 | 1,16 | 12,17 | – | 5,54 |
+| MG + LOBPCG | grob | 0 | nur gröbstes MG-Gitter: 6 × 19k | 9,5, 5,6 | 16,2 | 2,20 | 0,11 | 2,88 | 1,06 | 2,72 |
+| **MG + LOBPCG** | fein | **0** | nur gröbstes MG-Gitter: 6 × 42,5k | 15,8, 9,3 | 17,0 | **4,71** | **0,14** | 5,39 | 2,55 | 4,51 |
+
+Abweichung MG + LOBPCG (max. über alle Nebenbedingungen bzw. Sensitivitätsvektoren, Sensitivität als rel. Norm):
+
+| Raster | Referenz | Ziel | g abs. | Werte rel. | f1 rel. | f1-Sensitivität | übrige Sensitivitäten |
+|---|---|---|---|---|---|---|---|
+| grob | cuDSS 300 Iter. | 0 | 1,9e-10 | 2,0e-10 | 1,7e-12 | 3,8e-11 | 7,0e-10 |
+| fein | cuDSS 300 Iter. | 0 | 1,1e-10 | 1,1e-10 | 7,6e-13 | 1,6e-11 | 3,9e-10 |
+| grob | cuDSS Standard | 0 | 1,9e-10 | 2,0e-10 | 1,6e-12 | 3,9e-11 | 6,9e-10 |
+| fein | cuDSS Standard | 0 | 1,1e-10 | 1,1e-10 | 1,4e-12 | 3,7e-11 | 3,8e-10 |
+
+- Nachweis erfüllt: alle Werte und alle 14 Sensitivitätsvektoren ≤ 7e-10 (Grenze 1e-6). Rauschboden cuDSS gegen sich selbst 1e-12 / 2e-11. Am Frame ist der 30-Iterationen-Standardpfad bereits konvergiert (cuDSS 300 gegen Standard: f1-Sensitivität 2,5e-11).
+- Kein cuDSS-Faktor auf dem feinen Gitter mehr: 0 Formulierungsfaktoren, nur die 6 gröbsten MG-Systeme (4 statisch, 2 modal) mit 42,5k DOF.
+- Speicher fein: dediziert 11,49 → 4,71 GB (−59 %), geteilt 1,16 → 0,14 GB. Gegenüber Schritt 4 (8,35 GB) fallen die ≈ 3,6 GB der beiden f1-Faktoren weg.
+- Ziel Zeit weiter nicht erreicht: fein 17,0 statt 13,6 s je MMA-Iteration (+25 %; der explizite cuDSS-Kontrolllauf lag bei 16,0 s), grob 16,2 statt 7,8 s. Warme Auswertungen sind mit MG schneller (9,3 statt 11,7 s), die MMA-Schritte mit neuer Dichte kosten den Hierarchieaufbau und LOBPCG ab schlechterem Warmstart.
+- Belege: `exports/solver_memory/{multigrid_lobpcg,cudss_converged}/result.json`.

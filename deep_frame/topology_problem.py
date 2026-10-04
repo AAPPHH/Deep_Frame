@@ -5,7 +5,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 from deep_frame.config import COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
 from deep_frame.topology_neural import cell_centers
-from deep_frame.topology_optimization import DensityMap, HexElasticity, ModalConstraint, StiffnessConstraint, _settings
+from deep_frame.topology_optimization import DensityMap, HexElasticity, StiffnessConstraint, _settings
 
 ARM_TIP = {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0, "calibration": 1.0, "penalty": 1.0, "multiplier_interval": 1,
            "definition": "evaluator arm_tip: centre mount undersides fixed, uniform pad load on the front-left motor seat, k = |F| / mean pad displacement along F = |F|^2 / compliance"}
@@ -140,7 +140,7 @@ class TopologyProblem:
             if "interfaces" not in domain:
                 raise ValueError("The load covariance constraint needs domain interfaces")
             self.covariance = InterfaceCovariance(self.system, problem["covariance"], domain["interfaces"])
-        self.modal = ModalConstraint(self.system, problem["modal"]) if problem.get("modal") else None
+        self.modal = self.system.modal_constraint(problem["modal"]) if problem.get("modal") else None
         shadow = problem.get("shadow")
         self.shadow = None
         if shadow and shadow["motors_mm"]:

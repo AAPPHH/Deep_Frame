@@ -92,13 +92,15 @@ def test_multigrid_problem_evaluation_matches_cudss():
     results = []
     for solver in ("cuda_cudss", "multigrid"):
         tp = TopologyProblem(tiny_domain(), problem, linear_solver=solver)
-        results.append(tp.evaluate(np.full(tp.map.n, 0.6)))
+        results.append([tp.evaluate(design) for design in (np.full(tp.map.n, 0.6), np.random.default_rng(5).uniform(0.4, 0.8, tp.map.n))])
+        factors = len(tp.system.gpu_solvers)
         tp.close()
-    direct, multigrid = results
-    assert multigrid["names"] == direct["names"]
-    assert np.allclose(multigrid["constraints"], direct["constraints"], rtol=1e-7, atol=1e-9)
-    for a, b in zip(multigrid["constraint_gradients"], direct["constraint_gradients"]):
-        assert np.linalg.norm(a - b) <= 1e-7 * max(np.linalg.norm(b), 1e-30)
+    assert type(tp.modal).__name__ == "MultigridModal" and factors == 0 and all(report["converged"] for report in tp.modal.reports)
+    for direct, multigrid in zip(*results):
+        assert multigrid["names"] == direct["names"]
+        assert np.allclose(multigrid["constraints"], direct["constraints"], rtol=1e-7, atol=1e-9)
+        for a, b in zip(multigrid["constraint_gradients"], direct["constraint_gradients"]):
+            assert np.linalg.norm(a - b) <= 1e-7 * max(np.linalg.norm(b), 1e-30)
 
 @gpu
 def test_lobpcg_modes_match_shift_invert():

@@ -52,7 +52,7 @@ FORMULATION = {
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
                    "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "cuda_cudss"},
     "solver_memory": {"run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt", "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
-                      "output": "exports/solver_memory/baseline", "reference": None, "multigrid": None, "share_static": True},
+                      "output": "exports/solver_memory/baseline", "reference": None, "multigrid": None, "share_static": True, "modal": {}},
 }
 
 def configure(overrides):
@@ -414,7 +414,14 @@ def multigrid_state(system):
 
 def multigrid_summary(statistics):
     return [{"columns": len(row["iterations"]), "batches": row["batches"], "floating": row["floating"], "levels": row["levels"], "coarsest_dofs": row["coarsest_dofs"], "iterations_max": max(row["iterations"]), "iterations_mean": float(np.mean(row["iterations"])),
-             "relative_residual_max": max(row["relative_residual"]), "seconds": row["seconds"], "setup_s": row["setup_s"], "rhs_kernel_component_max": max(row["rhs_kernel_component"] or [0.0])} for row in statistics]
+             "relative_residual_max": max(row["relative_residual"]), "seconds": row["seconds"], "setup_s": row["setup_s"], "rhs_kernel_component_max": max(row["rhs_kernel_component"] or [0.0])} if "batches" in row else
+            {"lobpcg_iterations": row["iterations"], "converged": row["converged"], "levels": row["levels"], "coarsest_dofs": row["coarsest_dofs"], "relative_residual_max": max(row["relative_residual"]), "seconds": row["seconds"], "setup_s": row["setup_s"]} for row in statistics]
+
+def cudss_factors(system):
+    rows = [{"owner": "formulation", "key": str(key)[:40], "dofs": solver.shape[0]} for key, solver in system.gpu_solvers.items()]
+    if system.multigrid is not None:
+        rows += [{"owner": "multigrid_coarsest", "key": str(key)[:40], "dofs": solver.shape[0]} for key, solver in system.multigrid.coarsest_solvers.items()]
+    return rows
 
 def factor_inventory(tp):
     system, rows = tp.system, []
@@ -446,7 +453,7 @@ def deviation(a, b):
 
 def solver_grid(cfg, spec, grid, probe, out):
     half, problem = frame_setup(cfg, cfg["shape"] if grid == "fine" else cfg["coarse_shape"])
-    problem = {**problem, "multigrid": spec["multigrid"], "share_static": spec["share_static"]}
+    problem = {**problem, "multigrid": spec["multigrid"], "share_static": spec["share_static"], "modal": {**problem["modal"], **spec.get("modal", {})}}
     free, total = probe.cp.cuda.runtime.memGetInfo()
     with probe.phase(grid + "_build"):
         clock = perf_counter()
@@ -469,6 +476,7 @@ def solver_grid(cfg, spec, grid, probe, out):
         arrays.append(evaluation_arrays(result))
         evaluations.append({"index": index, "modal": "cold" if index < 2 else "warm", "seconds": seconds, "factorizations": factorizations(tp.system) - counted, **multigrid_state(tp.system), **probe.peaks(f"{grid}_evaluation_{index}")})
     inventory, cases = factor_inventory(tp)
+    factors = cudss_factors(tp.system)
     np.savez_compressed(out / f"{grid}.npz", **arrays[0])
     optimizer, iterations = MMAOptimizer(tp, cfg["mma"]["settings"]), []
     x = optimizer.start(design)
@@ -487,7 +495,7 @@ def solver_grid(cfg, spec, grid, probe, out):
     record = {"multigrid": multigrid, "grid": half["grid"], "design": str(source), "design_sha256_16": digest(source), "dofs": tp.system.ndof, "active_dofs": len(tp.system.active_dofs), "build_s": built,
               "gpu_before_build": {"device_free_gb": free / 2 ** 30, "device_total_gb": total / 2 ** 30}, "build": probe.peaks(grid + "_build"), "evaluations": evaluations,
               "noise_floor": deviation(arrays[1], arrays[0]), "mma": {"iterations": iterations, "seconds_per_iteration": float(np.mean([row["seconds"] for row in iterations])), **probe.peaks(grid + "_mma")},
-              "factors": inventory, "cases": cases, "names": result["names"], "f1_hz": float(arrays[0]["f1"]), "mass_g": float(arrays[0]["mass_g"])}
+              "factors": inventory, "cudss_factors": factors, "linear_solver": tp.system.linear_solver, "cases": cases, "names": result["names"], "f1_hz": float(arrays[0]["f1"]), "mass_g": float(arrays[0]["mass_g"])}
     if spec["reference"]:
         reference = np.load(Path(spec["reference"]) / f"{grid}.npz")
         record["deviation"] = deviation(arrays[0], {key: reference[key] for key in reference.files})

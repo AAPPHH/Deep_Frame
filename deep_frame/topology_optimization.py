@@ -678,8 +678,13 @@ class HexElasticity:
     def _multigrid(self):
         if self.multigrid is None:
             from deep_frame.topology_multigrid import GeometricMultigrid
-            self.multigrid = GeometricMultigrid(self.domain["grid"]["shape"], self.spacing, self.ke, self.multigrid_settings)
+            self.multigrid = GeometricMultigrid(self.domain["grid"]["shape"], self.spacing, self.ke, self.multigrid_settings, self.me)
         return self.multigrid
+    def modal_constraint(self, settings):
+        if self.linear_solver != "multigrid":
+            return ModalConstraint(self, settings)
+        from deep_frame.topology_multigrid import MultigridModal
+        return MultigridModal(self, settings, self._multigrid())
     def _multigrid_solve(self, key, part, forces):
         full = np.zeros((self.ndof, forces.shape[1]))
         full[part["free"]] = forces
@@ -1144,7 +1149,7 @@ def optimize_topology(domain, settings, *, progress_callback=None):
             raise ValueError("The volume budget must exceed the preserve-cell volume")
         design = mapping.initial(target)
         system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
-        modal = ModalConstraint(system, settings["modal"]) if settings["modal"] else None
+        modal = system.modal_constraint(settings["modal"]) if settings["modal"] else None
         modal_log = []
         scales = None
         converged = False
