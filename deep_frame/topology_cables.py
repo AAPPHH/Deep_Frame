@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter1d, label, maximum_filter1d
 
 from deep_frame.config import CABLES, COMPONENT_LIBRARY, IMPLICIT_CONFIG
 from deep_frame.topology_geometry import region_contains
-from deep_frame.topology_implicit import TWENTY_SIX, _manifold, _trimesh, exact_booleans, float32_margin, region_manifold
+from deep_frame.topology_implicit import TWENTY_SIX, _envelope, _manifold, _round_float32, _trimesh, exact_booleans, float32_margin, region_manifold
 from deep_frame.topology_problem import radial_weight
 from deep_frame.topology_reconstruction import clearance
 
@@ -24,6 +24,20 @@ def first_hits(mesh, origins, directions, chunk=CABLES["ray_chunk"]):
         hits, rays, _ = mesh.ray.intersects_location(origins[start:start+chunk], directions[start:start+chunk], multiple_hits=False)
         distance[start+rays] = np.linalg.norm(hits-origins[start+rays], axis=1)
     return distance
+
+def pinch_points(mesh):
+    rounded = np.asarray(mesh.vertices, dtype=np.float32).astype(float)
+    _, first, inverse = np.unique(rounded, axis=0, return_index=True, return_inverse=True)
+    pairs = np.column_stack((first[inverse.ravel()], np.arange(len(rounded))))
+    pairs = pairs[pairs[:, 0] != pairs[:, 1]]
+    edges = {tuple(edge) for edge in np.sort(mesh.edges_unique, axis=1).tolist()}
+    loose = np.array([tuple(sorted(pair)) not in edges for pair in pairs.tolist()], dtype=bool)
+    return mesh.vertices[pairs[loose if loose.any() else slice(None), 1]]
+
+def grown(region, distance):
+    if region["kind"] == "box":
+        return {**region, "min_mm": (np.asarray(region["min_mm"])-distance).tolist(), "max_mm": (np.asarray(region["max_mm"])+distance).tolist()}
+    return {**region, "radius_mm": region["radius_mm"]+distance, "height_mm": region["height_mm"]+2*distance}
 
 def bundle_diameter(diameters, packing=CABLES["packing"]):
     diameters = sorted(diameters, reverse=True)
@@ -81,10 +95,13 @@ def profile_frames(points, axis=CABLES["print_axis"]):
     v = _unit(v-np.einsum("ij,ij->i", v, tangent)[:, None]*tangent)
     return tangent, np.cross(v, tangent), v
 
-def sweep(points, us, vs, polygons):
+def sweep(points, us, vs, polygons, extend=0.0, overlap=CABLES["sweep_overlap_mm"]):
     from manifold3d import Manifold, OpType
+    tangent = _unit(np.gradient(points, axis=0))
+    shift = np.full(len(points), overlap)
+    shift[[0, -1]] += extend
     rings = [p+poly[:, :1]*u+poly[:, 1:]*v for p, u, v, poly in zip(points, us, vs, polygons)]
-    return Manifold.batch_boolean([Manifold.hull_points(np.vstack([rings[i], rings[i+1]])) for i in range(len(rings)-1)], OpType.Add)
+    return Manifold.batch_boolean([Manifold.hull_points(np.vstack([rings[i]-shift[i]*tangent[i], rings[i+1]+shift[i+1]*tangent[i+1]])) for i in range(len(rings)-1)], OpType.Add)
 
 def anchor_regions(domain):
     labels, total = label(domain["preserve"], TWENTY_SIX)
@@ -232,9 +249,16 @@ class CableChannels:
         points, seat = self._seat(points, profiles, ~inside, sigma)
         tangent, u, v = profile_frames(points, cfg["print_axis"])
         depth = self._slot_depth(body, points, v) if body is not None else np.zeros(len(points))
+        outer = np.array([p.outer for p in profiles])
+        ramp = np.clip(np.minimum(arc-arc[first], arc[last]-arc)/cfg["guide_mm"], 0, 1)*~inside
+        drop = np.minimum(gaussian_filter1d(maximum_filter1d(np.maximum(depth-outer, 0.0), 7), sigma, mode="nearest"), cfg["underside_drop_max_mm"])*ramp
+        if drop.max() > 0:
+            points = points-drop[:, None]*v
+            tangent, u, v = profile_frames(points, cfg["print_axis"])
+            depth = self._slot_depth(body, points, v)
         depth = np.clip(np.where(guide, 0.0, maximum_filter1d(depth, 7)), [p.outer for p in profiles], cfg["slot_depth_max_mm"])+cfg["slot_margin_mm"]
         return {**item, "routed": True, "points": points, "tangent": tangent, "u": u, "v": v, "owner": owner, "inside": inside, "guide": guide, "profiles": profiles, "slot_depth": depth, "end_regions": ends,
-                "route_mm": arc_length(raw), "seat_shift_mm": seat, "channel_mm": float(arc[last]-arc[first]) if len(free) else 0.0, "lead_mm": self._lead(item, points)}
+                "route_mm": arc_length(raw), "seat_shift_mm": seat, "underside_drop_mm": float(drop.max()), "channel_mm": float(arc[last]-arc[first]) if len(free) else 0.0, "lead_mm": self._lead(item, points)}
 
     def _seat(self, points, profiles, free, sigma):
         cfg, moved = self.config, np.zeros(len(points))
@@ -275,8 +299,8 @@ class CableChannels:
                 profiles = [path["profiles"][k] for k in run]
                 args = (path["points"][run], path["u"][run], path["v"][run])
                 shells.append(sweep(*args, [p.shell() for p in profiles]))
-                cavities.append(sweep(*args, [p.cavity() for p in profiles]))
-                cavities.append(sweep(*args, [p.slot_cut(d) for p, d in zip(profiles, path["slot_depth"][run])]))
+                cavities.append(sweep(*args, [p.cavity() for p in profiles], self.config["cavity_extend_mm"]))
+                cavities.append(sweep(*args, [p.slot_cut(d) for p, d in zip(profiles, path["slot_depth"][run])], self.config["cavity_extend_mm"]))
         return shells, cavities
 
     def apply(self, body, core):
@@ -284,20 +308,27 @@ class CableChannels:
         started = perf_counter()
         shells, cavities = self.solids()
         margin = float32_margin(self.domain)
-        keep = Manifold.batch_boolean([region_manifold(r, IMPLICIT_CONFIG["segment_tolerance_mm"], margin, 1, 1)[0] for r in self.preserves.values()], OpType.Add)
+        keep = Manifold.batch_boolean([region_manifold(grown(r, self.config["keep_margin_mm"]), IMPLICIT_CONFIG["segment_tolerance_mm"], margin, 1, 1)[0] for r in self.preserves.values()], OpType.Add)
         shell = Manifold.batch_boolean(shells, OpType.Add)
         cavity = Manifold.batch_boolean([Manifold.batch_boolean(cavities, OpType.Add), keep], OpType.Subtract)
-        result = Manifold.batch_boolean([Manifold.batch_boolean([_manifold(body), shell], OpType.Add), cavity], OpType.Subtract)
-        cut = dict(core, regions=[r for r in core["regions"] if r["role"] != "preserve"])
-        mesh, booleans = exact_booleans(_trimesh(result), cut, IMPLICIT_CONFIG)
-        parts = mesh.split(only_watertight=False)
-        largest = max(parts, key=lambda part: abs(part.volume))
-        minor = [part for part in parts if part is not largest]
-        if minor:
-            mesh = largest
+        solid = _manifold(body)
+        joined = Manifold.batch_boolean([solid, shell], OpType.Add)
+        carved = Manifold.batch_boolean([joined, cavity], OpType.Subtract)
+        mesh, booleans = exact_booleans(_trimesh(carved), dict(core, regions=[r for r in core["regions"] if r["role"] != "preserve"]), IMPLICIT_CONFIG)
+        parts = sorted(_manifold(mesh).decompose(), key=lambda part: -part.volume())
+        largest, booleans["pinch_cuts"] = parts[0], []
+        for _ in range(self.config["pinch_rounds"]):
+            mesh, booleans["float32_largest"] = _round_float32(_trimesh(largest), margin)
+            if booleans["float32_largest"]["passed"]:
+                break
+            points = pinch_points(_trimesh(largest))
+            booleans["pinch_cuts"] += np.round(points, 3).tolist()
+            largest = sorted(Manifold.batch_boolean([largest, Manifold.batch_boolean([Manifold.sphere(self.config["pinch_radius_mm"], 8).translate(tuple(point)) for point in points], OpType.Add)], OpType.Subtract).decompose(), key=lambda part: -part.volume())[0]
+        booleans = {key: booleans[key] for key in ("status", "components", "forbidden_removed_mm3", "envelope_removed_mm3", "float32", "float32_largest", "pinch_cuts") if key in booleans}
+        booleans.update(shell_outside_body_mm3=float(joined.volume()-solid.volume()), removed_from_body_mm3=float(joined.volume()-carved.volume()), float32_passed=bool(booleans["float32_largest"]["passed"]))
+        minor = [{"volume_mm3": float(part.volume()), "bounds_mm": np.round(np.reshape(part.bounding_box(), (2, 3)), 2).tolist()} for part in parts[1:]]
         reference = exact_booleans(body, core, IMPLICIT_CONFIG)[1]
-        return mesh, {"shell_mm3": float(shell.volume()), "cavity_mm3": float(cavity.volume()), "bodies": len(parts), "dropped_bodies": [{"volume_mm3": float(abs(part.volume)), "bounds_mm": np.round(part.bounds, 2).tolist()} for part in sorted(minor, key=lambda part: -abs(part.volume))[:6]],
-                      "dropped_volume_mm3": float(sum(abs(part.volume) for part in minor)), "watertight": bool(mesh.is_watertight), "volume_mm3": float(mesh.volume), "exact_booleans": {key: booleans[key] for key in ("status", "passed", "components", "forbidden_removed_mm3", "envelope_removed_mm3")},
+        return mesh, {"shell_mm3": float(shell.volume()), "cavity_mm3": float(cavity.volume()), "bodies": len(parts), "dropped_bodies": minor[:6], "dropped_volume_mm3": float(sum(part["volume_mm3"] for part in minor)), "watertight": bool(mesh.is_watertight), "volume_mm3": float(mesh.volume), "booleans": booleans,
                       "body_preserve_deficit_mm3": reference["preserve_added_mm3"], "runtime_s": perf_counter()-started}
 
     def check(self, mesh):
@@ -321,7 +352,7 @@ class CableChannels:
             reports.append({"name": path["name"], "kind": path["kind"], "routed": True, "start": path["start_regions"], "end": path["end_regions"][-1], "members": path["route"]["members"],
                             "route_mm": round(path["route_mm"], 1), "channel_mm": round(path["channel_mm"], 1), "lead_mm": round(path["lead_mm"], 1), "cable_mm": round(path["route_mm"]+path["lead_mm"], 1),
                             "cost": round(path["route"]["cost"], 1), "bend_deg": round(float(np.degrees(path["route"]["bend_rad"])), 1), "prop_mm": round(sum(self.router.costs[i]["prop_mm"] for i in path["route"]["members"]), 1),
-                            "checked_sections": int(len(rows)), "blocked_sections": int(blocked.sum()), "blocked_points_mm": blocked_points, "seat_shift_mm": round(path["seat_shift_mm"], 2), "continuous": bool(len(rows) and not blocked.any()),
+                            "checked_sections": int(len(rows)), "blocked_sections": int(blocked.sum()), "blocked_points_mm": blocked_points, "seat_shift_mm": round(path["seat_shift_mm"], 2), "underside_drop_mm": round(path["underside_drop_mm"], 2), "continuous": bool(len(rows) and not blocked.any()),
                             "closure_rays": total, "open_rays": open_rays, "open_targets": open_targets, "open_any_disc_rays": open_any, "open_points_mm": getattr(self, "open_points", np.zeros((0, 3)))[:12].tolist() if open_rays else [], "closed_to_props": bool(total and not open_rays), "members_below_limit": [row for row in fit if row["below_limit"]],
                             "profile": path["profiles"][len(path["profiles"])//2].size, "centerline_mm": np.round(path["points"], 2).tolist()})
         return reports
