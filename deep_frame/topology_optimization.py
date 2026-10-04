@@ -721,7 +721,7 @@ class ModalConstraint(AugmentedLagrangian):
         self.parts = []
         for sign in (1.0,) if system.symmetry is None else (1.0, -1.0):
             fixed = case["fixed"] if system.symmetry is None else np.union1d(case["fixed"], system._plane_dofs(sign))
-            self.parts.append({"sign": sign, "free": np.setdiff1d(system.active_dofs, fixed, assume_unique=True), "vectors": None, "key": f"modal{sign:+.0f}"})
+            self.parts.append({"sign": sign, "fixed": fixed, "free": np.setdiff1d(system.active_dofs, fixed, assume_unique=True), "vectors": None, "key": f"modal{sign:+.0f}"})
         self.lumped = np.zeros(len(system.points))
         for item in system.domain.get("point_masses", []):
             direct, mirror = system._select_both(item["attachment_region"], case["name"], "mass")
@@ -770,7 +770,13 @@ class ModalConstraint(AugmentedLagrangian):
         for part in self.parts:
             count = iterations or (settings["initial_iterations"] if part["vectors"] is None else settings["warm_iterations"])
             values, vectors = self.eigenpairs(part, stiffness, mass, count)
-            modes += [(part, values[index], vectors[:, index]) for index in range(settings["tracked"])]
+            for index in range(settings["tracked"]):
+                full = np.zeros(system.ndof)
+                full[part["free"]] = vectors[:, index]
+                modes.append((part, values[index], full))
+        return self.aggregate(density, modes, penalization, min_stiffness_ratio)
+    def aggregate(self, density, modes, penalization, min_stiffness_ratio):
+        system, settings = self.system, self.settings
         ratios = np.array([value / self.target for _, value, _ in modes])
         lowest = ratios.min()
         exponents = np.exp(-settings["ks"] * (ratios - lowest))
@@ -780,9 +786,7 @@ class ModalConstraint(AugmentedLagrangian):
         mass_slope = system.density * 1e-9 * self.interpolation(density)[1]
         sensitivity = np.zeros(system.nelem)
         for weight, (part, value, vector) in zip(weights, modes):
-            full = np.zeros(system.ndof)
-            full[part["free"]] = vector
-            element = full[system.dofs]
+            element = vector[system.dofs]
             strain = np.einsum("ei,ij,ej->e", element, system.ke, element, optimize=True)
             kinetic = np.einsum("ei,ij,ej->e", element, system.me, element, optimize=True)
             sensitivity += weight * (stiffness_slope * strain - value * mass_slope * kinetic) / self.target

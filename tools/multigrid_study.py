@@ -5,8 +5,8 @@ from time import perf_counter
 import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from deep_frame.config import PRINT_MATERIAL, command_line, configure
-from deep_frame.topology_multigrid import GeometricMultigrid, solve_elasticity
-from deep_frame.topology_optimization import HexElasticity
+from deep_frame.topology_multigrid import GeometricMultigrid, MultigridModal, solve_elasticity
+from deep_frame.topology_optimization import HexElasticity, ModalConstraint
 from deep_frame.topology_problem import PROBLEM, cantilever_domain, orthotropic_material
 
 INTERPOLATION = PROBLEM["interpolation"]
@@ -38,7 +38,7 @@ def moduli_of(system, density):
     return moduli, active
 
 def multigrid_of(system, settings=None):
-    return GeometricMultigrid(system.domain["grid"]["shape"], system.spacing, system.ke, settings)
+    return GeometricMultigrid(system.domain["grid"]["shape"], system.spacing, system.ke, settings, system.me)
 
 def timed(function, repeats):
     import torch
@@ -296,6 +296,124 @@ def truss_study(cfg):
         Path(cfg["output"]).write_text(json.dumps({"rows": rows, "versions": versions()}, indent=1, default=float), encoding="utf-8")
     return 0
 
+MODAL = {"output": "docs/validation/multigrid_modal.json", "problems": ["cantilever", "frame"], "scales": [1, 2, 3], "field": "smooth", "tip_mass_g": 2.0, "frame_density": TRUSS["frame_density"],
+         "subspace_iterations": [30, 300], "variants": {"float32": {"precision": "float32"}, "float64": {"precision": "float64"}}}
+MODAL_KINDS = {"output": "text", "problems": ["text"], "scales": ["int"], "field": "text", "tip_mass_g": "float", "frame_density": "text", "subspace_iterations": ["int"], "variants": "object"}
+
+def modal_cantilever(shape, spacing, tip_mass_g):
+    domain = cantilever_domain(shape, spacing)
+    length = shape[0] * spacing
+    domain["load_cases"].append({"name": "modes", "analysis": "modal", "fixed_regions": domain["load_cases"][0]["fixed_regions"]})
+    domain["point_masses"] = [{"name": "tip", "mass_g": tip_mass_g, "attachment_region": {"kind": "box", "min_mm": [length - spacing - 1e-6, -1e-6, -1e-6], "max_mm": [length + 1e-6, shape[1] * spacing + 1e-6, shape[2] * spacing + 1e-6]}}]
+    return domain
+
+def modal_settings(tracked=3, modes=6):
+    return {**PROBLEM["modal"], "tracked": tracked, "modes": modes}
+
+def shift_invert(constraint, density):
+    from scipy.sparse.linalg import LinearOperator, eigsh
+    system, settings = constraint.system, constraint.settings
+    stiffness, mass = constraint.matrices(density, INTERPOLATION["penalization"], INTERPOLATION["min_stiffness_ratio"])
+    modes, spectra, seconds = [], [], 0.0
+    for part in constraint.parts:
+        started = perf_counter()
+        free = part["free"]
+        reduced, reduced_mass = stiffness[free][:, free].tocsc(), mass[free][:, free].tocsc()
+        system._linear_solve(part["key"], reduced, np.zeros((len(free), 1)))
+        solver = system.gpu_solvers[part["key"]]
+        inverse = LinearOperator(reduced.shape, matvec=lambda v: solver.substitute(np.asarray(v, dtype=float).reshape(-1, 1))[:, 0], dtype=float)
+        values, vectors = eigsh(reduced, k=settings["modes"], M=reduced_mass, sigma=0.0, which="LM", OPinv=inverse, tol=0)
+        order = np.argsort(values)
+        values, vectors = values[order], vectors[:, order]
+        vectors = vectors / np.sqrt(np.einsum("ij,ij->j", vectors, reduced_mass @ vectors))
+        residual = np.linalg.norm(reduced @ vectors - reduced_mass @ vectors * values, axis=0) / np.linalg.norm(reduced @ vectors, axis=0)
+        seconds += perf_counter() - started
+        spectra.append({"sign": part["sign"], "eigenvalues": values.tolist(), "frequencies_hz": (np.sqrt(values) / (2 * np.pi)).tolist(), "relative_residual": residual.tolist(), "free_dofs": len(free)})
+        for index in range(settings["tracked"]):
+            full = np.zeros(system.ndof)
+            full[free] = vectors[:, index]
+            modes.append((part, values[index], full))
+    _, slope, info = constraint.aggregate(density, modes, INTERPOLATION["penalization"], INTERPOLATION["min_stiffness_ratio"])
+    return {"slope": slope, "info": info, "spectra": spectra, "seconds": seconds}
+
+def modal_compare(system, density, settings, cfg, label):
+    import torch
+    penalization, e_min = INTERPOLATION["penalization"], INTERPOLATION["min_stiffness_ratio"]
+    release(system)
+    torch.cuda.empty_cache()
+    base = device_used()
+    reference = shift_invert(ModalConstraint(system, settings), density)
+    rows = [{"problem": label, "solver": "cudss_shift_invert_lanczos", "seconds": reference["seconds"], "device_mib": device_used() - base, "f1_hz": reference["info"]["f1_hz"],
+             "aggregate_ratio": reference["info"]["aggregate_ratio"], "spectra": reference["spectra"], "free_dofs": [spectrum["free_dofs"] for spectrum in reference["spectra"]]}]
+    release(system)
+    print(json.dumps({key: rows[-1][key] for key in ("problem", "solver", "seconds", "f1_hz")}), flush=True)
+    exact = np.array([value for spectrum in reference["spectra"] for value in spectrum["eigenvalues"]])
+    tracked = np.array([value for spectrum in reference["spectra"] for value in spectrum["eigenvalues"][:settings["tracked"]]])
+    def scored(name, values, tracked_values, slope, info, extra):
+        row = {"problem": label, "solver": name, "f1_hz": info["f1_hz"], "f1_rel_diff": abs(info["f1_hz"] - reference["info"]["f1_hz"]) / reference["info"]["f1_hz"],
+               "aggregate_rel_diff": abs(info["aggregate_ratio"] - reference["info"]["aggregate_ratio"]) / abs(reference["info"]["aggregate_ratio"]),
+               "tracked_eigenvalue_max_rel_diff": float(np.max(np.abs(np.asarray(tracked_values) - tracked) / tracked)), "sensitivity_rel_diff": relative(slope, reference["slope"]), **extra}
+        if values is not None:
+            row["eigenvalue_rel_diff"] = (np.abs(np.asarray(values) - exact) / exact).tolist()
+            row["eigenvalue_max_rel_diff"] = float(np.max(row["eigenvalue_rel_diff"]))
+        rows.append(row)
+        print(json.dumps({key: row.get(key) for key in ("problem", "solver", "seconds", "iterations", "f1_rel_diff", "tracked_eigenvalue_max_rel_diff", "eigenvalue_max_rel_diff", "sensitivity_rel_diff")}), flush=True)
+    for iterations in cfg["subspace_iterations"]:
+        constraint = ModalConstraint(system, settings)
+        base = device_used()
+        started = perf_counter()
+        _, slope, info = constraint.measure(density, penalization, e_min, iterations)
+        seconds, used = perf_counter() - started, device_used() - base
+        release(system)
+        scored(f"cudss_subspace{iterations}", None, [(2 * np.pi * value) ** 2 for _, value in info["frequencies_hz"]], slope, info, {"seconds": seconds, "device_mib": used, "iterations": iterations})
+    for name, variant in cfg["variants"].items():
+        mg = multigrid_of(system, variant)
+        modal = MultigridModal(system, settings, mg)
+        torch.cuda.synchronize()
+        torch.cuda.reset_peak_memory_stats()
+        base, allocated = device_used(), torch.cuda.memory_allocated()
+        started = perf_counter()
+        _, slope, info = modal.measure(density, penalization, e_min)
+        torch.cuda.synchronize()
+        seconds, peak, used = perf_counter() - started, (torch.cuda.max_memory_allocated() - allocated) / 2 ** 20, device_used() - base
+        if any(report["kernel"] is not None for report in modal.reports):
+            raise RuntimeError("Modal hierarchy must be clamped")
+        reports = modal.reports
+        scored(f"multigrid_lobpcg_{name}", np.concatenate([part["values"] for part in modal.parts]), np.concatenate([part["values"][:settings["tracked"]] for part in modal.parts]), slope, info,
+               {"settings": variant, "seconds": seconds, "torch_peak_mib": peak, "device_mib": used, "iterations": [report["iterations"] for report in reports], "converged": all(report["converged"] for report in reports),
+                "max_relative_residual": max(max(report["relative_residual"]) for report in reports), "setup_s": sum(report["setup_s"] for report in reports), "levels": reports[0]["levels"],
+                "coarsest_dofs": [report["coarsest_dofs"] for report in reports], "history": [report["history"] for report in reports]})
+        mg.close()
+        del mg, modal
+        torch.cuda.empty_cache()
+    return rows
+
+def modal_study(cfg):
+    rows = []
+    for problem in cfg["problems"]:
+        if problem == "cantilever":
+            for scale in cfg["scales"]:
+                domain = modal_cantilever((32 * scale, 6 * scale, 12 * scale), 1.0 / scale, cfg["tip_mass_g"])
+                system = HexElasticity(domain, linear_solver="cuda_cudss")
+                density = np.kron(density_field(cfg["field"], (32, 6, 12), 1), np.ones((scale,) * 3)).ravel()
+                result = modal_compare(system, density, modal_settings(), cfg, f"cantilever_s{scale}_{cfg['field']}")
+                for row in result:
+                    row.update(scale=scale, shape=domain["grid"]["shape"], spacing_mm=domain["grid"]["spacing_mm"][0], dofs=system.ndof)
+                rows += result
+                release(system)
+        else:
+            from tools.formulation_study import FORMULATION, frame_setup
+            domain, problem_settings = frame_setup(FORMULATION, [102, 96, 24])
+            system = HexElasticity(domain, interface_node_policy=domain.get("optimizer_settings", {}).get("interface_node_policy", "allowed_adjacent"), linear_solver="cuda_cudss")
+            density = np.load(cfg["frame_density"])["density"].astype(float).ravel()
+            result = modal_compare(system, density, problem_settings["modal"], cfg, "frame_4over3")
+            for row in result:
+                row.update(shape=domain["grid"]["shape"], spacing_mm=domain["grid"]["spacing_mm"][0], dofs=system.ndof, density=cfg["frame_density"])
+            rows += result
+            release(system)
+        Path(cfg["output"]).write_text(json.dumps({"rows": rows, "versions": versions()}, indent=1, default=float), encoding="utf-8")
+    return 0
+
 def versions():
     import cupy
     import torch
@@ -306,7 +424,8 @@ def versions():
 def main(argv=None):
     return command_line({"operator": lambda overrides: operator_check(configure(OPERATOR, OPERATOR_KINDS, overrides)),
                          "cantilever": lambda overrides: cantilever_study(configure(CANTILEVER, CANTILEVER_KINDS, overrides)),
-                         "truss": lambda overrides: truss_study(configure(TRUSS, TRUSS_KINDS, overrides))}, argv)
+                         "truss": lambda overrides: truss_study(configure(TRUSS, TRUSS_KINDS, overrides)),
+                         "modal": lambda overrides: modal_study(configure(MODAL, MODAL_KINDS, overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

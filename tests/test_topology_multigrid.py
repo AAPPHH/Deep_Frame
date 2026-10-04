@@ -69,3 +69,37 @@ def test_pcg_matches_direct_solution(projection):
             expected[free] = spsolve(matrix[free][:, free].tocsc(), p["force"][free])
             assert np.linalg.norm(solution[:, column] - expected) < 1e-6 * np.linalg.norm(expected)
     mg.close()
+
+@gpu
+def test_lobpcg_modes_match_shift_invert():
+    from scipy.sparse.linalg import eigsh
+    from deep_frame.topology_multigrid import MultigridModal
+    from deep_frame.topology_optimization import ModalConstraint
+    from tools.multigrid_study import modal_cantilever, modal_settings
+    domain = modal_cantilever((16, 3, 6), 1.0, 0.5)
+    system = HexElasticity(domain, linear_solver="cpu_superlu")
+    density = np.clip(np.random.default_rng(3).uniform(0.2, 1.3, system.nelem), 0, 1)
+    settings = modal_settings(tracked=2, modes=4)
+    reference = ModalConstraint(system, settings)
+    stiffness, mass = reference.matrices(density, 3.0, 1e-6)
+    modes = []
+    for part in reference.parts:
+        free = part["free"]
+        values, vectors = eigsh(stiffness[free][:, free].tocsc(), k=4, M=mass[free][:, free].tocsc(), sigma=0.0)
+        order = np.argsort(values)
+        values, vectors = values[order], vectors[:, order] / np.sqrt(np.einsum("ij,ij->j", vectors[:, order], mass[free][:, free] @ vectors[:, order]))
+        part["values"] = values
+        for index in range(2):
+            full = np.zeros(system.ndof)
+            full[free] = vectors[:, index]
+            modes.append((part, values[index], full))
+    expected = reference.aggregate(density, modes, 3.0, 1e-6)
+    mg = GeometricMultigrid(domain["grid"]["shape"], system.spacing, system.ke, {"device": DEVICE, "coarsest_dofs": 200}, system.me)
+    modal = MultigridModal(system, settings, mg)
+    result = modal.measure(density, 3.0, 1e-6)
+    assert all(report["converged"] and report["levels"] > 1 for report in modal.reports)
+    for part, exact in zip(modal.parts, reference.parts):
+        assert np.max(np.abs(part["values"] - exact["values"]) / exact["values"]) < 1e-9
+    assert abs(result[2]["f1_hz"] / expected[2]["f1_hz"] - 1) < 1e-9
+    assert np.linalg.norm(result[1] - expected[1]) < 1e-6 * np.linalg.norm(expected[1])
+    mg.close()

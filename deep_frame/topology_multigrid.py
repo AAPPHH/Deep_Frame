@@ -3,10 +3,11 @@ import numpy as np
 from scipy.linalg import qr
 from scipy.sparse import coo_matrix
 
-from deep_frame.topology_optimization import _CORNERS, CudaDirectSolver, regular_grid
+from deep_frame.topology_optimization import _CORNERS, CudaDirectSolver, ModalConstraint, regular_grid
 
 MULTIGRID = {"coarse": "galerkin", "coarsest_dofs": 80000, "max_levels": 8, "smoother": "chebyshev", "sweeps": 2, "damping": 1.0, "chebyshev_degree": 3, "chebyshev_ratio": 20.0, "growth": 2.0, "cycle": "V",
-             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "device": "cuda"}
+             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "device": "cuda",
+             "eigen_tolerance": 1e-8, "eigen_iterations": 300, "eigen_guard": 2, "eigen_refresh": 10, "eigen_drop": 1e-12, "eigen_seed": 0}
 PRECISIONS = {"float64": ("float64", None), "float32": ("float32", None), "bfloat16": ("float32", "bfloat16"), "float16": ("float32", "float16")}
 _CHILDREN = np.array(list(np.ndindex(2, 2, 2)))
 
@@ -43,7 +44,7 @@ class Level:
         self.moduli = self.blocks = self.kernel = None
 
 class GeometricMultigrid:
-    def __init__(self, shape, spacing, ke, settings=None):
+    def __init__(self, shape, spacing, ke, settings=None, me=None):
         self.torch, self.F = _torch()
         torch = self.torch
         self.settings = {**MULTIGRID, **(settings or {})}
@@ -70,6 +71,7 @@ class GeometricMultigrid:
         self.tensor = tensor
         self.select = {dtype: tensor(select, dtype) for dtype in {torch.float64, self.work}}
         self.weight = {dtype: tensor(np.einsum("ij,jdabc->idabc", self.ke64, select), dtype) for dtype in {torch.float64, self.work}}
+        self.mass_weight = None if me is None else tensor(np.einsum("ij,jdabc->idabc", np.asarray(me, dtype=float), select), torch.float64)
         self.diagonal_ke = tensor(np.diag(self.ke64), torch.float64)
         self.transfer = tensor(np.broadcast_to(stencil, (3, 1, 3, 3, 3)), self.work)
         self.local = tensor(_interpolation(), torch.float64)
@@ -394,6 +396,79 @@ class GeometricMultigrid:
         return solution, {"iterations": iterations.tolist(), "relative_residual": relative.tolist(), "converged": bool(np.all(relative < tolerance)), "history": history}
     def element_energy(self, grid):
         return (self.F.conv3d(grid, self.weight[grid.dtype]) * self._gather(grid, grid.dtype)).sum(1)
+    def _svqb(self, blocks):
+        torch = self.torch
+        vector, applied, mass = blocks
+        gram = vector.flatten(1) @ mass.flatten(1).T
+        gram = (gram + gram.T) / 2
+        scale = 1 / torch.sqrt(torch.diagonal(gram).clamp_min(1e-300))
+        values, rotation = torch.linalg.eigh(scale[:, None] * gram * scale[None, :])
+        keep = values > self.settings["eigen_drop"] * values.max()
+        return self._combine(blocks, scale[:, None] * rotation[:, keep] / torch.sqrt(values[keep]))
+    def _combine(self, blocks, coefficients):
+        return [(coefficients.T @ block.flatten(1)).reshape((coefficients.shape[1],) + block.shape[1:]) for block in blocks]
+    def _project(self, blocks, basis):
+        coefficients = basis[2].flatten(1) @ blocks[0].flatten(1).T
+        return [block - (coefficients.T @ base.flatten(1)).reshape(block.shape) for block, base in zip(blocks, basis)]
+    def _rayleigh(self, blocks, size):
+        torch = self.torch
+        stiffness, gram = [blocks[0].flatten(1) @ block.flatten(1).T for block in blocks[1:]]
+        values, rotation = torch.linalg.eigh((gram + gram.T) / 2)
+        basis = rotation[:, values > self.settings["eigen_drop"] * values.max()]
+        basis = basis / torch.sqrt(torch.diagonal(basis.T @ gram @ basis))
+        reduced = basis.T @ stiffness @ basis
+        values, inner = torch.linalg.eigh((reduced + reduced.T) / 2)
+        return values[:size], basis @ inner[:, :size]
+    def _residual(self, blocks, values):
+        residual = blocks[1] - values[:, None, None, None, None] * blocks[2]
+        return residual, self.torch.linalg.vector_norm(residual.flatten(1), dim=1) / self.torch.linalg.vector_norm(blocks[1].flatten(1), dim=1)
+    def eigenpairs(self, key, fixed, mass, lumped, count, initial=None):
+        torch = self.torch
+        torch.cuda.synchronize() if self.device.type == "cuda" else None
+        started = perf_counter()
+        settings, tolerance = self.settings, self.settings["eigen_tolerance"]
+        hierarchy = self.hierarchy((key, False), np.asarray(fixed, dtype=np.int64))
+        mask = hierarchy["levels"][0].mask64
+        mass, lumped = self.element_field(mass), self.grid(lumped)[0] * mask
+        apply = lambda grid: [grid, self.operator(grid, mask=mask), (self._scatter(self.F.conv3d(grid * mask, self.mass_weight) * mass, torch.float64) + lumped * grid) * mask]
+        size = count + settings["eigen_guard"]
+        if initial is None or initial.shape[0] != size:
+            generator = torch.Generator(device=self.device).manual_seed(settings["eigen_seed"])
+            initial = torch.rand((size, 3) + self.levels[0].nodes, generator=generator, device=self.device, dtype=torch.float64) - 0.5
+        blocks = self._svqb(apply(initial * mask))
+        values, rotation = self._rayleigh(blocks, size)
+        current, previous, step, history = self._combine(blocks, rotation), None, 0, []
+        while True:
+            residual, relative = self._residual(current, values)
+            if step % settings["eigen_refresh"] == 0 or bool((relative[:count] < tolerance).all()):
+                current = apply(current[0])
+                residual, relative = self._residual(current, values)
+            history.append(float(relative[:count].max()))
+            if bool((relative[:count] < tolerance).all()) or step >= settings["eigen_iterations"]:
+                break
+            search = apply(self.precondition(hierarchy, residual)[relative >= tolerance] * mask)
+            search = self._svqb(self._project(self._project(search, current), current))
+            parts = [current, search]
+            if previous is not None:
+                previous = self._project(self._project(self._project(previous, current), search), search)
+                previous = self._svqb(previous)
+                parts.append(previous) if previous[0].shape[0] else None
+            blocks = [torch.cat(group) for group in zip(*parts)]
+            values, rotation = self._rayleigh(blocks, size)
+            current = self._combine(blocks, rotation)
+            rotation[:size] = 0
+            previous = self._combine(blocks, rotation)
+            step += 1
+        blocks = self._svqb(apply(current[0]))
+        values, rotation = self._rayleigh(blocks, size)
+        current = self._combine(blocks, rotation)
+        relative = self._residual(current, values)[1]
+        torch.cuda.synchronize() if self.device.type == "cuda" else None
+        report = {"iterations": step, "relative_residual": relative[:count].cpu().numpy().tolist(), "converged": bool((relative[:count] < tolerance).all()), "history": history,
+                  "seconds": perf_counter() - started, "setup_s": hierarchy.pop("setup_s", 0.0), "levels": len(hierarchy["levels"]), "coarsest_dofs": hierarchy["coarsest"]["dofs"],
+                  "kernel": None if hierarchy["levels"][0].kernel is None else int(hierarchy["levels"][0].kernel.shape[0]), "lambda_max": [level.lambda_max for level in hierarchy["levels"][:-1]]}
+        self.statistics.append(report)
+        return values[:count].cpu().numpy(), current[0], report
     def diagnostics(self):
         return {"settings": self.settings, "levels": [{"shape": list(level.shape), "spacing_mm": level.spacing.tolist()} for level in self.levels], "padded_shape": list(self.padded), "solves": self.statistics[-64:]}
     def close(self):
@@ -435,3 +510,23 @@ def solve_elasticity(system, multigrid, physical_density, penalization=3.0, min_
         entry["derivative"] = -derivative * entry.pop("energy")
     torch.cuda.empty_cache() if multigrid.device.type == "cuda" else None
     return results
+
+class MultigridModal(ModalConstraint):
+    def __init__(self, system, settings, multigrid):
+        super().__init__(system, settings)
+        self.multigrid = multigrid
+    def measure(self, physical_density, penalization=3.0, min_stiffness_ratio=1e-6, iterations=None):
+        system, mg = self.system, self.multigrid
+        density = np.asarray(physical_density, dtype=float).ravel()
+        moduli = np.where(system.active_elements, system.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization), 0)
+        mass = np.where(system.active_elements, system.density * 1e-9 * self.interpolation(density)[0], 0)
+        mg.update(moduli)
+        modes, self.reports = [], []
+        for part in self.parts:
+            values, vectors, report = mg.eigenpairs(part["key"], part["fixed"], mass, self.lumped, self.settings["modes"], part["vectors"])
+            part["vectors"] = vectors
+            self.reports.append(report)
+            flat = mg.flat(vectors[:self.settings["tracked"]]).cpu().numpy()
+            modes += [(part, values[index], flat[:, index]) for index in range(self.settings["tracked"])]
+            part["values"] = values
+        return self.aggregate(density, modes, penalization, min_stiffness_ratio)
