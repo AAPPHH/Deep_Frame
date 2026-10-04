@@ -1350,18 +1350,20 @@ STAND_STABILITY = {
     "enabled": True, "reserve_min_mm": 15.0, "prop_clearance_min_mm": 17.0, "enabled_source": "orchestrator 2026-10-04: on for the frame runs (user wants the standing condition in this run)",
     "prop_clearance_source": "ManaFly 3 measured with the same evaluator component model (prop disc underside 17.4 mm above its lowest point, docs/validation/stand_stability.json), rounded down to 17 mm; our rail v3b and free-battery frames 19.2 mm",
     "reserve_source": "user 2026-10-04: centre of gravity at least 15 mm inside the support polygon",
-    "start_beta": 4.0, "start_beta_source": "orchestrator 2026-10-04: the coarse free_layout2 run with the stand rows live from beta = 1 stalled at stand_reserve g = 3.25 (CoG about 34 mm outside the support) and 45 g for 20 iterations (docs/validation/free_layout2_opt.json, coarse_beta1_stalled); below start_beta the rows are reported satisfied with zero gradient",
-    "contact_tolerance_mm": 0.2, "directions": 64, "ground_sharpness_per_mm": 6.0, "density_lift_mm": 20.0, "contact_penalty": 2.0, "support_sharpness_per_mm": 1.0, "ks_per_mm": 4.0,
+    "start_beta": 0.0, "start_beta_source": "stand-fix 2026-10-04: the floor-band row is live from beta = 1 (rim cells get a direct gradient); the earlier beta >= 4 gate of the lifted-height row stayed for 300 iterations at g ~ 1 and 38-40 g (exports/runs/free_layout2_opt)",
+    "contact_tolerance_mm": 0.2, "directions": 64, "edge_width_mm": 0.5, "min_contact_area_mm2": 4.0, "gray_delta": 0.05, "ks": 20.0,
     "definition": {
         "exact": "evaluator: ground = lowest point of the body; contact set = body material with z <= ground + contact_tolerance_mm (vertices below plus the section at that height); support polygon = convex hull of its plan projection; "
                  "reserve = signed distance of the plan projection of the craft centre of gravity (frame mesh + layout components) to the hull boundary (> 0 inside); prop clearance = lowest prop disc underside - ground",
-        "lifted_height": "zeta_e = z_bottom_e + L (1 - rho_e) (L = density_lift_mm): gray and void cells are lifted out of the contact zone, binary solid cells keep their bottom face height",
-        "ground": "z_g = sum(zeta w) / sum(w), w = exp(-p_g (zeta - min zeta)): softmin-weighted mean, >= min zeta, upward bias <= one cell layer x exp(-p_g h) share",
-        "contact": "log weight lambda_e = -c s D ((zeta_e - z_g) / h_z)^2 (c = contact_penalty, s = support_sharpness, D = plan diameter of the domain): one cell layer above the ground loses more than the largest support gain exp(s D), so only the lowest layer carries",
-        "support": "h_k = sum(a u) / sum(a) over contact cells and their mirror copies, u = n_k . x_e (cell centre), a = exp(s u + lambda): soft-argmax support distance along n_k, never above the max over the cells",
-        "reserve": "r_k = h_k - n_k . c (c = plan CoG of frame share sum(rho V density) at the density-weighted cell centres + layout components), K directions on the full circle; r = KS_min(r_k) = -1/ks log sum exp(-ks r_k) <= min_k r_k; "
-                   "exact for a convex polygon: dist(c, boundary) = min over all unit n of (h(n) - n . c), sampled directions overestimate by <= 1/cos(pi/K)",
-        "rows": "stand_reserve: g = 1 - r / reserve_min_mm; stand_prop_clearance: g = 1 - (z_prop_bottom - z_g) / prop_clearance_min_mm; stand_ground_z monitored; all on the intermediate field like volume and shadow"},
+        "ground": "fixed plane z_f = lowest bottom face of the allowed cells (the envelope floor, floor_drop_mm below the base plate): nothing can lie lower, so material on the floor layer is the lowest material and the evaluator ground; "
+                  "a design without floor material is infeasible for the row (it then has to grow feet to the floor) and its prop clearance is measured against z_f (conservative)",
+        "contact": "contact cells = allowed cells whose bottom face lies within half a cell layer of z_f (the floor layer), geometry only; mirror copies count on half domains",
+        "reserve": "for K directions n_k on the full circle: A_k = sum over contact cells (and copies) of c(rho_e) a_e S((n_k . x_e - n_k . c - R) / w) (a_e plan cell area, S logistic, w = edge_width_mm, x_e cell centre, c = plan CoG of frame share sum(rho V density) at the density-weighted cell centres + layout components, R = reserve_min_mm); "
+                   "g_k = 1 - A_k / min_contact_area_mm2; row g = KS_max(g_k, ks) >= max g_k. g <= 0 means: in every direction at least min_contact_area_mm2 of floor material lies R or more beyond the CoG, i.e. the CoG is at least R inside the convex hull of the contact set (cell centres, sampled directions); "
+                   "c(rho) = rho (rho + 2 delta) / (1 + 2 delta) (delta = gray_delta): c(0) = 0, c(1) = 1, c'(0) = 2 delta / (1 + 2 delta) > 0, so void floor cells outside the line get a direct, bounded gradient, while diffuse gray counts less than its density (rho = 0.02: 0.0022); "
+                   "a support function over the floor field (soft-max of n . x weighted by density) was not used: any weight w(rho) > 0 of a far void cell is amplified by exp(s * distance) and the hull jumps to the domain rim",
+        "value": "reported reserve = min_k (max over the corners of floor cells with rho > 0.5 of n_k . x - n_k . c): voxel support-function distance of the CoG to the hull of the solid floor layer (cell faces, sampled directions), -inf without solid floor cells",
+        "rows": "stand_reserve: g as above; stand_prop_clearance: g = 1 - (z_prop_bottom - z_f) / prop_clearance_min_mm, design-independent (zero gradient); stand_ground_z monitors z_f; all on the intermediate field like volume and shadow"},
 }
 
 def command_line(commands, argv=None):

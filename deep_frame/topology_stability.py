@@ -74,13 +74,17 @@ def stand_measure(mesh, center, components, settings=STAND_STABILITY):
 
 class StandStability:
     def __init__(self, domain, settings=STAND_STABILITY):
+        from scipy.special import expit
         from deep_frame.topology_neural import cell_centers
+        self.expit = expit
         self.settings = settings = {**STAND_STABILITY, **settings}
         grid = domain["grid"]
         h = np.asarray(grid["spacing_mm"], dtype=float)
         self.allowed = np.flatnonzero(np.asarray(domain["allowed"]).ravel())
         centers = cell_centers(grid)[self.allowed]
-        self.bottom = centers[:, 2] - h[2] / 2
+        bottom = centers[:, 2] - h[2] / 2
+        self.floor = float(bottom.min())
+        self.contact = np.flatnonzero(bottom <= self.floor + h[2] / 2)
         copies = [centers[:, :2]]
         symmetry = domain.get("symmetry")
         if symmetry is not None:
@@ -88,6 +92,8 @@ class StandStability:
             mirror[:, symmetry["axis"]] = 2 * symmetry.get("plane_mm", 0.0) - mirror[:, symmetry["axis"]]
             copies.append(mirror)
         self.copies = np.stack(copies)
+        self.area = float(h[0] * h[1])
+        self.corners = (self.copies[:, self.contact, None, :] + np.array([[sx, sy] for sx in (-0.5, 0.5) for sy in (-0.5, 0.5)]) * h[:2]).reshape(len(self.copies), len(self.contact), 4, 2)
         self.cell_mass = float(np.prod(h)) * domain["material"]["density_g_cm3"] / 1000
         components = domain["metadata"]["components"]
         masses = [(entry["mass_g"], entry["center_of_mass_mm"][:2]) for entry in components.values() if entry["mass_g"] > 0]
@@ -97,38 +103,32 @@ class StandStability:
         self.prop = min(props) if props else None
         angles = 2 * np.pi * np.arange(settings["directions"]) / settings["directions"]
         self.directions = np.column_stack([np.cos(angles), np.sin(angles)])
-        self.projections = self.copies @ self.directions.T
-        extent = self.copies.reshape(-1, 2)
-        self.penalty = settings["contact_penalty"] * settings["support_sharpness_per_mm"] * float(np.hypot(*np.ptp(extent, axis=0))) / h[2] ** 2
-    def ground(self, rho):
-        s = self.settings
-        zeta = self.bottom + s["density_lift_mm"] * (1 - rho)
-        w = np.exp(-s["ground_sharpness_per_mm"] * (zeta - zeta.min()))
-        w /= w.sum()
-        ground = float(w @ zeta)
-        return zeta, ground, -s["density_lift_mm"] * w * (1 - s["ground_sharpness_per_mm"] * (zeta - ground))
+        self.projections = self.copies[:, self.contact] @ self.directions.T
     def measure(self, physical):
         s = self.settings
         rho = np.asarray(physical, dtype=float).ravel()[self.allowed]
-        zeta, ground, ground_slope = self.ground(rho)
-        offset = zeta - ground
-        lam = -self.penalty * offset ** 2
-        exponent = s["support_sharpness_per_mm"] * self.projections + lam[None, :, None]
-        a = np.exp(exponent - exponent.max(axis=(0, 1), keepdims=True))
-        a /= a.sum(axis=(0, 1), keepdims=True)
-        support = np.einsum("cek,cek->k", a, self.projections)
         mass = self.component_mass + self.cell_mass * len(self.copies) * rho.sum()
         cog = (self.component_moment + self.cell_mass * np.einsum("e,ced->d", rho, self.copies)) / mass
-        reserves = support - self.directions @ cog
-        low = reserves.min()
-        pi = np.exp(-s["ks_per_mm"] * (reserves - low))
-        reserve = float(low - np.log(pi.sum()) / s["ks_per_mm"])
+        width, needed = s["edge_width_mm"], s["min_contact_area_mm2"]
+        t = (self.projections - (self.directions @ cog + s["reserve_min_mm"])[None, None, :]) / width
+        step = self.expit(t)
+        contact, delta = rho[self.contact], s["gray_delta"]
+        weight, weight_slope = contact * (contact + 2 * delta) / (1 + 2 * delta), (2 * contact + 2 * delta) / (1 + 2 * delta)
+        beyond = self.area * np.einsum("e,cek->k", weight, step)
+        rows = 1 - beyond / needed
+        top = rows.max()
+        pi = np.exp(s["ks"] * (rows - top))
+        g = float(top + np.log(pi.sum()) / s["ks"])
         pi /= pi.sum()
-        q = np.einsum("cek,k->e", a * (self.projections - support[None, None, :]), pi)
-        dlam = -2 * self.penalty * offset
-        slope = q * dlam * (-s["density_lift_mm"]) - float(q @ dlam) * ground_slope
-        slope -= self.cell_mass * np.einsum("ced,d->e", self.copies - cog, self.directions.T @ pi) / mass
-        return {"ground_z_mm": ground, "ground_slope": ground_slope, "reserve_mm": reserve, "reserve_slope": slope, "reserves_mm": reserves, "support_mm": support, "center_of_gravity_xy_mm": cog, "mass_g": mass}
+        slope = np.zeros(len(rho))
+        slope[self.contact] = -self.area / needed * weight_slope * np.einsum("cek,k->e", step, pi)
+        edge = self.area / width * np.einsum("e,cek,k->k", weight, step * (1 - step), pi) / needed
+        slope += self.cell_mass * np.einsum("ced,dk,k->e", self.copies - cog, self.directions.T, edge) / mass
+        solid = contact > 0.5
+        corners = self.corners[:, solid].reshape(-1, 2)
+        reserves = (corners @ self.directions.T).max(axis=0) - self.directions @ cog if len(corners) else np.full(len(self.directions), -np.inf)
+        return {"ground_z_mm": self.floor, "g": g, "slope": slope, "beyond_mm2": beyond, "reserve_mm": float(reserves.min()), "reserves_mm": reserves, "center_of_gravity_xy_mm": cog, "mass_g": mass,
+                "contact_area_mm2": float(self.area * len(self.copies) * contact.sum())}
     def scatter(self, values, n):
         full = np.zeros(n)
         full[self.allowed] = values
@@ -136,11 +136,11 @@ class StandStability:
     def rows(self, physical):
         s, n = self.settings, np.asarray(physical).size
         m = self.measure(physical)
-        rows = [{"name": "stand_reserve", "g": 1 - m["reserve_mm"] / s["reserve_min_mm"], "gradient": self.scatter(-m["reserve_slope"] / s["reserve_min_mm"], n), "value": m["reserve_mm"], "limit": s["reserve_min_mm"], "unit": "mm", "sense": ">=",
-                 "info": {"center_of_gravity_xy_mm": m["center_of_gravity_xy_mm"].tolist(), "mass_g": m["mass_g"]}}]
+        rows = [{"name": "stand_reserve", "g": m["g"], "gradient": self.scatter(m["slope"], n), "value": m["reserve_mm"], "limit": s["reserve_min_mm"], "unit": "mm", "sense": ">=",
+                 "info": {"center_of_gravity_xy_mm": m["center_of_gravity_xy_mm"].tolist(), "mass_g": m["mass_g"], "min_beyond_mm2": float(m["beyond_mm2"].min()), "contact_area_mm2": m["contact_area_mm2"]}}]
         if self.prop is not None:
             minimum = s["prop_clearance_min_mm"]
-            value = self.prop - m["ground_z_mm"]
-            rows.append({"name": "stand_prop_clearance", "g": None if minimum is None else 1 - value / minimum, "gradient": self.scatter(m["ground_slope"] / (minimum or 1.0), n), "value": value, "limit": minimum, "unit": "mm", "sense": ">="})
-        rows.append({"name": "stand_ground_z", "g": None, "gradient": self.scatter(m["ground_slope"], n), "value": m["ground_z_mm"], "limit": None, "unit": "mm", "sense": ""})
+            value = self.prop - self.floor
+            rows.append({"name": "stand_prop_clearance", "g": None if minimum is None else 1 - value / minimum, "gradient": np.zeros(n), "value": value, "limit": minimum, "unit": "mm", "sense": ">="})
+        rows.append({"name": "stand_ground_z", "g": None, "gradient": np.zeros(n), "value": self.floor, "limit": None, "unit": "mm", "sense": ""})
         return rows
