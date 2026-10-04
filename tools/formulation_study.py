@@ -1,11 +1,14 @@
 import hashlib
 import io
 import json
+import os
 import shutil
 import subprocess
 import sys
 import tarfile
+import threading
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from copy import deepcopy
 from pathlib import Path
 from time import perf_counter
@@ -43,7 +46,7 @@ FORMULATION = {
     "camera_limits": {"spacing_mm": 4 / 3, "subdivision": 4, "stack_height_mm": 5.0, "tilts_deg": [20.0, 0.0], "linear_solver": "cpu_superlu", "output": "docs/validation/camera_limits_manafly.json"},
     "camera_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.02, "battery_support": "free", "output": "docs/validation/camera_support_fd.json", "limits": {}},
     "battery_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "output": "docs/validation/battery_support_fd.json"},
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
             "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -54,7 +57,10 @@ FORMULATION = {
                    "old_fine": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/result.json", "previous": {}, "previous_fine": None, "gap": {}, "manafly_sigma": "exports/cov/eval/manafly3/sigma.json", "aether4_sigma": "exports/cov/eval/aether4/sigma.json",
                    "twist": {"motor_front_left": 1.0, "motor_rear_right": 1.0, "motor_front_right": -1.0, "motor_rear_left": -1.0}, "twist_dof": "Fz"},
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
-                   "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "cuda_cudss"},
+                   "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "auto"},
+    "solver_memory": {"run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt", "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
+                      "output": "exports/solver_memory/baseline", "reference": None, "multigrid": None, "share_static": True, "modal": {}},
+    "setup_memory": {"shape": None, "start": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine", "evaluate": True, "sample_s": 0.02, "min_free_gb": 5.0, "output": "exports/setup_memory/probe"},
 }
 
 def configure(overrides):
@@ -250,7 +256,10 @@ def frame_problem(half, references=None):
 
 def frame_setup(cfg=FORMULATION, shape=None):
     half = frame_domain(cfg, shape or cfg["shape"])
-    return half, frame_problem(half, json.loads(Path(cfg["output"]).read_text(encoding="utf-8")))
+    problem = frame_problem(half, json.loads(Path(cfg["output"]).read_text(encoding="utf-8")))
+    if cfg["mma"]["calibration"]:
+        problem["covariance"]["limits"]["calibration"] = dict(cfg["mma"]["calibration"])
+    return half, problem
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
@@ -639,6 +648,302 @@ def battery_compare(cfg):
     Path(spec["summary"]).write_text(json.dumps({"bodies": summary, "renderer": "tools.neural_study.render, both bodies in one scene per view (same camera, same px/mm), side by side along the screen axis"}, indent=1, default=float), encoding="utf-8")
     print(json.dumps({label: {"mass_g": entry["frame"]["mass_g"], "alpha": entry["craft"]["alpha_rad_s2"]} for label, entry in summary.items()}, default=float), flush=True)
 
+class MemoryProbe:
+    def __init__(self, interval, log=None):
+        import cupy
+        import psutil
+        self.cp, self.process, self.interval, self.samples, self.phases, self.running = cupy, psutil.Process(), interval, [], [], True
+        self.log, self.started = (open(log, "a") if log else None), perf_counter()
+        self.cp.cuda.runtime.memGetInfo()
+        self.cp.zeros(1)
+        paths = ",".join(f"'\\GPU Process Memory(pid_{os.getpid()}_*)\\{name} Usage'" for name in ("Dedicated", "Shared"))
+        script = (f"Get-Counter -Counter {paths} -SampleInterval 1 -Continuous -ErrorAction SilentlyContinue | ForEach-Object {{ $c = $_.CounterSamples; "
+                  "$d = ($c | Where-Object Path -like '*dedicated*' | Measure-Object CookedValue -Sum).Sum; $s = ($c | Where-Object Path -like '*shared*' | Measure-Object CookedValue -Sum).Sum; "
+                  "[Console]::Out.WriteLine(\"$d $s\"); [Console]::Out.Flush() }")
+        self.readers = [subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True) for command in
+                        (["powershell", "-NoProfile", "-Command", script], ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits", "-lms", str(int(interval * 1000))])]
+        self.threads = [threading.Thread(target=self.read, args=(reader, kind), daemon=True) for reader, kind in zip(self.readers, ("counter", "smi"))] + [threading.Thread(target=self.poll, daemon=True)]
+        for thread in self.threads:
+            thread.start()
+    def read(self, reader, kind):
+        for line in reader.stdout:
+            try:
+                values = [float(item) for item in line.split()]
+            except ValueError:
+                continue
+            if kind == "counter" and len(values) == 2:
+                self.record({"dedicated_bytes": values[0], "shared_bytes": values[1]})
+            elif kind == "smi" and len(values) == 1:
+                self.record({"smi_used_bytes": values[0] * 2 ** 20})
+    def record(self, values):
+        clock = perf_counter()
+        self.samples.append((clock, values))
+        if self.log:
+            self.log.write(json.dumps({"t": round(clock - self.started, 2), **{key.replace("_bytes", "_gb"): round(value / 2 ** 30, 4) for key, value in values.items()}}) + "\n")
+            self.log.flush()
+    def poll(self):
+        pool = self.cp.get_default_memory_pool()
+        while self.running:
+            free, total = self.cp.cuda.runtime.memGetInfo()
+            self.record({"rss_bytes": self.process.memory_info().rss, "pool_used_bytes": pool.used_bytes(), "pool_total_bytes": pool.total_bytes(), "device_used_bytes": total - free})
+            threading.Event().wait(self.interval)
+    def phase(self, name):
+        probe = self
+        class Phase:
+            def __enter__(self):
+                self.started = perf_counter()
+                return self
+            def __exit__(self, *error):
+                threading.Event().wait(1.5)
+                probe.phases.append((name, self.started, perf_counter()))
+        return Phase()
+    def peaks(self, name, reduce=max):
+        _, started, ended = next(phase for phase in self.phases if phase[0] == name)
+        found = {}
+        for clock, values in list(self.samples):
+            if started <= clock <= ended:
+                for key, value in values.items():
+                    found.setdefault(key, []).append(value)
+        return {key.replace("_bytes", "_gb"): float(reduce(value)) / 2 ** 30 for key, value in found.items()}
+    def summary(self):
+        names = [phase[0] for phase in self.phases]
+        return {"interval_s": self.interval, "idle_mean": self.peaks(names[0], np.mean), "peaks": {name: self.peaks(name) for name in names},
+                "last": {name: self.peaks(name, lambda value: value[-1]) for name in names}, "device_total_gb": self.cp.cuda.runtime.memGetInfo()[1] / 2 ** 30}
+    def close(self):
+        self.running = False
+        for reader in self.readers:
+            reader.kill()
+        if self.log:
+            self.log.close()
+
+def factorizations(system):
+    return sum(len(solver.timings) for solver in system.gpu_solvers.values()) + sum(len(entry["solves"]) for entry in system.gpu_solver_history)
+
+def multigrid_state(system):
+    if system.multigrid is None:
+        return {}
+    torch, mg = system.multigrid.torch, system.multigrid
+    return {"multigrid_solves": len(mg.statistics), "multigrid_coarsest_factorizations": sum(len(solver.timings) for solver in mg.coarsest_solvers.values()), "torch_peak_reserved_gb": torch.cuda.max_memory_reserved() / 2 ** 30}
+
+def multigrid_summary(statistics):
+    return [{"columns": len(row["iterations"]), "batches": row["batches"], "floating": row["floating"], "levels": row["levels"], "coarsest_dofs": row["coarsest_dofs"], "iterations_max": max(row["iterations"]), "iterations_mean": float(np.mean(row["iterations"])),
+             "relative_residual_max": max(row["relative_residual"]), "seconds": row["seconds"], "setup_s": row["setup_s"], "rhs_kernel_component_max": max(row["rhs_kernel_component"] or [0.0])} if "batches" in row else
+            {"lobpcg_iterations": row["iterations"], "converged": row["converged"], "levels": row["levels"], "coarsest_dofs": row["coarsest_dofs"], "relative_residual_max": max(row["relative_residual"]), "seconds": row["seconds"], "setup_s": row["setup_s"]} for row in statistics]
+
+def cudss_factors(system):
+    rows = [{"owner": "formulation", "key": str(key)[:40], "dofs": solver.shape[0]} for key, solver in system.gpu_solvers.items()]
+    if system.multigrid is not None:
+        rows += [{"owner": "multigrid_coarsest", "key": str(key)[:40], "dofs": solver.shape[0]} for key, solver in system.multigrid.coarsest_solvers.items()]
+    return rows
+
+def factor_inventory(tp):
+    system, rows = tp.system, []
+    for key, members in system.groups.items():
+        part = members[0][1]
+        rows.append({"solver": "static", "sign": part["sign"], "cases": [case["name"] for case, _ in members], "rhs": len(members), "fixed_dofs": len(part["fixed"]), "free_dofs": len(part["free"]), "key": key,
+                     **({"factorized_with": [case["name"] for case, _ in system.groups[system.shared[key]["host"]]][:1], "constraint_columns": len(system.shared[key]["constrained"])} if key in (system.shared or {}) else {})})
+    for part in tp.modal.parts if tp.modal is not None else []:
+        rows.append({"solver": "modal", "sign": part["sign"], "cases": [tp.problem["modal"]["case"]], "rhs": tp.problem["modal"]["modes"], "fixed_dofs": len(system.active_dofs) - len(part["free"]), "free_dofs": len(part["free"]), "key": part["key"]})
+    for row in rows:
+        solver = system.gpu_solvers.get(row.pop("key"))
+        if solver is not None:
+            row.update(nnz=len(solver.indices), analysis_s=solver.analysis_s, **(solver.memory_estimates or {}))
+    cases = [{"name": case["name"], "analysis": case["analysis"], "support": "inertia_relief" if "inertia_relief" in case else "fixed", "fixed_dofs": len(case["fixed"]), "parts": len(case["parts"])} for case in system.cases]
+    return rows, cases
+
+def evaluation_arrays(result):
+    values = {row["name"]: row["value"] for row in result["rows"]}
+    return {"objective": np.float64(result["objective"]), "objective_gradient": result["objective_gradient"], "constraints": result["constraints"], "constraint_gradients": result["constraint_gradients"],
+            "names": np.array(result["names"]), "values": np.array([values[name] for name in result["names"]]), "f1": np.float64(values["f1"]), "mass_g": np.float64(result["mass_g"]), "beta": np.float64(result["beta"])}
+
+def deviation(a, b):
+    scale = lambda x: np.maximum(np.abs(x), 1e-30)
+    rows = [np.linalg.norm(x - y) / max(np.linalg.norm(y), 1e-30) for x, y in zip(a["constraint_gradients"], b["constraint_gradients"])]
+    return {"objective_rel": float(abs(a["objective"] - b["objective"]) / scale(b["objective"])), "constraints_g_abs": float(np.max(np.abs(a["constraints"] - b["constraints"]))),
+            "values_rel": float(np.max(np.abs(a["values"] - b["values"]) / scale(b["values"]))), "f1_rel": float(abs(a["f1"] - b["f1"]) / b["f1"]),
+            "gradients_rel_norm": float(max(rows)), "gradients_rel_norm_by_name": dict(zip([str(name) for name in b["names"]], map(float, rows))),
+            "objective_gradient_rel_norm": float(np.linalg.norm(a["objective_gradient"] - b["objective_gradient"]) / np.linalg.norm(b["objective_gradient"]))}
+
+def solver_grid(cfg, spec, grid, probe, out):
+    half, problem = frame_setup(cfg, cfg["shape"] if grid == "fine" else cfg["coarse_shape"])
+    problem = {**problem, "multigrid": spec["multigrid"], "share_static": spec["share_static"], "modal": {**problem["modal"], **spec.get("modal", {})}}
+    free, total = probe.cp.cuda.runtime.memGetInfo()
+    with probe.phase(grid + "_build"):
+        clock = perf_counter()
+        tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["linear_solver"])
+        built = perf_counter() - clock
+    while tp.advance():
+        pass
+    source = Path(spec["run"]) / grid / "design.npz"
+    design = np.load(source)["design"]
+    evaluations, arrays = [], []
+    for index in range(spec["evaluations"]):
+        if index == 1:
+            for part in tp.modal.parts:
+                part["vectors"] = None
+        counted = factorizations(tp.system)
+        with probe.phase(f"{grid}_evaluation_{index}"):
+            clock = perf_counter()
+            result = tp.evaluate(design)
+            seconds = perf_counter() - clock
+        arrays.append(evaluation_arrays(result))
+        evaluations.append({"index": index, "modal": "cold" if index < 2 else "warm", "seconds": seconds, "factorizations": factorizations(tp.system) - counted, **multigrid_state(tp.system), **probe.peaks(f"{grid}_evaluation_{index}")})
+    inventory, cases = factor_inventory(tp)
+    factors = cudss_factors(tp.system)
+    np.savez_compressed(out / f"{grid}.npz", **arrays[0])
+    optimizer, iterations = MMAOptimizer(tp, cfg["mma"]["settings"]), []
+    x = optimizer.start(design)
+    state = optimizer.fresh(x)
+    with probe.phase(grid + "_mma"):
+        for index in range(spec["mma_iterations"]):
+            clock, counted = perf_counter(), factorizations(tp.system)
+            x = optimizer.step(x, tp.evaluate(x), state)
+            iterations.append({"seconds": perf_counter() - clock, "factorizations": factorizations(tp.system) - counted})
+    multigrid = {**multigrid_state(tp.system), "settings": tp.system.multigrid.settings, "solves": multigrid_summary(tp.system.multigrid.statistics)} if tp.system.multigrid is not None else None
+    tp.close()
+    probe.cp.get_default_memory_pool().free_all_blocks()
+    if multigrid is not None:
+        tp.system.multigrid.torch.cuda.empty_cache()
+        tp.system.multigrid.torch.cuda.reset_peak_memory_stats()
+    record = {"multigrid": multigrid, "grid": half["grid"], "design": str(source), "design_sha256_16": digest(source), "dofs": tp.system.ndof, "active_dofs": len(tp.system.active_dofs), "build_s": built,
+              "gpu_before_build": {"device_free_gb": free / 2 ** 30, "device_total_gb": total / 2 ** 30}, "build": probe.peaks(grid + "_build"), "evaluations": evaluations,
+              "noise_floor": deviation(arrays[1], arrays[0]), "mma": {"iterations": iterations, "seconds_per_iteration": float(np.mean([row["seconds"] for row in iterations])), **probe.peaks(grid + "_mma")},
+              "factors": inventory, "cudss_factors": factors, "linear_solver": tp.system.linear_solver, "cases": cases, "names": result["names"], "f1_hz": float(arrays[0]["f1"]), "mass_g": float(arrays[0]["mass_g"])}
+    if spec["reference"]:
+        reference = np.load(Path(spec["reference"]) / f"{grid}.npz")
+        record["deviation"] = deviation(arrays[0], {key: reference[key] for key in reference.files})
+    return record
+
+def solver_memory(cfg):
+    spec = cfg["solver_memory"]
+    out = Path(spec["output"])
+    out.mkdir(parents=True, exist_ok=True)
+    probe = MemoryProbe(spec["sample_s"])
+    record = {"sha": git_sha(), "config": spec, "grids": {}}
+    try:
+        for grid in spec["grids"]:
+            record["grids"][grid] = solver_grid(cfg, spec, grid, probe, out)
+    finally:
+        probe.close()
+    record["peak_wset_gb"] = probe.process.memory_info().peak_wset / 2 ** 30 if hasattr(probe.process.memory_info(), "peak_wset") else None
+    lines = ["| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi total GB | CuPy pool GB | host RSS GB |", "|---|---|---|---|---|---|---|---|---|"]
+    for grid, item in record["grids"].items():
+        phases = item["evaluations"] + [item["mma"]]
+        peak = lambda key: max(phase.get(key, 0.0) for phase in phases)
+        lines.append(f"| {grid} | {item['evaluations'][-1]['factorizations']} | {item['evaluations'][0]['seconds']:.1f}, {item['evaluations'][-1]['seconds']:.1f} | {item['mma']['seconds_per_iteration']:.1f} | "
+                     f"{peak('dedicated_gb'):.2f} | {peak('shared_gb'):.2f} | {peak('smi_used_gb'):.2f} | {peak('pool_total_gb'):.2f} | {peak('rss_gb'):.2f} |")
+    record["table"] = "\n".join(lines)
+    (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(record["table"], flush=True)
+    for grid, item in record["grids"].items():
+        print(json.dumps({grid: {"noise_floor": item["noise_floor"], "deviation": item.get("deviation")}}, default=float), flush=True)
+
+SETUP_STEPS = [("deep_frame.topology_optimization", "DensityMap", "__init__", "filter"), ("deep_frame.topology_optimization", "DensityMap", "fields", "projections"),
+               ("deep_frame.topology_optimization", "HexElasticity", "__init__", "elasticity"), ("deep_frame.topology_optimization", None, "regular_grid", "elasticity.grid"),
+               ("deep_frame.topology_optimization", "HexElasticity", "assembly", "elasticity.assembly_indices"), ("deep_frame.topology_optimization", "HexElasticity", "_register", "load_cases"),
+               ("deep_frame.topology_problem", "InterfaceCovariance", "__init__", "covariance"), ("deep_frame.topology_optimization", "HexElasticity", "modal_constraint", "modal"),
+               ("deep_frame.topology_multigrid", "GeometricMultigrid", "__init__", "multigrid"), ("deep_frame.topology_multigrid", "GeometricMultigrid", "hierarchy", "multigrid.hierarchy"),
+               ("deep_frame.topology_multigrid", "GeometricMultigrid", "_coarsest_solver", "multigrid.coarsest_cudss"), ("deep_frame.topology_optimization", "CudaDirectSolver", "__init__", "cudss_factor"),
+               ("deep_frame.topology_problem", "TopologyProblem", "evaluate", "evaluation"), ("deep_frame.topology_optimization", "HexElasticity", "solve", "evaluation.static"),
+               ("deep_frame.topology_optimization", "HexElasticity", "_share_plan", "evaluation.static.share_plan"), ("deep_frame.topology_optimization", "HexElasticity", "_collect", "evaluation.static.collect"),
+               ("deep_frame.topology_multigrid", "GeometricMultigrid", "solve", "evaluation.static.pcg"), ("deep_frame.topology_problem", "InterfaceCovariance", "measure", "evaluation.covariance"),
+               ("deep_frame.topology_multigrid", "MultigridModal", "measure", "evaluation.modal"), ("deep_frame.topology_optimization", "ModalConstraint", "measure", "evaluation.modal"),
+               ("deep_frame.topology_optimization", "DensityMap", "pullback", "evaluation.pullback")]
+
+class SetupTrace:
+    def __init__(self, spec, log):
+        import psutil
+        self.psutil, self.process, self.spec, self.log = psutil, psutil.Process(), spec, open(log, "w")
+        self.samples, self.events, self.depth, self.running, self.started = [], [], 0, True, perf_counter()
+        self.thread = threading.Thread(target=self.poll, daemon=True)
+        self.thread.start()
+    def rss(self):
+        return self.process.memory_info().rss / 2 ** 30
+    def poll(self):
+        while self.running:
+            self.samples.append((perf_counter(), self.rss()))
+            if self.psutil.virtual_memory().available / 2 ** 30 < self.spec["min_free_gb"]:
+                self.log.write(json.dumps({"aborted": "free host RAM below " + str(self.spec["min_free_gb"]) + " GB", "t": perf_counter() - self.started, "rss_gb": self.samples[-1][1]}) + "\n")
+                self.log.close()
+                os._exit(3)
+            threading.Event().wait(self.spec["sample_s"])
+    def step(self, label, function):
+        trace = self
+        def wrapped(*args, **kwargs):
+            clock, before, trace.depth = perf_counter(), trace.rss(), trace.depth + 1
+            try:
+                return function(*args, **kwargs)
+            finally:
+                trace.depth -= 1
+                end, after = perf_counter(), trace.rss()
+                peak = max([value for moment, value in list(trace.samples) if clock <= moment <= end] + [before, after])
+                event = {"step": label, "depth": trace.depth, "t": clock - trace.started, "seconds": end - clock, "rss_before_gb": before, "rss_after_gb": after, "rss_peak_gb": peak}
+                trace.events.append(event)
+                trace.log.write(json.dumps(event) + "\n")
+                trace.log.flush()
+        return wrapped
+    def install(self, steps=SETUP_STEPS):
+        import importlib
+        for module, owner, name, label in steps:
+            target = importlib.import_module(module)
+            target = getattr(target, owner) if owner else target
+            original = target.__dict__.get(name)
+            if isinstance(original, property):
+                setattr(target, name, property(self.step(label, original.fget)))
+            elif original is not None:
+                setattr(target, name, self.step(label, original))
+    def summary(self):
+        steps = {}
+        for event in self.events:
+            row = steps.setdefault(event["step"], {"calls": 0, "seconds": 0.0, "rss_added_gb": 0.0, "rss_peak_gb": 0.0, "rss_after_first_gb": event["rss_after_gb"]})
+            row["calls"] += 1
+            row["seconds"] += event["seconds"]
+            row["rss_added_gb"] += event["rss_after_gb"] - event["rss_before_gb"]
+            row["rss_peak_gb"] = max(row["rss_peak_gb"], event["rss_peak_gb"])
+        return steps
+    def close(self):
+        self.running = False
+        self.thread.join()
+        self.log.close()
+
+def gpu_state():
+    import cupy
+    free, total = cupy.cuda.runtime.memGetInfo()
+    smi = subprocess.run(["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"], capture_output=True, text=True).stdout.split()
+    torch = sys.modules.get("torch")
+    live = torch is not None and torch.cuda.is_initialized()
+    return {"device_used_gb": (total - free) / 2 ** 30, "smi_used_gb": float(smi[0]) / 1024 if smi else None, "cupy_pool_gb": cupy.get_default_memory_pool().total_bytes() / 2 ** 30,
+            "torch_reserved_gb": torch.cuda.memory_reserved() / 2 ** 30 if live else 0.0, "torch_peak_reserved_gb": torch.cuda.max_memory_reserved() / 2 ** 30 if live else 0.0}
+
+def setup_memory(cfg):
+    spec = cfg["setup_memory"]
+    out = Path(spec["output"])
+    out.mkdir(parents=True, exist_ok=True)
+    idle = gpu_state()
+    trace = SetupTrace(spec, out / "steps.jsonl")
+    trace.install()
+    record = {"sha": git_sha(), "config": spec, "linear_solver": cfg["mma"]["linear_solver"], "rss_idle_gb": trace.rss(), "gpu_idle": idle}
+    try:
+        half, problem = trace.step("domain", frame_setup)(cfg, spec["shape"] or cfg["shape"])
+        tp = trace.step("problem", TopologyProblem)(half, problem, linear_solver=cfg["mma"]["linear_solver"])
+        record.update(grid=half["grid"], dofs=tp.system.ndof, active_elements=int(np.count_nonzero(tp.system.active_elements)), chosen_solver=tp.system.linear_solver, rss_after_problem_gb=trace.rss(), gpu_after_problem=gpu_state())
+        while tp.advance():
+            pass
+        if spec["evaluate"]:
+            source = Path(spec["start"])
+            design = prolongate(np.load(source / "design.npz")["design"], read(source / "result.json")["grid"], half)
+            result = tp.evaluate(design)
+            record.update(mass_g=result["mass_g"], max_violation=result["max_violation"], rss_after_evaluation_gb=trace.rss(), gpu_after_evaluation=gpu_state())
+        tp.close()
+    finally:
+        trace.close()
+    record.update(steps=trace.summary(), rss_peak_gb=max(value for _, value in trace.samples), events=trace.events)
+    lines = ["| step | calls | s | RSS added GB | RSS peak GB |", "|---|---|---|---|---|"] + [f"| {name} | {row['calls']} | {row['seconds']:.1f} | {row['rss_added_gb']:+.2f} | {row['rss_peak_gb']:.2f} |" for name, row in record["steps"].items()]
+    record["table"] = "\n".join(lines)
+    (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(record["table"], flush=True)
+    print(json.dumps({key: record.get(key) for key in ("grid", "dofs", "chosen_solver", "rss_after_problem_gb", "rss_after_evaluation_gb", "rss_peak_gb", "gpu_after_problem", "gpu_after_evaluation")}, default=float), flush=True)
+
 def checkpoint(path):
     def save(x, history, levels):
         np.savez_compressed(path, design=x, level=history[-1]["level"], iteration=len(history))
@@ -662,7 +967,7 @@ def optimize_stage(cfg, half, problem, design, out, start_level):
     np.savez_compressed(out / "density_half.npz", density=physical.reshape(half["grid"]["shape"]).astype(np.float32))
     record = {"status": result["status"], "iterations": result["iterations"], "runtime_s": result["runtime_s"], "seconds_per_iteration": result["seconds_per_iteration"], "levels": result["levels"],
               "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
-              "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"]}
+              "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"], "linear_solver": tp.system.linear_solver}
     tp.close()
     (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
     print(json.dumps({key: record[key] for key in ("status", "iterations", "seconds_per_iteration", "mass_g", "max_violation", "gray_fraction")}, default=float), flush=True)
@@ -692,22 +997,39 @@ def body_start(cfg, design, half):
 def frame_mma(cfg):
     started = perf_counter()
     root = Path(cfg["mma"]["root"])
-    fine, problem = frame_setup(cfg, cfg["shape"])
-    reference = embed_field(np.load(cfg["reference_density"])["density"], fine["grid"]).ravel()
-    design, stages, level = reference, {}, 0
-    if cfg["mma"]["coarse"]:
-        coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
-        start = body_start(cfg, prolongate(reference, fine["grid"], coarse), coarse)
-        result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
-        design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
-    design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
-    out = root / cfg["mma"]["variant"]
-    out.mkdir(parents=True, exist_ok=True)
-    physical = np.load(root / "fine" / "density_half.npz")["density"]
-    np.savez_compressed(out / "density_half.npz", density=physical)
-    body = export_body(cfg, physical, out)
+    root.mkdir(parents=True, exist_ok=True)
+    probe = MemoryProbe(cfg["mma"]["memory_s"], root / "memory.jsonl") if cfg["mma"]["memory_s"] else None
+    phase = lambda name: probe.phase(name) if probe else nullcontext()
+    try:
+        with phase("idle"):
+            threading.Event().wait(10.0 if probe else 0.0)
+        with phase("fine_setup"):
+            fine, problem = frame_setup(cfg, cfg["shape"])
+        reference = embed_field(np.load(cfg["reference_density"])["density"], fine["grid"]).ravel()
+        design, stages, level = reference, {}, 0
+        if cfg["mma"]["start"]:
+            source = Path(cfg["mma"]["start"])
+            design, level = prolongate(np.load(source / "design.npz")["design"], read(source / "result.json")["grid"], fine), cfg["mma"]["fine_start_level"]
+        elif cfg["mma"]["coarse"]:
+            with phase("coarse"):
+                coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
+                start = body_start(cfg, prolongate(reference, fine["grid"], coarse), coarse)
+                result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
+            design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
+        with phase("fine"):
+            design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
+        out = root / cfg["mma"]["variant"]
+        out.mkdir(parents=True, exist_ok=True)
+        physical = np.load(root / "fine" / "density_half.npz")["density"]
+        np.savez_compressed(out / "density_half.npz", density=physical)
+        with phase("export"):
+            body = export_body(cfg, physical, out)
+    finally:
+        if probe:
+            probe.close()
+            (root / "memory.json").write_text(json.dumps(probe.summary(), indent=1, default=float), encoding="utf-8")
     info = {"variant": cfg["mma"]["variant"], "method": "SIMP-MMA (mmapy 0.3.1), shared formulation " + git_sha(), "stages": stages, "body": body, "total_runtime_s": perf_counter() - started,
-            "iterations": sum(stage["iterations"] for stage in stages.values()), "reference": cfg["reference_density"]}
+            "iterations": sum(stage["iterations"] for stage in stages.values()), "reference": cfg["reference_density"], "start": cfg["mma"]["start"], "memory": probe.summary() if probe else None}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=float), encoding="utf-8")
     print(json.dumps({"iterations": info["iterations"], "total_runtime_s": info["total_runtime_s"], "mass_g_body": body["mass_g"], "bodies": body["bodies"], "watertight": body["watertight"]}, default=float), flush=True)
 
@@ -795,7 +1117,7 @@ def compose(cfg):
         shutil.copy2(source / f"{name}.png", manafly / f"{name}.png")
     if missing:
         render_views(trimesh.load_mesh(json.loads(Path(cfg["manafly"]["frame"]).read_text(encoding="utf-8"))["stl"], process=True), manafly, missing)
-    folders = {**{suffix: Path(path) / "renders" for suffix, path in runs.items()}, "manafly": manafly}
+    folders = {**{f"previous_{suffix}": Path(path) / "renders" for suffix, path in cfg["comparison"]["previous"].items()}, **{suffix: Path(path) / "renders" for suffix, path in runs.items()}, "manafly": manafly}
     for figure in cfg["mma"]["figures"]:
         output = Path(figure["output"].format(method=cfg["mma"]["method"]))
         output = output if output.is_absolute() else root / output
@@ -892,7 +1214,8 @@ def main(argv=None):
                          "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
                          "cov_compare": lambda overrides: cov_compare(configure(overrides)), "battery_fd": lambda overrides: battery_fd(configure(overrides)),
-                         "battery_compare": lambda overrides: battery_compare(configure(overrides)), "camera_limits": lambda overrides: camera_limits(configure(overrides)), "camera_fd": lambda overrides: camera_fd(configure(overrides))}, argv)
+                         "battery_compare": lambda overrides: battery_compare(configure(overrides)), "camera_limits": lambda overrides: camera_limits(configure(overrides)), "camera_fd": lambda overrides: camera_fd(configure(overrides)),
+                         "solver_memory": lambda overrides: solver_memory(configure(overrides)), "setup_memory": lambda overrides: setup_memory(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

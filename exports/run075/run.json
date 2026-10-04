@@ -1,0 +1,8 @@
+{"shape": [182, 170, 48], "reference_density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz",
+ "mma": {"root": "exports/runs/simp_mma_cov_075_opt", "variant": "simp_mma_cov_075", "method": "simp_mma_cov_075", "start": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine",
+         "memory_s": 1.0, "resume": true, "bodies": ["raw", "v3"],
+         "viewer_names": {"raw": "simp_mma_cov_075", "recon": "simp_mma_cov_075_1to1", "v3": "simp_mma_cov_075_v3b"},
+         "figures": [{"output": "C:/clones/Deep_Frame-gmg/exports/run075/compare.png", "panels": ["v3", "previous_v3", "manafly"], "labels": ["0,75 mm v3b", "4/3 mm v3b", "ManaFly"]}]},
+ "v3": {"worktree": "C:/clones/Deep_Frame-gmg", "ref": "b74dcf2"},
+ "comparison": {"output": "exports/run075/comparison.json", "previous": {"raw": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_raw_1", "v3": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2"},
+                "previous_fine": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/result.json"}}

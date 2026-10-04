@@ -142,7 +142,7 @@ def random_design(mapping, seed, low=0.2, high=0.8):
 @pytest.mark.parametrize("beta", [0.0, 1.0, 4.0])
 def test_single_projection_reproduces_legacy_formula_bitwise(beta):
     domain = beam_domain((6, 4, 4), (1.0, 1.0, 1.0))
-    mapping = DensityMap(domain, _settings({"filter_radius_mm": 2.6, "projection_beta": beta, "projection_eta": 0.45}))
+    mapping = DensityMap(domain, _settings({"filter_radius_mm": 2.6, "projection_beta": beta, "projection_eta": 0.45, "density_filter": "sparse"}))
     design = random_design(mapping, 3)
     filtered = np.asarray(mapping.filter @ design).ravel() / mapping.sums
     if beta:
@@ -710,3 +710,13 @@ def test_neural_stiffness_constraint_stays_out_of_the_objective_and_blocks_infea
     assert result["status"] == "ok" and "push" not in summary["normalization_compliances_n_mm"] and "push" not in summary["static_surrogate_metrics"]
     assert summary["stop_reason"] == "max_iterations" and summary["stiffness"]["active"] and summary["stiffness"]["case_stiffness_n_per_mm"] == pytest.approx(summary["stiffness"]["compliance_stiffness_n_per_mm"], rel=1e-9)
     assert all(entry["stiffness_penalty"] > 0 and entry["stiffness_n_per_mm"] > 0 for entry in result["history"][:-1])
+
+@pytest.mark.parametrize("spacing,choice,expected", [(2.0, None, "cuda_cudss"), (4 / 3, None, "cuda_cudss"), (1.1, None, "cuda_cudss"), (1.0, None, "multigrid"), (0.75, None, "multigrid"), (1.0, {"multigrid_below_mm": 0.9}, "cuda_cudss")])
+def test_auto_linear_solver_by_spacing(spacing, choice, expected):
+    from deep_frame.topology_problem import cantilever_domain
+    domain = cantilever_domain((8, 2, 3), spacing)
+    system = HexElasticity(domain, linear_solver="auto", solver_choice=choice)
+    assert system.linear_solver == expected and system.requested_solver == "auto"
+    assert HexElasticity(domain, linear_solver="cpu_superlu", solver_choice=choice).linear_solver == "cpu_superlu"
+    with pytest.raises(ValueError, match="linear_solver"):
+        HexElasticity(domain, linear_solver="unknown")

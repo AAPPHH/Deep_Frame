@@ -1,0 +1,1310 @@
+{
+ "sha": "265ee20e8ba760666c542cfe184bba39f2c5f8a2",
+ "config": {
+  "run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt",
+  "grids": [
+   "coarse",
+   "fine"
+  ],
+  "evaluations": 3,
+  "mma_iterations": 5,
+  "sample_s": 0.5,
+  "output": "exports/solver_memory/cudss_explicit",
+  "reference": "exports/solver_memory/cudss_gmg",
+  "multigrid": null,
+  "share_static": true,
+  "modal": {}
+ },
+ "grids": {
+  "coarse": {
+   "multigrid": null,
+   "grid": {
+    "origin_mm": [
+     0.0,
+     -64.0,
+     0.0
+    ],
+    "spacing_mm": [
+     2.0,
+     2.0,
+     1.3333333333333333
+    ],
+    "shape": [
+     34,
+     64,
+     24
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+   },
+   "design": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_opt\\coarse\\design.npz",
+   "design_sha256_16": "1376c0ebdf0989c0",
+   "dofs": 170625,
+   "active_dofs": 125535,
+   "build_s": 0.7471392000006745,
+   "gpu_before_build": {
+    "device_free_gb": 14.71875,
+    "device_total_gb": 15.99169921875
+   },
+   "build": {
+    "rss_gb": 1.1376419067382812,
+    "pool_used_gb": 0.0,
+    "pool_total_gb": 4.76837158203125e-07,
+    "device_used_gb": 1.27294921875,
+    "smi_used_gb": 0.888671875,
+    "dedicated_gb": 0.20456314086914062,
+    "shared_gb": 0.072265625
+   },
+   "evaluations": [
+    {
+     "index": 0,
+     "modal": "cold",
+     "seconds": 9.606482500006678,
+     "factorizations": 4,
+     "rss_gb": 2.4428024291992188,
+     "pool_used_gb": 0.7466473579406738,
+     "pool_total_gb": 0.7557621002197266,
+     "device_used_gb": 5.54443359375,
+     "smi_used_gb": 5.16015625,
+     "dedicated_gb": 4.476715087890625,
+     "shared_gb": 0.396484375
+    },
+    {
+     "index": 1,
+     "modal": "cold",
+     "seconds": 7.354691499996989,
+     "factorizations": 4,
+     "rss_gb": 2.4245872497558594,
+     "pool_used_gb": 0.7466473579406738,
+     "pool_total_gb": 0.8419589996337891,
+     "device_used_gb": 5.63232421875,
+     "smi_used_gb": 5.248046875,
+     "dedicated_gb": 4.564605712890625,
+     "shared_gb": 0.396484375
+    },
+    {
+     "index": 2,
+     "modal": "warm",
+     "seconds": 4.712567099995795,
+     "factorizations": 4,
+     "dedicated_gb": 4.564605712890625,
+     "shared_gb": 0.396484375,
+     "rss_gb": 2.4299087524414062,
+     "pool_used_gb": 0.7466473579406738,
+     "pool_total_gb": 0.8419589996337891,
+     "device_used_gb": 5.63232421875,
+     "smi_used_gb": 5.248046875
+    }
+   ],
+   "noise_floor": {
+    "objective_rel": 0.0,
+    "constraints_g_abs": 2.5516255774959973e-12,
+    "values_rel": 2.651467315769734e-12,
+    "f1_rel": 8.149613004114294e-14,
+    "gradients_rel_norm": 2.3171646891806404e-11,
+    "gradients_rel_norm_by_name": {
+     "load_mean": 8.887671345417703e-13,
+     "load_worst": 1.1764038103561832e-12,
+     "crash_front": 2.3171646891806404e-11,
+     "crash_side_left": 9.871661038233643e-12,
+     "crash_side_right": 1.0099780049950878e-11,
+     "crash_arm_front_left": 2.718734761831496e-12,
+     "crash_arm_front_right": 6.293210832705967e-13,
+     "crash_arm_rear_left": 3.7306815809122255e-12,
+     "crash_arm_rear_right": 4.708969454057014e-12,
+     "crash_below": 4.568372320431761e-12,
+     "crash_back": 5.8062604548971994e-12,
+     "f1": 3.3996734202345957e-12,
+     "volume": 0.0,
+     "shadow": 0.0
+    },
+    "objective_gradient_rel_norm": 0.0
+   },
+   "mma": {
+    "iterations": [
+     {
+      "seconds": 6.010860100002901,
+      "factorizations": 4
+     },
+     {
+      "seconds": 8.335389799998666,
+      "factorizations": 4
+     },
+     {
+      "seconds": 6.375171699997736,
+      "factorizations": 4
+     },
+     {
+      "seconds": 5.462329800000589,
+      "factorizations": 4
+     },
+     {
+      "seconds": 20.04477079999924,
+      "factorizations": 4
+     }
+    ],
+    "seconds_per_iteration": 9.245704439999827,
+    "rss_gb": 2.55157470703125,
+    "pool_used_gb": 0.7466473579406738,
+    "pool_total_gb": 0.8419589996337891,
+    "device_used_gb": 5.63232421875,
+    "smi_used_gb": 5.251953125,
+    "dedicated_gb": 4.564605712890625,
+    "shared_gb": 0.396484375
+   },
+   "factors": [
+    {
+     "solver": "static",
+     "sign": 1.0,
+     "cases": [
+      "thrust_all",
+      "crash_front",
+      "crash_side_left",
+      "crash_side_right",
+      "crash_arm_front_left",
+      "crash_arm_front_right",
+      "crash_arm_rear_left",
+      "crash_arm_rear_right",
+      "crash_below",
+      "crash_back",
+      "twist",
+      "torsion_yaw"
+     ],
+     "rhs": 12,
+     "fixed_dofs": 1136,
+     "free_dofs": 124399,
+     "nnz": 8866589,
+     "analysis_s": 0.5168421000053058,
+     "permanent_device_bytes": 926436644,
+     "peak_device_bytes": 926436644,
+     "permanent_host_bytes": 10540832,
+     "peak_host_bytes": 82598480
+    },
+    {
+     "solver": "static",
+     "sign": -1.0,
+     "cases": [
+      "crash_side_left",
+      "crash_side_right",
+      "crash_arm_front_left",
+      "crash_arm_front_right",
+      "crash_arm_rear_left",
+      "crash_arm_rear_right",
+      "twist",
+      "torsion_yaw"
+     ],
+     "rhs": 8,
+     "fixed_dofs": 2269,
+     "free_dofs": 123266,
+     "nnz": 8782260,
+     "analysis_s": 0.49001459999999497,
+     "permanent_device_bytes": 926990076,
+     "peak_device_bytes": 926990076,
+     "permanent_host_bytes": 10429952,
+     "peak_host_bytes": 81803728
+    },
+    {
+     "solver": "static",
+     "sign": 1.0,
+     "cases": [
+      "stiffness_arm_tip",
+      "sigma_0",
+      "sigma_1",
+      "sigma_2",
+      "sigma_3",
+      "sigma_4",
+      "sigma_5",
+      "sigma_6",
+      "sigma_7",
+      "sigma_8",
+      "sigma_9",
+      "sigma_10",
+      "sigma_11",
+      "sigma_12",
+      "sigma_13",
+      "sigma_14",
+      "sigma_15",
+      "sigma_16",
+      "sigma_17",
+      "sigma_18",
+      "sigma_19",
+      "sigma_20",
+      "sigma_21",
+      "sigma_22",
+      "sigma_23",
+      "sigma_24",
+      "sigma_25"
+     ],
+     "rhs": 27,
+     "fixed_dofs": 1187,
+     "free_dofs": 124348,
+     "factorized_with": [
+      "thrust_all"
+     ],
+     "constraint_columns": 54
+    },
+    {
+     "solver": "static",
+     "sign": -1.0,
+     "cases": [
+      "stiffness_arm_tip",
+      "sigma_0",
+      "sigma_1",
+      "sigma_2",
+      "sigma_3",
+      "sigma_5",
+      "sigma_6",
+      "sigma_7",
+      "sigma_10",
+      "sigma_11",
+      "sigma_12",
+      "sigma_13",
+      "sigma_14",
+      "sigma_16",
+      "sigma_17",
+      "sigma_18",
+      "sigma_19",
+      "sigma_20",
+      "sigma_21",
+      "sigma_22",
+      "sigma_23",
+      "sigma_24",
+      "sigma_25"
+     ],
+     "rhs": 23,
+     "fixed_dofs": 2320,
+     "free_dofs": 123215,
+     "factorized_with": [
+      "crash_side_left"
+     ],
+     "constraint_columns": 54
+    },
+    {
+     "solver": "modal",
+     "sign": 1.0,
+     "cases": [
+      "modes"
+     ],
+     "rhs": 6,
+     "fixed_dofs": 1283,
+     "free_dofs": 124252,
+     "nnz": 8852190,
+     "analysis_s": 0.5837447000012617,
+     "permanent_device_bytes": 914527444,
+     "peak_device_bytes": 914527444,
+     "permanent_host_bytes": 10534208,
+     "peak_host_bytes": 82466512
+    },
+    {
+     "solver": "modal",
+     "sign": -1.0,
+     "cases": [
+      "modes"
+     ],
+     "rhs": 6,
+     "fixed_dofs": 2416,
+     "free_dofs": 123119,
+     "nnz": 8767815,
+     "analysis_s": 0.5007093999956851,
+     "permanent_device_bytes": 916628796,
+     "peak_device_bytes": 916628796,
+     "permanent_host_bytes": 10455920,
+     "peak_host_bytes": 81704144
+    }
+   ],
+   "cudss_factors": [
+    {
+     "owner": "formulation",
+     "key": "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x03\\x",
+     "dofs": 124399
+    },
+    {
+     "owner": "formulation",
+     "key": "b'\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x02\\x",
+     "dofs": 123266
+    },
+    {
+     "owner": "formulation",
+     "key": "modal+1",
+     "dofs": 124252
+    },
+    {
+     "owner": "formulation",
+     "key": "modal-1",
+     "dofs": 123119
+    }
+   ],
+   "linear_solver": "cuda_cudss",
+   "cases": [
+    {
+     "name": "thrust_all",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 1
+    },
+    {
+     "name": "crash_front",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 1
+    },
+    {
+     "name": "crash_side_left",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_side_right",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_arm_front_left",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_arm_front_right",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_arm_rear_left",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_arm_rear_right",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_below",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 1
+    },
+    {
+     "name": "crash_back",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 1
+    },
+    {
+     "name": "modes",
+     "analysis": "modal",
+     "support": "fixed",
+     "fixed_dofs": 150,
+     "parts": 0
+    },
+    {
+     "name": "stiffness_arm_tip",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "twist",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "torsion_yaw",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "sigma_0",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_1",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_2",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_3",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_4",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 1
+    },
+    {
+     "name": "sigma_5",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_6",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_7",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_8",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 1
+    },
+    {
+     "name": "sigma_9",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 1
+    },
+    {
+     "name": "sigma_10",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_11",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_12",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_13",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_14",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_15",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 1
+    },
+    {
+     "name": "sigma_16",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_17",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_18",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_19",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_20",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_21",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_22",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_23",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_24",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    },
+    {
+     "name": "sigma_25",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 54,
+     "parts": 2
+    }
+   ],
+   "names": [
+    "load_mean",
+    "load_worst",
+    "crash_front",
+    "crash_side_left",
+    "crash_side_right",
+    "crash_arm_front_left",
+    "crash_arm_front_right",
+    "crash_arm_rear_left",
+    "crash_arm_rear_right",
+    "crash_below",
+    "crash_back",
+    "f1",
+    "volume",
+    "shadow"
+   ],
+   "f1_hz": 305.5042914119304,
+   "mass_g": 19.489643776870423,
+   "deviation": {
+    "objective_rel": 0.0,
+    "constraints_g_abs": 3.377076396304801e-12,
+    "values_rel": 3.436963080240468e-12,
+    "f1_rel": 2.495121241671232e-13,
+    "gradients_rel_norm": 2.2604159436665377e-11,
+    "gradients_rel_norm_by_name": {
+     "load_mean": 1.22690223788399e-12,
+     "load_worst": 1.9355962679143747e-12,
+     "crash_front": 2.2604159436665377e-11,
+     "crash_side_left": 1.2869766537576252e-11,
+     "crash_side_right": 1.3195555963824436e-11,
+     "crash_arm_front_left": 3.785889213353134e-12,
+     "crash_arm_front_right": 1.0416878958881635e-12,
+     "crash_arm_rear_left": 4.670463557082883e-12,
+     "crash_arm_rear_right": 4.85413316074109e-12,
+     "crash_below": 3.988071821659846e-12,
+     "crash_back": 6.546148414050908e-12,
+     "f1": 4.349574598458369e-12,
+     "volume": 0.0,
+     "shadow": 0.0
+    },
+    "objective_gradient_rel_norm": 0.0
+   }
+  },
+  "fine": {
+   "multigrid": null,
+   "grid": {
+    "origin_mm": [
+     0.0,
+     -64.0,
+     0.0
+    ],
+    "spacing_mm": [
+     1.3333333333333333,
+     1.3333333333333333,
+     1.3333333333333333
+    ],
+    "shape": [
+     51,
+     96,
+     24
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+   },
+   "design": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_opt\\fine\\design.npz",
+   "design_sha256_16": "321edb2094d63778",
+   "dofs": 378300,
+   "active_dofs": 279618,
+   "build_s": 1.858995100003085,
+   "gpu_before_build": {
+    "device_free_gb": 14.693359375,
+    "device_total_gb": 15.99169921875
+   },
+   "build": {
+    "rss_gb": 2.3167877197265625,
+    "pool_used_gb": 0.0,
+    "pool_total_gb": 0.0,
+    "device_used_gb": 1.29833984375,
+    "smi_used_gb": 0.9140625,
+    "dedicated_gb": 0.23059463500976562,
+    "shared_gb": 0.396484375
+   },
+   "evaluations": [
+    {
+     "index": 0,
+     "modal": "cold",
+     "seconds": 24.507948899998155,
+     "factorizations": 4,
+     "dedicated_gb": 11.204837799072266,
+     "shared_gb": 1.1640625,
+     "rss_gb": 5.276035308837891,
+     "pool_used_gb": 2.0345802307128906,
+     "pool_total_gb": 2.0732955932617188,
+     "device_used_gb": 12.853748321533203,
+     "smi_used_gb": 11.88671875
+    },
+    {
+     "index": 1,
+     "modal": "cold",
+     "seconds": 16.989478900002723,
+     "factorizations": 4,
+     "smi_used_gb": 12.171875,
+     "rss_gb": 5.394802093505859,
+     "pool_used_gb": 2.0345802307128906,
+     "pool_total_gb": 2.352827548980713,
+     "device_used_gb": 13.125957489013672,
+     "dedicated_gb": 11.486087799072266,
+     "shared_gb": 1.1640625
+    },
+    {
+     "index": 2,
+     "modal": "warm",
+     "seconds": 12.427911899998435,
+     "factorizations": 4,
+     "dedicated_gb": 11.486087799072266,
+     "shared_gb": 1.1640625,
+     "rss_gb": 5.251579284667969,
+     "pool_used_gb": 2.0345802307128906,
+     "pool_total_gb": 2.352827548980713,
+     "device_used_gb": 13.129619598388672,
+     "smi_used_gb": 12.171875
+    }
+   ],
+   "noise_floor": {
+    "objective_rel": 0.0,
+    "constraints_g_abs": 2.3374635560458046e-12,
+    "values_rel": 2.7378928102627214e-12,
+    "f1_rel": 4.737860782027397e-13,
+    "gradients_rel_norm": 2.3610460861561118e-11,
+    "gradients_rel_norm_by_name": {
+     "load_mean": 1.0047567156775953e-12,
+     "load_worst": 9.56300725538671e-13,
+     "crash_front": 6.457614525419301e-12,
+     "crash_side_left": 2.298872816813402e-11,
+     "crash_side_right": 2.2911988236920705e-11,
+     "crash_arm_front_left": 1.385709379592363e-11,
+     "crash_arm_front_right": 4.4563756711570925e-12,
+     "crash_arm_rear_left": 2.3610460861561118e-11,
+     "crash_arm_rear_right": 1.4354983395117016e-11,
+     "crash_below": 1.770285785117569e-12,
+     "crash_back": 6.8363526293727824e-12,
+     "f1": 9.490431797077826e-12,
+     "volume": 0.0,
+     "shadow": 0.0
+    },
+    "objective_gradient_rel_norm": 0.0
+   },
+   "mma": {
+    "iterations": [
+     {
+      "seconds": 17.217678400003933,
+      "factorizations": 4
+     },
+     {
+      "seconds": 15.208410100000037,
+      "factorizations": 4
+     },
+     {
+      "seconds": 18.348050699998566,
+      "factorizations": 4
+     },
+     {
+      "seconds": 14.889319500005513,
+      "factorizations": 4
+     },
+     {
+      "seconds": 14.527362500004529,
+      "factorizations": 4
+     }
+    ],
+    "seconds_per_iteration": 16.038164240002516,
+    "rss_gb": 5.534168243408203,
+    "pool_used_gb": 2.3141121864318848,
+    "pool_total_gb": 2.352827548980713,
+    "device_used_gb": 13.219711303710938,
+    "smi_used_gb": 12.173828125,
+    "dedicated_gb": 11.486087799072266,
+    "shared_gb": 1.1640625
+   },
+   "factors": [
+    {
+     "solver": "static",
+     "sign": 1.0,
+     "cases": [
+      "thrust_all",
+      "crash_front",
+      "crash_side_left",
+      "crash_side_right",
+      "crash_arm_front_left",
+      "crash_arm_front_right",
+      "crash_arm_rear_left",
+      "crash_arm_rear_right",
+      "crash_below",
+      "crash_back",
+      "twist",
+      "torsion_yaw"
+     ],
+     "rhs": 12,
+     "fixed_dofs": 1706,
+     "free_dofs": 277912,
+     "nnz": 20195150,
+     "analysis_s": 1.3485275999992155,
+     "permanent_device_bytes": 2412068844,
+     "peak_device_bytes": 2412068844,
+     "permanent_host_bytes": 23021552,
+     "peak_host_bytes": 187393856
+    },
+    {
+     "solver": "static",
+     "sign": -1.0,
+     "cases": [
+      "crash_side_left",
+      "crash_side_right",
+      "crash_arm_front_left",
+      "crash_arm_front_right",
+      "crash_arm_rear_left",
+      "crash_arm_rear_right",
+      "twist",
+      "torsion_yaw"
+     ],
+     "rhs": 8,
+     "fixed_dofs": 3409,
+     "free_dofs": 276209,
+     "nnz": 20067303,
+     "analysis_s": 1.4435317999959807,
+     "permanent_device_bytes": 2356013644,
+     "peak_device_bytes": 2356013644,
+     "permanent_host_bytes": 23236320,
+     "peak_host_bytes": 186462720
+    },
+    {
+     "solver": "static",
+     "sign": 1.0,
+     "cases": [
+      "stiffness_arm_tip",
+      "sigma_0",
+      "sigma_1",
+      "sigma_2",
+      "sigma_3",
+      "sigma_4",
+      "sigma_5",
+      "sigma_6",
+      "sigma_7",
+      "sigma_8",
+      "sigma_9",
+      "sigma_10",
+      "sigma_11",
+      "sigma_12",
+      "sigma_13",
+      "sigma_14",
+      "sigma_15",
+      "sigma_16",
+      "sigma_17",
+      "sigma_18",
+      "sigma_19",
+      "sigma_20",
+      "sigma_21",
+      "sigma_22",
+      "sigma_23",
+      "sigma_24",
+      "sigma_25"
+     ],
+     "rhs": 27,
+     "fixed_dofs": 1799,
+     "free_dofs": 277819,
+     "factorized_with": [
+      "thrust_all"
+     ],
+     "constraint_columns": 96
+    },
+    {
+     "solver": "static",
+     "sign": -1.0,
+     "cases": [
+      "stiffness_arm_tip",
+      "sigma_0",
+      "sigma_1",
+      "sigma_2",
+      "sigma_3",
+      "sigma_5",
+      "sigma_6",
+      "sigma_7",
+      "sigma_10",
+      "sigma_11",
+      "sigma_12",
+      "sigma_13",
+      "sigma_14",
+      "sigma_16",
+      "sigma_17",
+      "sigma_18",
+      "sigma_19",
+      "sigma_20",
+      "sigma_21",
+      "sigma_22",
+      "sigma_23",
+      "sigma_24",
+      "sigma_25"
+     ],
+     "rhs": 23,
+     "fixed_dofs": 3502,
+     "free_dofs": 276116,
+     "factorized_with": [
+      "crash_side_left"
+     ],
+     "constraint_columns": 96
+    },
+    {
+     "solver": "modal",
+     "sign": 1.0,
+     "cases": [
+      "modes"
+     ],
+     "rhs": 6,
+     "fixed_dofs": 2039,
+     "free_dofs": 277579,
+     "nnz": 20161863,
+     "analysis_s": 1.325758599996334,
+     "permanent_device_bytes": 2395393812,
+     "peak_device_bytes": 2395393812,
+     "permanent_host_bytes": 23033232,
+     "peak_host_bytes": 187152464
+    },
+    {
+     "solver": "modal",
+     "sign": -1.0,
+     "cases": [
+      "modes"
+     ],
+     "rhs": 6,
+     "fixed_dofs": 3742,
+     "free_dofs": 275876,
+     "nnz": 20033964,
+     "analysis_s": 1.2933324000041466,
+     "permanent_device_bytes": 2326596220,
+     "peak_device_bytes": 2326596220,
+     "permanent_host_bytes": 23023664,
+     "peak_host_bytes": 186010752
+    }
+   ],
+   "cudss_factors": [
+    {
+     "owner": "formulation",
+     "key": "b'\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x03\\x",
+     "dofs": 277912
+    },
+    {
+     "owner": "formulation",
+     "key": "b'\\x01\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x02\\x",
+     "dofs": 276209
+    },
+    {
+     "owner": "formulation",
+     "key": "modal+1",
+     "dofs": 277579
+    },
+    {
+     "owner": "formulation",
+     "key": "modal-1",
+     "dofs": 275876
+    }
+   ],
+   "linear_solver": "cuda_cudss",
+   "cases": [
+    {
+     "name": "thrust_all",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 1
+    },
+    {
+     "name": "crash_front",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 1
+    },
+    {
+     "name": "crash_side_left",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_side_right",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_arm_front_left",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_arm_front_right",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_arm_rear_left",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_arm_rear_right",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "crash_below",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 1
+    },
+    {
+     "name": "crash_back",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 1
+    },
+    {
+     "name": "modes",
+     "analysis": "modal",
+     "support": "fixed",
+     "fixed_dofs": 336,
+     "parts": 0
+    },
+    {
+     "name": "stiffness_arm_tip",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "twist",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "torsion_yaw",
+     "analysis": "static",
+     "support": "inertia_relief",
+     "fixed_dofs": 6,
+     "parts": 2
+    },
+    {
+     "name": "sigma_0",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_1",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_2",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_3",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_4",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 1
+    },
+    {
+     "name": "sigma_5",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_6",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_7",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_8",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 1
+    },
+    {
+     "name": "sigma_9",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 1
+    },
+    {
+     "name": "sigma_10",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_11",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_12",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_13",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_14",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_15",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 1
+    },
+    {
+     "name": "sigma_16",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_17",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_18",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_19",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_20",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_21",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_22",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_23",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_24",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    },
+    {
+     "name": "sigma_25",
+     "analysis": "static",
+     "support": "fixed",
+     "fixed_dofs": 96,
+     "parts": 2
+    }
+   ],
+   "names": [
+    "load_mean",
+    "load_worst",
+    "crash_front",
+    "crash_side_left",
+    "crash_side_right",
+    "crash_arm_front_left",
+    "crash_arm_front_right",
+    "crash_arm_rear_left",
+    "crash_arm_rear_right",
+    "crash_below",
+    "crash_back",
+    "f1",
+    "volume",
+    "shadow"
+   ],
+   "f1_hz": 310.62037953689486,
+   "mass_g": 18.22115195100823,
+   "deviation": {
+    "objective_rel": 0.0,
+    "constraints_g_abs": 3.9718228705964975e-12,
+    "values_rel": 3.972103148184211e-12,
+    "f1_rel": 1.381647311869903e-13,
+    "gradients_rel_norm": 2.5778578252966256e-11,
+    "gradients_rel_norm_by_name": {
+     "load_mean": 9.718165584798193e-13,
+     "load_worst": 1.372962193266838e-12,
+     "crash_front": 5.063396959562811e-12,
+     "crash_side_left": 2.2670139282827143e-11,
+     "crash_side_right": 2.2094733642280026e-11,
+     "crash_arm_front_left": 1.4279451781639337e-11,
+     "crash_arm_front_right": 3.9436379623219405e-12,
+     "crash_arm_rear_left": 2.5778578252966256e-11,
+     "crash_arm_rear_right": 1.4365624669547204e-11,
+     "crash_below": 2.427158117857698e-12,
+     "crash_back": 7.98851311874455e-12,
+     "f1": 9.482869196585503e-12,
+     "volume": 0.0,
+     "shadow": 0.0
+    },
+    "objective_gradient_rel_norm": 0.0
+   }
+  }
+ },
+ "peak_wset_gb": 5.534168243408203,
+ "table": "| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi total GB | CuPy pool GB | host RSS GB |\n|---|---|---|---|---|---|---|---|---|\n| coarse | 4 | 9.6, 4.7 | 9.2 | 4.56 | 0.40 | 5.25 | 0.84 | 2.55 |\n| fine | 4 | 24.5, 12.4 | 16.0 | 11.49 | 1.16 | 12.17 | 2.35 | 5.53 |"
+}

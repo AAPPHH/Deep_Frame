@@ -112,6 +112,15 @@ class CudaDirectSolver:
             self._create(name, "cudssMatrixCreateDn", array.shape[0], array.shape[1], array.shape[0],
                          array.data.ptr, 1, 0)
         self.analysis_s = self._execute(3)
+        self.memory_estimates = self._memory_estimates()
+    def _memory_estimates(self):
+        estimates = (ctypes.c_int64 * 16)()
+        written = ctypes.c_size_t()
+        try:
+            status = self.library.cudssDataGet(self.handles["handle"], self.handles["data"], 13, ctypes.cast(estimates, ctypes.c_void_p), ctypes.sizeof(estimates), ctypes.byref(written))
+        except Exception:
+            return None
+        return dict(zip(("permanent_device_bytes", "peak_device_bytes", "permanent_host_bytes", "peak_host_bytes"), map(int, estimates))) if status == 0 else None
     def _call(self, name, *arguments):
         status = getattr(self.library, name)(*arguments)
         if status:
@@ -171,7 +180,7 @@ class CudaDirectSolver:
                 "device_name": name.decode() if isinstance(name, bytes) else name,
                 "precision": "float64", "numeric_factorization": "GPU Cholesky, hybrid execution disabled",
                 "analysis_s": self.analysis_s, "shape": list(self.shape), "nnz": len(self.indices),
-                "solves": self.timings}
+                "cudss_memory_estimates": self.memory_estimates, "solves": self.timings}
     def close(self):
         if getattr(self, "closed", True):
             return getattr(self, "cleanup_errors", []).copy()
@@ -300,14 +309,26 @@ def select_nodes(points, region):
         raise ValueError(f"Empty topology node selector: {region}")
     return selected
 
+LINEAR_SOLVERS = ("auto", "cpu_superlu", "cuda_cudss", "multigrid")
+SOLVER_CHOICE = {"multigrid_below_mm": 1.1}
+
+def choose_solver(linear_solver, spacing, choice=None):
+    if linear_solver not in LINEAR_SOLVERS:
+        raise ValueError("Unknown topology linear_solver")
+    if linear_solver != "auto":
+        return linear_solver
+    return "multigrid" if float(np.max(spacing)) < {**SOLVER_CHOICE, **(choice or {})}["multigrid_below_mm"] else "cuda_cudss"
+
 class HexElasticity:
-    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident"):
-        if linear_solver not in ("cpu_superlu", "cuda_cudss"):
-            raise ValueError("Unknown topology linear_solver")
+    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident", share_static="auto", multigrid=None, solver_choice=None):
+        self.requested_solver = linear_solver
+        linear_solver = choose_solver(linear_solver, domain["grid"]["spacing_mm"], solver_choice)
         if gpu_solver_residency not in ("resident", "transient"):
             raise ValueError("Unknown topology gpu_solver_residency")
         self.linear_solver = linear_solver
         self.gpu_solver_residency = gpu_solver_residency
+        self.share_static, self.shared = linear_solver != "multigrid" if share_static == "auto" else share_static, None
+        self.multigrid_settings, self.multigrid = multigrid, None
         self.gpu_solvers = {}
         self.gpu_reanalyses = 0
         self.gpu_transient_releases = 0
@@ -343,8 +364,7 @@ class HexElasticity:
         else:
             self.constitutive = elasticity_matrix(material["poisson_ratio"])
         self.ke, self.me, self.strain = hexahedron_matrices(self.spacing, material["poisson_ratio"], self.constitutive)
-        self.rows = np.repeat(self.dofs[self.active_elements], 24, axis=1).ravel()
-        self.columns = np.tile(self.dofs[self.active_elements], (1, 24)).ravel()
+        self._assembly = None
         self.groups = defaultdict(list)
         self.cases = []
         self.selector_expansions = []
@@ -398,10 +418,17 @@ class HexElasticity:
             self.cases.append(compiled)
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
+    @property
+    def assembly(self):
+        if self._assembly is None:
+            elements = self.dofs[self.active_elements]
+            self._assembly = np.repeat(elements, 24, axis=1).ravel(), np.tile(elements, (1, 24)).ravel()
+        return self._assembly
     def _register(self, compiled, fixed, force, mirrored, split=None):
-        compiled["force"], compiled["mirrored"] = force, mirrored
+        compiled["force"], compiled["mirrored"], self.shared = force, mirrored, None
         for fixed_part, part_force, sign in self._parts(fixed, force, mirrored, split):
-            part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
+            known = self.groups.get(fixed_part.tobytes())
+            part_free = known[0][1]["free"] if known else np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
             if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
                 base = fixed if split is None else split[sign]
                 part = {"force": part_force, "fixed": fixed_part, "free": part_free, "sign": sign, "support": base if self.symmetry is None else np.setdiff1d(base, self._plane_dofs(sign))}
@@ -421,7 +448,37 @@ class HexElasticity:
         parts = {sign: part_force for _, part_force, sign in self._parts(case["fixed"], force, mirrored, case.get("split"))}
         for part in case["parts"]:
             part["force"] = parts[part["sign"]]
+        self.shared = None
         return {part["sign"]: part["force"] for part in case["parts"]}
+    def _rigid_modes(self, sign):
+        center = self.points[self.active_nodes].mean(axis=0)
+        if self.symmetry is not None:
+            center[self.axis] = float(self.symmetry.get("plane_mm", 0.0))
+        modes = np.zeros((self.ndof, 6))
+        for index in range(3):
+            modes[index::3, index] = 1
+            modes[:, 3 + index] = np.cross(np.eye(3)[index], self.points - center).ravel()
+        modes[np.setdiff1d(np.arange(self.ndof), self.active_dofs)] = 0
+        if self.symmetry is None:
+            return modes
+        _, values, vectors = np.linalg.svd(modes[self._plane_dofs(sign)])
+        return modes @ vectors[np.count_nonzero(values > 1e-9 * values[0]):].T
+    def _share_plan(self):
+        hosts, plan = {}, {}
+        for key, members in self.groups.items():
+            if self.share_static and any("inertia_relief" in case for case, _ in members):
+                hosts.setdefault(members[0][1]["sign"], key)
+        for key, members in self.groups.items():
+            sign, fixed = members[0][1]["sign"], members[0][1]["fixed"]
+            if hosts.get(sign, key) == key:
+                continue
+            host = self.groups[hosts[sign]][0][1]
+            support = np.setdiff1d(np.intersect1d(host["fixed"], self.active_dofs), self._plane_dofs(sign) if self.symmetry is not None else [])
+            constrained = np.intersect1d(np.setdiff1d(fixed, host["fixed"]), host["free"])
+            modes, held = self._rigid_modes(sign), np.isin(support, fixed)
+            if len(support) == modes.shape[1] and np.linalg.matrix_rank(modes[support]) == len(support) and not any(np.any(part["force"][support]) for _, part in members) and np.linalg.matrix_rank(modes[np.union1d(constrained, support[held])]) == len(support):
+                plan[key] = {"host": hosts[sign], "constrained": constrained, "positions": np.searchsorted(host["free"], constrained), "modes": modes, "released": np.linalg.inv(modes[support].T)[~held], "held": modes[support[held]]}
+        return plan
     def _flip(self):
         flip = np.ones(3)
         flip[self.axis] = -1
@@ -562,8 +619,8 @@ class HexElasticity:
         if len(moduli) != self.nelem or np.any(moduli <= 0) or not np.all(np.isfinite(moduli)):
             raise ValueError("Every element needs a finite positive modulus")
         values = (moduli[self.active_elements, None] * self.ke.ravel()[None, :]).ravel()
-        stiffness = coo_matrix((values, (self.rows, self.columns)), shape=(self.ndof, self.ndof)).tocsc()
-        if self.linear_solver == "cuda_cudss":
+        stiffness = coo_matrix((values, self.assembly), shape=(self.ndof, self.ndof)).tocsc()
+        if self.linear_solver != "cpu_superlu":
             transpose = stiffness.T.tocsc()
             if not np.array_equal(stiffness.indptr, transpose.indptr) or not np.array_equal(stiffness.indices, transpose.indices):
                 raise RuntimeError("Hex8 symbolic stiffness pattern must be symmetric")
@@ -578,29 +635,43 @@ class HexElasticity:
             raise ValueError("Invalid SIMP interpolation settings")
         moduli = self.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization)
         derivative = self.young * (1 - min_stiffness_ratio) * penalization * density ** (penalization - 1)
-        stiffness = self.matrix(moduli)
+        stiffness = None if self.linear_solver == "multigrid" else self.matrix(moduli)
         moduli[~self.active_elements] = 0
         derivative[~self.active_elements] = 0
-        factor = 1.0 if self.symmetry is None else 2.0
-        accumulated = {}
-        for members in self.groups.values():
+        if stiffness is None:
+            self._multigrid().update(moduli)
+        if self.shared is None:
+            self.shared = self._share_plan()
+        guests, accumulated = defaultdict(list), {}
+        for key, entry in self.shared.items():
+            guests[entry["host"]].append(key)
+        for key, members in self.groups.items():
+            if key in self.shared:
+                continue
             free = members[0][1]["free"]
-            forces = np.column_stack([part["force"][free] for _, part in members])
-            reduced = stiffness[free, :][:, free].tocsc()
-            solutions = self._linear_solve(members[0][1]["fixed"].tobytes(), reduced, forces)
-            residual = np.linalg.norm(reduced @ solutions - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
-            tolerance = 1e-6 if self.linear_solver == "cuda_cudss" else 1e-4
-            if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
-                raise RuntimeError(f"Topology linear solve failed residual check: {residual.tolist()}")
-            for column, (case, part) in enumerate(members):
-                displacement = np.zeros(self.ndof)
-                displacement[free] = solutions[:, column]
-                element_displacement = displacement[self.dofs]
-                entry = accumulated.setdefault(case["name"], {"case": case, "compliance": 0.0, "energy": np.zeros(self.nelem), "residual": 0.0, "fields": []})
-                entry["compliance"] += factor * float(np.dot(part["force"], displacement))
-                entry["energy"] += factor * np.einsum("ei,ij,ej->e", element_displacement, self.ke, element_displacement, optimize=True)
-                entry["residual"] = max(entry["residual"], float(residual[column]))
-                entry["fields"].append((part["sign"], displacement))
+            reduced = None if stiffness is None else stiffness[free, :][:, free].tocsc()
+            blocks = [np.column_stack([part["force"][free] for _, part in members])]
+            for guest in guests[key]:
+                unit = np.zeros((len(free), len(self.shared[guest]["constrained"])))
+                unit[self.shared[guest]["positions"], np.arange(unit.shape[1])] = 1
+                blocks += [np.column_stack([part["force"][free] for _, part in self.groups[guest]]), unit]
+            solutions = self._multigrid_solve(key, members[0][1], np.hstack(blocks)) if reduced is None else self._linear_solve(key, reduced, np.hstack(blocks))
+            self._collect(accumulated, members, free, reduced, solutions[:, :len(members)])
+            offset = len(members)
+            for guest in guests[key]:
+                plan, rest = self.shared[guest], self.groups[guest]
+                count, size, modes = len(rest), len(plan["constrained"]), plan["modes"]
+                direct, coupling = solutions[:, offset:offset + count], solutions[:, offset + count:offset + count + size]
+                offset += count + size
+                rigid, released, held = modes[plan["constrained"]], plan["released"], plan["held"]
+                system = np.block([[coupling[plan["positions"]], rigid], [released @ rigid.T, np.zeros((len(released), rigid.shape[1]))], [np.zeros((len(held), size)), held]])
+                multipliers = np.linalg.solve(system, -np.vstack([direct[plan["positions"]], released @ modes.T @ np.column_stack([part["force"] for _, part in rest]), np.zeros((len(held), count))]))
+                full = modes @ multipliers[size:]
+                full[free] += direct + coupling @ multipliers[:size]
+                guest_free = rest[0][1]["free"]
+                self._collect(accumulated, rest, guest_free, None if stiffness is None else stiffness[guest_free, :][:, guest_free].tocsc(), full[guest_free])
+        if stiffness is None:
+            self.multigrid.torch.cuda.empty_cache()
         results = {}
         for name, entry in accumulated.items():
             if not np.isfinite(entry["compliance"]) or entry["compliance"] <= 0:
@@ -614,6 +685,44 @@ class HexElasticity:
                 result.update(self._metrics([direct] if self.symmetry is None else [direct, mirror], moduli, entry["case"]))
             results[name] = result
         return results
+    def _collect(self, accumulated, members, free, reduced, solutions):
+        forces = np.column_stack([part["force"][free] for _, part in members])
+        residual = np.linalg.norm((reduced @ solutions if reduced is not None else self._multigrid_product(free, solutions)) - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
+        tolerance = 1e-4 if self.linear_solver == "cpu_superlu" else 1e-6
+        if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
+            raise RuntimeError(f"Topology linear solve failed residual check: {residual.tolist()}")
+        factor = 1.0 if self.symmetry is None else 2.0
+        for column, (case, part) in enumerate(members):
+            displacement = np.zeros(self.ndof)
+            displacement[free] = solutions[:, column]
+            element_displacement = displacement[self.dofs]
+            entry = accumulated.setdefault(case["name"], {"case": case, "compliance": 0.0, "energy": np.zeros(self.nelem), "residual": 0.0, "fields": []})
+            entry["compliance"] += factor * float(np.dot(part["force"], displacement))
+            entry["energy"] += factor * np.einsum("ei,ij,ej->e", element_displacement, self.ke, element_displacement, optimize=True)
+            entry["residual"] = max(entry["residual"], float(residual[column]))
+            entry["fields"].append((part["sign"], displacement))
+    def _multigrid(self):
+        if self.multigrid is None:
+            from deep_frame.topology_multigrid import GeometricMultigrid
+            self.multigrid = GeometricMultigrid(self.domain["grid"]["shape"], self.spacing, self.ke, self.multigrid_settings, self.me)
+        return self.multigrid
+    def modal_constraint(self, settings):
+        if self.linear_solver != "multigrid":
+            return ModalConstraint(self, settings)
+        from deep_frame.topology_multigrid import MultigridModal
+        return MultigridModal(self, settings, self._multigrid())
+    def _multigrid_solve(self, key, part, forces):
+        full = np.zeros((self.ndof, forces.shape[1]))
+        full[part["free"]] = forces
+        floating = self.support is not None and bool(np.isin(part["support"], self.support[1]).all())
+        solutions, report = self.multigrid.solve(key, part["fixed"], full, part["support"] if floating else None)
+        if not report["converged"]:
+            raise RuntimeError(f"Multigrid PCG did not converge: {max(report['relative_residual'])}")
+        return solutions[part["free"]]
+    def _multigrid_product(self, free, solutions):
+        full = np.zeros((self.ndof, solutions.shape[1]))
+        full[free] = solutions
+        return self.multigrid.product(full)[free]
     def _linear_solve(self, key, reduced, forces):
         if self.linear_solver == "cpu_superlu":
             return splu(reduced, permc_spec="MMD_AT_PLUS_A", options={"SymmetricMode": True}).solve(forces)
@@ -666,7 +775,7 @@ class HexElasticity:
             raise ValueError("Voxel modal verification requires strictly positive densities")
         stiffness = self.matrix(self.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization))
         mass_values = (self.density * 1e-9 * density[self.active_elements, None] * self.me.ravel()[None, :]).ravel()
-        mass = coo_matrix((mass_values, (self.rows, self.columns)), shape=(self.ndof, self.ndof)).tocsc()
+        mass = coo_matrix((mass_values, self.assembly), shape=(self.ndof, self.ndof)).tocsc()
         free = case["free"]
         if not 0 < number < len(free):
             raise ValueError("Invalid mode count")
@@ -678,9 +787,11 @@ class HexElasticity:
         errors = []
         for solver in self.gpu_solvers.values():
             errors.extend(solver.close())
+        if self.multigrid is not None:
+            errors.extend(self.multigrid.close())
         return errors
     def diagnostics(self):
-        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups)})
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "requested_linear_solver": self.requested_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups) - len(self.shared or {}), "shared_static_groups": len(self.shared or {}), **({"multigrid": self.multigrid.diagnostics()} if self.multigrid is not None else {})})
 
 def volume_weights(points, discs):
     weights = np.ones(len(points))
@@ -730,7 +841,7 @@ class ModalConstraint(AugmentedLagrangian):
         self.parts = []
         for sign in (1.0,) if system.symmetry is None else (1.0, -1.0):
             fixed = case["fixed"] if system.symmetry is None else np.union1d(case["fixed"], system._plane_dofs(sign))
-            self.parts.append({"sign": sign, "free": np.setdiff1d(system.active_dofs, fixed, assume_unique=True), "vectors": None, "key": f"modal{sign:+.0f}"})
+            self.parts.append({"sign": sign, "fixed": fixed, "free": np.setdiff1d(system.active_dofs, fixed, assume_unique=True), "vectors": None, "key": f"modal{sign:+.0f}"})
         self.lumped = np.zeros(len(system.points))
         for item in system.domain.get("point_masses", []):
             direct, mirror = system._select_both(item["attachment_region"], case["name"], "mass")
@@ -749,7 +860,7 @@ class ModalConstraint(AugmentedLagrangian):
         stiffness = system.matrix(system.young * (min_stiffness_ratio + (1 - min_stiffness_ratio) * density ** penalization))
         mass, _ = self.interpolation(density)
         values = (system.density * 1e-9 * mass[system.active_elements, None] * system.me.ravel()[None, :]).ravel()
-        return stiffness, (coo_matrix((values, (system.rows, system.columns)), shape=(system.ndof, system.ndof)) + diags(self.lumped)).tocsc()
+        return stiffness, (coo_matrix((values, system.assembly), shape=(system.ndof, system.ndof)) + diags(self.lumped)).tocsc()
     def eigenpairs(self, part, stiffness, mass, iterations):
         free = part["free"]
         reduced, reduced_mass = stiffness[free, :][:, free].tocsc(), mass[free, :][:, free].tocsc()
@@ -780,7 +891,13 @@ class ModalConstraint(AugmentedLagrangian):
         for part in self.parts:
             count = iterations or (settings["initial_iterations"] if part["vectors"] is None else settings["warm_iterations"])
             values, vectors = self.eigenpairs(part, stiffness, mass, count)
-            modes += [(part, values[index], vectors[:, index]) for index in range(settings["tracked"])]
+            for index in range(settings["tracked"]):
+                full = np.zeros(system.ndof)
+                full[part["free"]] = vectors[:, index]
+                modes.append((part, values[index], full))
+        return self.aggregate(density, modes, penalization, min_stiffness_ratio)
+    def aggregate(self, density, modes, penalization, min_stiffness_ratio):
+        system, settings = self.system, self.settings
         ratios = np.array([value / self.target for _, value, _ in modes])
         lowest = ratios.min()
         exponents = np.exp(-settings["ks"] * (ratios - lowest))
@@ -790,12 +907,10 @@ class ModalConstraint(AugmentedLagrangian):
         mass_slope = system.density * 1e-9 * self.interpolation(density)[1]
         sensitivity = np.zeros(system.nelem)
         for weight, (part, value, vector) in zip(weights, modes):
-            full = np.zeros(system.ndof)
-            full[part["free"]] = vector
-            element = full[system.dofs]
+            element = vector[system.dofs]
             strain = np.einsum("ei,ij,ej->e", element, system.ke, element, optimize=True)
             kinetic = np.einsum("ei,ij,ej->e", element, system.me, element, optimize=True)
-            sensitivity += weight * (stiffness_slope * strain - value * mass_slope * kinetic - (value * self.lumped_slope(full) if self.lumped_slope else 0.0)) / self.target
+            sensitivity += weight * (stiffness_slope * strain - value * mass_slope * kinetic - (value * self.lumped_slope(vector) if self.lumped_slope else 0.0)) / self.target
         sensitivity[~system.active_elements] = 0
         violation = 1 - aggregate
         frequencies = [[part["sign"], float(np.sqrt(max(value, 0)) / (2 * np.pi))] for part, value, _ in modes]
@@ -830,6 +945,8 @@ DEFAULT_SETTINGS = {
     "gpu_solver_residency": "resident",
     "prop_discs": None,
     "modal": None,
+    "solver_choice": SOLVER_CHOICE,
+    "density_filter": "auto",
 }
 
 def _settings(settings):
@@ -854,10 +971,12 @@ def _settings(settings):
         raise ValueError("max_runtime_s must be positive or None")
     if result["interface_node_policy"] not in ("allowed_adjacent", "preserve_adjacent"):
         raise ValueError("Invalid topology interface_node_policy")
-    if result["linear_solver"] not in ("cpu_superlu", "cuda_cudss"):
+    if result["linear_solver"] not in LINEAR_SOLVERS:
         raise ValueError("Invalid topology linear_solver")
     if result["gpu_solver_residency"] not in ("resident", "transient"):
         raise ValueError("Invalid topology gpu_solver_residency")
+    if result["density_filter"] not in DENSITY_FILTERS:
+        raise ValueError("Invalid topology density_filter")
     if result["projection"] not in ("single", "robust"):
         raise ValueError("Invalid topology projection")
     delta = result["robust_delta"]
@@ -897,6 +1016,29 @@ def validate_masks(domain):
         raise ValueError("The design domain has no free material cells")
     return allowed, preserve, forbidden
 
+DENSITY_FILTERS = ("auto", "sparse", "convolution")
+
+def choose_filter(name):
+    if name != "auto":
+        return name
+    try:
+        import torch
+    except ImportError:
+        return "sparse"
+    return "convolution" if torch.cuda.is_available() else "sparse"
+
+class ConeFilter:
+    def __init__(self, allowed, shape, spacing, radius):
+        import torch
+        self.torch, self.shape, device = torch, shape, torch.device("cuda")
+        self.padding = tuple(int(np.floor(radius / h)) for h in spacing)
+        offsets = np.meshgrid(*[np.arange(-k, k + 1) * h for k, h in zip(self.padding, spacing)], indexing="ij")
+        self.kernel = torch.as_tensor(np.maximum(radius - np.sqrt(sum(offset ** 2 for offset in offsets)), 0.0)[None, None], dtype=torch.float64, device=device)
+        self.mask = torch.as_tensor(allowed.reshape(shape), dtype=torch.float64, device=device)
+    def __call__(self, vector):
+        field = self.torch.as_tensor(np.asarray(vector, dtype=float).reshape(self.shape), device=self.mask.device) * self.mask
+        return (self.torch.nn.functional.conv3d(field[None, None], self.kernel, padding=self.padding)[0, 0] * self.mask).cpu().numpy().ravel()
+
 class DensityMap:
     def __init__(self, domain, settings):
         self.settings = settings
@@ -910,14 +1052,19 @@ class DensityMap:
         shape = tuple(domain["grid"]["shape"])
         spacing = np.asarray(domain["grid"]["spacing_mm"], dtype=float)
         coordinates = np.indices(shape).reshape(3, -1).T * spacing
-        active = np.flatnonzero(self.allowed)
-        tree = cKDTree(coordinates[active])
         radius = settings["filter_radius_mm"]
-        distances = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")
-        weights = radius - distances.data
-        self.filter = coo_matrix((weights, (active[distances.row], active[distances.col])), shape=(self.n, self.n)).tocsr()
-        self.filter.eliminate_zeros()
-        self.sums = np.asarray(self.filter.sum(axis=1)).ravel()
+        self.filter, self.convolution = None, None
+        if choose_filter(settings["density_filter"]) == "convolution":
+            self.convolution = ConeFilter(self.allowed, shape, spacing, radius)
+            self.sums = self.convolution(self.allowed)
+        else:
+            active = np.flatnonzero(self.allowed)
+            tree = cKDTree(coordinates[active])
+            distances = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")
+            weights = radius - distances.data
+            self.filter = coo_matrix((weights, (active[distances.row], active[distances.col])), shape=(self.n, self.n)).tocsr()
+            self.filter.eliminate_zeros()
+            self.sums = np.asarray(self.filter.sum(axis=1)).ravel()
         self.sums[self.forbidden] = 1
         if np.any(self.sums <= 0):
             raise ValueError("Density filter contains an empty allowed-cell neighborhood")
@@ -927,7 +1074,7 @@ class DensityMap:
         design = np.asarray(design, dtype=float).ravel()
         if design.size != self.n or not np.all(np.isfinite(design)) or np.any(design < 0) or np.any(design > 1):
             raise ValueError("Design densities must be finite and within [0, 1]")
-        return np.asarray(self.filter @ design).ravel() / self.sums
+        return (self.convolution(design) if self.convolution else np.asarray(self.filter @ design).ravel()) / self.sums
     def physical(self, design):
         return self.project(self.filtered(design), self.settings["projection_eta"])
     def fields(self, design):
@@ -957,7 +1104,8 @@ class DensityMap:
         derivative[~self.free] = 0
         return np.clip(physical, 0, 1), derivative
     def pullback(self, sensitivity, projection_derivative):
-        result = np.asarray(self.filter.T @ (np.asarray(sensitivity).ravel() * projection_derivative / self.sums)).ravel()
+        scaled = np.asarray(sensitivity).ravel() * projection_derivative / self.sums
+        result = self.convolution(scaled) if self.convolution else np.asarray(self.filter.T @ scaled).ravel()
         result[~self.free] = 0
         return result
     def initial(self, target):
@@ -1060,8 +1208,8 @@ def optimize_topology(domain, settings, *, progress_callback=None):
         if np.count_nonzero(mapping.preserve) >= target:
             raise ValueError("The volume budget must exceed the preserve-cell volume")
         design = mapping.initial(target)
-        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
-        modal = ModalConstraint(system, settings["modal"]) if settings["modal"] else None
+        system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"], solver_choice=settings["solver_choice"])
+        modal = system.modal_constraint(settings["modal"]) if settings["modal"] else None
         modal_log = []
         scales = None
         converged = False

@@ -3,7 +3,7 @@ from time import perf_counter
 
 import numpy as np
 
-from deep_frame.topology_optimization import HexElasticity, ModalConstraint, StiffnessConstraint, _case_scaling, _history_entry, validate_masks, volume_weights
+from deep_frame.topology_optimization import HexElasticity, StiffnessConstraint, _case_scaling, _history_entry, validate_masks, volume_weights
 
 NEURAL_SETTINGS = {
     "volume_fraction": 0.12,
@@ -188,7 +188,7 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
         system = HexElasticity(domain, interface_node_policy=settings["interface_node_policy"], linear_solver=settings["linear_solver"], gpu_solver_residency=settings["gpu_solver_residency"])
         optimizer = Adam(mapping.field.parameters, settings["learning_rate"])
         penalty = LocalVolumePenalty(domain, settings)
-        modal = ModalConstraint(system, settings["modal"]) if settings["modal"] else None
+        modal = system.modal_constraint(settings["modal"]) if settings["modal"] else None
         stiffness = StiffnessConstraint(system, settings["stiffness"]) if settings["stiffness"] else None
         modal_log, stiffness_log = [], []
         scales = None

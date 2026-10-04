@@ -5,7 +5,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 from deep_frame.config import BATTERY_SUPPORT, COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
 from deep_frame.topology_neural import cell_centers
-from deep_frame.topology_optimization import DensityMap, HexElasticity, ModalConstraint, StiffnessConstraint, _settings
+from deep_frame.topology_optimization import SOLVER_CHOICE, DensityMap, HexElasticity, StiffnessConstraint, _settings
 
 ARM_TIP = {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0, "calibration": 1.0, "penalty": 1.0, "multiplier_interval": 1,
            "definition": "evaluator arm_tip: centre mount undersides fixed, uniform pad load on the front-left motor seat, k = |F| / mean pad displacement along F = |F|^2 / compliance"}
@@ -49,6 +49,7 @@ PROBLEM = {
     "termination": {"mass_change": 1e-3, "violation": 1e-3, "window": 5, "active": 0.01},
     "material": "orthotropic",
     "battery": None,
+    "solver_choice": SOLVER_CHOICE,
 }
 
 def length_scale_ratio(eta_eroded, samples=2001):
@@ -134,7 +135,7 @@ class TopologyProblem:
         self.map = DensityMap(domain, _settings({"projection": "robust", "projection_eta": width["eta"], "robust_delta": width["delta"], "filter_radius_mm": self.radius,
                                                  "beta_schedule": problem["continuation"]["beta_schedule"]}))
         self.level = 0
-        self.system = HexElasticity(domain, interface_node_policy=domain.get("optimizer_settings", {}).get("interface_node_policy", "allowed_adjacent"), linear_solver=linear_solver)
+        self.system = HexElasticity(domain, interface_node_policy=domain.get("optimizer_settings", {}).get("interface_node_policy", "allowed_adjacent"), linear_solver=linear_solver, share_static=problem.get("share_static", "auto"), multigrid=problem.get("multigrid"), solver_choice=problem.get("solver_choice"))
         self.factor = 1.0 if self.system.symmetry is None else 2.0
         self.cell = float(np.prod(self.system.spacing))
         self.allowed = int(np.count_nonzero(self.map.allowed))
@@ -156,7 +157,7 @@ class TopologyProblem:
                 raise ValueError("The load covariance constraint needs domain interfaces")
             self.covariance = InterfaceCovariance(self.system, problem["covariance"], domain["interfaces"], self.bodies, self.linear)
             self.battery_sigma = self.covariance.sigmas.get("battery")
-        self.modal = ModalConstraint(self.system, problem["modal"]) if problem.get("modal") else None
+        self.modal = self.system.modal_constraint(problem["modal"]) if problem.get("modal") else None
         if self.bodies and self.modal is not None:
             self.modal.lumped_slope = lambda mode: sum(body.lumped_slope(mode) for body in self.bodies.values())
         if self.camera is not None:
