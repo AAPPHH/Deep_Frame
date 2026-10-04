@@ -1090,7 +1090,7 @@ FRAME_PRINT_KINDS = {"nozzle_mm": "float", "layer_mm": "float"}
 FRAME_COMPONENT_KINDS = {"motor": "text", "aio": "text", "camera": "text", "battery": "text", "antennas": "text", "prop": "text"}
 
 RUN_GRIDS = {
-    "coarse": {"shape": [68, 64, 24], "fine_shape": [136, 128, 48], "neural": {"max_iterations": 60, "minimum_iterations": 30, "sharpness_iterations": 45, "max_runtime_s": 900.0},
+    "coarse": {"shape": [68, 64, 24], "fine_shape": [136, 128, 48], "neural": {"max_iterations": 60, "minimum_iterations": 30, "sharpness_iterations": 45},
                "reconstruction": {"voxel_mm": 0.5, "calibration_voxel_mm": 1.0}, "evaluation": {"voxel_mm": 0.5},
                "compute": {"reconstruction": "geometry"}},
     "fine": {"shape": [102, 96, 24], "fine_shape": [204, 192, 48], "neural": {}, "reconstruction": {}, "evaluation": {}, "compute": {}},
