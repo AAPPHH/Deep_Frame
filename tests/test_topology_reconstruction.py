@@ -183,3 +183,26 @@ def test_spline_anchors_land_inside_the_analytic_prescribed_part():
     assert report["seating"]["nodes"]["anchors"]["moved"] >= 1 and report["bodies"] == 1
     assert inside(rod["points"][0]) >= config["anchor_inset_mm"]-config["clearance_tolerance_mm"] and inside(rod["points"][-1]) >= config["anchor_inset_mm"]-config["clearance_tolerance_mm"]
 
+
+def test_spline_sections_follow_the_raw_section_orientation_along_the_member():
+    h, shape = 0.25, (192, 64, 64)
+    centers = (np.stack(np.meshgrid(*[np.arange(n) for n in shape], indexing="ij"), axis=-1)+0.5)*h
+    start, stop = np.array([4.0, 8.0, 8.0]), np.array([44.0, 8.0, 8.0])
+    s = np.clip((centers[..., 0]-start[0])/(stop[0]-start[0]), 0, 1)
+    turn = np.pi/2*np.clip((0.3-np.abs(s-0.5))/0.1, 0, 1)
+    y, z = centers[..., 1]-8.0, centers[..., 2]-8.0
+    u, v = np.cos(turn)*y+np.sin(turn)*z, -np.sin(turn)*y+np.cos(turn)*z
+    pads = [{"name": f"pad_{i}", "role": "preserve", "kind": "box", "min_mm": (end-2.5).tolist(), "max_mm": (end+2.5).tolist()} for i, end in enumerate((start, stop))]
+    preserve = np.zeros(shape, dtype=bool)
+    for pad in pads:
+        preserve |= np.all((centers >= pad["min_mm"]) & (centers <= pad["max_mm"]), axis=-1)
+    density = (((u/2.8)**2+(v/1.4)**2 <= 1) | preserve).astype(np.float32)
+    domain = {"grid": {"origin_mm": [0.0, 0.0, 0.0], "spacing_mm": [h]*3, "shape": list(shape)}, "regions": pads, "preserve": preserve}
+    config = {**SPLINE_RECONSTRUCTION_CONFIG, "density_sigma_cells": 0.0, "voxel_mm": 0.25, "preserve_round_mm": 0.0}
+    mesh, graph, rods, report = reconstruct_splines(domain, density, config)
+    rod = max((rod for rod in rods if rod is not None), key=lambda rod: rod["length"])
+    along = (rod["points"][:, 0]-start[0])/(stop[0]-start[0])
+    middle, flank = np.argmin(np.abs(along-0.5)), np.argmin(np.abs(along-0.12))
+    assert abs(rod["axis"][middle, 2]) > 0.9 and abs(rod["axis"][flank, 1]) > 0.9
+    assert rod["a"][middle]/rod["b"][middle] > 1.5 and rod["a"][flank]/rod["b"][flank] > 1.5
+    assert mesh.is_watertight and report["bodies"] == 1

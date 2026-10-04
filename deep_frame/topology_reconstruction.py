@@ -639,6 +639,43 @@ def profile_values(profile, t):
     coefficients, (low, high) = profile
     return np.polyval(coefficients, np.clip(t, low, high))
 
+def plane_sections(weights, origin, h, curve, reach, threshold=0.5):
+    tangent = np.gradient(curve, axis=0)
+    tangent /= np.maximum(np.linalg.norm(tangent, axis=1, keepdims=True), 1e-12)
+    u = np.cross(tangent, np.where(np.abs(tangent[:, 2:]) < 0.9, [[0.0, 0.0, 1.0]], [[1.0, 0.0, 0.0]]))
+    u /= np.linalg.norm(u, axis=1, keepdims=True)
+    v = np.cross(tangent, u)
+    offsets = np.arange(-reach, reach+h/4, h/2)
+    s, t = np.meshgrid(offsets, offsets, indexing="ij")
+    points = curve[:, None, None]+s[None, ..., None]*u[:, None, None]+t[None, ..., None]*v[:, None, None]
+    values = map_coordinates(np.asarray(weights, dtype=np.float32), ((points-origin)/h-0.5).reshape(-1, 3).T, order=1, mode="constant").reshape(points.shape[:3])
+    tensors, found = np.zeros((len(curve), 3, 3)), np.zeros(len(curve), dtype=bool)
+    for i, value in enumerate(values):
+        labels, count = label(value > threshold)
+        if not count:
+            continue
+        w = value*(labels == labels.flat[np.argmin(np.where(labels > 0, s**2+t**2, np.inf))])
+        q = s[..., None]*u[i]+t[..., None]*v[i]
+        q = q-np.einsum("ij,ijk->k", w, q)/w.sum()
+        tensors[i], found[i] = np.einsum("ij,ijk,ijl->kl", w, q, q)/w.sum(), True
+    return tensors, found
+
+def section_shape(graph, curve, valid, member, config):
+    tensors, found = plane_sections(graph.weights, graph.origin, graph.h, curve, config["section_reach_mm"])
+    valid = valid & found
+    if not valid.any():
+        major = np.mean(member["axis"], axis=0)
+        return np.full(len(curve), float(np.clip(member["aspect"], 1.0, config["maximum_aspect"]))), np.tile(major if np.linalg.norm(major) > 1e-6 else [0.0, 0.0, 1.0], (len(curve), 1))
+    rows = np.flatnonzero(valid)
+    step = max(float(np.linalg.norm(np.diff(curve, axis=0), axis=1).mean()), 1e-9) if len(curve) > 1 else 1.0
+    tensors = gaussian_filter1d(tensors[np.clip(np.arange(len(curve)), rows[0], rows[-1])], config["section_smooth_mm"]/step, axis=0, mode="nearest")
+    values, vectors = np.linalg.eigh(tensors)
+    major = vectors[:, :, 2]
+    for i in range(1, len(major)):
+        if major[i] @ major[i-1] < 0:
+            major[i] = -major[i]
+    return np.clip(np.sqrt(np.maximum(values[:, 2], 1e-12)/np.maximum(values[:, 1], 1e-12)), 1.0, config["maximum_aspect"]), major
+
 def spline_member(graph, member, area, config, domain=None):
     ends = [graph.nodes[n-1]["center"] if isinstance(n, int) else member["anchors"][side] for side, n in enumerate(member["nodes"])]
     inner = graph.centers(member["voxels"])
@@ -653,14 +690,13 @@ def spline_member(graph, member, area, config, domain=None):
     area = area*length/arc
     measured = gaussian_filter1d(area, config["profile_sigma_samples"], mode="nearest") if config["profile_sigma_samples"] > 0 and len(area) > 1 else area
     profile = fit_profile(t, measured, keep, config["profile_degree"])
-    aspect = float(np.clip(member["aspect"], 1.0, config["maximum_aspect"]))
-    fitted = np.maximum(profile_values(profile, np.linspace(0, 1, len(curve))), 0.0)
+    samples = np.linspace(0, 1, len(curve))
+    aspect, major = section_shape(graph, curve, (samples >= profile[1][0]) & (samples <= profile[1][1]), member, config)
+    fitted = np.maximum(profile_values(profile, samples), 0.0)
     b = np.sqrt(fitted/(np.pi*aspect))
     a, b = np.maximum(aspect*b, config["minimum_radius_mm"]), np.maximum(b, config["minimum_radius_mm"])
-    major = np.mean(member["axis"], axis=0)
-    major = major if np.linalg.norm(major) > 1e-6 else np.array([0.0, 0.0, 1.0])
     control, curve, shift = seat_curve(domain, control, curve, a, b, major, count, config) if domain is not None else (control, curve, 0.0)
-    return {"kind": "rod", "points": curve, "a": a, "b": b, "axis": frame_axes(curve, major)[0], "nodes": ["joined", "joined"], "control": control, "profile": profile, "t": t, "keep": keep, "length": arc, "path_length": length, "aspect": aspect, "stretch": length/arc, "seat_shift_mm": shift}
+    return {"kind": "rod", "points": curve, "a": a, "b": b, "axis": frame_axes(curve, major)[0], "nodes": ["joined", "joined"], "control": control, "profile": profile, "t": t, "keep": keep, "length": arc, "path_length": length, "aspect": float(np.median(aspect)), "stretch": length/arc, "seat_shift_mm": shift}
 
 def bumps(graph, domain, rods, areas, config):
     loads = [(case["name"], load["region"]) for key in ("load_cases", "comparison_load_cases") for case in domain.get(key, []) for load in case.get("loads", [])]
