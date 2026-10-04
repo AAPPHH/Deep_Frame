@@ -1,0 +1,834 @@
+{
+ "status": "ok",
+ "mass_g": 52.948824283812186,
+ "eigenfrequencies_hz": [
+  386.0976,
+  442.1277,
+  461.3183,
+  473.8744,
+  481.3831,
+  526.5899
+ ],
+ "max_displacement_mm": 5.136846329339821,
+ "max_von_mises_mpa": 351.42847405183034,
+ "stiffness_n_per_mm": 3.404046316168079,
+ "load_cases": {
+  "arm_tip": {
+   "analysis": "static",
+   "max_displacement_mm": 1.3726409285786676,
+   "max_von_mises_mpa": 76.27757926123512,
+   "von_mises_p99_mpa": 5.945054139845635,
+   "print_normal_tension_p99_mpa": 1.29549654999999,
+   "print_normal_abs_p99_mpa": 1.7411706499999906,
+   "von_mises_p999_mpa": 13.804530273581438,
+   "print_normal_tension_p999_mpa": 4.012789625001056,
+   "print_normal_abs_p999_mpa": 4.587481945000423,
+   "stress_samples": 1078636,
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "loads": [
+    {
+     "node_count": 2222,
+     "force_n": [
+      0.0,
+      0.0,
+      3.6
+     ],
+     "mean_displacement_mm": [
+      0.06280515123312339,
+      0.31149302182718264,
+      1.0575649288028799
+     ],
+     "directional_displacement_mm": 1.0575649288028799,
+     "stiffness_n_per_mm": 3.404046316168079
+    }
+   ],
+   "stiffness_n_per_mm": 3.404046316168079,
+   "fixed_node_count": 3907
+  },
+  "modes": {
+   "analysis": "modal",
+   "eigenfrequencies_hz": [
+    386.0976,
+    442.1277,
+    461.3183,
+    473.8744,
+    481.3831,
+    526.5899
+   ],
+   "discarded_rigid_modes": 0,
+   "fixture": "all translations fixed on selected nodes",
+   "fixed_node_count": 6976
+  },
+  "crash_front": {
+   "analysis": "static",
+   "max_displacement_mm": 0.4484319472368912,
+   "max_von_mises_mpa": 90.79009308319534,
+   "von_mises_p99_mpa": 6.848008825078066,
+   "print_normal_tension_p99_mpa": 2.2711362499999828,
+   "print_normal_abs_p99_mpa": 2.958789299999998,
+   "von_mises_p999_mpa": 23.739648118187965,
+   "print_normal_tension_p999_mpa": 5.322919735000434,
+   "print_normal_abs_p999_mpa": 7.349837660000153,
+   "stress_samples": 1078636,
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "loads": [
+    {
+     "node_count": 7872,
+     "force_n": [
+      0.0,
+      -30.64578125,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      -0.08981603654471516,
+      -0.24179605016514288,
+      0.14065919073805927
+     ],
+     "directional_displacement_mm": 0.24179605016514288,
+     "stiffness_n_per_mm": 126.74227403247247
+    }
+   ],
+   "stiffness_n_per_mm": 126.74227403247247,
+   "fixed_node_count": 3907
+  },
+  "crash_arm": {
+   "analysis": "static",
+   "max_displacement_mm": 5.136846329339821,
+   "max_von_mises_mpa": 351.42847405183034,
+   "von_mises_p99_mpa": 19.977415139686364,
+   "print_normal_tension_p99_mpa": 4.035571849999982,
+   "print_normal_abs_p99_mpa": 5.842516599999983,
+   "von_mises_p999_mpa": 44.947902724661134,
+   "print_normal_tension_p999_mpa": 10.821441650000718,
+   "print_normal_abs_p999_mpa": 14.755503250001128,
+   "stress_samples": 1078636,
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "loads": [
+    {
+     "node_count": 2222,
+     "force_n": [
+      2.2077626326054296,
+      -14.27686502418177,
+      -5.107630208333331
+     ],
+     "mean_displacement_mm": [
+      -1.0797272309630932,
+      -3.0478027200719997,
+      -2.697259876237627
+     ],
+     "directional_displacement_mm": 3.5832594507259876,
+     "stiffness_n_per_mm": 4.27624369256753
+    }
+   ],
+   "stiffness_n_per_mm": 4.27624369256753,
+   "fixed_node_count": 3907
+  },
+  "crash_back": {
+   "analysis": "static",
+   "max_displacement_mm": 0.04464818400412335,
+   "max_von_mises_mpa": 12.583573194518648,
+   "von_mises_p99_mpa": 1.2744557782588875,
+   "print_normal_tension_p99_mpa": 0.19099669999999572,
+   "print_normal_abs_p99_mpa": 0.39555985499999824,
+   "von_mises_p999_mpa": 2.367843849310577,
+   "print_normal_tension_p999_mpa": 0.5132902640000343,
+   "print_normal_abs_p999_mpa": 0.8241150095000404,
+   "stress_samples": 1078636,
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "loads": [
+    {
+     "node_count": 113,
+     "force_n": [
+      0.0,
+      0.0,
+      -15.322890625
+     ],
+     "mean_displacement_mm": [
+      -0.0008940753982300886,
+      0.004368342256637168,
+      -0.03914315548672567
+     ],
+     "directional_displacement_mm": 0.03914315548672567,
+     "stiffness_n_per_mm": 391.457725736913
+    }
+   ],
+   "stiffness_n_per_mm": 391.457725736913,
+   "fixed_node_count": 6976
+  }
+ },
+ "diagnostics": [],
+ "artifacts": {
+  "directory": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil",
+  "arm_tip": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_0.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_0.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_0.log"
+  },
+  "modes": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_1.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_1.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_1.log"
+  },
+  "crash_front": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_2.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_2.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_2.log"
+  },
+  "crash_arm": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_3.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_3.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_3.log"
+  },
+  "crash_back": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_4.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_4.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\case_4.log"
+  },
+  "result": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_graded\\fea\\evaluation_4h0fdwil\\result.json"
+ },
+ "linear_solver": null,
+ "solver_threads": 4,
+ "mesh": {
+  "attempts": [
+   {
+    "name": "direct_hxt",
+    "target_mm": null,
+    "status": "ok",
+    "timeout_s": 120.0,
+    "linear_element_count": 269659,
+    "runtime_s": 47.229107300008764
+   }
+  ],
+  "input_face_count": 141522,
+  "input_minimum_angle_deg": 1.2627496291722557,
+  "memory_budget": {
+   "elements": 351985,
+   "solver_memory_mb": 13061.95703125,
+   "process_mb": 1274.04296875,
+   "available_mb": 18254.23046875,
+   "memory_budget_mb": 14336.0,
+   "memory_per_element_kb": 38.0
+  },
+  "gmsh_version": "4.15.2",
+  "element_type": "C3D10",
+  "element_count": 269659,
+  "minimum_jacobian_mm3": 1.0760275080872223e-05,
+  "mesh_size_mm": 3.0,
+  "second_order_linear": false,
+  "high_order_optimize": 0,
+  "boundary_geometry": "quadratic boundary nodes projected to CAD",
+  "attempt": "direct_hxt",
+  "target_mm": null,
+  "linear_element_count": 269659,
+  "element_budget": 351985,
+  "over_budget": false,
+  "boundary_node_count": 70665,
+  "boundary_node_deviation_mm": 0.0,
+  "boundary_fidelity": {
+   "method": "bidirectional vertices, centroids and all edge midpoints; exact nearest-surface distance by MeshLab per-vertex distance",
+   "reference_to_approximation": {
+    "sample_count": 636753,
+    "surface_distance_mm": {
+     "max": 2.842170943040401e-14,
+     "p50": 0.0,
+     "p95": 3.552713678800501e-15,
+     "p99": 7.105427357601002e-15,
+     "mean": 7.030116491359167e-16
+    }
+   },
+   "approximation_to_reference": {
+    "sample_count": 636753,
+    "surface_distance_mm": {
+     "max": 2.842170943040401e-14,
+     "p50": 0.0,
+     "p95": 3.552713678800501e-15,
+     "p99": 7.105427357601002e-15,
+     "mean": 7.030116491359167e-16
+    }
+   },
+   "maximum_sampled_deviation_mm": 2.842170943040401e-14,
+   "relative_volume_change": 0.0,
+   "runtime_s": 3.0486094999941997
+  },
+  "input_volume_mm3": 14631.948884231366,
+  "tet_volume_mm3": 14631.948884231368,
+  "tet_volume_relative_change": 2.220446049250313e-16,
+  "minimum_sicn": 0.01828559805094433,
+  "elements_below_sicn": 0,
+  "node_count": 508898
+ },
+ "point_mass_coupling": [
+  {
+   "name": "battery",
+   "mass_g": 37.0,
+   "position_mm": [
+    -1.6781509643504353e-16,
+    -3.0144237274670914e-16,
+    33.5
+   ],
+   "attachment_nodes": 113,
+   "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+  }
+ ],
+ "frame_mass_g": 15.94882428381219,
+ "model_frame_mass_g": 15.948824283812192,
+ "point_mass_g": 37.0,
+ "solver_version": "2.22",
+ "runtime_s": 353.9010091999953,
+ "sliver_cleanup": null,
+ "fea_surface": {
+  "trials": [],
+  "graded": {
+   "voxel_mm": 0.125,
+   "grid_shape": [
+    989,
+    776,
+    234
+   ],
+   "inconsistent_columns": 0,
+   "voxel_face_count": 2684924,
+   "voxel_volume_change": 0.0013302776860990573,
+   "sizes_mm": [
+    0.5,
+    1.0,
+    1.6
+   ],
+   "tier_vertex_counts": [
+    19418,
+    24107,
+    27140
+   ],
+   "dropped_parts": 5,
+   "dropped_volume_mm3": 7.324526632146444e-05,
+   "intersection_repairs": [
+    7
+   ],
+   "face_count": 141522,
+   "minimum_angle_deg": 1.2627496291722557,
+   "folded_edges": 0,
+   "topology": {
+    "input": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -90
+    },
+    "graded": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -96
+    }
+   },
+   "checks_passed": true,
+   "self_intersections_passed": true,
+   "print_deviation_mm": 0.4483920931816101,
+   "print_to_fea_mm": {
+    "max": 0.4483920931816101,
+    "p50": 0.01990688405930996,
+    "p95": 0.05823665112257004,
+    "p99": 0.07956826686859131,
+    "mean": 0.023494342760170588
+   },
+   "fea_to_print_mm": {
+    "max": 0.1570996642112732,
+    "p50": 0.012777273543179035,
+    "p95": 0.043265660852193834,
+    "p99": 0.06250115126371378,
+    "mean": 0.016494900368935778
+   },
+   "relative_volume_change": -0.007171120918475937,
+   "runtime_s": 225.2493669999967,
+   "deviation_within_limit": false,
+   "passed": true
+  },
+  "choice": {
+   "tet_attempts": [
+    "direct_hxt"
+   ],
+   "fea_direct_minimum_angle_deg": 1.0
+  },
+  "volume_mm3": 14631.948884231366
+ },
+ "model": {
+  "material": {
+   "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+   "young_modulus_mpa": 4430.0,
+   "poisson_ratio": 0.3,
+   "density_g_cm3": 1.09,
+   "orthotropic": {
+    "e_xy_mpa": 4430.0,
+    "e_z_mpa": 2170.0,
+    "nu_xy": 0.3,
+    "nu_xz": 0.3,
+    "g_xy_mpa": 1703.8,
+    "g_z_mpa": 834.6
+   },
+   "strength_xy_mpa": 102.0,
+   "strength_z_mpa": 48.0,
+   "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+   "measured": [
+    "E_xy 4430 +/- 310 MPa",
+    "E_z 2170 +/- 230 MPa",
+    "tensile strength XY 102 +/- 7 MPa",
+    "tensile strength Z 48 +/- 6 MPa",
+    "density 1.09 g/cm3"
+   ],
+   "assumptions": {
+    "nu_xy": "0.30 not in the TDS",
+    "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+    "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+    "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+    "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+   },
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "point_masses": [
+   {
+    "name": "battery",
+    "mass_g": 37.0,
+    "position_mm": [
+     -1.6781509643504353e-16,
+     -3.0144237274670914e-16,
+     33.5
+    ],
+    "attachment_region": {
+     "kind": "box",
+     "min_mm": [
+      -20.1,
+      -2.0,
+      27.5
+     ],
+     "max_mm": [
+      20.1,
+      2.0,
+      28.51
+     ]
+    }
+   }
+  ],
+  "load_cases": [
+   {
+    "name": "arm_tip",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        8.823333333333334
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        9.343333333333334
+       ]
+      },
+      "force_n": [
+       0.0,
+       0.0,
+       3.6
+      ]
+     }
+    ]
+   },
+   {
+    "name": "modes",
+    "analysis": "modal",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_front",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -12.01,
+        26.5,
+        19.5
+       ],
+       "max_mm": [
+        12.01,
+        43.5,
+        26.01
+       ]
+      },
+      "force_n": [
+       0.0,
+       -30.64578125,
+       0.0
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_arm",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        8.823333333333334
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        9.343333333333334
+       ]
+      },
+      "force_n": [
+       2.2077626326054296,
+       -14.27686502418177,
+       -5.107630208333331
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_back",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -20.1,
+        -2.0,
+        27.5
+       ],
+       "max_mm": [
+        20.1,
+        2.0,
+        28.51
+       ]
+      },
+      "force_n": [
+       0.0,
+       0.0,
+       -15.322890625
+      ]
+     }
+    ]
+   }
+  ],
+  "loads": {
+   "arm_tip_force_n": 3.6,
+   "all_up_mass_g": 125.0,
+   "standard_gravity_m_s2": 9.80665,
+   "crash_front_g": 25.0,
+   "crash_arm_g": 12.5,
+   "crash_back_g": 12.5,
+   "safety_factor": 2.0,
+   "sources": {
+    "arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+    "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+    "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+    "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+    "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"
+   }
+  },
+  "support": {
+   "arm_tip": "centre mount undersides fixed (all translations)",
+   "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
+   "crash_front": "centre mount undersides fixed",
+   "crash_arm": "centre mount undersides fixed",
+   "crash_back": "four motor seat undersides fixed"
+  }
+ }
+}

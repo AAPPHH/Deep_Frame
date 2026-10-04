@@ -1,0 +1,322 @@
+[
+ {
+  "body": "v3b rail",
+  "variant": "with channels",
+  "status": "ok",
+  "frame_mass_g": 15.94882428381219,
+  "arm_tip_n_per_mm": 3.404046316168079,
+  "f1_hz": 386.0976,
+  "crash_vm_p999_mpa": {
+   "crash_front": 23.739648118187965,
+   "crash_arm": 44.947902724661134,
+   "crash_back": 2.367843849310577
+  },
+  "crash_vm_max_mpa": {
+   "crash_front": 90.79009308319534,
+   "crash_arm": 351.42847405183034,
+   "crash_back": 12.583573194518648
+  },
+  "crash_print_normal_tension_p999_mpa": {
+   "crash_front": 5.322919735000434,
+   "crash_arm": 10.821441650000718,
+   "crash_back": 0.5132902640000343
+  },
+  "tets": 269659,
+  "min_sicn": 0.01828559805094433,
+  "tet_vs_surface_mm": 0.0,
+  "route": [
+   "direct_hxt"
+  ],
+  "graded_passed": true,
+  "print_deviation_max_mm": 0.4483920931816101,
+  "print_to_fea": {
+   "max": 0.4483920931816101,
+   "p50": 0.01990688405930996,
+   "p95": 0.05823665112257004,
+   "p99": 0.07956826686859131,
+   "mean": 0.023494342760170588
+  },
+  "fea_to_print": {
+   "max": 0.1570996642112732,
+   "p50": 0.012777273543179035,
+   "p95": 0.043265660852193834,
+   "p99": 0.06250115126371378,
+   "mean": 0.016494900368935778
+  },
+  "volume_change": -0.007171120918475937,
+  "graded_euler": {
+   "watertight": true,
+   "winding_consistent": true,
+   "body_count": 1,
+   "euler_number": -96
+  },
+  "input_euler": {
+   "watertight": true,
+   "winding_consistent": true,
+   "body_count": 1,
+   "euler_number": -90
+  },
+  "print_vertices_over_0p2_mm": 49,
+  "print_vertex_count": 324072,
+  "print_vertices_over_0p2_area_mm2": 13.470581201647914,
+  "print_area_mm2": 15238.617892642138
+ },
+ {
+  "body": "v3b rail",
+  "variant": "without (graded)",
+  "status": "ok",
+  "frame_mass_g": 17.469427125954724,
+  "arm_tip_n_per_mm": 10.544516521323109,
+  "f1_hz": 471.553,
+  "crash_vm_p999_mpa": {
+   "crash_front": 7.1165804694153065,
+   "crash_arm": 14.232046885443296,
+   "crash_back": 2.172243746504967
+  },
+  "crash_vm_max_mpa": {
+   "crash_front": 20.444761893867586,
+   "crash_arm": 26.544890171251556,
+   "crash_back": 11.664066075600195
+  },
+  "crash_print_normal_tension_p999_mpa": {
+   "crash_front": 3.0220260550000426,
+   "crash_arm": 2.0513898400000183,
+   "crash_back": 0.33439839050002784
+  },
+  "tets": 174699,
+  "min_sicn": 0.035554872083262815,
+  "tet_vs_surface_mm": 0.0,
+  "route": [
+   "direct_hxt"
+  ],
+  "graded_passed": true,
+  "print_deviation_max_mm": 0.1570996642112732,
+  "print_to_fea": {
+   "max": 0.15539546310901642,
+   "p50": 0.02243445534259081,
+   "p95": 0.06045047789812087,
+   "p99": 0.07922358058393,
+   "mean": 0.025414755481859612
+  },
+  "fea_to_print": {
+   "max": 0.1570996642112732,
+   "p50": 0.015942302532494068,
+   "p95": 0.04876280948519707,
+   "p99": 0.06970955431461334,
+   "mean": 0.019286161385501464
+  },
+  "volume_change": -0.00859063165608387,
+  "graded_euler": {
+   "watertight": true,
+   "winding_consistent": true,
+   "body_count": 1,
+   "euler_number": -72
+  },
+  "input_euler": {
+   "watertight": true,
+   "winding_consistent": true,
+   "body_count": 1,
+   "euler_number": -72
+  },
+  "print_vertices_over_0p2_mm": 0,
+  "print_vertex_count": 258024,
+  "print_vertices_over_0p2_area_mm2": 0.0,
+  "print_area_mm2": 12976.704907973506
+ },
+ {
+  "body": "v3b rail",
+  "variant": "without (standard, cov eval)",
+  "status": "ok",
+  "frame_mass_g": 17.621842405511096,
+  "arm_tip_n_per_mm": 10.46144252257219,
+  "f1_hz": 472.8289,
+  "crash_vm_p999_mpa": {
+   "crash_front": 6.292357119705665,
+   "crash_arm": 13.484351659221808,
+   "crash_back": 2.2305180981863897
+  },
+  "crash_vm_max_mpa": {
+   "crash_front": 12.517767603577095,
+   "crash_arm": 23.834422228651444,
+   "crash_back": 5.7745395367723376
+  },
+  "crash_print_normal_tension_p999_mpa": {
+   "crash_front": 2.7848876250000747,
+   "crash_arm": 2.0134551250000046,
+   "crash_back": 0.3341869125000016
+  },
+  "tets": 54469,
+  "min_sicn": 0.1324275739011868,
+  "tet_vs_surface_mm": 2.5618982671915014e-14,
+  "route": [
+   "remesh_hxt"
+  ],
+  "graded_passed": null,
+  "print_deviation_max_mm": null,
+  "print_to_fea": null,
+  "fea_to_print": null,
+  "volume_change": null,
+  "graded_euler": null,
+  "input_euler": null
+ },
+ {
+  "body": "battery_free v3c",
+  "variant": "with channels",
+  "status": "ok",
+  "frame_mass_g": 16.264164265287558,
+  "arm_tip_n_per_mm": 7.193519723290741,
+  "f1_hz": 366.9339,
+  "crash_vm_p999_mpa": {
+   "crash_front": 11.232537068839905,
+   "crash_arm": 25.258469312325726,
+   "crash_back": 2.5060725129131853
+  },
+  "crash_vm_max_mpa": {
+   "crash_front": 177.5354784145155,
+   "crash_arm": 126.09669847014749,
+   "crash_back": 11.99569750965259
+  },
+  "crash_print_normal_tension_p999_mpa": {
+   "crash_front": 4.6324306580006205,
+   "crash_arm": 4.9601623870001195,
+   "crash_back": 0.5970148078000305
+  },
+  "tets": 260470,
+  "min_sicn": 0.03318548952358491,
+  "tet_vs_surface_mm": 0.0,
+  "route": [
+   "direct_hxt"
+  ],
+  "graded_passed": true,
+  "print_deviation_max_mm": 0.6833646297454834,
+  "print_to_fea": {
+   "max": 0.6833646297454834,
+   "p50": 0.020084764808416367,
+   "p95": 0.05885392799973488,
+   "p99": 0.08183039620518681,
+   "mean": 0.0237148035269114
+  },
+  "fea_to_print": {
+   "max": 0.15477454662322998,
+   "p50": 0.013149811886250973,
+   "p95": 0.04353927858173849,
+   "p99": 0.06220736626535655,
+   "mean": 0.016754188780329096
+  },
+  "volume_change": -0.00594548386835092,
+  "graded_euler": {
+   "watertight": true,
+   "winding_consistent": true,
+   "body_count": 1,
+   "euler_number": -96
+  },
+  "input_euler": {
+   "watertight": true,
+   "winding_consistent": true,
+   "body_count": 1,
+   "euler_number": -74
+  },
+  "print_vertices_over_0p2_mm": 132,
+  "print_vertex_count": 312238,
+  "print_vertices_over_0p2_area_mm2": 31.487743525623145,
+  "print_area_mm2": 15113.921562778893
+ },
+ {
+  "body": "battery_free v3c",
+  "variant": "without (cable evaluator, graded surface failed SICN 0.0036 -> standard 2 mm remesh)",
+  "status": "ok",
+  "frame_mass_g": 18.75120678905128,
+  "arm_tip_n_per_mm": 15.414319942990161,
+  "f1_hz": 487.1557,
+  "crash_vm_p999_mpa": {
+   "crash_front": 5.300874271831931,
+   "crash_arm": 12.755201239568493,
+   "crash_back": 1.151439141590526
+  },
+  "crash_vm_max_mpa": {
+   "crash_front": 16.29722191489528,
+   "crash_arm": 16.367397780627183,
+   "crash_back": 3.1534281667313713
+  },
+  "crash_print_normal_tension_p999_mpa": {
+   "crash_front": 3.905516725000001,
+   "crash_arm": 2.350435910000006,
+   "crash_back": 0.42680536800000557
+  },
+  "tets": 51004,
+  "min_sicn": 0.008684122377907855,
+  "tet_vs_surface_mm": 1.2147937225280453e-05,
+  "route": [
+   "remesh_hxt"
+  ],
+  "graded_passed": false,
+  "print_deviation_max_mm": 0.2347431182861328,
+  "print_to_fea": {
+   "max": 0.2347431182861328,
+   "p50": 0.022441402077674866,
+   "p95": 0.06112955883145332,
+   "p99": 0.07974259555339813,
+   "mean": 0.02553103172947679
+  },
+  "fea_to_print": {
+   "max": 0.15106120705604553,
+   "p50": 0.016809718683362007,
+   "p95": 0.0493234358727932,
+   "p99": 0.07042423941195043,
+   "mean": 0.019985291773830825
+  },
+  "volume_change": -0.008991811842114061,
+  "graded_euler": {
+   "watertight": true,
+   "winding_consistent": true,
+   "body_count": 1,
+   "euler_number": -60
+  },
+  "input_euler": {
+   "watertight": true,
+   "winding_consistent": true,
+   "body_count": 1,
+   "euler_number": -60
+  },
+  "print_vertices_over_0p2_mm": 0,
+  "print_vertex_count": 249267,
+  "print_vertices_over_0p2_area_mm2": 0.0,
+  "print_area_mm2": 12796.118539779749
+ },
+ {
+  "body": "battery_free v3c",
+  "variant": "without (standard, recon3 eval)",
+  "status": "ok",
+  "frame_mass_g": 18.761207352472866,
+  "arm_tip_n_per_mm": 14.761932893085515,
+  "f1_hz": 486.8461,
+  "crash_vm_p999_mpa": {
+   "crash_front": 4.939093095420068,
+   "crash_arm": 12.725053216816153,
+   "crash_back": 1.264694600180898
+  },
+  "crash_vm_max_mpa": {
+   "crash_front": 32.49491382309938,
+   "crash_arm": 30.467992408754657,
+   "crash_back": 10.01839470621245
+  },
+  "crash_print_normal_tension_p999_mpa": {
+   "crash_front": 3.8723935000000576,
+   "crash_arm": 2.306642125000003,
+   "crash_back": 0.41682227500004837
+  },
+  "tets": 51594,
+  "min_sicn": 0.12826933108528782,
+  "tet_vs_surface_mm": 2.1972320632906738e-14,
+  "route": [
+   "remesh_hxt"
+  ],
+  "graded_passed": null,
+  "print_deviation_max_mm": null,
+  "print_to_fea": null,
+  "fea_to_print": null,
+  "volume_change": null,
+  "graded_euler": null,
+  "input_euler": null
+ }
+]
