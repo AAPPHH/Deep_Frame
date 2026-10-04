@@ -1,0 +1,124 @@
+{
+ "voxel_mm": 0.1,
+ "opening_radius_mm": 1.0,
+ "deep_depth_mm": 0.45,
+ "grid_shape": [
+  1248,
+  1128,
+  317
+ ],
+ "unbalanced_columns": 0,
+ "part_volume_mm3": 14972.047000000004,
+ "removed_volume_mm3": 1757.9810000000002,
+ "components": 7738,
+ "deep_components": 5,
+ "deep_volume_mm3": 1619.9650000000006,
+ "deep_fraction": 0.10819929966824177,
+ "largest_deep_mm3": 619.3840000000001,
+ "shallow_volume_mm3": 138.01600000000002,
+ "motor_zone_hits": {
+  "motor_front_left": {
+   "components": 1,
+   "volume_mm3": 619.3840000000001
+  },
+  "motor_front_right": {
+   "components": 1,
+   "volume_mm3": 312.0350000000001
+  },
+  "motor_rear_left": {
+   "components": 1,
+   "volume_mm3": 347.8540000000001
+  },
+  "motor_rear_right": {
+   "components": 1,
+   "volume_mm3": 327.91800000000006
+  }
+ },
+ "motor_zones": [
+  "motor_front_left",
+  "motor_front_right",
+  "motor_rear_left",
+  "motor_rear_right"
+ ],
+ "largest_deep_components": [
+  {
+   "volume_mm3": 619.3840000000001,
+   "max_depth_mm": 0.9899494936611667,
+   "centroid_mm": [
+    -19.861,
+    30.243,
+    14.544
+   ],
+   "extent_mm": [
+    42.4,
+    41.0,
+    26.9
+   ]
+  },
+  {
+   "volume_mm3": 347.8540000000001,
+   "max_depth_mm": 0.9643650760992956,
+   "centroid_mm": [
+    -32.881,
+    -27.812,
+    10.308
+   ],
+   "extent_mm": [
+    44.8,
+    29.9,
+    12.4
+   ]
+  },
+  {
+   "volume_mm3": 327.91800000000006,
+   "max_depth_mm": 0.9695359714832659,
+   "centroid_mm": [
+    32.97,
+    -27.804,
+    9.806
+   ],
+   "extent_mm": [
+    51.4,
+    37.1,
+    12.2
+   ]
+  },
+  {
+   "volume_mm3": 312.0350000000001,
+   "max_depth_mm": 0.9899494936611667,
+   "centroid_mm": [
+    28.399,
+    30.314,
+    9.865
+   ],
+   "extent_mm": [
+    41.5,
+    31.2,
+    12.8
+   ]
+  },
+  {
+   "volume_mm3": 12.774000000000003,
+   "max_depth_mm": 0.8124038404635961,
+   "centroid_mm": [
+    30.567,
+    -27.074,
+    15.852
+   ],
+   "extent_mm": [
+    10.3,
+    7.4,
+    2.6
+   ]
+  }
+ ],
+ "limits": {
+  "deep_max_fraction": 0.005,
+  "deep_component_max_mm3": 5.0,
+  "motor_zone_margin_mm": 2.0
+ },
+ "elapsed_s": 133.398260499991,
+ "method": "Winding-number voxelisation at h; exact EDT opening with a ball of the radius (erosion EDT >= r, dilation EDT <= r) tiled along x with halo; removed voxels grouped with 26-connectivity; deep components reach the depth below the original surface (true walls under 2 r), shallow ones are edge rounding",
+ "status": "Provisional: calibrated on the ManaFly 3 BETA V4 manufacturer geometry (no own test); final after own drop tests in M2",
+ "calibrated_rule_passed": false
+}

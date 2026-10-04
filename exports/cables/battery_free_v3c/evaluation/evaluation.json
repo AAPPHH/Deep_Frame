@@ -1,0 +1,1025 @@
+{
+ "name": "battery_free_v3c_cables",
+ "stl": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\frame.stl",
+ "print_axis": [
+  0.0,
+  0.0,
+  1.0
+ ],
+ "material": {
+  "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+  "young_modulus_mpa": 4430.0,
+  "poisson_ratio": 0.3,
+  "density_g_cm3": 1.09,
+  "orthotropic": {
+   "e_xy_mpa": 4430.0,
+   "e_z_mpa": 2170.0,
+   "nu_xy": 0.3,
+   "nu_xz": 0.3,
+   "g_xy_mpa": 1703.8,
+   "g_z_mpa": 834.6
+  },
+  "strength_xy_mpa": 102.0,
+  "strength_z_mpa": 48.0,
+  "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+  "measured": [
+   "E_xy 4430 +/- 310 MPa",
+   "E_z 2170 +/- 230 MPa",
+   "tensile strength XY 102 +/- 7 MPa",
+   "tensile strength Z 48 +/- 6 MPa",
+   "density 1.09 g/cm3"
+  ],
+  "assumptions": {
+   "nu_xy": "0.30 not in the TDS",
+   "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+   "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+   "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+   "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+  }
+ },
+ "geometry": {
+  "mass": {
+   "frame_mass_g": 16.361440948509898,
+   "frame_volume_mm3": 15010.496283036604,
+   "total_mass_g": 85.6614409485099,
+   "component_mass_g": 69.30000000000001,
+   "center_of_mass_mm": [
+    0.035072027699843605,
+    1.832353191075324,
+    22.32768757043578
+   ],
+   "frame_center_of_mass_mm": [
+    0.18362199510479232,
+    10.11170197018496,
+    15.136583361383073
+   ],
+   "inertia_g_mm2": [
+    [
+     77302.37172667375,
+     -19.78773850619018,
+     18.008401238949453
+    ],
+    [
+     -19.78773850619018,
+     87746.28012905094,
+     2211.190349953288
+    ],
+    [
+     18.008401238949453,
+     2211.190349953288,
+     151279.88245105674
+    ]
+   ],
+   "principal_inertia_g_mm2": [
+    77302.32753248555,
+    87669.45615329573,
+    151356.75062100016
+   ],
+   "components": [
+    {
+     "name": "aio15",
+     "type": "aio15",
+     "mass_g": 7.2,
+     "center_mm": [
+      6.269413576081472e-16,
+      5.387777291945015e-17,
+      14.3
+     ],
+     "size_mm": [
+      31.3,
+      31.3,
+      6.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "camera",
+     "type": "camera",
+     "mass_g": 2.3,
+     "center_mm": [
+      7.140688267439225e-17,
+      49.4,
+      18.47198934878104
+     ],
+     "size_mm": [
+      16.0,
+      14.0,
+      14.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "battery",
+     "type": "battery",
+     "mass_g": 37.0,
+     "center_mm": [
+      -4.399639222765998e-17,
+      -3.299999999999996,
+      31.3
+     ],
+     "size_mm": [
+      30.0,
+      63.0,
+      11.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "motor_front_left",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      -53.45466183516625,
+      39.13644884360386,
+      14.283333333333333
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_front_left",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      -53.45466183516625,
+      39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_front_right",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      53.45466183516625,
+      39.13644884360386,
+      14.283333333333335
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_front_right",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      53.45466183516625,
+      39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_rear_left",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      -53.45466183516625,
+      -39.13644884360386,
+      14.283333333333335
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_rear_left",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      -53.45466183516625,
+      -39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_rear_right",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      53.45466183516625,
+      -39.13644884360386,
+      14.283333333333333
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_rear_right",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      53.45466183516624,
+      -39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    }
+   ],
+   "model": "frame: exact mesh volume integrals x density; components: homogeneous boxes (props: discs) with parallel-axis theorem about the total centre of mass"
+  },
+  "airflow": {
+   "projected_area_mm2": 2895.84,
+   "bbox_share": 0.2143009377664109,
+   "hull_share": 0.23220070433828763,
+   "prop_disc_share": 0.09946567216605524,
+   "prop_ring_share": 0.04990836616877444,
+   "prop_diameter_mm": 63.5,
+   "hub_radius_mm": 7.88,
+   "discs_overlap": false,
+   "method": "top-view silhouette of the winding-number voxel grid; prop share = material inside the four prop discs / disc area, ring share excludes the motor hub radius"
+  },
+  "assembly": {
+   "bolt_patterns": [
+    {
+     "name": "motor_front_left",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -56.63664235050572,
+        35.954468328264404
+       ],
+       "centroid_mm": [
+        -56.63754280311917,
+        35.953567875650954
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -56.63664235050572,
+        42.31842935894332
+       ],
+       "centroid_mm": [
+        -56.63754280311917,
+        42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -50.27268131982679,
+        35.9544683282644
+       ],
+       "centroid_mm": [
+        -50.27178086721334,
+        35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -50.27268131982679,
+        42.31842935894332
+       ],
+       "centroid_mm": [
+        -50.27178086721334,
+        42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_front_right",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        50.27268131982679,
+        35.9544683282644
+       ],
+       "centroid_mm": [
+        50.271780867213344,
+        35.953567875650954
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        50.27268131982679,
+        42.31842935894333
+       ],
+       "centroid_mm": [
+        50.271780867213344,
+        42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        56.63664235050571,
+        35.95446832826439
+       ],
+       "centroid_mm": [
+        56.63754280311915,
+        35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        56.63664235050571,
+        42.31842935894333
+       ],
+       "centroid_mm": [
+        56.63754280311915,
+        42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_rear_left",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -56.63664235050572,
+        -42.31842935894332
+       ],
+       "centroid_mm": [
+        -56.63754280311917,
+        -42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -56.63664235050572,
+        -35.9544683282644
+       ],
+       "centroid_mm": [
+        -56.63754280311917,
+        -35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -50.27268131982679,
+        -42.31842935894332
+       ],
+       "centroid_mm": [
+        -50.27178086721334,
+        -42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -50.27268131982679,
+        -35.9544683282644
+       ],
+       "centroid_mm": [
+        -50.27178086721334,
+        -35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_rear_right",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        50.27268131982679,
+        -42.31842935894333
+       ],
+       "centroid_mm": [
+        50.271780867213344,
+        -42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        50.27268131982679,
+        -35.95446832826439
+       ],
+       "centroid_mm": [
+        50.271780867213344,
+        -35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        56.63664235050571,
+        -42.31842935894333
+       ],
+       "centroid_mm": [
+        56.63754280311915,
+        -42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        56.63664235050571,
+        -35.95446832826439
+       ],
+       "centroid_mm": [
+        56.63754280311915,
+        -35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "stack",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -12.749999999999998,
+        -12.749999999999998
+       ],
+       "centroid_mm": [
+        -12.750369421237993,
+        -12.750369421237993
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -12.750369415885993,
+        12.749630573410318
+       ],
+       "centroid_mm": [
+        -12.750369421237993,
+        12.749630578762007
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        12.749630573410318,
+        -12.750369415885993
+       ],
+       "centroid_mm": [
+        12.749630578762007,
+        -12.750369421237993
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        12.750000000000002,
+        12.750000000000002
+       ],
+       "centroid_mm": [
+        12.749630578762007,
+        12.749630578762007
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    }
+   ],
+   "keep_out_material_mm3": {
+    "aio15_envelope": 0.0,
+    "camera_envelope": 0.0,
+    "battery_envelope": 0.0,
+    "motor_front_left_envelope": 0.0,
+    "prop_front_left_swept_clearance": 0.0,
+    "motor_front_right_envelope": 0.0,
+    "prop_front_right_swept_clearance": 0.0,
+    "motor_rear_left_envelope": 0.0,
+    "prop_rear_left_swept_clearance": 0.0,
+    "motor_rear_right_envelope": 0.0,
+    "prop_rear_right_swept_clearance": 0.0,
+    "front_left_shaft_clearance": 0.0,
+    "front_left_motor_screw_0": 0.0,
+    "front_left_motor_screw_1": 0.0,
+    "front_left_motor_screw_2": 0.0,
+    "front_left_motor_screw_3": 0.0,
+    "front_left_motor_leads": 0.0,
+    "front_right_shaft_clearance": 0.0,
+    "front_right_motor_screw_0": 0.0,
+    "front_right_motor_screw_1": 0.0,
+    "front_right_motor_screw_2": 0.0,
+    "front_right_motor_screw_3": 0.0,
+    "front_right_motor_leads": 0.0,
+    "rear_left_shaft_clearance": 0.0,
+    "rear_left_motor_screw_0": 0.0,
+    "rear_left_motor_screw_1": 0.0,
+    "rear_left_motor_screw_2": 0.0,
+    "rear_left_motor_screw_3": 0.0,
+    "rear_left_motor_leads": 0.0,
+    "rear_right_shaft_clearance": 0.0,
+    "rear_right_motor_screw_0": 0.0,
+    "rear_right_motor_screw_1": 0.0,
+    "rear_right_motor_screw_2": 0.0,
+    "rear_right_motor_screw_3": 0.0,
+    "rear_right_motor_leads": 0.0,
+    "aio_screw_0": 0.0,
+    "aio_screw_1": 0.0,
+    "aio_screw_2": 0.0,
+    "aio_screw_3": 0.0,
+    "elrs_antenna_clearance": 0.0,
+    "battery_insertion": 0.0,
+    "camera_screw_axis": 0.0,
+    "camera_tool_access_-1": 0.0,
+    "camera_tool_access_1": 0.0,
+    "camera_front_access": 0.0,
+    "aio_side_assembly_access": 0.0
+   },
+   "connector_reachable": {},
+   "fit_tolerance_mm3": 1.0,
+   "bolt_patterns_passed": true,
+   "tools_passed": true,
+   "fit_passed": true,
+   "connectors_checked": false,
+   "method": "holes from an exact plane section rasterised at the section voxel; reachability = 9 parallel rays (axis plus screw-head or connector radius) from the hole or connector along the tool axis must not re-enter material beyond the tool skip distance (the pad itself); fit = material voxels inside each keep-out shrunk by one voxel"
+  },
+  "printability": {
+   "overhang_area_mm2": 2013.1745159525963,
+   "overhang_share": 0.1332000108370582,
+   "bed_contact_mm2": 81.25409181041114,
+   "print_height_mm": 29.28166389465332,
+   "print_footprint_mm": [
+    122.33121490478516,
+    110.3365592956543
+   ],
+   "overhang_deg": 45.0,
+   "method": "faces whose normal lies within 45 deg of straight down above the bed, area share of the surface"
+  },
+  "form": {
+   "strut_width_mm": {
+    "p10": 0.985640646055102,
+    "p50": 2.0000000000000004,
+    "p90": 3.908131845707604
+   },
+   "share_below_2mm": 0.38371693576090693,
+   "section_ratio": {
+    "p10": 0.5466081666101212,
+    "p50": 1.25,
+    "p90": 4.949747468305832
+   },
+   "upright_share": 0.44314668498797666,
+   "flat_share": 0.15458605290278254,
+   "skeleton_voxels": 2911,
+   "method": "widths 2 x EDT on the 3D skeleton minus one voxel; section ratio = vertical material run / in-plane width at each skeleton voxel (> 1 upright, < 1 flat)",
+   "loops": {
+    "closing_radius_mm": 3.0,
+    "voxel_mm": 0.4,
+    "bodies": 1,
+    "cavities": 0,
+    "loops": 16,
+    "method": "first Betti number b1 = b0 + b2 - chi of the voxel solid after a morphological closing that fills bores and slots up to 2 x the closing radius"
+   },
+   "mesh_bodies": 1,
+   "mesh_genus": 38,
+   "flight_height_mm": 29.28166389465332,
+   "symmetry": {
+    "plane_x_mm": 0.0,
+    "rms_mm": 0.3170311537446028,
+    "p95_mm": 0.6333103044459019,
+    "max_mm": 2.8949536877405175,
+    "samples": 5000,
+    "method": "surface samples mirrored at x = mean motor x, distance to the original surface"
+   },
+   "roughness": {
+    "curvature_neighbour_rms_per_mm": 0.27010737285849246,
+    "mean_abs_curvature_per_mm": {
+     "max": 3.8051789929018796,
+     "p50": 0.18961663987377414,
+     "p95": 0.6188730728217238,
+     "p99": 1.241851874063424,
+     "mean": 0.2482594012108229
+    },
+    "radius_mm": 1.0,
+    "method": "Cohen-Steiner/Morvan mean curvature measure of each ball around evenly sampled surface points divided by the disc area pi r^2 (sphere 1/R, cylinder 1/(2R), plane 0); RMS of the |H| differences of sample pairs closer than 1.5 r; independent of the triangulation, record only"
+   }
+  },
+  "voxel_mm": 0.4,
+  "unbalanced_columns": 0,
+  "runtime_s": 14.747866499994416
+ },
+ "walls": {
+  "voxel_mm": 0.1,
+  "opening_radius_mm": 1.0,
+  "deep_depth_mm": 0.45,
+  "grid_shape": [
+   1248,
+   1128,
+   317
+  ],
+  "unbalanced_columns": 0,
+  "part_volume_mm3": 14972.047000000004,
+  "removed_volume_mm3": 1757.9810000000002,
+  "components": 7738,
+  "deep_components": 5,
+  "deep_volume_mm3": 1619.9650000000006,
+  "deep_fraction": 0.10819929966824177,
+  "largest_deep_mm3": 619.3840000000001,
+  "shallow_volume_mm3": 138.01600000000002,
+  "motor_zone_hits": {
+   "motor_front_left": {
+    "components": 1,
+    "volume_mm3": 619.3840000000001
+   },
+   "motor_front_right": {
+    "components": 1,
+    "volume_mm3": 312.0350000000001
+   },
+   "motor_rear_left": {
+    "components": 1,
+    "volume_mm3": 347.8540000000001
+   },
+   "motor_rear_right": {
+    "components": 1,
+    "volume_mm3": 327.91800000000006
+   }
+  },
+  "motor_zones": [
+   "motor_front_left",
+   "motor_front_right",
+   "motor_rear_left",
+   "motor_rear_right"
+  ],
+  "largest_deep_components": [
+   {
+    "volume_mm3": 619.3840000000001,
+    "max_depth_mm": 0.9899494936611667,
+    "centroid_mm": [
+     -19.861,
+     30.243,
+     14.544
+    ],
+    "extent_mm": [
+     42.4,
+     41.0,
+     26.9
+    ]
+   },
+   {
+    "volume_mm3": 347.8540000000001,
+    "max_depth_mm": 0.9643650760992956,
+    "centroid_mm": [
+     -32.881,
+     -27.812,
+     10.308
+    ],
+    "extent_mm": [
+     44.8,
+     29.9,
+     12.4
+    ]
+   },
+   {
+    "volume_mm3": 327.91800000000006,
+    "max_depth_mm": 0.9695359714832659,
+    "centroid_mm": [
+     32.97,
+     -27.804,
+     9.806
+    ],
+    "extent_mm": [
+     51.4,
+     37.1,
+     12.2
+    ]
+   },
+   {
+    "volume_mm3": 312.0350000000001,
+    "max_depth_mm": 0.9899494936611667,
+    "centroid_mm": [
+     28.399,
+     30.314,
+     9.865
+    ],
+    "extent_mm": [
+     41.5,
+     31.2,
+     12.8
+    ]
+   },
+   {
+    "volume_mm3": 12.774000000000003,
+    "max_depth_mm": 0.8124038404635961,
+    "centroid_mm": [
+     30.567,
+     -27.074,
+     15.852
+    ],
+    "extent_mm": [
+     10.3,
+     7.4,
+     2.6
+    ]
+   }
+  ],
+  "limits": {
+   "deep_max_fraction": 0.005,
+   "deep_component_max_mm3": 5.0,
+   "motor_zone_margin_mm": 2.0
+  },
+  "elapsed_s": 133.398260499991,
+  "method": "Winding-number voxelisation at h; exact EDT opening with a ball of the radius (erosion EDT >= r, dilation EDT <= r) tiled along x with halo; removed voxels grouped with 26-connectivity; deep components reach the depth below the original surface (true walls under 2 r), shallow ones are edge rounding",
+  "status": "Provisional: calibrated on the ManaFly 3 BETA V4 manufacturer geometry (no own test); final after own drop tests in M2",
+  "calibrated_rule_passed": false
+ },
+ "fea": null,
+ "sigma": null,
+ "slicer": {
+  "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
+  "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed",
+  "options": [
+   "--nozzle-diameter",
+   "0.4",
+   "--layer-height",
+   "0.2",
+   "--first-layer-height",
+   "0.2",
+   "--perimeters",
+   "2",
+   "--fill-density",
+   "15%",
+   "--filament-diameter",
+   "1.75",
+   "--filament-density",
+   "1.09",
+   "--bed-shape",
+   "0x0,256x0,256x256,0x256",
+   "--max-print-height",
+   "256",
+   "--center",
+   "128,128"
+  ],
+  "supports": {
+   "returncode": 0,
+   "runtime_s": 5.26478140000836,
+   "log_tail": "10 => Processing triangulated mesh\n20 => Generating perimeters\n30 => Preparing infill\n45 => Making infill\n65 => Searching support spots\n69 => Alert if supports needed\n70 => Generating support material\n89 => Calculating overhanging perimeters\n88 => Generating skirt and brim\n90 => Exporting G-code to C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation\\slicer\\supports.gcode\nSlicing result exported to C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation\\slicer\\supports.gcode\n",
+   "print_time": "4h 16m 0s",
+   "print_time_min": 256.0,
+   "filament_mm3": 30090.0,
+   "filament_g": 32.79
+  },
+  "no_supports": {
+   "returncode": 0,
+   "runtime_s": 2.2963087999960408,
+   "log_tail": "10 => Processing triangulated mesh\n20 => Generating perimeters\n30 => Preparing infill\n45 => Making infill\n65 => Searching support spots\n69 => Alert if supports needed\nprint warning: Detected print stability issues:\n\nprinted.stl\nFloating object part, Floating bridge anchors, Low bed adhesion, Loose extrusions\n\nConsider enabling supports.\nAlso consider enabling brim.\n89 => Calculating overhanging perimeters\n88 => Generating skirt and brim\n90 => Exporting G-code to C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation\\slicer\\no_supports.gcode\nSlicing result exported to C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation\\slicer\\no_supports.gcode\n",
+   "print_time": "2h 24m 3s",
+   "print_time_min": 144.05,
+   "filament_mm3": 13420.0,
+   "filament_g": 14.63
+  },
+  "support_mm3": 16670.0,
+  "passed": true
+ },
+ "scaled": {
+  "arm_mm": 66.25,
+  "wheelbase_mm": 132.5,
+  "arm_tip_slope": null,
+  "support_per_volume": 1.1105562191730334,
+  "print_min_per_g": 15.646543651359444,
+  "symmetry_per_wheelbase": 0.002392687952789455,
+  "cog_offset_per_wheelbase": 0.013831613639110915,
+  "height_per_wheelbase": 0.22099368977096845,
+  "izz_per_mass_arm2": 0.40236855890020073
+ },
+ "assessment": {
+  "conditions": {
+   "one_body": true,
+   "bolt_patterns": true,
+   "keep_outs_free": true,
+   "tools_reachable": true,
+   "fea_solved": false,
+   "slicer": true,
+   "wall_deep_fraction": false,
+   "wall_deep_component": false,
+   "wall_motor_zones": false,
+   "crash_front_strength": false,
+   "crash_arm_strength": false,
+   "crash_back_strength": false,
+   "target:airflow": true,
+   "target:overhang": true,
+   "target:support": true,
+   "target:strut_min": false,
+   "target:symmetry": true,
+   "target:arm_tip_slope": false,
+   "target:f1": false,
+   "target:sigma_mean": false,
+   "target:sigma_worst": false
+  },
+  "missed": [
+   "fea_solved",
+   "wall_deep_fraction",
+   "wall_deep_component",
+   "wall_motor_zones",
+   "crash_front_strength",
+   "crash_arm_strength",
+   "crash_back_strength",
+   "target:strut_min",
+   "target:arm_tip_slope",
+   "target:f1",
+   "target:sigma_mean",
+   "target:sigma_worst"
+  ],
+  "good": false,
+  "warnings": [
+   "loops",
+   "roughness",
+   "cog_offset"
+  ],
+  "crash": {
+   "crash_front": null,
+   "crash_arm": null,
+   "crash_back": null
+  },
+  "safety_factor": 2.0,
+  "targets": {
+   "airflow": [
+    "geometry.airflow.prop_ring_share",
+    null,
+    0.15
+   ],
+   "overhang": [
+    "geometry.printability.overhang_share",
+    null,
+    0.25
+   ],
+   "support": [
+    "scaled.support_per_volume",
+    null,
+    1.5
+   ],
+   "strut_min": [
+    "geometry.form.strut_width_mm.p10",
+    1.19,
+    null
+   ],
+   "symmetry": [
+    "scaled.symmetry_per_wheelbase",
+    null,
+    0.0025
+   ],
+   "arm_tip_slope": [
+    "scaled.arm_tip_slope",
+    null,
+    0.007
+   ],
+   "f1": [
+    "fea.eigenfrequencies_hz.0",
+    330.0,
+    null
+   ],
+   "sigma_mean": [
+    "sigma.mean_compliance_n_mm",
+    null,
+    0.687
+   ],
+   "sigma_worst": [
+    "sigma.worst_case_compliance_n_mm",
+    null,
+    0.229
+   ]
+  },
+  "warning_ranges": {
+   "strut_max": [
+    "geometry.form.strut_width_mm.p90",
+    null,
+    6.5
+   ],
+   "section_ratio": [
+    "geometry.form.section_ratio.p50",
+    1.0,
+    1.4
+   ],
+   "top_view_material": [
+    "geometry.airflow.bbox_share",
+    null,
+    0.45
+   ],
+   "loops": [
+    "geometry.form.loops.loops",
+    20,
+    null
+   ],
+   "roughness": [
+    "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+    null,
+    0.18
+   ],
+   "height": [
+    "scaled.height_per_wheelbase",
+    null,
+    0.4
+   ],
+   "cog_offset": [
+    "scaled.cog_offset_per_wheelbase",
+    null,
+    0.01
+   ],
+   "inertia_z": [
+    "scaled.izz_per_mass_arm2",
+    null,
+    0.45
+   ],
+   "print_time": [
+    "scaled.print_min_per_g",
+    null,
+    16.0
+   ]
+  },
+  "wall_rule": {
+   "deep_max_fraction": 0.005,
+   "deep_component_max_mm3": 5.0,
+   "motor_zone_margin_mm": 2.0,
+   "opening_radius_mm": 1.0,
+   "deep_depth_mm": 0.45,
+   "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+  },
+  "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+ },
+ "line": "| battery_free_v3c_cables | 16,4 g | SP z 22,3 mm; Ixx/Iyy/Izz 77/88/151 kg\u00b7mm\u00b2 (K) | 5,0 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 13,3 %, \u00d6ffn. r=1 10,82 %/619,4 mm\u00b3/Motorzonen 4,St\u00fctze 16,67 cm\u00b3, 256 min | Strebe 1,0/2,0/3,9 mm, H/B 1,25, offen 79 %, H\u00f6he 29,3 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,32 mm, Rauh. 0,270/mm | \u2013 (A) | \u2013 | \u2013 | fea_solved, wall_deep_fraction, wall_deep_component, wall_motor_zones, crash_front_strength, crash_arm_strength, crash_back_strength, target:strut_min, target:arm_tip_slope, target:f1, target:sigma_mean, target:sigma_worst; Warnung: loops, roughness, cog_offset |"
+}
