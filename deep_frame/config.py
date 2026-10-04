@@ -1350,6 +1350,7 @@ STAND_STABILITY = {
     "enabled": True, "reserve_min_mm": 15.0, "prop_clearance_min_mm": 17.0, "enabled_source": "orchestrator 2026-10-04: on for the frame runs (user wants the standing condition in this run)",
     "prop_clearance_source": "ManaFly 3 measured with the same evaluator component model (prop disc underside 17.4 mm above its lowest point, docs/validation/stand_stability.json), rounded down to 17 mm; our rail v3b and free-battery frames 19.2 mm",
     "reserve_source": "user 2026-10-04: centre of gravity at least 15 mm inside the support polygon",
+    "start_beta": 4.0, "start_beta_source": "orchestrator 2026-10-04: the coarse free_layout2 run with the stand rows live from beta = 1 stalled at stand_reserve g = 3.25 (CoG about 34 mm outside the support) and 45 g for 20 iterations (docs/validation/free_layout2_opt.json, coarse_beta1_stalled); below start_beta the rows are reported satisfied with zero gradient",
     "contact_tolerance_mm": 0.2, "directions": 64, "ground_sharpness_per_mm": 6.0, "density_lift_mm": 20.0, "contact_penalty": 2.0, "support_sharpness_per_mm": 1.0, "ks_per_mm": 4.0,
     "definition": {
         "exact": "evaluator: ground = lowest point of the body; contact set = body material with z <= ground + contact_tolerance_mm (vertices below plus the section at that height); support polygon = convex hull of its plan projection; "

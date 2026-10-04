@@ -314,7 +314,10 @@ class TopologyProblem:
             value = float(np.dot(self.shadow, physical))
             rows.append({"name": "shadow", "g": value / limit - 1, "gradient": self.shadow / limit, "value": value, "limit": limit, "unit": "mm", "sense": "<="})
         if self.stability is not None:
-            rows += self.stability.rows(physical)
+            stand = self.stability.rows(physical)
+            if self.map.beta < self.stability.settings["start_beta"]:
+                stand = [row if row["g"] is None else {**row, "g": -1.0, "gradient": np.zeros_like(row["gradient"]), "gated_below_beta": self.stability.settings["start_beta"]} for row in stand]
+            rows += stand
         if self.camera is not None:
             value, gradient = self.coverage.measure(physical)
             minimum = self.problem["camera"]["min_coverage"]

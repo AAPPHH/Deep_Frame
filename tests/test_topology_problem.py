@@ -483,3 +483,9 @@ def test_stand_rows_in_the_shared_formulation():
     result = on.evaluate(np.full(on.map.n, 0.5))
     assert result["names"][-2:] == ["stand_reserve", "stand_prop_clearance"] and any(row["name"] == "stand_ground_z" and row["status"] == "monitored" for row in result["rows"])
     on.close()
+    gated = {row["name"]: row for row in on.geometry(np.full(on.map.n, 0.5)) if row["name"].startswith("stand_")}
+    assert on.beta < on.stability.settings["start_beta"] and gated["stand_reserve"]["g"] == -1.0 and not np.any(gated["stand_reserve"]["gradient"]) and gated["stand_ground_z"]["g"] is None
+    on.map.beta = on.stability.settings["start_beta"]
+    live = {row["name"]: row for row in on.geometry(np.full(on.map.n, 0.5)) if row["name"].startswith("stand_")}
+    assert np.any(live["stand_reserve"]["gradient"]) and live["stand_reserve"]["value"] == gated["stand_reserve"]["value"]
+    on.close()

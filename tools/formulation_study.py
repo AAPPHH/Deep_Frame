@@ -521,7 +521,7 @@ def stand_fd(cfg):
             exact = voxel_reserve(domain, design, measure["center_of_gravity_xy_mm"])
             cases[f"{name}_{'half' if half else 'full'}"] = {"smooth_mm": measure["reserve_mm"], "min_over_directions_mm": float(measure["reserves_mm"].min()), "smooth_ground_z_mm": measure["ground_z_mm"], **exact,
                                                              "error_vs_cell_centres_mm": measure["reserve_mm"] - exact["cell_centres_mm"], "error_vs_cell_faces_mm": measure["reserve_mm"] - exact["cell_faces_mm"]}
-    config.STAND_STABILITY["enabled"] = True
+    config.STAND_STABILITY.update(enabled=True, start_beta=0.0)
     half, problem = frame_setup(cfg, spec["shape"])
     tp = TopologyProblem(half, problem, linear_solver=cfg["linear_solver"])
     random = np.random.default_rng(spec["seed"])
