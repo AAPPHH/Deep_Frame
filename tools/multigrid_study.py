@@ -113,16 +113,20 @@ def operator_check(cfg):
 
 CANTILEVER = {"output": "docs/validation/multigrid_cantilever.json", "scales": [1, 2, 3, 4], "fields": ["solid", "smooth"],
               "variants": {"float64": {"precision": "float64"}, "float32": {"precision": "float32"}, "bfloat16": {"precision": "bfloat16"}, "float16": {"precision": "float16"},
-                           "jacobi_bfloat16": {"precision": "bfloat16", "smoother": "jacobi"}}, "reference_variant": "bfloat16"}
+                           "jacobi_bfloat16": {"precision": "bfloat16", "smoother": "jacobi"}, "float32_deep": {"precision": "float32", "coarsest_dofs": 1500}}, "reference_variant": "bfloat16"}
 CANTILEVER_KINDS = {"output": "text", "scales": ["int"], "fields": ["text"], "variants": "object", "reference_variant": "text"}
 TRUSS = {"output": "docs/validation/multigrid_truss.json", "spacing_mm": 1.25, "shape": [128, 16, 32], "panel_cells": 16, "member_mm": 2.5,
-         "frame_density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "problems": ["truss", "frame"],
+         "frame_density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "problems": ["sweep", "truss", "frame"],
          "frame_cases": ["stiffness_arm_tip", "thrust_all", "crash_front", "crash_side_left"],
-         "variants": {"galerkin": {"precision": "bfloat16"}, "galerkin_float64": {"precision": "float64"}, "rediscretize": {"precision": "bfloat16", "coarse": "rediscretize"},
-                      "galerkin_pinned": {"precision": "bfloat16", "projection": False}, "jacobi": {"precision": "bfloat16", "smoother": "jacobi", "growth": 1.0},
-                      "galerkin_deep": {"precision": "bfloat16", "coarsest_dofs": 1000}, "rediscretize_deep": {"precision": "bfloat16", "coarse": "rediscretize", "coarsest_dofs": 1000},
-                      "pinned_deep": {"precision": "bfloat16", "projection": False, "coarsest_dofs": 1000}, "w_cycle_deep": {"precision": "bfloat16", "cycle": "W", "coarsest_dofs": 1000}}}
-TRUSS_KINDS = {"output": "text", "spacing_mm": "float", "shape": ["int"] * 3, "panel_cells": "int", "member_mm": "float", "frame_density": "text", "problems": ["text"], "frame_cases": ["text"], "variants": "object"}
+         "variants": {"galerkin": {"precision": "float32"}, "galerkin_float64": {"precision": "float64"}, "galerkin_float16": {"precision": "float16"}, "galerkin_bfloat16": {"precision": "bfloat16"},
+                      "rediscretize": {"precision": "float32", "coarse": "rediscretize"}, "galerkin_pinned": {"precision": "float32", "projection": False}, "jacobi": {"precision": "float32", "smoother": "jacobi", "growth": 1.0},
+                      "galerkin_deep": {"precision": "float32", "coarsest_dofs": 1000}, "rediscretize_deep": {"precision": "float32", "coarse": "rediscretize", "coarsest_dofs": 1000},
+                      "pinned_deep": {"precision": "float32", "projection": False, "coarsest_dofs": 1000}, "w_cycle_deep": {"precision": "float32", "cycle": "W", "coarsest_dofs": 1000},
+                      "power100_deep": {"precision": "float32", "coarsest_dofs": 1000, "power_iterations": 100}},
+         "frame_variants": ["galerkin", "galerkin_float64", "galerkin_float16", "rediscretize", "galerkin_pinned", "galerkin_deep"],
+         "sweep": {"min_stiffness": [1e-6, 1e-4, 1e-2], "levels": [2, 3, 4, 5], "settings": {"precision": "float32", "coarsest_dofs": 1}}}
+TRUSS_KINDS = {"output": "text", "spacing_mm": "float", "shape": ["int"] * 3, "panel_cells": "int", "member_mm": "float", "frame_density": "text", "problems": ["text"], "frame_cases": ["text"], "variants": "object",
+               "frame_variants": ["text"], "sweep": "object"}
 
 def device_used():
     import cupy
@@ -138,25 +142,25 @@ def release(system):
     system.gpu_solvers.clear()
     cupy.get_default_memory_pool().free_all_blocks()
 
-def reference_solve(system, density):
+def reference_solve(system, density, e_min):
     import cupy
     import torch
     release(system)
     torch.cuda.empty_cache()
     base = device_used()
     started = perf_counter()
-    result = system.solve(density, INTERPOLATION["penalization"], INTERPOLATION["min_stiffness_ratio"])
+    result = system.solve(density, INTERPOLATION["penalization"], e_min)
     seconds = perf_counter() - started
     row = {"solver": "cudss", "seconds": seconds, "factor_solve_s": sum(t["factor_s"] + t["solve_s"] for solver in system.gpu_solvers.values() for t in solver.timings),
            "device_mib": device_used() - base, "dofs": len(system.active_dofs), "relative_residual": max(value["relative_residual"] for value in result.values())}
     release(system)
     return result, row
 
-def compare(system, density, variants, label, fields=False):
+def compare(system, density, variants, label, fields=False, e_min=INTERPOLATION["min_stiffness_ratio"]):
     import torch
     for case in system.cases:
         case["keep_fields"] = fields
-    reference, row = reference_solve(system, density)
+    reference, row = reference_solve(system, density, e_min)
     rows = [{"problem": label, **row}]
     for name, settings in variants.items():
         mg = multigrid_of(system, settings)
@@ -164,7 +168,7 @@ def compare(system, density, variants, label, fields=False):
         torch.cuda.reset_peak_memory_stats()
         base, allocated = device_used(), torch.cuda.memory_allocated()
         started = perf_counter()
-        results = solve_elasticity(system, mg, density, INTERPOLATION["penalization"], INTERPOLATION["min_stiffness_ratio"])
+        results = solve_elasticity(system, mg, density, INTERPOLATION["penalization"], e_min)
         torch.cuda.synchronize()
         seconds = perf_counter() - started
         peak, used = (torch.cuda.max_memory_allocated() - allocated) / 2 ** 20, device_used() - base
@@ -180,7 +184,7 @@ def compare(system, density, variants, label, fields=False):
         rows.append({"problem": label, "solver": name, "settings": settings, "seconds": seconds, "setup_s": sum(entry["setup_s"] for entry in statistics), "torch_peak_mib": peak, "device_mib": used,
                      "levels": statistics[0]["levels"], "coarsest_dofs": statistics[0]["coarsest_dofs"], "max_iterations": max(max(entry["iterations"]) for entry in statistics),
                      "converged": all(entry["converged"] for entry in statistics), "max_relative_residual": max(max(entry["relative_residual"]) for entry in statistics),
-                     "kernel_check": max([value for entry in statistics for value in entry["kernel_check"]] or [0.0]),
+                     "kernel_check": max([value for entry in statistics for value in entry["kernel_check"]] or [0.0]), "lambda_max": statistics[0]["lambda_max"], "kernel_checks": statistics[-1]["kernel_check"],
                      "max_compliance_rel_diff": max(value["compliance_rel_diff"] for value in cases.values()), "max_sensitivity_rel_diff": max(value["sensitivity_rel_diff"] for value in cases.values()),
                      "max_displacement_rel_diff": max(value["displacement_rel_diff"] for value in cases.values()) if fields else None, "cases": cases,
                      "solves": [{key: entry[key] for key in ("iterations", "relative_residual", "floating", "kernel", "setup_s", "seconds", "rhs_kernel_component")} for entry in statistics]})
@@ -196,7 +200,7 @@ def cantilever_study(cfg):
         domain = cantilever_domain((32 * scale, 6 * scale, 12 * scale), 1.0 / scale)
         for seed, field in enumerate(cfg["fields"]):
             system = HexElasticity(domain, linear_solver="cuda_cudss")
-            density = np.ones(system.nelem) if field == "solid" else density_field("smooth", domain["grid"]["shape"], seed).ravel()
+            density = np.ones(system.nelem) if field == "solid" else np.kron(density_field("smooth", (32, 6, 12), seed), np.ones((scale,) * 3)).ravel()
             result = compare(system, density, cfg["variants"], f"cantilever_s{scale}_{field}", fields=True)
             for row in result:
                 row.update(scale=scale, field=field, shape=domain["grid"]["shape"], spacing_mm=domain["grid"]["spacing_mm"][0])
@@ -246,7 +250,19 @@ def truss_domain(cfg, floating):
 def truss_study(cfg):
     rows = []
     for problem in cfg["problems"]:
-        if problem == "truss":
+        if problem == "sweep":
+            domain, density = truss_domain(cfg, False)
+            system = HexElasticity(domain, interface_node_policy="preserve_adjacent", linear_solver="cuda_cudss")
+            sweep = cfg["sweep"]
+            for e_min in sweep["min_stiffness"]:
+                variants = {f"levels{count}": {**sweep["settings"], "max_levels": count} for count in sweep["levels"]}
+                variants.update({f"rediscretize_levels{count}": {**sweep["settings"], "max_levels": count, "coarse": "rediscretize"} for count in sweep["levels"][1:]})
+                result = compare(system, density, variants, f"truss_sweep_emin{e_min:g}", e_min=e_min)
+                for row in result:
+                    row.update(min_stiffness=e_min, shape=domain["grid"]["shape"], spacing_mm=cfg["spacing_mm"])
+                rows += result
+            release(system)
+        elif problem == "truss":
             for floating in (False, True):
                 domain, density = truss_domain(cfg, floating)
                 system = HexElasticity(domain, interface_node_policy="preserve_adjacent", linear_solver="cuda_cudss")
@@ -260,7 +276,7 @@ def truss_study(cfg):
             domain["load_cases"] = [case for case in domain["load_cases"] if case["name"] in cfg["frame_cases"]]
             system = HexElasticity(domain, interface_node_policy=domain.get("optimizer_settings", {}).get("interface_node_policy", "allowed_adjacent"), linear_solver="cuda_cudss")
             density = np.load(cfg["frame_density"])["density"].astype(float).ravel()
-            result = compare(system, density, cfg["variants"], "frame_4over3", fields=True)
+            result = compare(system, density, {name: cfg["variants"][name] for name in cfg["frame_variants"]}, "frame_4over3", fields=True)
             for row in result:
                 row.update(shape=domain["grid"]["shape"], spacing_mm=domain["grid"]["spacing_mm"][0], density=cfg["frame_density"])
             rows += result

@@ -6,7 +6,7 @@ from scipy.sparse import coo_matrix
 from deep_frame.topology_optimization import _CORNERS, CudaDirectSolver, regular_grid
 
 MULTIGRID = {"coarse": "galerkin", "coarsest_dofs": 20000, "max_levels": 8, "smoother": "chebyshev", "sweeps": 2, "damping": 1.0, "chebyshev_degree": 3, "chebyshev_ratio": 20.0, "growth": 2.0, "cycle": "V",
-             "power_iterations": 20, "precision": "float64", "tolerance": 1e-8, "max_iterations": 2000, "projection": True, "dead_ratio": 1e-12, "device": "cuda"}
+             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "projection": True, "dead_ratio": 1e-12, "device": "cuda"}
 PRECISIONS = {"float64": ("float64", None), "float32": ("float32", None), "bfloat16": ("float32", "bfloat16"), "float16": ("float32", "float16")}
 _CHILDREN = np.array(list(np.ndindex(2, 2, 2)))
 
@@ -341,7 +341,7 @@ class GeometricMultigrid:
             flat = flat - rigid @ shift
         torch.cuda.synchronize() if self.device.type == "cuda" else None
         report.update(seconds=perf_counter() - started, setup_s=hierarchy.pop("setup_s", 0.0), floating=floating, levels=len(hierarchy["levels"]), coarsest_dofs=hierarchy["coarsest"]["dofs"],
-                      kernel=int(hierarchy["coefficients"].shape[1]) if floating else 0, rhs_kernel_component=None if consistency is None else consistency.tolist(), kernel_check=hierarchy["kernel_check"])
+                      kernel=int(hierarchy["coefficients"].shape[1]) if floating else 0, rhs_kernel_component=None if consistency is None else consistency.tolist(), kernel_check=hierarchy["kernel_check"], lambda_max=[level.lambda_max for level in hierarchy["levels"][:-1]])
         self.statistics.append(report)
         return flat, report
     def _pcg(self, hierarchy, rhs):
