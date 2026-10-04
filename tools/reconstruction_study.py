@@ -14,9 +14,10 @@ import trimesh
 from PIL import Image
 from scipy.ndimage import gaussian_filter
 
-from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, RUN_SETTINGS, STAGES, SPLINE_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_KINDS, command_line, configure
+from deep_frame.config import CABLES, CABLES_KINDS, DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, RUN_SETTINGS, STAGES, SPLINE_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_KINDS, command_line, configure
 from deep_frame.frame_run import FrameRun, _git
-from deep_frame.topology_reconstruction import body_weights, bumps, load_paths, reconstruct, reconstruct_splines, reference_body, stored_domain
+from deep_frame.topology_cables import CableChannels
+from deep_frame.topology_reconstruction import body_weights, bumps, core_domain, load_paths, reconstruct, reconstruct_splines, reference_body, spline_graph, stored_domain
 
 RUN_CONFIG = {**DESIGN_RECONSTRUCTION_CONFIG, "domain": None, "study": {}, "geometry": None, "panels": None, "labels": None, "fea_surface_targets_mm": [0.5, 0.6], "fea_volume_targets_mm": [1.5, 1.2, 1.0], "fea_feature_degs": [40.0, 60.0, 89.0]}
 RUN_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, "domain": "path", "study": "object", "geometry": "path", "panels": ["path"], "labels": ["text"], "fea_surface_targets_mm": ["float"], "fea_volume_targets_mm": ["float"], "fea_feature_degs": ["float"]}
@@ -132,6 +133,9 @@ def render(mesh, direction, up=(0, 0, 1), size=(1600, 1200), supersample=2, ligh
     return Image.fromarray((np.clip(image, 0, 1) ** (1 / 1.1) * 255).astype(np.uint8))
 
 VIEWS = {"iso": ((0.55, -0.85, -0.62), (0, 0, 1)), "top": ((0, 0, -1), (0, 1, 0)), "side": ((-1, 0, 0), (0, 0, 1))}
+CABLE_VIEWS = {**VIEWS, "front": ((0, -1, 0), (0, 0, 1)), "bottom": ((0, 0, 1), (0, 1, 0)), "bottom_iso": ((0.55, -0.85, 0.62), (0, 0, 1))}
+CABLE_RUN_CONFIG = {**SPLINE_RUN_CONFIG, "body": None, "cables": {}, "section_paths": ["front_left", "rear_right", "camera"]}
+CABLE_RUN_KINDS = {**SPLINE_RUN_KINDS, "body": "path", "cables": "object", "section_paths": ["text"]}
 
 def render_views(mesh, out, views=VIEWS):
     shaded = trimesh.graph.smooth_shade(mesh, angle=np.radians(35), facet_minarea=None)
@@ -481,8 +485,61 @@ def study_main(overrides):
             record = table_case(cfg, name, case)
             print(json.dumps({name: {body: {key: row[key] for key in ("mass_g", "arm_tip_n_per_mm", "f1_hz", "fallback_arm_tip_n_per_mm", "fallback_f1_hz", "bodies", "wall_deep_fraction", "wall_deep_components", "wall_largest_deep_mm3", "members", "nodes", "relative_to_raw")} for body, row in record["bodies"].items()}}, default=float), flush=True)
 
+def cable_section(mesh, before, path, out):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    free = np.flatnonzero(~path["inside"] & ~path["guide"])
+    i = int(free[len(free)//2])
+    origin, normal, u, v, profile = path["points"][i], path["tangent"][i], path["u"][i], path["v"][i], path["profiles"][i]
+    fig, ax = plt.subplots(figsize=(6.4, 6.4))
+    for body, style, label in ((before, dict(color="0.6", lw=1.2, ls="--"), "ohne Kanal"), (mesh, dict(color="k", lw=1.6), "mit Kanal")):
+        segments = trimesh.intersections.mesh_plane(body, normal, origin)
+        local = np.stack([(segments-origin)@u, (segments-origin)@v], axis=-1)
+        local = local[np.all(np.abs(local) < 9, axis=(1, 2))]
+        for k, segment in enumerate(local):
+            ax.plot(segment[:, 0], segment[:, 1], **style, label=label if k == 0 else None)
+    for polygon, color, label in ((profile.cavity(), "tab:blue", "Innenraum (Tropfen)"), (profile.slot_cut(path["slot_depth"][i]), "tab:red", "Klemmschlitz"), (profile.shell(), "tab:green", "Kanalschale")):
+        closed = np.vstack([polygon, polygon[:1]])
+        ax.plot(closed[:, 0], closed[:, 1], color=color, lw=0.8, ls=":", label=label)
+    ax.add_patch(plt.Circle((0, 0), profile.bundle/2, color="tab:orange", alpha=0.35, label=f"Bündel {profile.bundle:.2f} mm"))
+    size = profile.size
+    ax.set_title(f"{path['name']} bei s = {i*CABLES['sample_mm']:.0f} mm, Glied {int(path['owner'][i])}\ninnen {size['inner_mm']:.2f} / Schlitz {size['slot_mm']:.2f} / Lippe {size['lip_mm']:.2f} / Schale {size['outer_width_mm']:.1f} x {size['outer_height_mm']:.1f} mm", fontsize=9)
+    ax.set_xlabel("quer [mm]")
+    ax.set_ylabel("oben = Druckachse/Propseite [mm]")
+    ax.set_aspect("equal")
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=7, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(out, dpi=150)
+    plt.close(fig)
+
+def cables_main(overrides):
+    config = configure(CABLE_RUN_CONFIG, CABLE_RUN_KINDS, overrides, ("source", "output", "body"))
+    cables = configure(CABLES, CABLES_KINDS, config["cables"])
+    out = config["output"]
+    out.mkdir(parents=True, exist_ok=True)
+    started = perf_counter()
+    domain = full_domain(config)
+    density = np.load(config["source"])["density"]
+    source = config["section_body"] or config["source"].with_name("geometry.stl")
+    graph, rods = spline_graph(domain, density, config, trimesh.load_mesh(source, process=True) if Path(source).is_file() else None)[:2]
+    body = trimesh.load_mesh(config["body"], process=True)
+    channels = CableChannels(graph, rods, domain, cables)
+    channels.plan(body)
+    mesh, applied = channels.apply(body, core_domain(domain, config))
+    report = {**channels.report(mesh, body), "apply": applied, "body": str(config["body"]), "mass_before_g": float(body.volume)*domain["material"]["density_g_cm3"]/1000, "mass_after_g": float(mesh.volume)*domain["material"]["density_g_cm3"]/1000}
+    mesh.export(out/"frame.stl")
+    for path in channels.paths:
+        if path["routed"] and path["name"] in config["section_paths"]:
+            cable_section(mesh, body, path, out/f"section_{path['name']}.png")
+    render_views(mesh, out, CABLE_VIEWS)
+    report["runtime_s"] = perf_counter()-started
+    (out/"cables.json").write_text(json.dumps({**report, "config": {"cables": cables, "body": str(config["body"]), "source": str(config["source"])}}, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value) if isinstance(value, np.floating) else str(value)), encoding="utf-8")
+    print(json.dumps({"steckbrief": report["steckbrief"], "printability": report["printability"], "mass_g": [report["mass_before_g"], report["mass_after_g"]], "apply": applied}, default=float), flush=True)
+
 def main(argv=None):
-    return command_line({"build": build_main, "splines": splines_main, "study": study_main, "fea": fea_main, "render": render_main, "compose": compose_main}, argv)
+    return command_line({"build": build_main, "splines": splines_main, "cables": cables_main, "study": study_main, "fea": fea_main, "render": render_main, "compose": compose_main}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())
