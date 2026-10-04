@@ -65,7 +65,8 @@ class StandStability:
         angles = 2 * np.pi * np.arange(settings["directions"]) / settings["directions"]
         self.directions = np.column_stack([np.cos(angles), np.sin(angles)])
         self.projections = self.copies @ self.directions.T
-        self.delta = settings["contact_band_cells"] * h[2]
+        extent = self.copies.reshape(-1, 2)
+        self.penalty = settings["contact_penalty"] * settings["support_sharpness_per_mm"] * float(np.hypot(*np.ptp(extent, axis=0))) / h[2] ** 2
     def ground(self, rho):
         s = self.settings
         zeta = self.bottom + s["density_lift_mm"] * (1 - rho)
@@ -78,7 +79,7 @@ class StandStability:
         rho = np.asarray(physical, dtype=float).ravel()[self.allowed]
         zeta, ground, ground_slope = self.ground(rho)
         offset = zeta - ground
-        lam = -(offset / self.delta) ** 2
+        lam = -self.penalty * offset ** 2
         exponent = s["support_sharpness_per_mm"] * self.projections + lam[None, :, None]
         a = np.exp(exponent - exponent.max(axis=(0, 1), keepdims=True))
         a /= a.sum(axis=(0, 1), keepdims=True)
@@ -91,7 +92,7 @@ class StandStability:
         reserve = float(low - np.log(pi.sum()) / s["ks_per_mm"])
         pi /= pi.sum()
         q = np.einsum("cek,k->e", a * (self.projections - support[None, None, :]), pi)
-        dlam = -2 * offset / self.delta ** 2
+        dlam = -2 * self.penalty * offset
         slope = q * dlam * (-s["density_lift_mm"]) - float(q @ dlam) * ground_slope
         slope -= self.cell_mass * np.einsum("ced,d->e", self.copies - cog, self.directions.T @ pi) / mass
         return {"ground_z_mm": ground, "ground_slope": ground_slope, "reserve_mm": reserve, "reserve_slope": slope, "reserves_mm": reserves, "support_mm": support, "center_of_gravity_xy_mm": cog, "mass_g": mass}

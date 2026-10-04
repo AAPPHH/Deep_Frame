@@ -243,6 +243,8 @@ def frame_problem(half, references=None):
     if "camera" in half:
         problem["camera"] = deepcopy(config.CAMERA_SUPPORT)
     problem["shadow"].update(half["metadata"]["formulation"]["shadow"])
+    if config.STAND_STABILITY["enabled"]:
+        problem["stability"] = deepcopy(config.STAND_STABILITY)
     if references:
         problem["crash"].update(reference=references["crash_compliance_n_mm"], reference_source=references["source"])
         problem["shadow"].update(limit_mm=references["manafly_shadow_mm"], source=references["source"])

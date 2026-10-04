@@ -1350,13 +1350,13 @@ STAND_STABILITY = {
     "enabled": False, "reserve_min_mm": 15.0, "prop_clearance_min_mm": 17.0,
     "prop_clearance_source": "ManaFly 3 measured with the same evaluator component model (prop disc underside 17.4 mm above its lowest point, docs/validation/stand_stability.json), rounded down to 17 mm; our rail v3b and free-battery frames 19.2 mm",
     "reserve_source": "user 2026-10-04: centre of gravity at least 15 mm inside the support polygon",
-    "contact_tolerance_mm": 0.2, "directions": 64, "ground_sharpness_per_mm": 3.0, "density_lift_mm": 20.0, "contact_band_cells": 0.5, "support_sharpness_per_mm": 1.0, "ks_per_mm": 4.0,
+    "contact_tolerance_mm": 0.2, "directions": 64, "ground_sharpness_per_mm": 6.0, "density_lift_mm": 20.0, "contact_penalty": 2.0, "support_sharpness_per_mm": 1.0, "ks_per_mm": 4.0,
     "definition": {
         "exact": "evaluator: ground = lowest point of the body; contact set = body material with z <= ground + contact_tolerance_mm (vertices below plus the section at that height); support polygon = convex hull of its plan projection; "
                  "reserve = signed distance of the plan projection of the craft centre of gravity (frame mesh + layout components) to the hull boundary (> 0 inside); prop clearance = lowest prop disc underside - ground",
         "lifted_height": "zeta_e = z_bottom_e + L (1 - rho_e) (L = density_lift_mm): gray and void cells are lifted out of the contact zone, binary solid cells keep their bottom face height",
         "ground": "z_g = sum(zeta w) / sum(w), w = exp(-p_g (zeta - min zeta)): softmin-weighted mean, >= min zeta, upward bias <= one cell layer x exp(-p_g h) share",
-        "contact": "log weight lambda_e = -((zeta_e - z_g) / delta)^2, delta = contact_band_cells x h_z",
+        "contact": "log weight lambda_e = -c s D ((zeta_e - z_g) / h_z)^2 (c = contact_penalty, s = support_sharpness, D = plan diameter of the domain): one cell layer above the ground loses more than the largest support gain exp(s D), so only the lowest layer carries",
         "support": "h_k = sum(a u) / sum(a) over contact cells and their mirror copies, u = n_k . x_e (cell centre), a = exp(s u + lambda): soft-argmax support distance along n_k, never above the max over the cells",
         "reserve": "r_k = h_k - n_k . c (c = plan CoG of frame share sum(rho V density) at the density-weighted cell centres + layout components), K directions on the full circle; r = KS_min(r_k) = -1/ks log sum exp(-ks r_k) <= min_k r_k; "
                    "exact for a convex polygon: dist(c, boundary) = min over all unit n of (h(n) - n . c), sampled directions overestimate by <= 1/cos(pi/K)",
