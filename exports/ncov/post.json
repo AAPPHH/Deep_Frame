@@ -1,0 +1,5 @@
+{"mma": {"root": "exports/runs/neural_cov_opt", "variant": "neural_cov", "method": "neural_cov", "bodies": ["raw", "v3"], "label": "neural field + augmented Lagrangian on the shared formulation (feature/neural-cov)",
+         "viewer_names": {"raw": "neural_cov", "recon": "neural_cov_1to1", "v3": "neural_cov_v3"},
+         "figures": [{"output": "C:/clones/Deep_Frame-ncov/exports/cov/compare_simp_neural_manafly.png", "panels": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_1/renders", "v3", "manafly"],
+                      "labels": ["SIMP-MMA recon v3", "Neural-AL recon v3", "ManaFly"]}]},
+ "v3": {"ref": "recon-v3-noseats"}}

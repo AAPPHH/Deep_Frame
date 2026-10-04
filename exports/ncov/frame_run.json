@@ -1,0 +1,97 @@
+{
+ "root": "C:/clones/Deep_Frame-ncov/exports/runs/neural_cov_opt",
+ "viewer_root": "",
+ "shape": [
+  102,
+  96,
+  24
+ ],
+ "fine_shape": [
+  204,
+  192,
+  48
+ ],
+ "neural": {
+  "max_frequency_per_mm": 0.125
+ },
+ "pad": {
+  "top_mm": 9.333333333333334,
+  "thickness_mm": 2.6666666666666665,
+  "support_half_mm": 5.0,
+  "bore_margin_mm": 0.5
+ },
+ "variants": [
+  {
+   "name": "neural_cov",
+   "method": "neural_al"
+  }
+ ],
+ "prop_discs": {
+  "mode": "soft"
+ },
+ "modal": {
+  "f1_min_hz": 300.0
+ },
+ "hoop": {
+  "x_mm": 12.0,
+  "radius_mm": 1.6,
+  "path_yz_mm": [
+   [
+    24.0,
+    27.5
+   ],
+   [
+    34.0,
+    26.0
+   ],
+   [
+    42.0,
+    23.5
+   ],
+   [
+    46.5,
+    18.0
+   ],
+   [
+    47.5,
+    11.0
+   ],
+   [
+    45.5,
+    5.0
+   ],
+   [
+    41.0,
+    2.0
+   ],
+   [
+    33.0,
+    1.5
+   ]
+  ],
+  "load_y_min_mm": 44.0,
+  "load_z_mm": [
+   4.0,
+   22.0
+  ],
+  "case_weight": 1.0
+ },
+ "crash_directions": [
+  "front",
+  "side_left",
+  "side_right",
+  "arm_front_left",
+  "arm_front_right",
+  "arm_rear_left",
+  "arm_rear_right",
+  "below",
+  "back"
+ ],
+ "al": {
+  "frame": {
+   "settings": {
+    "max_runtime_s": 5400.0
+   }
+  }
+ }
+}

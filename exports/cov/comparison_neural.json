@@ -1,0 +1,2062 @@
+{
+ "simp": {
+  "optimizer": {
+   "mass_g": 18.22115195100823,
+   "rows": [
+    {
+     "name": "load_mean",
+     "value": 0.946713295868688,
+     "limit": 0.950808,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.004306552039225586,
+     "status": "active",
+     "margin": 0.004306552039225586
+    },
+    {
+     "name": "load_worst",
+     "value": 0.30807706093382614,
+     "limit": 0.31464600000000004,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "info": {
+      "eigenvalues_n_mm": [
+       0.30807706093382614,
+       0.196273192992799,
+       0.12293575627614572,
+       0.10172707783859071,
+       0.08141795706693702,
+       0.06177601565933135
+      ],
+      "ks_n_mm": 0.30807706105486216,
+      "ks": 50.0,
+      "rank": 26,
+      "worst_wrench": [
+       [
+        "motor_front_right/Mz",
+        -4.67628262152492
+       ],
+       [
+        "motor_front_left/Mz",
+        4.676282621524882
+       ],
+       [
+        "motor_rear_left/Mz",
+        -4.297530551655152
+       ],
+       [
+        "motor_rear_right/Mz",
+        4.297530551655133
+       ],
+       [
+        "motor_front_left/My",
+        4.104753484121017
+       ],
+       [
+        "motor_front_right/My",
+        -4.104753484120995
+       ]
+      ]
+     },
+     "g": -0.02087723646618067,
+     "status": "satisfied",
+     "margin": 0.02087723646618067
+    },
+    {
+     "name": "crash_front",
+     "value": 4.085249053199826,
+     "limit": 9.267770232495144,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.5591982806310939,
+     "status": "satisfied",
+     "margin": 0.5591982806310939
+    },
+    {
+     "name": "crash_side_left",
+     "value": 13.779956165769745,
+     "limit": 20.438937229804516,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.32579879223487684,
+     "status": "satisfied",
+     "margin": 0.32579879223487684
+    },
+    {
+     "name": "crash_side_right",
+     "value": 13.77995616576975,
+     "limit": 20.43893722980452,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.32579879223487673,
+     "status": "satisfied",
+     "margin": 0.32579879223487673
+    },
+    {
+     "name": "crash_arm_front_left",
+     "value": 102.0766153123194,
+     "limit": 211.62622638695808,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.5176561192105154,
+     "status": "satisfied",
+     "margin": 0.5176561192105154
+    },
+    {
+     "name": "crash_arm_front_right",
+     "value": 33.83983316927183,
+     "limit": 33.80899650269828,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": 0.0009120846450172415,
+     "status": "active",
+     "margin": -0.0009120846450172415
+    },
+    {
+     "name": "crash_arm_rear_left",
+     "value": 65.6358435014133,
+     "limit": 65.64105289024488,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -7.936175003597778e-05,
+     "status": "active",
+     "margin": 7.936175003597778e-05
+    },
+    {
+     "name": "crash_arm_rear_right",
+     "value": 96.69093933100962,
+     "limit": 108.16575437523417,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.10608547141840907,
+     "status": "satisfied",
+     "margin": 0.10608547141840907
+    },
+    {
+     "name": "crash_below",
+     "value": 14.065014481959818,
+     "limit": 41.277144989126185,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.6592541832613417,
+     "status": "satisfied",
+     "margin": 0.6592541832613417
+    },
+    {
+     "name": "crash_back",
+     "value": 7.693432102612036,
+     "limit": 10.414240549567483,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.26125845989494123,
+     "status": "satisfied",
+     "margin": 0.26125845989494123
+    },
+    {
+     "name": "f1",
+     "value": 310.6203795367824,
+     "limit": 300.0,
+     "unit": "Hz",
+     "sense": ">=",
+     "field": "eroded",
+     "info": {
+      "f1_hz": 310.6203795367824,
+      "frequencies_hz": [
+       [
+        1.0,
+        310.6203795367824
+       ],
+       [
+        1.0,
+        323.69794190114146
+       ],
+       [
+        1.0,
+        392.70253610600287
+       ],
+       [
+        -1.0,
+        371.42119588151576
+       ],
+       [
+        -1.0,
+        411.8594918479503
+       ],
+       [
+        -1.0,
+        508.996973627123
+       ]
+      ],
+      "aggregate_ratio": 1.0714372051722376,
+      "violation": -0.07143720517223762
+     },
+     "g": -0.07143720517223762,
+     "status": "satisfied",
+     "margin": 0.07143720517223762
+    },
+    {
+     "name": "volume",
+     "value": 0.0446017408165589,
+     "limit": 0.1,
+     "unit": "-",
+     "sense": "<=",
+     "field": "intermediate",
+     "g": -0.553982591834411,
+     "status": "satisfied",
+     "margin": 0.553982591834411
+    },
+    {
+     "name": "shadow",
+     "value": 0.2552105014458308,
+     "limit": 0.3137367868997963,
+     "unit": "mm",
+     "sense": "<=",
+     "field": "intermediate",
+     "g": -0.1865458176973619,
+     "status": "satisfied",
+     "margin": 0.1865458176973619
+    },
+    {
+     "name": "thrust_all",
+     "value": 4.25126393806427,
+     "limit": null,
+     "unit": "N mm",
+     "sense": "",
+     "field": "eroded",
+     "g": null,
+     "status": "monitored",
+     "margin": null
+    },
+    {
+     "name": "torsion_yaw",
+     "value": 0.0816325799932249,
+     "limit": null,
+     "unit": "N mm",
+     "sense": "",
+     "field": "eroded",
+     "g": null,
+     "status": "monitored",
+     "margin": null
+    },
+    {
+     "name": "twist",
+     "value": 5.18473649707778,
+     "limit": null,
+     "unit": "N mm",
+     "sense": "",
+     "field": "eroded",
+     "g": null,
+     "status": "monitored",
+     "margin": null
+    },
+    {
+     "name": "f1_intermediate",
+     "value": 374.96470928399503,
+     "limit": null,
+     "unit": "Hz",
+     "sense": "",
+     "field": "intermediate",
+     "g": null,
+     "status": "monitored",
+     "margin": null
+    }
+   ],
+   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| load_mean | 0.9467 | <= 0.9508 | N mm | active | +0.4 % |\n| load_worst | 0.3081 | <= 0.3146 | N mm | satisfied | +2.1 % |\n| crash_front | 4.085 | <= 9.268 | N mm | satisfied | +55.9 % |\n| crash_side_left | 13.78 | <= 20.44 | N mm | satisfied | +32.6 % |\n| crash_side_right | 13.78 | <= 20.44 | N mm | satisfied | +32.6 % |\n| crash_arm_front_left | 102.1 | <= 211.6 | N mm | satisfied | +51.8 % |\n| crash_arm_front_right | 33.84 | <= 33.81 | N mm | active | -0.1 % |\n| crash_arm_rear_left | 65.64 | <= 65.64 | N mm | active | +0.0 % |\n| crash_arm_rear_right | 96.69 | <= 108.2 | N mm | satisfied | +10.6 % |\n| crash_below | 14.07 | <= 41.28 | N mm | satisfied | +65.9 % |\n| crash_back | 7.693 | <= 10.41 | N mm | satisfied | +26.1 % |\n| f1 | 310.6 | >= 300 | Hz | satisfied | +7.1 % |\n| volume | 0.0446 | <= 0.1 | - | satisfied | +55.4 % |\n| shadow | 0.2552 | <= 0.3137 | mm | satisfied | +18.7 % |\n| thrust_all | 4.251 |  | N mm | monitored |  |\n| torsion_yaw | 0.08163 |  | N mm | monitored |  |\n| twist | 5.185 |  | N mm | monitored |  |\n| f1_intermediate | 375 |  | Hz | monitored |  |",
+   "iterations": 270,
+   "total_runtime_s": 5173.541981999999,
+   "seconds_per_iteration": {
+    "coarse": 5.922839077595617,
+    "fine": 45.4465838505747
+   },
+   "status": [
+    "converged",
+    "converged"
+   ],
+   "start": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_opt/fine/density_half.npz"
+  },
+  "raw": {
+   "standard": {
+    "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1",
+    "mass_g": 15.716924130112192,
+    "arm_tip_n_per_mm": 10.88217418166711,
+    "f1_hz": 406.9983,
+    "sigma_full": [
+     0.6869528018194226,
+     0.2196738312840407
+    ],
+    "sigma_diagonal": [
+     0.8087954170548496,
+     0.30504032592211683
+    ],
+    "worst_load": {
+     "motor_front_left My": -5.000282290114076,
+     "motor_front_left Mz": -4.491588748846203,
+     "motor_front_right My": 5.00193491120293,
+     "motor_front_right Mz": 4.540664729933258,
+     "motor_rear_left My": 4.985949141825836,
+     "motor_rear_left Mz": 4.173265469830554,
+     "motor_rear_right My": -4.985789245984644,
+     "motor_rear_right Mz": -4.140647333291659,
+     "battery Fz": 1.1925386843972883
+    },
+    "stiffness": {
+     "motor_front_left Fx": 59.30735495911571,
+     "motor_front_left Fy": 11.683695950659226,
+     "motor_front_left Fz": 9.72408884621018,
+     "motor_front_left Mx": 3431.8494046908536,
+     "motor_front_left My": 4238.490609220404,
+     "motor_front_left Mz": 7713.881239759658,
+     "motor_front_right Fx": 57.691652105021625,
+     "motor_front_right Fy": 11.413746205476244,
+     "motor_front_right Fz": 9.325008749302288,
+     "motor_front_right Mx": 3267.1806716716746,
+     "motor_front_right My": 4002.3831355184716,
+     "motor_front_right Mz": 7433.0316353889175,
+     "motor_rear_left Fx": 29.89499302917557,
+     "motor_rear_left Fy": 9.271038383896578,
+     "motor_rear_left Fz": 19.21130294015456,
+     "motor_rear_left Mx": 3737.2498598649645,
+     "motor_rear_left My": 4709.421447263004,
+     "motor_rear_left Mz": 6207.602100436969,
+     "motor_rear_right Fx": 31.077968568127357,
+     "motor_rear_right Fy": 9.386679887783519,
+     "motor_rear_right Fz": 20.23560571369162,
+     "motor_rear_right Mx": 3951.8765166524504,
+     "motor_rear_right My": 4764.588481817905,
+     "motor_rear_right Mz": 6326.210916831295,
+     "stack Fx": 407.0368230173373,
+     "stack Fy": 162.60508529890552,
+     "stack Fz": 209.7530746793154,
+     "stack Mx": 40117.977088174106,
+     "stack My": 58387.115555778124,
+     "stack Mz": 72832.47184647241,
+     "battery Fx": 117.5353209966974,
+     "battery Fy": 193.68680691678082,
+     "battery Fz": 439.12075657459394,
+     "battery Mx": 24907.489410351496,
+     "battery My": 88681.13473274144,
+     "battery Mz": 71595.3153395617,
+     "camera Fx": 48.6011655661763,
+     "camera Fy": 210.07987524753662,
+     "camera Fz": 148.15119421314168,
+     "camera Mx": 14000.788248599434,
+     "camera My": 29043.169473420076,
+     "camera Mz": 58435.43694521209
+    },
+    "twist": {
+     "compliance_n_mm": 0.3279387981878314,
+     "stiffness_n_per_mm": 12.197397874553854
+    },
+    "missed": [
+     "bolt_patterns",
+     "keep_outs_free",
+     "wall_deep_fraction",
+     "wall_deep_component",
+     "target:symmetry"
+    ],
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "line": "| simp_mma_cov3_raw_1 | 15,7 g | SP z 22,4 mm; Ixx/Iyy/Izz 74/92/146 kg\u00b7mm\u00b2 (K) | 5,5 % (64 mm) | Bohrb. 4/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 21,7 %, \u00d6ffn. r=1 1,14 %/49,3 mm\u00b3/Motorzonen 0,St\u00fctze 16,66 cm\u00b3, 231 min | Strebe 1,9/2,8/4,7 mm, H/B 1,00, offen 76 %, H\u00f6he 28,8 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,33 mm, Rauh. 0,119/mm | 10,9 N/mm; \u03a3 tr 0,687/\u03bbmax 0,220 N\u00b7mm (A) | f1 407 Hz; 408/502/504 (A) | front 6,5/3,9 MPa; arm 14,2/3,8 MPa; back 1,8/0,6 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, target:symmetry; Warnung: loops, cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\datasheet.md",
+    "sigma_peak_memory_gb": 11.540779113769531
+   },
+   "fallback": {
+    "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation_fallback",
+    "mass_g": 15.716924130112192,
+    "arm_tip_n_per_mm": 10.823242055257897,
+    "f1_hz": 406.9914,
+    "sigma_full": [
+     0.6857137279087288,
+     0.21961640676375394
+    ],
+    "sigma_diagonal": [
+     0.8065921310983944,
+     0.30370311596133426
+    ],
+    "worst_load": {
+     "motor_front_left My": -5.036899348033776,
+     "motor_front_left Mz": -4.482618676994378,
+     "motor_front_right My": 5.038767731139234,
+     "motor_front_right Mz": 4.534241064564151,
+     "motor_rear_left My": 5.0227105623930575,
+     "motor_rear_left Mz": 4.166393958943532,
+     "motor_rear_right My": -5.0226097536159555,
+     "motor_rear_right Mz": -4.131165964821362,
+     "battery Fz": 1.1915237433141974
+    },
+    "stiffness": {
+     "motor_front_left Fx": 59.11718320849154,
+     "motor_front_left Fy": 11.718175481364383,
+     "motor_front_left Fz": 9.745375145617347,
+     "motor_front_left Mx": 3437.9446972815444,
+     "motor_front_left My": 4235.520798894617,
+     "motor_front_left Mz": 7714.598576856128,
+     "motor_front_right Fx": 58.08336664535729,
+     "motor_front_right Fy": 11.390800660282641,
+     "motor_front_right Fz": 9.326790115604066,
+     "motor_front_right Mx": 3261.7891128500287,
+     "motor_front_right My": 3982.3022371025645,
+     "motor_front_right Mz": 7429.378058258132,
+     "motor_rear_left Fx": 29.86727856866018,
+     "motor_rear_left Fy": 9.268731090429458,
+     "motor_rear_left Fz": 19.392413877048668,
+     "motor_rear_left Mx": 3732.145429477406,
+     "motor_rear_left My": 4682.7160061566,
+     "motor_rear_left Mz": 6203.792305893341,
+     "motor_rear_right Fx": 31.10225607013551,
+     "motor_rear_right Fy": 9.485796099350528,
+     "motor_rear_right Fz": 20.566740725394176,
+     "motor_rear_right Mx": 3971.2381318421735,
+     "motor_rear_right My": 4821.811220932747,
+     "motor_rear_right Mz": 6330.934510495551,
+     "stack Fx": 405.186101591978,
+     "stack Fy": 162.40658145071282,
+     "stack Fz": 209.54655121535652,
+     "stack Mx": 39881.855353147286,
+     "stack My": 58412.38754889313,
+     "stack Mz": 72563.55142946827,
+     "battery Fx": 117.99932350415452,
+     "battery Fy": 193.68060847474683,
+     "battery Fz": 439.7594716535426,
+     "battery Mx": 24914.73582972447,
+     "battery My": 89564.98102640794,
+     "battery Mz": 72000.79052250387,
+     "camera Fx": 49.077736671630426,
+     "camera Fy": 210.38668856480564,
+     "camera Fz": 149.53525130663374,
+     "camera Mx": 14136.811583661134,
+     "camera My": 29108.65217816852,
+     "camera Mz": 59075.182851728205
+    },
+    "twist": {
+     "compliance_n_mm": 0.3263165356181267,
+     "stiffness_n_per_mm": 12.258036487249965
+    },
+    "missed": [
+     "bolt_patterns",
+     "keep_outs_free",
+     "wall_deep_fraction",
+     "wall_deep_component",
+     "target:symmetry"
+    ],
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "line": "| simp_mma_cov3_raw_1 | 15,7 g | SP z 22,4 mm; Ixx/Iyy/Izz 74/92/146 kg\u00b7mm\u00b2 (K) | 5,5 % (64 mm) | Bohrb. 4/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 21,7 %, \u00d6ffn. r=1 1,14 %/49,3 mm\u00b3/Motorzonen 0,St\u00fctze 16,66 cm\u00b3, 231 min | Strebe 1,9/2,8/4,7 mm, H/B 1,00, offen 76 %, H\u00f6he 28,8 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,33 mm, Rauh. 0,119/mm | 10,8 N/mm; \u03a3 tr 0,686/\u03bbmax 0,220 N\u00b7mm (A) | f1 407 Hz; 408/502/504 (A) | front 6,5/3,9 MPa; arm 14,2/3,9 MPa; back 1,7/0,6 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, target:symmetry; Warnung: loops, cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation_fallback\\datasheet.md",
+    "sigma_peak_memory_gb": 11.452068328857422
+   },
+   "assessment": {
+    "conditions": {
+     "one_body": true,
+     "bolt_patterns": false,
+     "keep_outs_free": false,
+     "tools_reachable": true,
+     "fea_solved": true,
+     "slicer": true,
+     "wall_deep_fraction": false,
+     "wall_deep_component": false,
+     "wall_motor_zones": true,
+     "crash_front_strength": true,
+     "crash_arm_strength": true,
+     "crash_back_strength": true,
+     "target:airflow": true,
+     "target:overhang": true,
+     "target:support": true,
+     "target:strut_min": true,
+     "target:symmetry": false,
+     "target:arm_tip_slope": true,
+     "target:f1": true,
+     "target:sigma_mean": true,
+     "target:sigma_worst": true
+    },
+    "missed": [
+     "bolt_patterns",
+     "keep_outs_free",
+     "wall_deep_fraction",
+     "wall_deep_component",
+     "target:symmetry"
+    ],
+    "good": false,
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "crash": {
+     "crash_front": {
+      "von_mises_p999_mpa": 6.485987542190671,
+      "print_normal_p999_mpa": 3.9477410720000368,
+      "utilisation_xy": 0.12717622631746414,
+      "utilisation_z": 0.16448921133333486
+     },
+     "crash_arm": {
+      "von_mises_p999_mpa": 14.19844579499049,
+      "print_normal_p999_mpa": 3.8398857780000717,
+      "utilisation_xy": 0.27840089794099,
+      "utilisation_z": 0.159995240750003
+     },
+     "crash_back": {
+      "von_mises_p999_mpa": 1.7506981241768902,
+      "print_normal_p999_mpa": 0.5738205317000025,
+      "utilisation_xy": 0.034327414199546866,
+      "utilisation_z": 0.023909188820833437
+     }
+    },
+    "safety_factor": 2.0,
+    "targets": {
+     "airflow": [
+      "geometry.airflow.prop_ring_share",
+      null,
+      0.15
+     ],
+     "overhang": [
+      "geometry.printability.overhang_share",
+      null,
+      0.25
+     ],
+     "support": [
+      "scaled.support_per_volume",
+      null,
+      1.5
+     ],
+     "strut_min": [
+      "geometry.form.strut_width_mm.p10",
+      1.19,
+      null
+     ],
+     "symmetry": [
+      "scaled.symmetry_per_wheelbase",
+      null,
+      0.0025
+     ],
+     "arm_tip_slope": [
+      "scaled.arm_tip_slope",
+      null,
+      0.007
+     ],
+     "f1": [
+      "fea.eigenfrequencies_hz.0",
+      330.0,
+      null
+     ],
+     "sigma_mean": [
+      "sigma.mean_compliance_n_mm",
+      null,
+      0.687
+     ],
+     "sigma_worst": [
+      "sigma.worst_case_compliance_n_mm",
+      null,
+      0.229
+     ]
+    },
+    "warning_ranges": {
+     "strut_max": [
+      "geometry.form.strut_width_mm.p90",
+      null,
+      6.5
+     ],
+     "section_ratio": [
+      "geometry.form.section_ratio.p50",
+      1.0,
+      1.4
+     ],
+     "top_view_material": [
+      "geometry.airflow.bbox_share",
+      null,
+      0.45
+     ],
+     "loops": [
+      "geometry.form.loops.loops",
+      20,
+      null
+     ],
+     "roughness": [
+      "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+      null,
+      0.18
+     ],
+     "height": [
+      "scaled.height_per_wheelbase",
+      null,
+      0.4
+     ],
+     "cog_offset": [
+      "scaled.cog_offset_per_wheelbase",
+      null,
+      0.01
+     ],
+     "inertia_z": [
+      "scaled.izz_per_mass_arm2",
+      null,
+      0.45
+     ],
+     "print_time": [
+      "scaled.print_min_per_g",
+      null,
+      16.0
+     ]
+    },
+    "wall_rule": {
+     "deep_max_fraction": 0.005,
+     "deep_component_max_mm3": 5.0,
+     "motor_zone_margin_mm": 2.0,
+     "opening_radius_mm": 1.0,
+     "deep_depth_mm": 0.45,
+     "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+    },
+    "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+   },
+   "assessment_fallback": {
+    "conditions": {
+     "one_body": true,
+     "bolt_patterns": false,
+     "keep_outs_free": false,
+     "tools_reachable": true,
+     "fea_solved": true,
+     "slicer": true,
+     "wall_deep_fraction": false,
+     "wall_deep_component": false,
+     "wall_motor_zones": true,
+     "crash_front_strength": true,
+     "crash_arm_strength": true,
+     "crash_back_strength": true,
+     "target:airflow": true,
+     "target:overhang": true,
+     "target:support": true,
+     "target:strut_min": true,
+     "target:symmetry": false,
+     "target:arm_tip_slope": true,
+     "target:f1": true,
+     "target:sigma_mean": true,
+     "target:sigma_worst": true
+    },
+    "missed": [
+     "bolt_patterns",
+     "keep_outs_free",
+     "wall_deep_fraction",
+     "wall_deep_component",
+     "target:symmetry"
+    ],
+    "good": false,
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "crash": {
+     "crash_front": {
+      "von_mises_p999_mpa": 6.47471498593957,
+      "print_normal_p999_mpa": 3.938512810000123,
+      "utilisation_xy": 0.12695519580273665,
+      "utilisation_z": 0.1641047004166718
+     },
+     "crash_arm": {
+      "von_mises_p999_mpa": 14.203000726106277,
+      "print_normal_p999_mpa": 3.94731362900015,
+      "utilisation_xy": 0.27849021031580934,
+      "utilisation_z": 0.16447140120833958
+     },
+     "crash_back": {
+      "von_mises_p999_mpa": 1.749771980022938,
+      "print_normal_p999_mpa": 0.5764725065000059,
+      "utilisation_xy": 0.03430925451025369,
+      "utilisation_z": 0.02401968777083358
+     }
+    },
+    "safety_factor": 2.0,
+    "targets": {
+     "airflow": [
+      "geometry.airflow.prop_ring_share",
+      null,
+      0.15
+     ],
+     "overhang": [
+      "geometry.printability.overhang_share",
+      null,
+      0.25
+     ],
+     "support": [
+      "scaled.support_per_volume",
+      null,
+      1.5
+     ],
+     "strut_min": [
+      "geometry.form.strut_width_mm.p10",
+      1.19,
+      null
+     ],
+     "symmetry": [
+      "scaled.symmetry_per_wheelbase",
+      null,
+      0.0025
+     ],
+     "arm_tip_slope": [
+      "scaled.arm_tip_slope",
+      null,
+      0.007
+     ],
+     "f1": [
+      "fea.eigenfrequencies_hz.0",
+      330.0,
+      null
+     ],
+     "sigma_mean": [
+      "sigma.mean_compliance_n_mm",
+      null,
+      0.687
+     ],
+     "sigma_worst": [
+      "sigma.worst_case_compliance_n_mm",
+      null,
+      0.229
+     ]
+    },
+    "warning_ranges": {
+     "strut_max": [
+      "geometry.form.strut_width_mm.p90",
+      null,
+      6.5
+     ],
+     "section_ratio": [
+      "geometry.form.section_ratio.p50",
+      1.0,
+      1.4
+     ],
+     "top_view_material": [
+      "geometry.airflow.bbox_share",
+      null,
+      0.45
+     ],
+     "loops": [
+      "geometry.form.loops.loops",
+      20,
+      null
+     ],
+     "roughness": [
+      "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+      null,
+      0.18
+     ],
+     "height": [
+      "scaled.height_per_wheelbase",
+      null,
+      0.4
+     ],
+     "cog_offset": [
+      "scaled.cog_offset_per_wheelbase",
+      null,
+      0.01
+     ],
+     "inertia_z": [
+      "scaled.izz_per_mass_arm2",
+      null,
+      0.45
+     ],
+     "print_time": [
+      "scaled.print_min_per_g",
+      null,
+      16.0
+     ]
+    },
+    "wall_rule": {
+     "deep_max_fraction": 0.005,
+     "deep_component_max_mm3": 5.0,
+     "motor_zone_margin_mm": 2.0,
+     "opening_radius_mm": 1.0,
+     "deep_depth_mm": 0.45,
+     "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+    },
+    "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+   },
+   "line": "| simp_mma_cov3_raw_1 | 15,7 g | SP z 22,4 mm; Ixx/Iyy/Izz 74/92/146 kg\u00b7mm\u00b2 (K) | 5,5 % (64 mm) | Bohrb. 4/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 21,7 %, \u00d6ffn. r=1 1,14 %/49,3 mm\u00b3/Motorzonen 0,St\u00fctze 16,66 cm\u00b3, 231 min | Strebe 1,9/2,8/4,7 mm, H/B 1,00, offen 76 %, H\u00f6he 28,8 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,33 mm, Rauh. 0,119/mm | 10,9 N/mm; \u03a3 tr 0,687/\u03bbmax 0,220 N\u00b7mm (A) | f1 407 Hz; 408/502/504 (A) | front 6,5/3,9 MPa; arm 14,2/3,8 MPa; back 1,8/0,6 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, target:symmetry; Warnung: loops, cog_offset |",
+   "line_fallback": "| simp_mma_cov3_raw_1 | 15,7 g | SP z 22,4 mm; Ixx/Iyy/Izz 74/92/146 kg\u00b7mm\u00b2 (K) | 5,5 % (64 mm) | Bohrb. 4/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 21,7 %, \u00d6ffn. r=1 1,14 %/49,3 mm\u00b3/Motorzonen 0,St\u00fctze 16,66 cm\u00b3, 231 min | Strebe 1,9/2,8/4,7 mm, H/B 1,00, offen 76 %, H\u00f6he 28,8 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,33 mm, Rauh. 0,119/mm | 10,8 N/mm; \u03a3 tr 0,686/\u03bbmax 0,220 N\u00b7mm (A) | f1 407 Hz; 408/502/504 (A) | front 6,5/3,9 MPa; arm 14,2/3,9 MPa; back 1,7/0,6 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, target:symmetry; Warnung: loops, cog_offset |"
+  },
+  "v3": {
+   "standard": {
+    "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_1",
+    "mass_g": 17.63299109417663,
+    "arm_tip_n_per_mm": 9.396696968998908,
+    "f1_hz": 521.2659,
+    "sigma_full": [
+     0.6463163078421611,
+     0.24713731378103718
+    ],
+    "sigma_diagonal": [
+     0.7473235253600548,
+     0.29736519971294256
+    ],
+    "worst_load": {
+     "motor_front_left My": -4.891717080330162,
+     "motor_front_left Mz": -4.537949574215514,
+     "motor_front_right My": 4.891265041134995,
+     "motor_front_right Mz": 4.547811815420937,
+     "motor_rear_left My": 4.877636921572866,
+     "motor_rear_left Mz": 4.155617555136847,
+     "motor_rear_right My": -4.876850818367824,
+     "motor_rear_right Mz": -4.155154046727736,
+     "battery Fz": 1.2452869460598415
+    },
+    "stiffness": {
+     "motor_front_left Fx": 63.50043858414596,
+     "motor_front_left Fy": 12.67800735109306,
+     "motor_front_left Fz": 9.06692195681882,
+     "motor_front_left Mx": 3885.225417544675,
+     "motor_front_left My": 4194.561755120475,
+     "motor_front_left Mz": 8734.753388740248,
+     "motor_front_right Fx": 59.260831843196094,
+     "motor_front_right Fy": 12.554421947279076,
+     "motor_front_right Fz": 9.218040932737422,
+     "motor_front_right Mx": 3669.057123272299,
+     "motor_front_right My": 4047.4590797534433,
+     "motor_front_right Mz": 7849.549844221977,
+     "motor_rear_left Fx": 30.972640957056807,
+     "motor_rear_left Fy": 9.472122927026923,
+     "motor_rear_left Fz": 23.889720113630453,
+     "motor_rear_left Mx": 4861.3857800441065,
+     "motor_rear_left My": 5894.837982237548,
+     "motor_rear_left Mz": 6477.232339781892,
+     "motor_rear_right Fx": 32.420474384333254,
+     "motor_rear_right Fy": 9.756285618070274,
+     "motor_rear_right Fz": 24.222708031291248,
+     "motor_rear_right Mx": 5189.60665435221,
+     "motor_rear_right My": 6281.333641964679,
+     "motor_rear_right Mz": 6689.357817575262,
+     "stack Fx": 421.1894711226316,
+     "stack Fy": 207.1750577444176,
+     "stack Fz": 268.7982155052118,
+     "stack Mx": 80857.74033337628,
+     "stack My": 69634.56524925237,
+     "stack Mz": 119829.29515185789,
+     "battery Fx": 152.86342488321608,
+     "battery Fy": 206.96989370651482,
+     "battery Fz": 389.9624031289385,
+     "battery Mx": 16036.611905265212,
+     "battery My": 81467.12742276488,
+     "battery Mz": 94719.2598177634,
+     "camera Fx": 125.20644883716453,
+     "camera Fy": 224.28909606801483,
+     "camera Fz": 202.9129615553996,
+     "camera Mx": 51687.99575430572,
+     "camera My": 44462.58140110627,
+     "camera Mz": 87069.59807041605
+    },
+    "twist": {
+     "compliance_n_mm": 0.3073006638566802,
+     "stiffness_n_per_mm": 13.016568040560863
+    },
+    "missed": [
+     "target:symmetry",
+     "target:sigma_worst"
+    ],
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "line": "| simp_mma_cov3_v3_1 | 17,6 g | SP z 22,2 mm; Ixx/Iyy/Izz 76/93/149 kg\u00b7mm\u00b2 (K) | 6,0 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 20,6 %, \u00d6ffn. r=1 0,00 %/0,0 mm\u00b3/Motorzonen 0,St\u00fctze 16,98 cm\u00b3, 250 min | Strebe 2,0/2,8/5,2 mm, H/B 1,00, offen 75 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 15, Sym. 0,36 mm, Rauh. 0,137/mm | 9,4 N/mm; \u03a3 tr 0,646/\u03bbmax 0,247 N\u00b7mm (A) | f1 521 Hz; 536/548/550 (A) | front 6,3/3,7 MPa; arm 12,1/5,0 MPa; back 2,0/0,6 MPa (SF 2,0, A) | target:symmetry, target:sigma_worst; Warnung: loops, cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_1\\datasheet.md",
+    "sigma_peak_memory_gb": 14.36777114868164
+   },
+   "fallback": {
+    "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_1\\evaluation_fallback",
+    "mass_g": 17.63299109417663,
+    "arm_tip_n_per_mm": 9.396696968998908,
+    "f1_hz": 521.2659,
+    "sigma_full": [
+     0.6463163078421611,
+     0.24713731378103718
+    ],
+    "sigma_diagonal": [
+     0.7473235253600548,
+     0.29736519971294256
+    ],
+    "worst_load": {
+     "motor_front_left My": -4.891717080330162,
+     "motor_front_left Mz": -4.537949574215514,
+     "motor_front_right My": 4.891265041134995,
+     "motor_front_right Mz": 4.547811815420937,
+     "motor_rear_left My": 4.877636921572866,
+     "motor_rear_left Mz": 4.155617555136847,
+     "motor_rear_right My": -4.876850818367824,
+     "motor_rear_right Mz": -4.155154046727736,
+     "battery Fz": 1.2452869460598415
+    },
+    "stiffness": {
+     "motor_front_left Fx": 63.50043858414596,
+     "motor_front_left Fy": 12.67800735109306,
+     "motor_front_left Fz": 9.06692195681882,
+     "motor_front_left Mx": 3885.225417544675,
+     "motor_front_left My": 4194.561755120475,
+     "motor_front_left Mz": 8734.753388740248,
+     "motor_front_right Fx": 59.260831843196094,
+     "motor_front_right Fy": 12.554421947279076,
+     "motor_front_right Fz": 9.218040932737422,
+     "motor_front_right Mx": 3669.057123272299,
+     "motor_front_right My": 4047.4590797534433,
+     "motor_front_right Mz": 7849.549844221977,
+     "motor_rear_left Fx": 30.972640957056807,
+     "motor_rear_left Fy": 9.472122927026923,
+     "motor_rear_left Fz": 23.889720113630453,
+     "motor_rear_left Mx": 4861.3857800441065,
+     "motor_rear_left My": 5894.837982237548,
+     "motor_rear_left Mz": 6477.232339781892,
+     "motor_rear_right Fx": 32.420474384333254,
+     "motor_rear_right Fy": 9.756285618070274,
+     "motor_rear_right Fz": 24.222708031291248,
+     "motor_rear_right Mx": 5189.60665435221,
+     "motor_rear_right My": 6281.333641964679,
+     "motor_rear_right Mz": 6689.357817575262,
+     "stack Fx": 421.1894711226316,
+     "stack Fy": 207.1750577444176,
+     "stack Fz": 268.7982155052118,
+     "stack Mx": 80857.74033337628,
+     "stack My": 69634.56524925237,
+     "stack Mz": 119829.29515185789,
+     "battery Fx": 152.86342488321608,
+     "battery Fy": 206.96989370651482,
+     "battery Fz": 389.9624031289385,
+     "battery Mx": 16036.611905265212,
+     "battery My": 81467.12742276488,
+     "battery Mz": 94719.2598177634,
+     "camera Fx": 125.20644883716453,
+     "camera Fy": 224.28909606801483,
+     "camera Fz": 202.9129615553996,
+     "camera Mx": 51687.99575430572,
+     "camera My": 44462.58140110627,
+     "camera Mz": 87069.59807041605
+    },
+    "twist": {
+     "compliance_n_mm": 0.3073006638566802,
+     "stiffness_n_per_mm": 13.016568040560863
+    },
+    "missed": [
+     "target:symmetry",
+     "target:sigma_worst"
+    ],
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "line": "| simp_mma_cov3_v3_1 | 17,6 g | SP z 22,2 mm; Ixx/Iyy/Izz 76/93/149 kg\u00b7mm\u00b2 (K) | 6,0 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 20,6 %, \u00d6ffn. r=1 0,00 %/0,0 mm\u00b3/Motorzonen 0,St\u00fctze 16,98 cm\u00b3, 250 min | Strebe 2,0/2,8/5,2 mm, H/B 1,00, offen 75 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 15, Sym. 0,36 mm, Rauh. 0,137/mm | 9,4 N/mm; \u03a3 tr 0,646/\u03bbmax 0,247 N\u00b7mm (A) | f1 521 Hz; 536/548/550 (A) | front 6,3/3,7 MPa; arm 12,1/5,0 MPa; back 2,0/0,6 MPa (SF 2,0, A) | target:symmetry, target:sigma_worst; Warnung: loops, cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_1\\evaluation_fallback\\datasheet.md",
+    "sigma_peak_memory_gb": 14.36777114868164
+   },
+   "assessment": {
+    "conditions": {
+     "one_body": true,
+     "bolt_patterns": true,
+     "keep_outs_free": true,
+     "tools_reachable": true,
+     "fea_solved": true,
+     "slicer": true,
+     "wall_deep_fraction": true,
+     "wall_deep_component": true,
+     "wall_motor_zones": true,
+     "crash_front_strength": true,
+     "crash_arm_strength": true,
+     "crash_back_strength": true,
+     "target:airflow": true,
+     "target:overhang": true,
+     "target:support": true,
+     "target:strut_min": true,
+     "target:symmetry": false,
+     "target:arm_tip_slope": true,
+     "target:f1": true,
+     "target:sigma_mean": true,
+     "target:sigma_worst": false
+    },
+    "missed": [
+     "target:symmetry",
+     "target:sigma_worst"
+    ],
+    "good": false,
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "crash": {
+     "crash_front": {
+      "von_mises_p999_mpa": 6.307591169300984,
+      "print_normal_p999_mpa": 3.719266348000219,
+      "utilisation_xy": 0.12367825822158793,
+      "utilisation_z": 0.1549694311666758
+     },
+     "crash_arm": {
+      "von_mises_p999_mpa": 12.103021332393977,
+      "print_normal_p999_mpa": 5.038618042000099,
+      "utilisation_xy": 0.23731414377243093,
+      "utilisation_z": 0.2099424184166708
+     },
+     "crash_back": {
+      "von_mises_p999_mpa": 2.006851205586456,
+      "print_normal_p999_mpa": 0.6126264362000059,
+      "utilisation_xy": 0.03935002363895012,
+      "utilisation_z": 0.02552610150833358
+     }
+    },
+    "safety_factor": 2.0,
+    "targets": {
+     "airflow": [
+      "geometry.airflow.prop_ring_share",
+      null,
+      0.15
+     ],
+     "overhang": [
+      "geometry.printability.overhang_share",
+      null,
+      0.25
+     ],
+     "support": [
+      "scaled.support_per_volume",
+      null,
+      1.5
+     ],
+     "strut_min": [
+      "geometry.form.strut_width_mm.p10",
+      1.19,
+      null
+     ],
+     "symmetry": [
+      "scaled.symmetry_per_wheelbase",
+      null,
+      0.0025
+     ],
+     "arm_tip_slope": [
+      "scaled.arm_tip_slope",
+      null,
+      0.007
+     ],
+     "f1": [
+      "fea.eigenfrequencies_hz.0",
+      330.0,
+      null
+     ],
+     "sigma_mean": [
+      "sigma.mean_compliance_n_mm",
+      null,
+      0.687
+     ],
+     "sigma_worst": [
+      "sigma.worst_case_compliance_n_mm",
+      null,
+      0.229
+     ]
+    },
+    "warning_ranges": {
+     "strut_max": [
+      "geometry.form.strut_width_mm.p90",
+      null,
+      6.5
+     ],
+     "section_ratio": [
+      "geometry.form.section_ratio.p50",
+      1.0,
+      1.4
+     ],
+     "top_view_material": [
+      "geometry.airflow.bbox_share",
+      null,
+      0.45
+     ],
+     "loops": [
+      "geometry.form.loops.loops",
+      20,
+      null
+     ],
+     "roughness": [
+      "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+      null,
+      0.18
+     ],
+     "height": [
+      "scaled.height_per_wheelbase",
+      null,
+      0.4
+     ],
+     "cog_offset": [
+      "scaled.cog_offset_per_wheelbase",
+      null,
+      0.01
+     ],
+     "inertia_z": [
+      "scaled.izz_per_mass_arm2",
+      null,
+      0.45
+     ],
+     "print_time": [
+      "scaled.print_min_per_g",
+      null,
+      16.0
+     ]
+    },
+    "wall_rule": {
+     "deep_max_fraction": 0.005,
+     "deep_component_max_mm3": 5.0,
+     "motor_zone_margin_mm": 2.0,
+     "opening_radius_mm": 1.0,
+     "deep_depth_mm": 0.45,
+     "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+    },
+    "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+   },
+   "assessment_fallback": {
+    "conditions": {
+     "one_body": true,
+     "bolt_patterns": true,
+     "keep_outs_free": true,
+     "tools_reachable": true,
+     "fea_solved": true,
+     "slicer": true,
+     "wall_deep_fraction": true,
+     "wall_deep_component": true,
+     "wall_motor_zones": true,
+     "crash_front_strength": true,
+     "crash_arm_strength": true,
+     "crash_back_strength": true,
+     "target:airflow": true,
+     "target:overhang": true,
+     "target:support": true,
+     "target:strut_min": true,
+     "target:symmetry": false,
+     "target:arm_tip_slope": true,
+     "target:f1": true,
+     "target:sigma_mean": true,
+     "target:sigma_worst": false
+    },
+    "missed": [
+     "target:symmetry",
+     "target:sigma_worst"
+    ],
+    "good": false,
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "crash": {
+     "crash_front": {
+      "von_mises_p999_mpa": 6.307591169300984,
+      "print_normal_p999_mpa": 3.719266348000219,
+      "utilisation_xy": 0.12367825822158793,
+      "utilisation_z": 0.1549694311666758
+     },
+     "crash_arm": {
+      "von_mises_p999_mpa": 12.103021332393977,
+      "print_normal_p999_mpa": 5.038618042000099,
+      "utilisation_xy": 0.23731414377243093,
+      "utilisation_z": 0.2099424184166708
+     },
+     "crash_back": {
+      "von_mises_p999_mpa": 2.006851205586456,
+      "print_normal_p999_mpa": 0.6126264362000059,
+      "utilisation_xy": 0.03935002363895012,
+      "utilisation_z": 0.02552610150833358
+     }
+    },
+    "safety_factor": 2.0,
+    "targets": {
+     "airflow": [
+      "geometry.airflow.prop_ring_share",
+      null,
+      0.15
+     ],
+     "overhang": [
+      "geometry.printability.overhang_share",
+      null,
+      0.25
+     ],
+     "support": [
+      "scaled.support_per_volume",
+      null,
+      1.5
+     ],
+     "strut_min": [
+      "geometry.form.strut_width_mm.p10",
+      1.19,
+      null
+     ],
+     "symmetry": [
+      "scaled.symmetry_per_wheelbase",
+      null,
+      0.0025
+     ],
+     "arm_tip_slope": [
+      "scaled.arm_tip_slope",
+      null,
+      0.007
+     ],
+     "f1": [
+      "fea.eigenfrequencies_hz.0",
+      330.0,
+      null
+     ],
+     "sigma_mean": [
+      "sigma.mean_compliance_n_mm",
+      null,
+      0.687
+     ],
+     "sigma_worst": [
+      "sigma.worst_case_compliance_n_mm",
+      null,
+      0.229
+     ]
+    },
+    "warning_ranges": {
+     "strut_max": [
+      "geometry.form.strut_width_mm.p90",
+      null,
+      6.5
+     ],
+     "section_ratio": [
+      "geometry.form.section_ratio.p50",
+      1.0,
+      1.4
+     ],
+     "top_view_material": [
+      "geometry.airflow.bbox_share",
+      null,
+      0.45
+     ],
+     "loops": [
+      "geometry.form.loops.loops",
+      20,
+      null
+     ],
+     "roughness": [
+      "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+      null,
+      0.18
+     ],
+     "height": [
+      "scaled.height_per_wheelbase",
+      null,
+      0.4
+     ],
+     "cog_offset": [
+      "scaled.cog_offset_per_wheelbase",
+      null,
+      0.01
+     ],
+     "inertia_z": [
+      "scaled.izz_per_mass_arm2",
+      null,
+      0.45
+     ],
+     "print_time": [
+      "scaled.print_min_per_g",
+      null,
+      16.0
+     ]
+    },
+    "wall_rule": {
+     "deep_max_fraction": 0.005,
+     "deep_component_max_mm3": 5.0,
+     "motor_zone_margin_mm": 2.0,
+     "opening_radius_mm": 1.0,
+     "deep_depth_mm": 0.45,
+     "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+    },
+    "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+   },
+   "line": "| simp_mma_cov3_v3_1 | 17,6 g | SP z 22,2 mm; Ixx/Iyy/Izz 76/93/149 kg\u00b7mm\u00b2 (K) | 6,0 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 20,6 %, \u00d6ffn. r=1 0,00 %/0,0 mm\u00b3/Motorzonen 0,St\u00fctze 16,98 cm\u00b3, 250 min | Strebe 2,0/2,8/5,2 mm, H/B 1,00, offen 75 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 15, Sym. 0,36 mm, Rauh. 0,137/mm | 9,4 N/mm; \u03a3 tr 0,646/\u03bbmax 0,247 N\u00b7mm (A) | f1 521 Hz; 536/548/550 (A) | front 6,3/3,7 MPa; arm 12,1/5,0 MPa; back 2,0/0,6 MPa (SF 2,0, A) | target:symmetry, target:sigma_worst; Warnung: loops, cog_offset |",
+   "line_fallback": "| simp_mma_cov3_v3_1 | 17,6 g | SP z 22,2 mm; Ixx/Iyy/Izz 76/93/149 kg\u00b7mm\u00b2 (K) | 6,0 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 20,6 %, \u00d6ffn. r=1 0,00 %/0,0 mm\u00b3/Motorzonen 0,St\u00fctze 16,98 cm\u00b3, 250 min | Strebe 2,0/2,8/5,2 mm, H/B 1,00, offen 75 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 15, Sym. 0,36 mm, Rauh. 0,137/mm | 9,4 N/mm; \u03a3 tr 0,646/\u03bbmax 0,247 N\u00b7mm (A) | f1 521 Hz; 536/548/550 (A) | front 6,3/3,7 MPa; arm 12,1/5,0 MPa; back 2,0/0,6 MPa (SF 2,0, A) | target:symmetry, target:sigma_worst; Warnung: loops, cog_offset |"
+  }
+ },
+ "neural": {
+  "optimizer": {
+   "mass_g": 29.913202083406016,
+   "rows": [
+    {
+     "name": "load_mean",
+     "value": 0.9249185558015858,
+     "limit": 0.950808,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.02722888763915976,
+     "status": "satisfied",
+     "margin": 0.02722888763915976
+    },
+    {
+     "name": "load_worst",
+     "value": 0.2745641421313322,
+     "limit": 0.31464600000000004,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "info": {
+      "eigenvalues_n_mm": [
+       0.2745641421313322,
+       0.2195487085078047,
+       0.15796439819585845,
+       0.07349857336491894,
+       0.053629262471160184,
+       0.04078040413727532
+      ],
+      "ks_n_mm": 0.2745651468660192,
+      "ks": 50.0,
+      "rank": 26,
+      "worst_wrench": [
+       [
+        "motor_front_right/Mz",
+        -4.920994591271217
+       ],
+       [
+        "motor_front_left/Mz",
+        4.9209945912712065
+       ],
+       [
+        "motor_rear_left/Mz",
+        -4.880079668398553
+       ],
+       [
+        "motor_rear_right/Mz",
+        4.880079668398549
+       ],
+       [
+        "battery/Fz",
+        -1.2911487163299962
+       ],
+       [
+        "motor_front_left/Fz",
+        0.9538293025747989
+       ]
+      ]
+     },
+     "g": -0.12738395890613852,
+     "status": "satisfied",
+     "margin": 0.12738395890613852
+    },
+    {
+     "name": "crash_front",
+     "value": 6.641878570932224,
+     "limit": 9.267770232495144,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.2833358613440674,
+     "status": "satisfied",
+     "margin": 0.2833358613440674
+    },
+    {
+     "name": "crash_side_left",
+     "value": 16.275017194886626,
+     "limit": 20.438937229804516,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.2037248800219401,
+     "status": "satisfied",
+     "margin": 0.2037248800219401
+    },
+    {
+     "name": "crash_side_right",
+     "value": 16.275017194886626,
+     "limit": 20.43893722980452,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.20372488002194022,
+     "status": "satisfied",
+     "margin": 0.20372488002194022
+    },
+    {
+     "name": "crash_arm_front_left",
+     "value": 116.64639787805024,
+     "limit": 211.62622638695808,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.44880934717059806,
+     "status": "satisfied",
+     "margin": 0.44880934717059806
+    },
+    {
+     "name": "crash_arm_front_right",
+     "value": 21.50282206685398,
+     "limit": 33.80899650269828,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.3639911180109161,
+     "status": "satisfied",
+     "margin": 0.3639911180109161
+    },
+    {
+     "name": "crash_arm_rear_left",
+     "value": 59.10323477963992,
+     "limit": 65.64105289024488,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.09959953143250944,
+     "status": "satisfied",
+     "margin": 0.09959953143250944
+    },
+    {
+     "name": "crash_arm_rear_right",
+     "value": 92.2715345343335,
+     "limit": 108.16575437523417,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.14694317931498513,
+     "status": "satisfied",
+     "margin": 0.14694317931498513
+    },
+    {
+     "name": "crash_below",
+     "value": 15.286494450006739,
+     "limit": 41.277144989126185,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.6296620211006908,
+     "status": "satisfied",
+     "margin": 0.6296620211006908
+    },
+    {
+     "name": "crash_back",
+     "value": 4.857595464750048,
+     "limit": 10.414240549567483,
+     "unit": "N mm",
+     "sense": "<=",
+     "field": "eroded",
+     "g": -0.5335621986423398,
+     "status": "satisfied",
+     "margin": 0.5335621986423398
+    },
+    {
+     "name": "f1",
+     "value": 280.4049804211409,
+     "limit": 300.0,
+     "unit": "Hz",
+     "sense": ">=",
+     "field": "eroded",
+     "info": {
+      "f1_hz": 280.4049804211409,
+      "frequencies_hz": [
+       [
+        1.0,
+        280.4049804211409
+       ],
+       [
+        1.0,
+        322.1244755208655
+       ],
+       [
+        1.0,
+        353.1343562171613
+       ],
+       [
+        -1.0,
+        283.8192033432091
+       ],
+       [
+        -1.0,
+        390.66799002067535
+       ],
+       [
+        -1.0,
+        439.7367334972532
+       ]
+      ],
+      "aggregate_ratio": 0.8647820413091502,
+      "violation": 0.13521795869084985
+     },
+     "g": 0.13521795869084985,
+     "status": "violated",
+     "margin": -0.13521795869084985
+    },
+    {
+     "name": "volume",
+     "value": 0.07322154438449761,
+     "limit": 0.1,
+     "unit": "-",
+     "sense": "<=",
+     "field": "intermediate",
+     "g": -0.26778455615502395,
+     "status": "satisfied",
+     "margin": 0.26778455615502395
+    },
+    {
+     "name": "shadow",
+     "value": 0.2217676968447274,
+     "limit": 0.3137367868997963,
+     "unit": "mm",
+     "sense": "<=",
+     "field": "intermediate",
+     "g": -0.29314091906105577,
+     "status": "satisfied",
+     "margin": 0.29314091906105577
+    },
+    {
+     "name": "thrust_all",
+     "value": 2.1492034155506876,
+     "limit": null,
+     "unit": "N mm",
+     "sense": "",
+     "field": "eroded",
+     "g": null,
+     "status": "monitored",
+     "margin": null
+    },
+    {
+     "name": "torsion_yaw",
+     "value": 0.13032043019879286,
+     "limit": null,
+     "unit": "N mm",
+     "sense": "",
+     "field": "eroded",
+     "g": null,
+     "status": "monitored",
+     "margin": null
+    },
+    {
+     "name": "twist",
+     "value": 2.3274870335209434,
+     "limit": null,
+     "unit": "N mm",
+     "sense": "",
+     "field": "eroded",
+     "g": null,
+     "status": "monitored",
+     "margin": null
+    },
+    {
+     "name": "f1_intermediate",
+     "value": 330.0681560961297,
+     "limit": null,
+     "unit": "Hz",
+     "sense": "",
+     "field": "intermediate",
+     "g": null,
+     "status": "monitored",
+     "margin": null
+    }
+   ],
+   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| load_mean | 0.9249 | <= 0.9508 | N mm | satisfied | +2.7 % |\n| load_worst | 0.2746 | <= 0.3146 | N mm | satisfied | +12.7 % |\n| crash_front | 6.642 | <= 9.268 | N mm | satisfied | +28.3 % |\n| crash_side_left | 16.28 | <= 20.44 | N mm | satisfied | +20.4 % |\n| crash_side_right | 16.28 | <= 20.44 | N mm | satisfied | +20.4 % |\n| crash_arm_front_left | 116.6 | <= 211.6 | N mm | satisfied | +44.9 % |\n| crash_arm_front_right | 21.5 | <= 33.81 | N mm | satisfied | +36.4 % |\n| crash_arm_rear_left | 59.1 | <= 65.64 | N mm | satisfied | +10.0 % |\n| crash_arm_rear_right | 92.27 | <= 108.2 | N mm | satisfied | +14.7 % |\n| crash_below | 15.29 | <= 41.28 | N mm | satisfied | +63.0 % |\n| crash_back | 4.858 | <= 10.41 | N mm | satisfied | +53.4 % |\n| f1 | 280.4 | >= 300 | Hz | violated | -13.5 % |\n| volume | 0.07322 | <= 0.1 | - | satisfied | +26.8 % |\n| shadow | 0.2218 | <= 0.3137 | mm | satisfied | +29.3 % |\n| thrust_all | 2.149 |  | N mm | monitored |  |\n| torsion_yaw | 0.1303 |  | N mm | monitored |  |\n| twist | 2.327 |  | N mm | monitored |  |\n| f1_intermediate | 330.1 |  | Hz | monitored |  |",
+   "iterations": 240,
+   "total_runtime_s": 5535.161741399999,
+   "optimize_runtime_s": 5513.134645099999,
+   "seconds_per_iteration": {
+    "[34, 64, 24]": 4.460131537681171,
+    "[51, 96, 24]": 43.072335788235485
+   },
+   "iterations_per_grid": {
+    "[34, 64, 24]": 138,
+    "[51, 96, 24]": 102
+   },
+   "stop_reason": "guard",
+   "converged": false,
+   "start": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1/density_half.npz",
+   "max_violation": 0.13521795869084985
+  },
+  "raw": {
+   "standard": {
+    "run": "C:\\clones\\Deep_Frame-ncov\\exports\\runs\\neural_cov_raw_1",
+    "mass_g": 27.48284252303962,
+    "arm_tip_n_per_mm": 19.391881211197436,
+    "f1_hz": 481.1059,
+    "sigma_full": [
+     0.49393126542246407,
+     0.15983891157454946
+    ],
+    "sigma_diagonal": [
+     0.5459783420150378,
+     0.20489969498087085
+    ],
+    "worst_load": {
+     "motor_front_left My": 3.2684445796210047,
+     "motor_front_left Mz": 4.759368245705334,
+     "motor_front_right My": -3.2703207333454984,
+     "motor_front_right Mz": -4.798213401094279,
+     "motor_rear_left My": -3.2317590422580946,
+     "motor_rear_left Mz": -4.611703949671952,
+     "motor_rear_right My": 3.232402424898568,
+     "motor_rear_right Mz": 4.590363378954413,
+     "battery Fz": -1.226222814650858
+    },
+    "stiffness": {
+     "motor_front_left Fx": 188.74145767441632,
+     "motor_front_left Fy": 15.52961127281587,
+     "motor_front_left Fz": 18.785782703061297,
+     "motor_front_left Mx": 4657.757439539321,
+     "motor_front_left My": 5365.097267238867,
+     "motor_front_left Mz": 8845.728829241656,
+     "motor_front_right Fx": 198.5592683311202,
+     "motor_front_right Fy": 15.129962711699838,
+     "motor_front_right Fz": 17.92682867272491,
+     "motor_front_right Mx": 4515.219588825572,
+     "motor_front_right My": 5292.662167723827,
+     "motor_front_right Mz": 8761.314076405253,
+     "motor_rear_left Fx": 54.842062043000865,
+     "motor_rear_left Fy": 16.70258245478946,
+     "motor_rear_left Fz": 19.69816294938621,
+     "motor_rear_left Mx": 5900.53027753081,
+     "motor_rear_left My": 5848.498426073428,
+     "motor_rear_left Mz": 8906.841176539707,
+     "motor_rear_right Fx": 54.74026655925284,
+     "motor_rear_right Fy": 17.035635062396068,
+     "motor_rear_right Fz": 20.602483478042934,
+     "motor_rear_right Mx": 6034.079742404432,
+     "motor_rear_right My": 5805.1236411464515,
+     "motor_rear_right Mz": 9130.96299173488,
+     "stack Fx": 5373.179899732297,
+     "stack Fy": 2922.7754783608025,
+     "stack Fz": 484.6445678741571,
+     "stack Mx": 276473.71921694325,
+     "stack My": 302516.4983839873,
+     "stack Mz": 1771091.2500390597,
+     "battery Fx": 268.7787998628565,
+     "battery Fy": 429.2099409789301,
+     "battery Fz": 500.62932301409194,
+     "battery Mx": 24574.15005868527,
+     "battery My": 126388.49058144592,
+     "battery Mz": 231525.97475805008,
+     "camera Fx": 41.32838035083262,
+     "camera Fy": 343.23155746364927,
+     "camera Fz": 129.69745416885917,
+     "camera Mx": 21053.499565264923,
+     "camera My": 17628.80995539728,
+     "camera Mz": 105207.41629254376
+    },
+    "twist": {
+     "compliance_n_mm": 0.21643894097953587,
+     "stiffness_n_per_mm": 18.480962722776383
+    },
+    "missed": [
+     "bolt_patterns",
+     "keep_outs_free",
+     "wall_deep_component"
+    ],
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "line": "| neural_cov_raw_1 | 27,5 g | SP z 20,0 mm; Ixx/Iyy/Izz 84/99/155 kg\u00b7mm\u00b2 (K) | 5,4 % (64 mm) | Bohrb. 5/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 14,1 %, \u00d6ffn. r=1 0,43 %/88,0 mm\u00b3/Motorzonen 0,St\u00fctze 11,77 cm\u00b3, 227 min | Strebe 2,0/3,6/6,0 mm, H/B 1,00, offen 68 %, H\u00f6he 28,8 mm, K\u00f6rper 1, Schlaufen 13, Sym. 0,32 mm, Rauh. 0,103/mm | 19,4 N/mm; \u03a3 tr 0,494/\u03bbmax 0,160 N\u00b7mm (A) | f1 481 Hz; 540/552/998 (A) | front 5,2/1,8 MPa; arm 18,0/0,9 MPa; back 1,9/0,6 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_component; Warnung: loops, cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-ncov\\exports\\runs\\neural_cov_raw_1\\datasheet.md",
+    "sigma_peak_memory_gb": 2.9501113891601562
+   },
+   "fallback": null,
+   "assessment": {
+    "conditions": {
+     "one_body": true,
+     "bolt_patterns": false,
+     "keep_outs_free": false,
+     "tools_reachable": true,
+     "fea_solved": true,
+     "slicer": true,
+     "wall_deep_fraction": true,
+     "wall_deep_component": false,
+     "wall_motor_zones": true,
+     "crash_front_strength": true,
+     "crash_arm_strength": true,
+     "crash_back_strength": true,
+     "target:airflow": true,
+     "target:overhang": true,
+     "target:support": true,
+     "target:strut_min": true,
+     "target:symmetry": true,
+     "target:arm_tip_slope": true,
+     "target:f1": true,
+     "target:sigma_mean": true,
+     "target:sigma_worst": true
+    },
+    "missed": [
+     "bolt_patterns",
+     "keep_outs_free",
+     "wall_deep_component"
+    ],
+    "good": false,
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "crash": {
+     "crash_front": {
+      "von_mises_p999_mpa": 5.191391483104426,
+      "print_normal_p999_mpa": 1.7824697200000552,
+      "utilisation_xy": 0.10179198986479267,
+      "utilisation_z": 0.07426957166666896
+     },
+     "crash_arm": {
+      "von_mises_p999_mpa": 17.988389501795744,
+      "print_normal_p999_mpa": 0.9231225716000104,
+      "utilisation_xy": 0.3527135196430538,
+      "utilisation_z": 0.03846344048333377
+     },
+     "crash_back": {
+      "von_mises_p999_mpa": 1.9337810750086726,
+      "print_normal_p999_mpa": 0.6200150950000134,
+      "utilisation_xy": 0.03791727598056221,
+      "utilisation_z": 0.025833962291667224
+     }
+    },
+    "safety_factor": 2.0,
+    "targets": {
+     "airflow": [
+      "geometry.airflow.prop_ring_share",
+      null,
+      0.15
+     ],
+     "overhang": [
+      "geometry.printability.overhang_share",
+      null,
+      0.25
+     ],
+     "support": [
+      "scaled.support_per_volume",
+      null,
+      1.5
+     ],
+     "strut_min": [
+      "geometry.form.strut_width_mm.p10",
+      1.19,
+      null
+     ],
+     "symmetry": [
+      "scaled.symmetry_per_wheelbase",
+      null,
+      0.0025
+     ],
+     "arm_tip_slope": [
+      "scaled.arm_tip_slope",
+      null,
+      0.007
+     ],
+     "f1": [
+      "fea.eigenfrequencies_hz.0",
+      330.0,
+      null
+     ],
+     "sigma_mean": [
+      "sigma.mean_compliance_n_mm",
+      null,
+      0.687
+     ],
+     "sigma_worst": [
+      "sigma.worst_case_compliance_n_mm",
+      null,
+      0.229
+     ]
+    },
+    "warning_ranges": {
+     "strut_max": [
+      "geometry.form.strut_width_mm.p90",
+      null,
+      6.5
+     ],
+     "section_ratio": [
+      "geometry.form.section_ratio.p50",
+      1.0,
+      1.4
+     ],
+     "top_view_material": [
+      "geometry.airflow.bbox_share",
+      null,
+      0.45
+     ],
+     "loops": [
+      "geometry.form.loops.loops",
+      20,
+      null
+     ],
+     "roughness": [
+      "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+      null,
+      0.18
+     ],
+     "height": [
+      "scaled.height_per_wheelbase",
+      null,
+      0.4
+     ],
+     "cog_offset": [
+      "scaled.cog_offset_per_wheelbase",
+      null,
+      0.01
+     ],
+     "inertia_z": [
+      "scaled.izz_per_mass_arm2",
+      null,
+      0.45
+     ],
+     "print_time": [
+      "scaled.print_min_per_g",
+      null,
+      16.0
+     ]
+    },
+    "wall_rule": {
+     "deep_max_fraction": 0.005,
+     "deep_component_max_mm3": 5.0,
+     "motor_zone_margin_mm": 2.0,
+     "opening_radius_mm": 1.0,
+     "deep_depth_mm": 0.45,
+     "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+    },
+    "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+   },
+   "assessment_fallback": null,
+   "line": "| neural_cov_raw_1 | 27,5 g | SP z 20,0 mm; Ixx/Iyy/Izz 84/99/155 kg\u00b7mm\u00b2 (K) | 5,4 % (64 mm) | Bohrb. 5/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 14,1 %, \u00d6ffn. r=1 0,43 %/88,0 mm\u00b3/Motorzonen 0,St\u00fctze 11,77 cm\u00b3, 227 min | Strebe 2,0/3,6/6,0 mm, H/B 1,00, offen 68 %, H\u00f6he 28,8 mm, K\u00f6rper 1, Schlaufen 13, Sym. 0,32 mm, Rauh. 0,103/mm | 19,4 N/mm; \u03a3 tr 0,494/\u03bbmax 0,160 N\u00b7mm (A) | f1 481 Hz; 540/552/998 (A) | front 5,2/1,8 MPa; arm 18,0/0,9 MPa; back 1,9/0,6 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_component; Warnung: loops, cog_offset |",
+   "line_fallback": null
+  },
+  "v3": {
+   "standard": {
+    "run": "C:\\clones\\Deep_Frame-ncov\\exports\\runs\\neural_cov_v3_1",
+    "mass_g": 27.91733942275773,
+    "arm_tip_n_per_mm": 19.6775217914392,
+    "f1_hz": 449.5677,
+    "sigma_full": [
+     0.5346627958116748,
+     0.1953730476596401
+    ],
+    "sigma_diagonal": [
+     0.5913973201409972,
+     0.24617266499080162
+    ],
+    "worst_load": {
+     "motor_front_left Mz": -4.882683182627362,
+     "motor_front_right Mz": 4.956383370700301,
+     "motor_rear_left Mz": 4.872513945642891,
+     "motor_rear_right Mz": -4.837431605593226,
+     "battery Fz": 1.2957219914512939
+    },
+    "stiffness": {
+     "motor_front_left Fx": 229.65627000417115,
+     "motor_front_left Fy": 16.95288022540169,
+     "motor_front_left Fz": 18.81188749660495,
+     "motor_front_left Mx": 4859.531885499781,
+     "motor_front_left My": 6428.338696763732,
+     "motor_front_left Mz": 8979.965936348544,
+     "motor_front_right Fx": 202.85636408552375,
+     "motor_front_right Fy": 16.3722382511011,
+     "motor_front_right Fz": 16.29257083755144,
+     "motor_front_right Mx": 4901.713793053533,
+     "motor_front_right My": 6231.466454400658,
+     "motor_front_right Mz": 9452.944616454895,
+     "motor_rear_left Fx": 67.41367212410199,
+     "motor_rear_left Fy": 21.602517787060627,
+     "motor_rear_left Fz": 14.018958534092635,
+     "motor_rear_left Mx": 5969.526878134879,
+     "motor_rear_left My": 5860.579455814875,
+     "motor_rear_left Mz": 10456.756893784524,
+     "motor_rear_right Fx": 79.18417471938031,
+     "motor_rear_right Fy": 25.8181830368741,
+     "motor_rear_right Fz": 14.692948385470238,
+     "motor_rear_right Mx": 6311.021146928475,
+     "motor_rear_right My": 6079.196713424696,
+     "motor_rear_right Mz": 11872.893790817134,
+     "stack Fx": 4108.022763511322,
+     "stack Fy": 2334.9568865595156,
+     "stack Fz": 388.2350213462635,
+     "stack Mx": 215087.0693143188,
+     "stack My": 262038.99713395597,
+     "stack Mz": 1283673.1007573204,
+     "battery Fx": 276.1771876876065,
+     "battery Fy": 374.3213847183746,
+     "battery Fz": 419.0457135687552,
+     "battery Mx": 17700.31922487086,
+     "battery My": 102104.55497914595,
+     "battery Mz": 237437.47515161766,
+     "camera Fx": 50.584456314933654,
+     "camera Fy": 314.2010895350715,
+     "camera Fz": 145.99765398493543,
+     "camera Mx": 26217.81776725437,
+     "camera My": 22824.143797555047,
+     "camera Mz": 117778.84775638425
+    },
+    "twist": {
+     "compliance_n_mm": 0.25945979894704413,
+     "stiffness_n_per_mm": 15.416646494883016
+    },
+    "missed": [
+     "wall_deep_component",
+     "wall_motor_zones"
+    ],
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "line": "| neural_cov_v3_1 | 27,9 g | SP z 20,1 mm; Ixx/Iyy/Izz 85/100/157 kg\u00b7mm\u00b2 (K) | 5,6 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 15,7 %, \u00d6ffn. r=1 0,23 %/11,6 mm\u00b3/Motorzonen 4,St\u00fctze 13,06 cm\u00b3, 250 min | Strebe 2,0/3,6/6,4 mm, H/B 1,02, offen 68 %, H\u00f6he 28,1 mm, K\u00f6rper 1, Schlaufen 14, Sym. 0,29 mm, Rauh. 0,144/mm | 19,7 N/mm; \u03a3 tr 0,535/\u03bbmax 0,195 N\u00b7mm (A) | f1 450 Hz; 475/498/1040 (A) | front 5,6/1,9 MPa; arm 13,9/1,0 MPa; back 2,2/0,8 MPa (SF 2,0, A) | wall_deep_component, wall_motor_zones; Warnung: loops, cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-ncov\\exports\\runs\\neural_cov_v3_1\\datasheet.md",
+    "sigma_peak_memory_gb": 3.6099853515625
+   },
+   "fallback": null,
+   "assessment": {
+    "conditions": {
+     "one_body": true,
+     "bolt_patterns": true,
+     "keep_outs_free": true,
+     "tools_reachable": true,
+     "fea_solved": true,
+     "slicer": true,
+     "wall_deep_fraction": true,
+     "wall_deep_component": false,
+     "wall_motor_zones": false,
+     "crash_front_strength": true,
+     "crash_arm_strength": true,
+     "crash_back_strength": true,
+     "target:airflow": true,
+     "target:overhang": true,
+     "target:support": true,
+     "target:strut_min": true,
+     "target:symmetry": true,
+     "target:arm_tip_slope": true,
+     "target:f1": true,
+     "target:sigma_mean": true,
+     "target:sigma_worst": true
+    },
+    "missed": [
+     "wall_deep_component",
+     "wall_motor_zones"
+    ],
+    "good": false,
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "crash": {
+     "crash_front": {
+      "von_mises_p999_mpa": 5.61603420368791,
+      "print_normal_p999_mpa": 1.891187327000022,
+      "utilisation_xy": 0.11011831771937079,
+      "utilisation_z": 0.07879947195833424
+     },
+     "crash_arm": {
+      "von_mises_p999_mpa": 13.88780332496162,
+      "print_normal_p999_mpa": 1.026781384000024,
+      "utilisation_xy": 0.27230986911689453,
+      "utilisation_z": 0.042782557666667664
+     },
+     "crash_back": {
+      "von_mises_p999_mpa": 2.22403481735889,
+      "print_normal_p999_mpa": 0.8225909735000024,
+      "utilisation_xy": 0.04360852583056647,
+      "utilisation_z": 0.03427462389583343
+     }
+    },
+    "safety_factor": 2.0,
+    "targets": {
+     "airflow": [
+      "geometry.airflow.prop_ring_share",
+      null,
+      0.15
+     ],
+     "overhang": [
+      "geometry.printability.overhang_share",
+      null,
+      0.25
+     ],
+     "support": [
+      "scaled.support_per_volume",
+      null,
+      1.5
+     ],
+     "strut_min": [
+      "geometry.form.strut_width_mm.p10",
+      1.19,
+      null
+     ],
+     "symmetry": [
+      "scaled.symmetry_per_wheelbase",
+      null,
+      0.0025
+     ],
+     "arm_tip_slope": [
+      "scaled.arm_tip_slope",
+      null,
+      0.007
+     ],
+     "f1": [
+      "fea.eigenfrequencies_hz.0",
+      330.0,
+      null
+     ],
+     "sigma_mean": [
+      "sigma.mean_compliance_n_mm",
+      null,
+      0.687
+     ],
+     "sigma_worst": [
+      "sigma.worst_case_compliance_n_mm",
+      null,
+      0.229
+     ]
+    },
+    "warning_ranges": {
+     "strut_max": [
+      "geometry.form.strut_width_mm.p90",
+      null,
+      6.5
+     ],
+     "section_ratio": [
+      "geometry.form.section_ratio.p50",
+      1.0,
+      1.4
+     ],
+     "top_view_material": [
+      "geometry.airflow.bbox_share",
+      null,
+      0.45
+     ],
+     "loops": [
+      "geometry.form.loops.loops",
+      20,
+      null
+     ],
+     "roughness": [
+      "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+      null,
+      0.18
+     ],
+     "height": [
+      "scaled.height_per_wheelbase",
+      null,
+      0.4
+     ],
+     "cog_offset": [
+      "scaled.cog_offset_per_wheelbase",
+      null,
+      0.01
+     ],
+     "inertia_z": [
+      "scaled.izz_per_mass_arm2",
+      null,
+      0.45
+     ],
+     "print_time": [
+      "scaled.print_min_per_g",
+      null,
+      16.0
+     ]
+    },
+    "wall_rule": {
+     "deep_max_fraction": 0.005,
+     "deep_component_max_mm3": 5.0,
+     "motor_zone_margin_mm": 2.0,
+     "opening_radius_mm": 1.0,
+     "deep_depth_mm": 0.45,
+     "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+    },
+    "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+   },
+   "assessment_fallback": null,
+   "line": "| neural_cov_v3_1 | 27,9 g | SP z 20,1 mm; Ixx/Iyy/Izz 85/100/157 kg\u00b7mm\u00b2 (K) | 5,6 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 15,7 %, \u00d6ffn. r=1 0,23 %/11,6 mm\u00b3/Motorzonen 4,St\u00fctze 13,06 cm\u00b3, 250 min | Strebe 2,0/3,6/6,4 mm, H/B 1,02, offen 68 %, H\u00f6he 28,1 mm, K\u00f6rper 1, Schlaufen 14, Sym. 0,29 mm, Rauh. 0,144/mm | 19,7 N/mm; \u03a3 tr 0,535/\u03bbmax 0,195 N\u00b7mm (A) | f1 450 Hz; 475/498/1040 (A) | front 5,6/1,9 MPa; arm 13,9/1,0 MPa; back 2,2/0,8 MPa (SF 2,0, A) | wall_deep_component, wall_motor_zones; Warnung: loops, cog_offset |",
+   "line_fallback": null
+  }
+ }
+}
