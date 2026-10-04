@@ -1,6 +1,6 @@
 # Frame mit Lastmodell als Verteilung, Kalibrierschleife (SIMP+MMA, 4/3 mm)
 
-Stand 04.10. 05:20. Kalibrierschleife abgeschlossen und stabil (3 Läufe). Ergebnis ist **recon v3 des Endlaufs, 17,6 g** (`simp_mma_cov3_v3_1`), aus dem Rohkörper 15,7 g (`simp_mma_cov3_raw_1`). v3 = feature/recon-v3 879713d mit Standardwerten (Übergangsradius 1,5 mm, Schalen ≥ 2,0 mm, Ankerfang, Brücken), plus die Sitz-Entfernung aus 2bafe8f (siehe unten). **v3 liegt nicht überall innerhalb 10 % vom Rohkörper und verfehlt λmax** (0,247 > 0,229 N mm, 108 %). Das wird berichtet, nicht ersetzt; 1:1 bleibt nur Vergleich.
+Stand 04.10. 09:05. Kalibrierschleife abgeschlossen und stabil (3 Läufe). Ergebnis ist jetzt **recon v3b des Endlaufs, 17,6 g** (`simp_mma_cov3_v3_2`), aus dem Rohkörper 15,7 g (`simp_mma_cov3_raw_1`). v3b = feature/recon-v3b b74dcf2 (af19376 + Querschnittsorientierung aus Schnittebenen, Gabelstege aus dem Rohkörper, Rohkörper-Hülle). **v3b erfüllt λmax (0,207 N mm, 90 % der Grenze) und alle neun Kriterien; Armspitze −4 % und λmax −6 % liegen innerhalb 10 % vom Rohkörper, Masse +12 %, f1 +16 % und tr −12 % (steifer) nicht.** Das wird berichtet, nicht ersetzt. Der frühere v3 (af19376, `simp_mma_cov3_v3_1`, λmax 108 %) steht weiter unten zum Vergleich; 1:1 bleibt nur Vergleich.
 
 ## Zur Frage "wieso sind die Halter noch dran?"
 
@@ -39,7 +39,8 @@ Lauf 2 lag knapp über der 10-%-Schwelle, daher Lauf 3. Lauf 3 bestätigt den Fa
 | Optimierer (Feld) | 17,18 g | 29,36 g | 18,45 g | **18,22 g** |
 | Rohkörper (STL) | 14,56 g | 26,56 g | 15,88 g | **15,72 g** |
 | 1:1 (nur Vergleich) | 16,39 g | 26,34 g | – | 16,28 g |
-| recon v3 | – | – | – | **17,63 g** |
+| recon v3 (af19376) | – | – | – | 17,63 g |
+| **recon v3b (b74dcf2)** | – | – | – | **17,62 g** |
 
 ## Nebenbedingungen Endlauf (Optimierer, fein)
 
@@ -72,7 +73,9 @@ Aktiv sind tr und zwei Arm-Crash-Fälle. f1 hat 7 % Reserve; die robuste Mindest
 | Iteration 2 roh | 15,9 g | 0,619 | 0,187 | 0,728 | 0,266 | erfüllt (90 % / 82 %) |
 | **Endlauf roh** | **15,7 g** | **0,687** | **0,220** | **0,809** | **0,305** | **erfüllt (100,0 % / 96 %)** |
 | Endlauf 1:1 (Vergleich) | 16,3 g | – | – | – | – | nicht gerechnet: Tet-Vernetzung scheiterte in allen 6 Versuchen |
-| **Endlauf recon v3** (Ersatz-FEA) | **17,6 g** | **0,646** | **0,247** | 0,747 | 0,297 | **tr erfüllt (94 %), λmax verfehlt (108 %)** |
+| Endlauf recon v3 af19376 (Ersatz-FEA) | 17,6 g | 0,646 | 0,247 | 0,747 | 0,297 | tr erfüllt (94 %), λmax verfehlt (108 %) |
+| **Endlauf recon v3b b74dcf2** (Standard-FEA) | **17,6 g** | **0,602** | **0,207** | 0,705 | 0,264 | **erfüllt (88 % / 90 %)** |
+| Endlauf recon v3b (Ersatz-FEA) | 17,6 g | 0,600 | 0,206 | 0,703 | 0,263 | erfüllt (87 % / 90 %) |
 | Endlauf roh (Ersatz-FEA, Vergleichsbasis) | 15,7 g | 0,686 | 0,220 | 0,807 | 0,304 | erfüllt (99,8 % / 96 %) |
 | ManaFly 3 | | 0,859 | 0,286 | 1,248 | 0,579 | Referenz (Grenze = × 0,8) |
 | Aether4 (unskaliert) | | 0,391 | 0,143 | 0,528 | 0,242 | nur Vergleich |
@@ -134,7 +137,8 @@ Weit unter ManaFly bleiben die Richtungen, die Σ kaum gewichtet:
 | Lastmodell 26,6 g roh | 0,086 | 46,3 |
 | Iteration 2 roh | 0,282 | 14,2 |
 | **Endlauf roh** | **0,328** | **12,2** |
-| **Endlauf recon v3** | **0,307** | **13,0** |
+| Endlauf recon v3 af19376 | 0,307 | 13,0 |
+| **Endlauf recon v3b** | **0,287** | **13,9** |
 | ManaFly 3 | 0,236 | 16,9 |
 | Aether4 (unskaliert) | 0,120 | 33,2 |
 
@@ -154,7 +158,71 @@ Der Endlauf ist um den Faktor 1,8 verwindungssteifer als der 17,2-g-Rahmen, lieg
   - FEA nicht lösbar: gmsh scheiterte in allen 6 Vernetzungsversuchen. Deshalb fehlen fea_solved, die Crash-Festigkeiten und die Zielwerte (Armspitze, f1, Σ).
 - **Datenblätter** (10 Felder + Neun-Kriterien-Zeile + Oberflächenwarnung): `exports/runs/simp_mma_cov3_raw_1/datasheet.md`, `exports/runs/simp_mma_cov3_recon_1/datasheet.md`, `exports/runs/simp_mma_cov3_v3_1/datasheet.md`.
 
-## Rekonstruktion v3 des Endlaufs
+## Rekonstruktion v3b des Endlaufs (Armwurzeln, Gabelstege)
+
+**Ursache beim alten v3 (af19376).** Lastfall Armspitze: Kraft am vorderen linken Motor, Lagerung an den vier AIO-Standoffs unten in der Mitte. Der Lastpfad läuft über die Armwurzel in eine senkrechte Wand des Rohkörpers (x ≈ ±9…14, y ≈ 19, z 4…17) zwischen oberem Querriegel, Pfosten und unterem Querriegel. Das Skelett macht daraus einzelne Stäbe. Schnitte normal zur Gliedachse, roh gegen af19376:
+
+- Glied 18 (Knoten → AIO-Standoff vorne links): roh 99 mm², 18,4 mm hoch; v3 36 mm², 6,2 mm.
+- Glied 16 (oberer Querriegel) bei x = −9: roh Iv 1967 mm⁴, 17,3 mm hoch; v3 Iv 64 mm⁴, 5,3 mm.
+- Glied 20 (unterer Querriegel) bei x = +8,3: roh 109 mm²; v3 29 mm².
+- Arm-Mitte vorn: gleiche Fläche, aber roh hochkant (h 7,5 / b 5,8 mm, Iv 105–129 mm⁴), v3 flach (5,9 / 7,3 mm, Iv 72–82 mm⁴). Grund: ein Seitenverhältnis (Median) und eine mittlere Hauptachse je Glied.
+
+**Änderungen (feature/recon-v3b, je ein Commit, Tests dazu):**
+
+1. 48c517a: Seitenverhältnis und Hauptachse je Spline-Stützstelle aus Schnittebenen normal zur Kurve (zentrierte Flächenmomente des Rohkörpers, 2 mm geglättet). Die Flächenkurve bleibt unverändert. Der Arm stimmt jetzt mit roh überein (Iv 116–119 gegen 105–129 mm⁴). Allein bringt das aber nichts: Armspitze 9,17 N/mm, f1 515 Hz.
+2. b74dcf2: Gabelstege. Zwei Glieder, deren Enden ≤ 3 mm auseinander liegen und die sich um ≤ 120° spreizen, bekommen einen Steg. Er läuft zwischen den beiden Splines vom Gabelpunkt so weit, wie der Rohkörper die Verbindungslinie zu ≥ 70 % füllt. Die Form kommt aus dem Rohkörper, mit einem Kern von 2,5 mm. Gefunden werden 24 Stege, 2–5 mm über die Gliedradien hinaus. Rohfeld ist jetzt die Rohkörper-Belegung statt der Dichte: die Dichte-Isofläche ist 17,1 cm³ groß, der Rohkörper 14,4 cm³. Splines dürfen höchstens 0,5 mm über den Rohkörper hinausragen, Schalen und Knoten nicht. Mindestkerne 2,5 mm bleiben, ebenso Spline-Glieder und der feste Übergangsradius 1,5 mm. Keine Skalierung.
+
+**Variantenreihe (Ersatz-FEA, gleiche Einstellungen; roh 15,72 g / 10,82 N/mm / 407 Hz):**
+
+| Variante | Masse | Armspitze | f1 |
+|---|---|---|---|
+| af19376 (alt) | 17,63 g (+12,2 %) | 9,40 (−13,2 %) | 521 (+28 %) |
+| A: nur Schnittorientierung | 17,62 g (+12,1 %) | 9,17 (−15,3 %) | 515 (+27 %) |
+| C: + Stege aus der Dichte | 19,53 g (+24 %) | 11,36 (+5,0 %) | 540 (+33 %) |
+| F: + Rohkörper als Feld, Hülle 0,5 mm überall | 18,04 g (+14,7 %) | 10,26 (−5,2 %) | 484 (+19 %) |
+| G: Hülle 0 mm überall | 16,66 g (+6,0 %) | 7,81 (−27,8 %) | 436 (+7 %) |
+| H: Hülle 0,25 mm überall | 17,39 g (+10,6 %) | 9,04 (−16,5 %) | 464 (+14 %) |
+| I: Stäbe frei, Schalen/Knoten 0 mm | 18,17 g (+15,6 %) | – | – |
+| **J = v3b: Stäbe 0,5 mm, Schalen/Knoten 0 mm** | **17,70 g (+12,6 %)** | **9,84 (−9,1 %)** | **472 (+16 %)** |
+
+Wird v3 enger an den Rohkörper gelegt, sinkt die Steifigkeit schneller als die Masse. Bei G fehlen die Teile des Rohkörpers außerhalb der Spline-Ellipse, vor allem am Übergang Arm–Pad. Auf Rohmasse verliert v3 also etwa 25 % Steifigkeit, auf Rohsteifigkeit kostet es etwa 15 % Masse.
+
+Die Mehrmasse liegt nicht in den festen Bereichen: innerhalb der Preserve-Maske roh 4,24 / v3b 4,87 cm³, außerhalb roh 10,17 / v3b 11,30 cm³ (+11 %). Ein Teil kommt aus der 2,5-mm-Mindestbreite, denn der Rohkörper unterschreitet sie: Akkuschienen-Stützen 2,1 mm (Glieder 8, 31), oberer Querriegel hinten 2,1 × 2,9 mm (Glied 17), unterer Hinterarmgurt 1,5 mm, AIO-Steg unten 0,5–0,9 mm (Glied 14).
+
+**f1 ist ein Zielkonflikt.** Der Modalfall spannt das vordere linke Motorpad ein, der Akku (37 g) sitzt auf den Schienen. Die Schienenstützen des Rohkörpers sind dünner als 2,5 mm. Mit 2,5 mm werden sie steifer, f1 steigt. Jede Variante liegt bei +14 bis +28 %, außer G, und G bezahlt das mit −28 % Armspitze. Das ist kein Fehler, den ich weiter tune. Es wird berichtet.
+
+**Ergebnis v3b** (`simp_mma_cov3_v3_2`, b74dcf2, 1 Körper, 15 Knoten, 30 Glieder, 7 Schalen, 24 Stege, Kontinuität und exakte Booleans bestanden). Die Standard-FEA hat v3b diesmal vernetzt. Daher steht unten Standard gegen Standard und Ersatz-FEA gegen Ersatz-FEA (`evaluation_fallback/`, identische Einstellungen wie beim Rohkörper):
+
+| Größe | roh Std | v3b Std | Abw. | roh Ersatz | v3b Ersatz | Abw. | innerhalb 10 %? |
+|---|---|---|---|---|---|---|---|
+| Masse | 15,72 g | 17,62 g | +12,1 % | 15,72 g | 17,62 g | +12,1 % | nein |
+| Armspitze | 10,88 N/mm | 10,46 N/mm | −3,9 % | 10,82 | 10,40 | −3,9 % | ja |
+| f1 | 407,0 Hz | 472,8 Hz | +16,2 % | 407,0 | 472,8 | +16,2 % | nein |
+| Σ tr voll | 0,687 N mm | 0,602 N mm | −12,4 % | 0,686 | 0,600 | −12,5 % | nein (steifer) |
+| Σ λmax voll | 0,220 N mm | 0,207 N mm | −5,7 % | 0,220 | 0,206 | −6,4 % | ja |
+| Verwindung | 12,2 N/mm | 13,9 N/mm | +14 % | | | | |
+
+Gegen die ManaFly-×-0,8-Grenzen: tr 0,602 ≤ 0,687 (88 %) und **λmax 0,207 ≤ 0,229 (90 %), beide erfüllt**. Alt (af19376) war λmax 108 %.
+
+**Neun Kriterien v3b** (`exports/runs/simp_mma_cov3_v3_2/datasheet.md`, Standard-FEA):
+
+- Verfehlt: keine. Warnung: cog_offset.
+- Bohrbilder 20/20, Passung ok, Keep-outs frei.
+- Wandregel bestanden: 0,03 % / 2,8 mm³, Motorzonen 0.
+- Spannungen front 6,3 / arm 13,5 / back 2,2 MPa (SF 2).
+- Überhang 20 %.
+- FEA-Oberfläche: Warnung, 0,31 mm > 0,20 mm (nur Rechenmodell).
+
+**Neural-Gegenprobe** (recon3 `neural_v06_f1`, v3b b74dcf2 gegen 879713d; roh 19,60 g, Ersatz-FEA 4,56 N/mm / 330 Hz):
+
+| | Masse | Armspitze | f1 |
+|---|---|---|---|
+| 879713d | +9,5 % | −7,9 % | +2,0 % |
+| v3b | **+4,2 %** | **+30,6 %** (5,96 N/mm) | +7,9 % |
+
+Die Masse ist besser. Die Armspitze liegt nicht mehr innerhalb 10 %, und zwar auf der steifen Seite. Gegen den 10-%-Maßstab ist das eine Regression, gegen das Bauteil keine. Vermutete Ursache: Stege und 2,5-mm-Kerne an dünnen Rohgliedern. Nicht weiter untersucht. Ein Basislauf von af19376 auf dieser Dichte (ohne Sitze) wurde aus Zeitgründen nicht gerechnet; der 879713d-Wert stammt noch aus dem Lauf mit Sitzen.
+
+## Rekonstruktion v3 des Endlaufs (af19376, abgelöst durch v3b)
 
 **Quelle.** v3 wird per `git archive` gebaut. recon3 (879713d) zweigt vor dem Merge 2bafe8f ab und hat deshalb noch XT30-, Balancer- und Antennensitze als Preserve. Der erste v3-Bau enthielt sie: 4 Körper, drei lose Sitzblöcke hinten in der Mitte (264 / 226 / 160 mm³), exakte Booleans nicht bestanden. Dieser Bau ist verworfen (`exports/runs/simp_mma_cov3_v3_seats_discarded`).
 
@@ -200,12 +268,12 @@ Gegen die ManaFly-×-0,8-Grenzen: tr 0,646 ≤ 0,687 (94 %) erfüllt, **λmax 0,
 ## Bilder und STLs
 
 - Rohkörper-STL: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov3/geometry.stl` (= `simp_mma_cov3_raw_1/frame.stl`).
-- v3-STL (Ergebnis): `/c/clones/Deep_Frame-neural/exports/simp_mma_cov3_v3/geometry.stl` (= `simp_mma_cov3_v3_1/frame.stl`).
+- v3b-STL (Ergebnis): `/c/clones/Deep_Frame-neural/exports/simp_mma_cov3_v3/geometry.stl` (= `simp_mma_cov3_v3_2/frame.stl`; der alte v3 liegt in `simp_mma_cov3_v3_1/frame.stl`).
 - 1:1 nur als Vergleich: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov3_1to1/geometry.stl` (= `simp_mma_cov3_recon_1/frame.stl`).
-- `exports/cov/cov_4views.png` (roh | v3 | ManaFly; iso/top/side/front) und `exports/cov/recon_1to1_vs_v3.png`.
+- `exports/cov/cov_4views.png` (roh | v3b | ManaFly; iso/top/side/front) und `exports/cov/recon_1to1_vs_v3.png` (1:1 | v3b).
 - Renders je Lauf: `exports/runs/simp_mma_cov3_{raw,v3}_1/renders/{iso,top,side,front}.png`.
 
 ## Reproduktion
 
-1. `python tools/formulation_study.py frame_runs exports/cov/post_v3.json` (`v3.ref` = `recon-v3-noseats`), dann `compose` und `cov_compare` mit derselben Datei.
+1. v3b: `python tools/formulation_study.py frame_runs exports/cov/post_v3b.json` (`v3.ref` = `feature/recon-v3b`, b74dcf2; vorher `v3` aus `runs.json` entfernt, alte Fassung `runs_v3_af19376.json`), dann `compose` und `cov_compare` mit derselben Datei (alte `comparison.json` als `comparison_v3_af19376.json`). Alt: dasselbe mit `post_v3.json` (`recon-v3-noseats`).
 2. Ersatz-FEA für roh und v3: `evaluation/frame.json` mit `fea_memory_budget_mb` 16384 nach `evaluation_fallback/`, Teile `fea` und `sigma` über Ray (Typ `reconstruction`), dann `report`; v3-`evaluation.json` in den Lauf kopiert und `run.py datasheet` neu.
