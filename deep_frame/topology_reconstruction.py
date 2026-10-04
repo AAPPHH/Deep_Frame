@@ -389,6 +389,21 @@ class Reconstruction:
             axes = self.field.axes(window)
             self._blend(window, self._fit(axes, primitive_distance(axes, region), primitive_distance(axes, dict(region, radius_mm=min(node["radius"], self.config["minimum_radius_mm"])))).astype(np.float32), blend)
 
+    def lift_contacts(self, faces, reach, over):
+        h = float(self.field.spacing[0])
+        for axis, sign, plane, low, high in faces:
+            bounds = np.array([low, high])
+            bounds[:, axis] = sorted((plane-sign*reach, plane+sign*over))
+            window = self.field.window(_box(*bounds), 0.0)
+            if window is None:
+                continue
+            axes, values = self.field.axes(window), self.field.values[window]
+            depth = sign*(axes[axis]-plane)
+            first, second = [(axes[i] >= low[i]+h) & (axes[i] <= high[i]-h) for i in range(3) if i != axis]
+            inside = first & second
+            peak = np.where((depth >= -reach) & (depth <= 0), values, -np.inf).max(axis=axis, keepdims=True)
+            self.field.values[window] = np.where(inside & (depth >= -reach) & (depth <= over) & (peak > 0), np.maximum(values, peak), values)
+
     def finish(self):
         h = self.field.spacing[0]
         preserves = [r for r in self.domain["regions"] if r["role"] == "preserve"]
@@ -405,10 +420,25 @@ class Reconstruction:
             self.add_bridges()
         clip = lambda margin: self.field.intersect(-self.field.primitives(forbidden, margin+3*h)-margin)
         clip(offset)
+        self.lift_contacts(contact_faces(self.domain, self.config.get("contact_regions", [])), self.config.get("contact_reach_mm", 0.0), abs(self.config["preserve_flush_mm"]))
         self.field.smooth_union(self.preserve_values(preserves, self.config["preserve_blend_mm"]+3*h), self.config["preserve_blend_mm"])
         clip(np.float32(self.config["preserve_flush_mm"]))
         self.field.intersect(self.field.primitives([_envelope(self.domain)])+offset)
         return self.field.extract()
+
+def contact_faces(domain, names):
+    faces = {}
+    for region in (r for r in domain["regions"] if r["name"] in names and r["kind"] == "box"):
+        low, high = region_bounds(region)
+        for other in (r for r in domain["regions"] if r["role"] == "forbidden" and r["kind"] == "box"):
+            other_low, other_high = region_bounds(other)
+            start, stop = np.maximum(low, other_low), np.minimum(high, other_high)
+            for axis in range(3):
+                rest = [i for i in range(3) if i != axis]
+                for sign, plane, face in ((1, high[axis], other_low[axis]), (-1, low[axis], other_high[axis])):
+                    if abs(plane-face) < 1e-6 and np.all(stop[rest] > start[rest]):
+                        faces[(axis, sign, round(float(plane), 6), *np.round(start, 6), *np.round(stop, 6))] = (axis, sign, float(plane), start, stop)
+    return list(faces.values())
 
 def shrunk_region(region, r):
     if region["kind"] == "box":

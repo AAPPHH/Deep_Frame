@@ -1084,10 +1084,12 @@ SPLINE_RECONSTRUCTION_CONFIG = {
     "web_margin_mm": 1.0,
     "raw_margin_mm": 0.0,
     "rod_raw_margin_mm": 0.5,
+    "contact_regions": ["battery_contact"],
+    "contact_reach_mm": 0.5,
 }
 
 SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if isinstance(value, float) else "int" for key, value in SPLINE_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},
-                               "section_body": "path", "spline_lengths_mm": ["float"]}
+                               "section_body": "path", "spline_lengths_mm": ["float"], "contact_regions": ["text"]}
 
 MATERIALS = {
     "PA6-CF": {

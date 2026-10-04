@@ -224,3 +224,24 @@ def test_fork_web_is_found_where_the_raw_body_fills_between_diverging_members():
     assert 10.0 <= found[0]["length_mm"] <= 15.0 and found[0]["open_mm"] >= 5.0
     assert found[0]["thickness_mm"] == pytest.approx(3.0, abs=0.6)
     assert not fork_webs(SimpleNamespace(weights=bars.astype(np.float32), origin=np.zeros(3), h=h), rods, config)
+
+def test_spline_contact_surface_ends_exactly_on_the_keep_out_plane():
+    h, shape, plane = 0.25, (176, 64, 40), 5.0
+    centers = (np.stack(np.meshgrid(*[np.arange(n) for n in shape], indexing="ij"), axis=-1)+0.5)*h
+    pads = [{"name": f"pad_{i}", "role": "preserve", "kind": "box", "min_mm": [x-2.5, 5.5, 1.5], "max_mm": [x+2.5, 10.5, 4.5]} for i, x in enumerate((6.0, 38.0))]
+    lid = {"name": "battery_envelope", "role": "forbidden", "kind": "box", "min_mm": [10.0, 2.0, plane], "max_mm": [34.0, 14.0, 9.5]}
+    contact = {"name": "battery_contact", "role": "allowed", "kind": "box", "min_mm": [10.0, 2.0, plane-3.0], "max_mm": [34.0, 14.0, plane]}
+    preserve = np.zeros(shape, dtype=bool)
+    for pad in pads:
+        preserve |= np.all((centers >= pad["min_mm"]) & (centers <= pad["max_mm"]), axis=-1)
+    density = (np.all((centers >= [6.0, 6.0, plane-2.5]) & (centers <= [38.0, 10.0, plane]), axis=-1) | preserve).astype(np.float32)
+    domain = {"grid": {"origin_mm": [0.0, 0.0, 0.0], "spacing_mm": [h]*3, "shape": list(shape)}, "regions": [*pads, lid, contact], "preserve": preserve}
+    tops = {}
+    for names in (["battery_contact"], []):
+        config = {**SPLINE_RECONSTRUCTION_CONFIG, "density_sigma_cells": 0.0, "voxel_mm": 0.25, "preserve_round_mm": 0.0, "contact_regions": names}
+        mesh = reconstruct_splines(domain, density, config)[0]
+        under = np.all((mesh.vertices[:, :2] >= [12.0, 2.0]) & (mesh.vertices[:, :2] <= [32.0, 14.0]), axis=1)
+        up = (mesh.face_normals[:, 2] > 0.99) & (np.abs(mesh.triangles_center[:, 2]-plane) <= 0.02) & np.all((mesh.triangles_center[:, :2] >= [12.0, 2.0]) & (mesh.triangles_center[:, :2] <= [32.0, 14.0]), axis=1)
+        tops[bool(names)] = (float(mesh.vertices[under, 2].max()), float(mesh.area_faces[up].sum()), len(mesh.split(only_watertight=False)))
+    assert abs(tops[True][0]-plane) <= 0.02 and tops[True][1] >= 40.0 and tops[True][2] == 1
+    assert tops[False][0] <= plane-SPLINE_RECONSTRUCTION_CONFIG["boolean_offset_mm"]+0.02 and tops[False][1] == 0.0

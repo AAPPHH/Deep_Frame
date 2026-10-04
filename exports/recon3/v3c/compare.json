@@ -1,0 +1,95 @@
+{
+ "raw": {
+  "mass_g": 17.013107675829534,
+  "arm_tip_n_mm": 13.405514297223522,
+  "arm_tip_slope": 0.0040535276332340315,
+  "f1_hz": 393.559,
+  "tr": 0.7215063234407656,
+  "lmax": 0.23040977902038126,
+  "missed": [
+   "bolt_patterns",
+   "keep_outs_free",
+   "wall_deep_fraction",
+   "wall_deep_component",
+   "target:sigma_mean",
+   "target:sigma_worst"
+  ],
+  "n_cond": 21,
+  "passed": 15
+ },
+ "v3b_old": {
+  "mass_g": 18.613561174452453,
+  "arm_tip_n_mm": null,
+  "arm_tip_slope": null,
+  "f1_hz": null,
+  "tr": null,
+  "lmax": null,
+  "missed": [
+   "fea_solved",
+   "crash_front_strength",
+   "crash_arm_strength",
+   "crash_back_strength",
+   "target:arm_tip_slope",
+   "target:f1",
+   "target:sigma_mean",
+   "target:sigma_worst"
+  ],
+  "n_cond": 21,
+  "passed": 13
+ },
+ "v3c": {
+  "mass_g": 18.751206903209418,
+  "arm_tip_n_mm": 14.761932893085515,
+  "arm_tip_slope": 0.003681064196339905,
+  "f1_hz": 486.8461,
+  "tr": 0.6579172710595024,
+  "lmax": 0.22007813743319854,
+  "missed": [],
+  "n_cond": 21,
+  "passed": 21
+ },
+ "rail_v3b": {
+  "mass_g": 17.620800936283516,
+  "arm_tip_n_mm": 10.46144252257219,
+  "arm_tip_slope": 0.005194276269669622,
+  "f1_hz": 472.8289,
+  "tr": 0.601582087548817,
+  "lmax": 0.20718303901272683,
+  "missed": [],
+  "n_cond": 21,
+  "passed": 21
+ },
+ "battery_plane": {
+  "plane_z_mm": 25.8,
+  "raw": {
+   "top_z_mm": 25.8,
+   "up_area_at_plane_mm2": 467.5,
+   "battery_nodes": 240
+  },
+  "v3b_old": {
+   "top_z_mm": 25.5,
+   "up_area_at_plane_mm2": 0.0,
+   "battery_nodes": 0
+  },
+  "v3c": {
+   "top_z_mm": 25.799999,
+   "up_area_at_plane_mm2": 401.6,
+   "battery_nodes": 299
+  },
+  "min_area_mm2": 350.0
+ },
+ "rail_check": {
+  "frame": "simp_mma_cov3 v3b (Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2)",
+  "geometry_sha256_16": {
+   "before": "81504ebdb07388a2",
+   "after": "81504ebdb07388a2"
+  },
+  "volume_mm3": {
+   "before": 16165.872418608727,
+   "after": 16165.872418608727
+  },
+  "note": "no contact region in the rail domain, geometry bit-identical, FEA numbers unchanged by construction"
+ },
+ "cause": "Reconstruction.finish clipped all material boolean_offset_mm = 0.3 below every keep-out; the exact boolean then cut nothing at the battery plane, so the free support ended at 25.5 mm",
+ "fix": "contact_regions (battery_contact) and contact_reach_mm 0.5: material within 0.5 mm below a keep-out face shared with a contact region is extended past the face (up to |preserve_flush_mm|) inside the face footprint inset by one voxel; the exact boolean cuts it on the plane"
+}
