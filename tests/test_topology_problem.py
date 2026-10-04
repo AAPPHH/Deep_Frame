@@ -4,6 +4,7 @@ import pytest
 
 from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, COMPONENT_DEFAULTS, PRINT_MATERIAL
 from deep_frame.topology_optimization import elasticity_matrix, hexahedron_matrices, orthotropic_matrix
+from deep_frame.topology_stability import FOUR_FEET, StandStability, stand_design, stand_domain
 from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
@@ -375,26 +376,8 @@ def test_free_camera_support_equilibrium_and_gradients():
     assert lumped.sum() / 3 == pytest.approx(2.0e-6 / 2)
     tested.close()
 
-def stand_domain(half, n=(48, 48, 12), components=None):
-    nx = n[0] // 2 if half else n[0]
-    grid = {"origin_mm": [0.0 if half else -n[0] / 2, -n[1] / 2, 0.0], "spacing_mm": [1.0] * 3, "shape": [nx, n[1], n[2]]}
-    return {"grid": grid, "allowed": np.ones((nx, n[1], n[2]), dtype=bool), "symmetry": {"axis": 0, "plane_mm": 0.0} if half else None, "material": {"density_g_cm3": 1.0},
-            "metadata": {"components": components or {"prop_a": {"center_of_mass_mm": [0.0, 0.0, 20.0], "mass_g": 0.0}}}}
-
-def stand_design(domain, feet, low=0.02):
-    from deep_frame.topology_neural import cell_centers
-    c = cell_centers(domain["grid"])
-    rho = np.full(len(c), low)
-    rho[(c[:, 2] > 8) & (c[:, 2] < 10) & (np.abs(c[:, 0]) < 22) & (np.abs(c[:, 1]) < 22)] = 1
-    for x, y, z in feet:
-        rho[(np.abs(c[:, 0] - x) < 2) & (np.abs(c[:, 1] - y) < 2) & (c[:, 2] > z) & (c[:, 2] < 10)] = 1
-    return rho
-
-FOUR_FEET = [(sx * 18, sy * 18, 0) for sx in (-1, 1) for sy in (-1, 1)]
-
 @pytest.mark.parametrize("half", [False, True])
 def test_stand_reserve_box_on_four_feet(half):
-    from deep_frame.topology_stability import StandStability
     domain = stand_domain(half)
     rows = {row["name"]: row for row in StandStability(domain, {"enabled": True}).rows(stand_design(domain, FOUR_FEET))}
     assert 18.0 < rows["stand_reserve"]["value"] <= 19.5 and rows["stand_reserve"]["g"] < 0
@@ -402,7 +385,6 @@ def test_stand_reserve_box_on_four_feet(half):
     assert rows["stand_prop_clearance"]["value"] == pytest.approx(20.0 - COMPONENT_DEFAULTS["prop"]["thickness_mm"] / 2, abs=0.01)
 
 def test_stand_reserve_violated_on_one_sided_or_tilted_feet():
-    from deep_frame.topology_stability import StandStability
     domain = stand_domain(True)
     stability = StandStability(domain, {"enabled": True})
     raised = stability.rows(stand_design(domain, [(sx * 18, 18, 0) for sx in (-1, 1)] + [(sx * 18, -18, 3) for sx in (-1, 1)]))[0]
@@ -412,7 +394,6 @@ def test_stand_reserve_violated_on_one_sided_or_tilted_feet():
     assert shifted["value"] < 0 and shifted["g"] > 1 and shifted["info"]["center_of_gravity_xy_mm"][1] > 20
 
 def test_stand_prop_clearance_and_gradients():
-    from deep_frame.topology_stability import StandStability
     domain = stand_domain(True, components={"prop_a": {"center_of_mass_mm": [10.0, 0.0, 14.5], "mass_g": 1.0}})
     stability = StandStability(domain, {"enabled": True, "prop_clearance_min_mm": 17.0})
     design = stand_design(domain, [(sx * 18, sy * 18, 4) for sx in (-1, 1) for sy in (-1, 1)])

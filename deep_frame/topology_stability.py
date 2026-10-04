@@ -3,6 +3,39 @@ from scipy.spatial import ConvexHull, QhullError
 
 from deep_frame.config import COMPONENT_DEFAULTS, STAND_STABILITY
 
+FOUR_FEET = [(sx * 18, sy * 18, 0) for sx in (-1, 1) for sy in (-1, 1)]
+STAND_CASES = {"four_feet": FOUR_FEET, "rear_feet_raised_3mm": [(sx * 18, 18, 0) for sx in (-1, 1)] + [(sx * 18, -18, 3) for sx in (-1, 1)],
+               "tripod": [(sx * 18, 18, 0) for sx in (-1, 1)] + [(0, -18, 0)], "front_pair": [(sx * 18, 18, 0) for sx in (-1, 1)], "stepped_feet": [(sx * 18, 18, 0) for sx in (-1, 1)] + [(sx * 18, -18, 1) for sx in (-1, 1)]}
+
+def stand_domain(half, n=(48, 48, 12), components=None):
+    nx = n[0] // 2 if half else n[0]
+    grid = {"origin_mm": [0.0 if half else -n[0] / 2, -n[1] / 2, 0.0], "spacing_mm": [1.0] * 3, "shape": [nx, n[1], n[2]]}
+    return {"grid": grid, "allowed": np.ones((nx, n[1], n[2]), dtype=bool), "symmetry": {"axis": 0, "plane_mm": 0.0} if half else None, "material": {"density_g_cm3": 1.0},
+            "metadata": {"components": components or {"prop_a": {"center_of_mass_mm": [0.0, 0.0, 20.0], "mass_g": 0.0}}}}
+
+def stand_design(domain, feet, low=0.02):
+    from deep_frame.topology_neural import cell_centers
+    c = cell_centers(domain["grid"])
+    rho = np.full(len(c), low)
+    rho[(c[:, 2] > 8) & (c[:, 2] < 10) & (np.abs(c[:, 0]) < 22) & (np.abs(c[:, 1]) < 22)] = 1
+    for x, y, z in feet:
+        rho[(np.abs(c[:, 0] - x) < 2) & (np.abs(c[:, 1] - y) < 2) & (c[:, 2] > z) & (c[:, 2] < 10)] = 1
+    return rho
+
+def voxel_reserve(domain, physical, center, threshold=0.5):
+    from deep_frame.topology_neural import cell_centers
+    grid = domain["grid"]
+    h = np.asarray(grid["spacing_mm"], dtype=float)
+    c = cell_centers(grid)[np.asarray(physical).ravel() > threshold]
+    bottom = c[:, 2] - h[2] / 2
+    cells = c[bottom <= bottom.min() + 1e-6, :2]
+    corners = (cells[:, None, :] + np.array([[sx, sy] for sx in (-0.5, 0.5) for sy in (-0.5, 0.5)]) * h[:2]).reshape(-1, 2)
+    symmetry = domain.get("symmetry")
+    if symmetry is not None:
+        mirror = lambda points: np.concatenate([points, np.where(np.arange(2) == symmetry["axis"], 2 * symmetry.get("plane_mm", 0.0) - points, points)])
+        cells, corners = mirror(cells), mirror(corners)
+    return {"cell_centres_mm": plan_reserve(cells, center)[0], "cell_faces_mm": plan_reserve(corners, center)[0], "ground_z_mm": float(bottom.min())}
+
 def prop_bottoms(components):
     half = COMPONENT_DEFAULTS["prop"]["thickness_mm"] / 2
     return [float(entry["center_of_mass_mm"][2]) - half for name, entry in components.items() if name.startswith("prop")]
