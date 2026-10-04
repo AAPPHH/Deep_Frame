@@ -16,7 +16,7 @@ from deep_frame.config import RUN_SETTINGS, STAGES, command_line
 from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge
 from deep_frame.topology_optimization import HexElasticity
-from deep_frame.topology_problem import ARM_TIP, CANTILEVER_COVARIANCE, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
+from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
 FORMULATION = {
@@ -37,6 +37,9 @@ FORMULATION = {
               "crash_source": "ASSUMPTION: all-up mass 125 g (INTEGRATION_CONFIG), impact speed 5 m/s, 50 mm combined stopping distance (props, battery, frame); E = m v^2 / 2, F = E / d per direction",
               "rotation": {"front_left": 1.0, "rear_right": 1.0, "front_right": 0.0, "rear_left": 0.0}},
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
+    "layout": None,
+    "compare": {"bodies": {}, "output": "exports/layout/battery_vs_rails.png", "summary": "exports/layout/battery_vs_rails.json", "gap_mm": 25.0, "size": [1400, 900]},
+    "battery_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "output": "docs/validation/formulation_battery_fd.json"},
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
@@ -66,16 +69,56 @@ def load_numbers(loads):
             "twist": "diagonal differential thrust (front_left, rear_right full; front_right, rear_left idle) = mean + saddle; saddle part +-T SF / 2 per motor, self-equilibrated",
             "yaw": "reaction torque of the full-thrust pair as tangential force couples on the two halves of each pad, other pair idle; inertia relief balances the net yaw moment"}
 
-def patched_builder(cfg, stiffness=True):
+def patched_settings(cfg):
     from run import _update
+    from deep_frame.frame_run import FrameLayout
+    from tools.neural_study import configure as study
     request = json.loads(Path(cfg["request"]).read_text(encoding="utf-8"))
-    for name, values in request["patch"].items():
-        _update(getattr(config, name), values)
-    from tools.neural_study import R2Domain, configure as study
     overrides = deepcopy(request["overrides"])
+    patches = [request["patch"]]
+    if cfg["layout"]:
+        layout = FrameLayout(cfg["layout"])
+        patches.append(layout.patch())
+        overrides["hoop"] = layout.hoop()
+    for patch in patches:
+        for name, values in patch.items():
+            _update(getattr(config, name), values)
+    settings = study(overrides)
+    if free_battery():
+        settings["inertia_relief"]["attachments"].pop("battery")
+    return settings
+
+def free_battery():
+    return config.TOPOLOGY_CONFIG.get("battery_support", "rails") == "free"
+
+def patched_builder(cfg, stiffness=True):
+    from tools.neural_study import R2Domain
+    settings = patched_settings(cfg)
     if stiffness:
-        overrides["stiffness"] = {"min_n_per_mm": ARM_TIP["min_n_per_mm"]}
-    return R2Domain(study(overrides))
+        settings["stiffness"] = {**settings["stiffness"], "min_n_per_mm": ARM_TIP["min_n_per_mm"]}
+    return R2Domain(settings)
+
+def free_support(half):
+    regions = {region["name"]: region for region in half["regions"]}
+    part, clearance = config.COMPONENT_DEFAULTS["battery"], config.TOPOLOGY_CONFIG["component_clearance_mm"]
+    keep_out = regions["battery_insertion"]
+    low = np.asarray(keep_out["min_mm"]) + [clearance, clearance, 0.0]
+    size = np.array([part["width_mm"], part["length_mm"], part["height_mm"]])
+    center = low + size / 2
+    mass = part["mass_g"]
+    inertia = mass / 12 * np.diag([size[1] ** 2 + size[2] ** 2, size[0] ** 2 + size[2] ** 2, size[0] ** 2 + size[1] ** 2])
+    half["battery"] = {"keep_out": keep_out, "reference_mm": [0.0, float(center[1]), float(low[2])], "center_mm": center.tolist(), "size_mm": size.tolist(), "mass_g": mass, "inertia_g_mm2": inertia.tolist()}
+    deck = half["interfaces"]["battery"]["regions"][0]
+    for case in half["load_cases"]:
+        if "inertia_relief" not in case:
+            continue
+        applied = sum((np.asarray(load["force_n"], dtype=float) for load in case["loads"] if load["region"] == deck), np.zeros(3))
+        case["loads"] = [load for load in case["loads"] if load["region"] != deck]
+        case["inertia_relief"] = {**deepcopy(case["inertia_relief"]), "bodies": [{"name": "battery", "mass_g": mass, "position_mm": center.tolist(), "inertia_g_mm2": inertia.tolist(), "force_n": applied.tolist()}]}
+    half["point_masses"] = [item for item in half["point_masses"] if item["name"] != "battery"]
+    half["metadata"]["formulation"]["battery_support"] = {"mode": "free", **{key: half["battery"][key] for key in ("reference_mm", "center_mm", "size_mm", "mass_g")},
+                                                          "statement": "battery rigid body on density-dependent contact springs (BATTERY_SUPPORT); its inertia and the crash_back deck load act on the body, not on frame nodes"}
+    return half
 
 def motor_name(center):
     return ("front_" if center[1] > 0 else "rear_") + ("left" if center[0] < 0 else "right")
@@ -118,10 +161,12 @@ def frame_domain(cfg, shape):
     discs = half["metadata"]["round4"]["prop_discs"]
     half["metadata"]["formulation"] = {"loads": numbers, "load_parameters": cfg["loads"], "shadow": {"motors_mm": discs["motors_mm"], "radius_mm": discs["radius_mm"]},
                                        "inertia_relief_frame_mass_g": relief["preserve_mass_g"], "inertia_relief": "point masses + frame mass at the reference fraction on the preserves, design-independent (keeps compliance self-adjoint)"}
-    return half
+    return free_support(half) if free_battery() else half
 
 def frame_problem(half, references=None):
     problem = deepcopy(PROBLEM)
+    if "battery" in half:
+        problem["battery"] = deepcopy(BATTERY_SUPPORT)
     problem["shadow"].update(half["metadata"]["formulation"]["shadow"])
     if references:
         problem["crash"].update(reference=references["crash_compliance_n_mm"], reference_source=references["source"])
@@ -344,6 +389,68 @@ def covariance_frame(cfg):
     print(json.dumps({key: record[key] for key in ("rank", "build_s", "evaluate_s", "peak_rss_gb", "mass_g")}, default=float), flush=True)
     print(record["table"], flush=True)
 
+def battery_fd(cfg):
+    spec = cfg["battery_fd"]
+    half, problem = frame_setup(cfg, spec["shape"])
+    tp = TopologyProblem(half, problem, linear_solver=cfg["linear_solver"])
+    design = np.random.default_rng(spec["seed"]).uniform(spec["low"], spec["high"], tp.map.n)
+    result = tp.evaluate(design)
+    checks = finite_differences(tp, design, spec["step"], spec["seed"])
+    record = {"statement": "central finite differences along one random direction on a uniform random design; all rows incl. the design-dependent battery load (springs), crash active sets frozen", "grid": half["grid"],
+              "battery": tp.battery.summary, "battery_body": half["battery"], "rows": result["rows"], "table": format_report(result["rows"]), "finite_differences": checks, "settings": problem["battery"], "sha": git_sha()}
+    tp.close()
+    Path(spec["output"]).write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(record["table"], flush=True)
+    print(json.dumps({name: [row["analytic"], row["finite_difference"], row["relative_error"]] for name, row in checks.items()}, indent=0, default=float), flush=True)
+
+def body_properties(stl, layout, density=config.PRINT_MATERIAL["density_g_cm3"]):
+    import trimesh
+    from deep_frame.frame_run import LayoutModel
+    mesh = trimesh.load_mesh(stl, process=True)
+    frame = {"mass_g": mesh.volume * density / 1000, "center_mm": np.asarray(mesh.center_mass).tolist(), "inertia_g_mm2": (np.asarray(mesh.moment_inertia) * density / 1000).tolist()}
+    agility = layout.agility()
+    craft = LayoutModel({**agility["setup"], "frame": frame}).evaluate(agility["layout"])
+    return mesh, {"stl": str(stl), "sha256_16": digest(stl), "frame": frame, "craft": {key: craft[key] for key in ("mass_g", "center_of_mass_mm", "cg_above_rotor_plane_mm", "inertia_g_mm2", "alpha_rad_s2", "alpha_min_rad_s2", "limiting_axis", "layout", "violated")}}
+
+def battery_compare(cfg):
+    import trimesh
+    from PIL import Image, ImageDraw, ImageFont
+    from deep_frame.frame_run import FrameLayout
+    from tools.neural_study import render, _camera
+    spec = cfg["compare"]
+    meshes, summary = {}, {}
+    for label, body in spec["bodies"].items():
+        meshes[label], summary[label] = body_properties(body["stl"], FrameLayout(body["request"]))
+        summary[label]["note"] = body.get("note")
+    labels = list(meshes)
+    try:
+        font = ImageFont.truetype("arial.ttf", 34)
+    except OSError:
+        font = ImageFont.load_default()
+    rows = []
+    for name, (direction, up) in config.RUN_SETTINGS["views"].items():
+        right = _camera(direction, up)[1]
+        width = max(float(np.ptp(mesh.vertices @ right)) for mesh in meshes.values())
+        parts, offsets = [], []
+        for index, label in enumerate(labels):
+            mesh = meshes[label].copy()
+            mesh.apply_translation(-mesh.bounds.mean(axis=0) + right * index * (width + spec["gap_mm"]))
+            parts.append(mesh)
+        image = render(trimesh.util.concatenate(parts), tuple(direction), tuple(up), size=tuple(spec["size"]))
+        canvas = Image.new("RGB", (image.width, image.height + 60), "white")
+        canvas.paste(image, (0, 60))
+        draw = ImageDraw.Draw(canvas)
+        for index, label in enumerate(labels):
+            draw.text((int((index + 0.5) * image.width / len(labels)) - 220, 10), f"{label} ({name})", fill="black", font=font)
+        rows.append(canvas)
+    figure = Image.new("RGB", (max(row.width for row in rows), sum(row.height for row in rows)), "white")
+    for index, row in enumerate(rows):
+        figure.paste(row, (0, sum(previous.height for previous in rows[:index])))
+    Path(spec["output"]).parent.mkdir(parents=True, exist_ok=True)
+    figure.save(spec["output"])
+    Path(spec["summary"]).write_text(json.dumps({"bodies": summary, "renderer": "tools.neural_study.render, both bodies in one scene per view (same camera, same px/mm), side by side along the screen axis"}, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({label: {"mass_g": entry["frame"]["mass_g"], "alpha": entry["craft"]["alpha_rad_s2"]} for label, entry in summary.items()}, default=float), flush=True)
+
 def checkpoint(path):
     def save(x, history, levels):
         np.savez_compressed(path, design=x, level=history[-1]["level"], iteration=len(history))
@@ -375,12 +482,8 @@ def optimize_stage(cfg, half, problem, design, out, start_level):
     return result["design"], record
 
 def export_body(cfg, physical, out):
-    from run import _update
-    from tools.neural_study import R2Domain, configure as study, finish, upsample
-    request = json.loads(Path(cfg["request"]).read_text(encoding="utf-8"))
-    for name, values in request["patch"].items():
-        _update(getattr(config, name), values)
-    settings = study(deepcopy(request["overrides"]))
+    from tools.neural_study import R2Domain, finish, upsample
+    settings = patched_settings(cfg)
     fine_full, _ = R2Domain(settings).build(settings["fine_shape"], cfg["reference_fraction"])
     density = upsample(physical, fine_full)
     np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
@@ -461,7 +564,7 @@ def body_run(cfg, suffix, request, stages, runs):
 def frame_runs(cfg):
     root = Path(cfg["mma"]["root"]).resolve()
     stages = {name: {**spec, "worktree": ROOT.as_posix()} for name, spec in STAGES.items()}
-    request = json.loads((Path(RUN) / "config.json").read_text(encoding="utf-8"))
+    request = deepcopy(cfg["layout"]) if cfg["layout"] else json.loads((Path(RUN) / "config.json").read_text(encoding="utf-8"))
     runs = json.loads((root / "runs.json").read_text(encoding="utf-8")) if (root / "runs.json").is_file() else {}
     todo = [suffix for suffix in cfg["mma"]["bodies"] if suffix not in runs]
     with ThreadPoolExecutor(max(len(todo), 1)) as pool:
@@ -588,7 +691,8 @@ def main(argv=None):
                          "frame_runs": lambda overrides: frame_runs(configure(overrides)), "manafly_check": lambda overrides: manafly_check(configure(overrides)), "compose": lambda overrides: compose(configure(overrides)),
                          "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
-                         "cov_compare": lambda overrides: cov_compare(configure(overrides))}, argv)
+                         "cov_compare": lambda overrides: cov_compare(configure(overrides)), "battery_fd": lambda overrides: battery_fd(configure(overrides)),
+                         "battery_compare": lambda overrides: battery_compare(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

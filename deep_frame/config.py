@@ -899,6 +899,7 @@ TOPOLOGY_CONFIG = {
     "battery_contact_length_mm": 50.0,
     "battery_contact_y_mm": 0.0,
     "battery_rail_edge_inset_mm": 0.0,
+    "battery_support": "rails",
     "connection_proof_force_n": 0.05,
     "manufacturing": {
         "nozzle_width_mm": 0.4,
@@ -1164,8 +1165,26 @@ LAYOUT_REFERENCES = {
                             "components": "ASSUMPTION: Tadpole is a 2.5 inch toothpick like ours, so our hardware (GTS V3 1203, HQ T2.5, AIO15 standoff 3 mm, Lux, GNB 2S 550) with its 1203-class mounts"}},
 }
 
+BATTERY_SUPPORT = {
+    "pad_normal_n_mm3": 1.0, "pad_shear_n_mm3": 0.3,
+    "pad_source": "ANNAHME Haftpad (Silikon/Schaum ~1 mm, Shore ~30A): Schubmodul G ~ 0,3 MPa -> 0,3 N/mm je mm2 Kontakt in x/y; Druck ~ 3 G ~ 1,0 N/mm je mm2 in Normalenrichtung (unten z, Seitenband x/y)",
+    "exponent": 3.0, "floor": 1e-4, "tension_ratio": 1e-3, "side_secant": 0.5, "active_iterations": 30, "band_preload_n": 10.0,
+    "band_source": "ANNAHME Gummiband-Vorspannung 10 N (zwei Straenge je ~5 N): nur fuer den Kontaktzustand (welche Federn auf Druck sind); die Bandkraefte selbst schliessen sich zwischen Akku und Rahmen und sind nicht modelliert",
+    "limit_mm": 0.5, "limit_source": "Nutzervorgabe: Akkuverschiebung relativ zum Rahmen in x und y <= 0,5 mm unter Flug- und Crashlasten",
+    "sigma_factor": 3.0, "sigma_source": "Fluglast: Sigma-Akkublock (LOAD_COVARIANCE, zweites Moment) -> 3 sigma in der unguenstigsten horizontalen Richtung (sqrt lambda_max der 2x2-Verschiebungskovarianz)",
+    "min_area_mm2": 350.0, "min_area_source": "Mindest-Auflageflaeche unten = Schienenvariante 2 x 3,5 x 50 mm (TOPOLOGY_CONFIG battery_contact_width/length_mm)",
+    "definition": {
+        "body": "Akku starr (Masse, Eigentraegheit Quader, Volumen als Keep-out battery_insertion); Referenzpunkt Unterseitenmitte (0, y_b, deck_top) wie der Sigma-Akkublock",
+        "springs": "Kontaktknoten = Knoten zwischen erlaubten Zellen und Keep-out-Zellen des Akkus: Unterseite (Normalenfeder z + Schubfedern x/y) und Seitenband (Normalenfeder x bzw. y, bis zur Huellenoberkante); k = Flaeche x Padsteifigkeit x (floor + (1 - floor) rho^p), rho = Mittel der anliegenden erlaubten Zellen (erodiertes Feld)",
+        "load": "designabhaengige Last: Akkuwrench w -> s = D^-1 w (Starrkoerper auf Federn ueber dem Rahmen), Knotenkraefte f_j = K_j T_j s, D = sum T_j^T K_j T_j; Einweg-Kopplung (Federverteilung auf starrem Rahmen, Rahmenantwort mit diesen Kraeften)",
+        "contact": "z nur Auflage: Normalenfedern nur auf Druck (Active-Set auf die Starrkoerperbewegung unter Last + Bandvorspannung, Zug -> tension_ratio x k; die Rahmenlast kommt nur aus dem Akkuwrench mit diesem Active-Set); Sigma linearisiert um den vorgespannten Zustand (Unterseite geschlossen, Seitenbaender mit side_secant, weil bei +-Last je eine Seite anliegt); Crash- und Inertia-Relief-Faelle mit Active-Set",
+        "sensitivity": "d(u^T f)/dk_jd = [T_j s]_d ([u_j]_d - [T_j r]_d), r = D^-1 sum T_j^T K_j u_j; Active-Set eingefroren; Massenanteil des Akkus in der Modalanalyse auf die Unterseitenknoten nach k_z verteilt, Ableitung enthalten",
+        "shift": "Relativverschiebung = Federweg am Akkuschwerpunkt (x, y); Flug: 3 sigma aus dem Sigma-Akkublock, Crash: |delta_xy| je Crashfall",
+        "area": "Auflageflaeche = sum Knotenflaeche x rho der Unterseitenknoten >= min_area_mm2"},
+}
+
 LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float"},
-                    "battery": {"deck_top_mm": "float", "y_mm": "float"}, "stack": {"standoff_mm": "float"},
+                    "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free")}, "stack": {"standoff_mm": "float"},
                     "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
                                   "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float"}}
 

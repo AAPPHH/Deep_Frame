@@ -378,9 +378,9 @@ class HexElasticity:
             compiled = {"name": case["name"], "analysis": case["analysis"], "free": free, "fixed": fixed, "split": split, "load_regions": [], "parts": []}
             if case["analysis"] == "static":
                 force, mirrored = np.zeros(self.ndof), np.zeros(self.ndof)
-                if not case.get("loads"):
+                if not case.get("loads") and not any(np.any(body["force_n"]) for body in (relief or {}).get("bodies", [])):
                     raise ValueError("Static topology cases require loads")
-                for load in case["loads"]:
+                for load in case.get("loads", []):
                     direct, mirror = self._select_both(load["region"], case["name"], "load")
                     if np.intersect1d(np.concatenate([direct, mirror]), fixed_nodes).size:
                         raise ValueError("Topology force patch overlaps the fixture")
@@ -399,7 +399,7 @@ class HexElasticity:
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
     def _register(self, compiled, fixed, force, mirrored, split=None):
-        compiled["force"] = force
+        compiled["force"], compiled["mirrored"] = force, mirrored
         for fixed_part, part_force, sign in self._parts(fixed, force, mirrored, split):
             part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
             if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
@@ -417,6 +417,11 @@ class HexElasticity:
         self._register(compiled, source["fixed"], force, mirrored, compiled["split"])
         self.cases.append(compiled)
         return compiled
+    def set_force(self, case, force, mirrored):
+        parts = {sign: part_force for _, part_force, sign in self._parts(case["fixed"], force, mirrored, case.get("split"))}
+        for part in case["parts"]:
+            part["force"] = parts[part["sign"]]
+        return {part["sign"]: part["force"] for part in case["parts"]}
     def _flip(self):
         flip = np.ones(3)
         flip[self.axis] = -1
@@ -471,19 +476,22 @@ class HexElasticity:
                 mirror += incidence
                 direct[self.plane_nodes] += mirror[self.plane_nodes]
                 mirror[self.plane_nodes] = 0
-        positions = np.concatenate([self.points, self.points * flip])
-        masses = np.concatenate([direct, mirror])
-        applied = np.concatenate([force.reshape(-1, 3), mirrored.reshape(-1, 3) * flip])
+        bodies = relief.get("bodies", [])
+        positions = np.concatenate([self.points, self.points * flip, np.reshape([body["position_mm"] for body in bodies], (-1, 3))])
+        masses = np.concatenate([direct, mirror, [body["mass_g"] for body in bodies]])
+        applied = np.concatenate([force.reshape(-1, 3), mirrored.reshape(-1, 3) * flip, np.reshape([body["force_n"] for body in bodies], (-1, 3))])
         total = masses.sum()
         center = masses @ positions / total
         arm = positions - center
-        inertia = np.eye(3) * np.sum(masses * np.sum(arm ** 2, axis=1)) - (arm * masses[:, None]).T @ arm
+        inertia = np.eye(3) * np.sum(masses * np.sum(arm ** 2, axis=1)) - (arm * masses[:, None]).T @ arm + sum((np.asarray(body["inertia_g_mm2"]) for body in bodies), np.zeros((3, 3)))
         linear = applied.sum(axis=0) / total
         angular = np.linalg.solve(inertia, np.cross(arm, applied).sum(axis=0))
         inertial = -masses[:, None] * (linear + np.cross(angular, arm))
-        force += inertial[:len(self.points)].ravel()
-        mirrored += (inertial[len(self.points):] * flip).ravel()
-        return {"mass_g": float(total), "center_of_mass_mm": center.tolist(), "acceleration_n_per_g": linear.tolist(), "angular_acceleration": angular.tolist(), "support_nodes_mm": self.points[support_nodes].tolist()}
+        count = len(self.points)
+        force += inertial[:count].ravel()
+        mirrored += (inertial[count:2 * count] * flip).ravel()
+        loads = [{"name": body["name"], "position_mm": list(body["position_mm"]), "force_n": (inertial[2 * count + index] + body["force_n"]).tolist(), "moment_n_mm": (-np.asarray(body["inertia_g_mm2"]) @ angular).tolist()} for index, body in enumerate(bodies)]
+        return {"mass_g": float(total), "center_of_mass_mm": center.tolist(), "acceleration_n_per_g": linear.tolist(), "angular_acceleration": angular.tolist(), "support_nodes_mm": self.points[support_nodes].tolist(), "bodies": loads}
     def support_reactions(self, physical_density, case_name, penalization=3.0, min_stiffness_ratio=1e-6):
         case = next(case for case in self.cases if case["name"] == case_name)
         density = np.asarray(physical_density, dtype=float).ravel()
@@ -729,7 +737,8 @@ class ModalConstraint(AugmentedLagrangian):
             if system.symmetry is not None:
                 share[np.isin(direct, system.plane_nodes)] /= 2
             np.add.at(self.lumped, direct, share)
-        self.lumped = np.repeat(self.lumped, 3)
+        self.lumped = self.base_lumped = np.repeat(self.lumped, 3)
+        self.lumped_slope = None
     def interpolation(self, density):
         cutoff = self.settings["mass_cutoff"]
         low = density < cutoff
@@ -785,7 +794,7 @@ class ModalConstraint(AugmentedLagrangian):
             element = full[system.dofs]
             strain = np.einsum("ei,ij,ej->e", element, system.ke, element, optimize=True)
             kinetic = np.einsum("ei,ij,ej->e", element, system.me, element, optimize=True)
-            sensitivity += weight * (stiffness_slope * strain - value * mass_slope * kinetic) / self.target
+            sensitivity += weight * (stiffness_slope * strain - value * mass_slope * kinetic - (value * self.lumped_slope(full) if self.lumped_slope else 0.0)) / self.target
         sensitivity[~system.active_elements] = 0
         violation = 1 - aggregate
         frequencies = [[part["sign"], float(np.sqrt(max(value, 0)) / (2 * np.pi))] for part, value, _ in modes]

@@ -348,6 +348,8 @@ class FrameLayout:
         patch = {"FRAME_DEFAULTS": self.frame, "COMPONENT_DEFAULTS": self.components, "FEA_CONFIG": {"material": material},
                  "TOPOLOGY_CONFIG": {"manufacturing": {"nozzle_width_mm": self.request["print"]["nozzle_mm"], "minimum_feature_mm": self.durability["minimum_width_mm"]}},
                  "INTEGRATION_CONFIG": {"crash_directions": list(self.style["crash_directions"])}}
+        if "support" in self.overrides.get("battery", {}):
+            patch["TOPOLOGY_CONFIG"]["battery_support"] = self.overrides["battery"]["support"]
         if weights:
             patch["TOPOLOGY_CONFIG"]["optimizer"] = {"case_weights": weights}
         return patch
