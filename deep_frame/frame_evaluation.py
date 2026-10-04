@@ -56,7 +56,7 @@ def ours(spec):
     aio = [regions[f"aio_screw_{index}"]["center_mm"] for index in range(4)]
     patterns.append({"name": "stack_25.5", "center_mm": np.mean(aio, axis=0)[:2].tolist(), "z_mm": 1.5, "radius_mm": float(np.hypot(*np.subtract(aio[0], np.mean(aio, axis=0))[:2])), "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]})
     components = [{"type": entry["prototype"] if "prototype" in entry else name.split("_")[0], "name": name, "center_mm": entry["center_of_mass_mm"]} for name, entry in placements.items() if entry["mass_g"] > 0]
-    connectors = [{"name": name, "position_mm": placements[name]["center_of_mass_mm"], "direction": [0, 0, 1]} for name in ("xt30", "balancer")]
+    connectors = [{"name": name, "position_mm": placements[name]["center_of_mass_mm"], "direction": [0, 0, 1]} for name in ("xt30", "balancer") if name + "_contact" in regions]
     keep_outs = [region for region in domain["regions"] if region["role"] == "forbidden"]
     selectors = {"center_fixtures": cases["arm_tip"]["fixed_regions"], "motor_fixtures": cases["modes"]["fixed_regions"], "arm_tip": cases["arm_tip"]["loads"][0]["region"], "arm_motor": "front_left",
                  "camera": cases["camera_side"]["loads"][0]["region"], "deck": battery["attachment_region"], "battery_center_mm": battery["position_mm"], "battery_mass_g": battery["mass_g"]}

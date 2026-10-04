@@ -91,17 +91,11 @@ class FrameLayout:
         wheelbase = self._override("motors", "wheelbase_mm", ceil(minimum / rules["wheelbase_step_mm"] - 1e-9) * rules["wheelbase_step_mm"])
         if wheelbase < minimum - 1e-9:
             raise ValueError(f"motors.wheelbase_mm {wheelbase} leaves less than {rules['prop_tip_gap_mm']} mm between neighbouring {c['prop']['diameter_mm']} mm props; minimum {minimum:.1f} mm")
-        aio, camera, xt30 = c["aio15"], c["camera"], c["xt30"]
-        antenna = self.parts["antennas"]
-        antenna_y = self._override("antennas", "y_mm", -(rules["envelope"]["size_mm"][1] / 2 - rules["antennas"]["eyelet_radius_mm"] - rules["antennas"]["envelope_margin_mm"]))
-        if antenna_y >= 0:
-            raise ValueError("antennas.y_mm must be negative: the antennas sit behind the stack")
-        connector_y = -antenna_y - rules["antennas"]["eyelet_radius_mm"] - rules["antennas"]["connector_clearance_mm"] - xt30["length_mm"] / 2
+        aio, camera = c["aio15"], c["camera"]
         mount = self.request["layout"]["battery_mount"]
         frame = {"wheelbase_mm": wheelbase, "lateral_longitudinal_ratio": tan(radians(angle)), "arm_height_mm": rules["pad"]["top_mm"],
                  "camera_y_mm": self._override("camera", "y_mm", aio["length_mm"] / 2 + rules["camera"]["stack_gap_mm"] + camera["length_mm"] / 2),
-                 "antenna_y_mm": -antenna_y, "antenna_bore_mm": antenna["dimensions_mm"]["bore"], "antenna_holder_height_mm": antenna["dimensions_mm"]["holder_height"],
-                 "connector_y_mm": connector_y, "aio_standoff_mm": self._override("stack", "standoff_mm", FRAME_DEFAULTS["aio_standoff_mm"]),
+                 "aio_standoff_mm": self._override("stack", "standoff_mm", FRAME_DEFAULTS["aio_standoff_mm"]),
                  "camera_screw_diameter_mm": camera.get("screw_clearance_mm", FRAME_DEFAULTS["camera_screw_diameter_mm"])}
         if mount == "top":
             frame["deck_top_mm"] = self._override("battery", "deck_top_mm", rules["battery_mounts"]["top"]["deck_top_mm"])
@@ -139,8 +133,6 @@ class FrameLayout:
         front = max(f["camera_y_mm"] + extent_y / 2, max(y for y, _ in hoop["path_yz_mm"]) + hoop["radius_mm"])
         if front > high[1] or f["camera_y_mm"] - extent_y / 2 < c["aio15"]["length_mm"] / 2:
             raise ValueError(f"Camera at y = {f['camera_y_mm']:.1f} mm with tilt {c['camera']['tilt_deg']} deg does not fit between the stack and the envelope front {high[1]} mm")
-        if f["antenna_y_mm"] + f["antenna_bore_mm"] / 2 > -low[1] or f["connector_y_mm"] - c["xt30"]["length_mm"] / 2 < c["aio15"]["length_mm"] / 2:
-            raise ValueError("Antenna eyelet and connectors do not fit behind the stack inside the envelope")
         stack_top = f["base_thickness_mm"] + f["aio_standoff_mm"] + c["aio15"]["stack_height_mm"] + c["aio15"]["elrs_antenna_clearance_mm"]
         deck_bottom = f["deck_top_mm"] - f["deck_thickness_mm"]
         if self.request["layout"]["battery_mount"] == "top" and min(f["deck_top_mm"] - camera_top, deck_bottom - stack_top) < rules["camera"]["top_clearance_mm"] - 1e-9:
@@ -155,8 +147,6 @@ class FrameLayout:
         cg = [sum(m * x for m, x, _ in masses) / total, sum(m * y for m, _, y in masses) / total]
         if hypot(*cg) > rules["cg_tolerance_mm"]:
             raise ValueError(f"Component centre of gravity {cg} is more than {rules['cg_tolerance_mm']} mm from the battery and stack axis")
-        if "angle_deg" in self.overrides.get("antennas", {}):
-            self.notes.append("antennas.angle_deg is recorded but the stage domain has no antenna angle parameter")
         return {"motor_pad_envelope": True, "camera_fit": True, "camera_top_mm": camera_top, "stack_top_mm": stack_top, "battery_plan_clearance_mm": plan, "prop_plane_mm": prop_plane,
                 "component_cg_mm": cg, "component_mass_g": total}
 
@@ -165,7 +155,6 @@ class FrameLayout:
         return {"request": self.request, "frame": self.frame, "motors_mm": self.motors(), "hoop": self.hoop() if self.style["hoops"] else None, "checks": self.checks,
                 "battery": {"mount": self.request["layout"]["battery_mount"], "deck_top_mm": f["deck_top_mm"], "position_mm": [0.0, 0.0, f["deck_top_mm"]]},
                 "stack": {"position_mm": [0.0, 0.0, f["base_thickness_mm"] + f["aio_standoff_mm"]]}, "camera": {"y_mm": f["camera_y_mm"], "tilt_deg": self.components["camera"]["tilt_deg"]},
-                "antennas": {"y_mm": -f["antenna_y_mm"], "angle_deg": self._override("antennas", "angle_deg", LAYOUT_RULES["antennas"]["angle_deg"])},
                 "style": self.style, "durability": self.durability, "material": self.material, "parts": {role: part["source"] for role, part in self.parts.items()}, "notes": self.notes}
 
     def patch(self, crash_cases=()):
@@ -321,7 +310,7 @@ class FrameRun:
                      "camera": cases["camera_side"]["loads"][0]["region"], "deck": deck, "battery_center_mm": battery["position_mm"], "battery_mass_g": battery["mass_g"]}
         out = self.dir / "evaluation"
         return {"name": self.dir.name, "stl": str(mesh), "output": str(out), "prop_diameter_mm": self.layout.components["prop"]["diameter_mm"], "motors": motors, "mount_patterns": patterns,
-                "components": components, "connectors": [{"name": name, "position_mm": placements[name]["center_of_mass_mm"], "direction": [0, 0, 1]} for name in ("xt30", "balancer") if name in placements],
+                "components": components, "connectors": [{"name": name, "position_mm": placements[name]["center_of_mass_mm"], "direction": [0, 0, 1]} for name in ("xt30", "balancer") if name + "_contact" in regions],
                 "keep_outs": [region for region in domain["regions"] if region["role"] == "forbidden"], "selectors": selectors,
                 "loads": {"safety_factor": self.layout.durability["safety_factor"]}, "python": self.stages["evaluation"]["python"], "compute": self.settings["compute"], **self.grid["evaluation"]}
 
@@ -460,7 +449,7 @@ def datasheet(manifest_path):
         ("5 Offenheit", measured(f"Material in Draufsicht {100 * m['top_fraction']:.0f} % der Bounding-Box, {m['openings_100']} Öffnungen ≥ 100 mm² (größte {m['largest_opening_mm2']:.0f} mm²), {m['openings_20_100']} mit 20–100 mm²") if m else missing, "gemessen (Draufsicht-Projektion)"),
         ("6 Arme", f"{request['layout']['x_type']} mit Armwinkel {np.degrees(np.arctan(frame['lateral_longitudinal_ratio'])):.1f}° zur Längsachse, Motorpads Oberkante z = {frame['arm_height_mm']:.2f} mm (Vorgabe), Armform aus der Optimierung", "Layoutregeln; Form siehe Renders"),
         ("7 Kamera und Schutz", f"Kamera {request['components']['camera']} bei y = {layout['camera']['y_mm']:.1f} mm, Neigung {layout['camera']['tilt_deg']:g}°; Bügel " + (measured(f"vorgegeben, Material im Bügelkanal {m['hoop_volume_mm3']:.0f} mm³") if layout["hoop"] else "nicht vorgegeben"), "Layoutregeln + gemessen"),
-        ("8 Akku und Stack", f"Akku {request['components']['battery']} {request['layout']['battery_mount']}, Deckoberkante z = {layout['battery']['deck_top_mm']:.1f} mm, Stack {request['components']['aio']} zentriert bei z = {layout['stack']['position_mm'][2]:.1f} mm, Antennen {request['components']['antennas']} bei y = {layout['antennas']['y_mm']:.1f} mm", "Layoutregeln"),
+        ("8 Akku und Stack", f"Akku {request['components']['battery']} {request['layout']['battery_mount']}, Deckoberkante z = {layout['battery']['deck_top_mm']:.1f} mm, Stack {request['components']['aio']} zentriert bei z = {layout['stack']['position_mm'][2]:.1f} mm, Antennen {request['components']['antennas']}, XT30 und Balancer ohne vorgeschriebenen Sitz (Gummiband, frei platziert)", "Layoutregeln"),
         ("9 Masse", measured(f"{_number(mass)} g = {m['volume_mm3'] / 1000:.2f} cm³ × {material['density_g_cm3']} g/cm³ ({request['material']}); Komponenten {layout['checks']['component_mass_g']:.1f} g") if m else missing, "gemessen (STL)"),
         ("10 Druckbarkeit", measured(f"{'wasserdicht' if m['watertight'] else 'NICHT wasserdicht'}, {m['bodies']} Körper, Überhang > 45°: {m['overhang_mm2']:.0f} mm² = {100 * m['overhang_fraction']:.0f} % der Oberfläche; Wandregel: {({True: 'bestanden', False: 'nicht bestanden', None: 'nicht geprüft'})[manifest.get('wall_rule_passed')]}; Düse {request['print']['nozzle_mm']} mm, Schicht {request['print']['layer_mm']} mm") if m else missing, "gemessen (STL, Normalen) + Wandregel (int)"),
     ]
