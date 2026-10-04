@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from deep_frame.config import PRINT_MATERIAL
-from deep_frame.topology_optimization import elasticity_matrix, hexahedron_matrices, orthotropic_matrix
+from deep_frame.topology_optimization import HexElasticity, elasticity_matrix, hexahedron_matrices, orthotropic_matrix
 from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
@@ -282,3 +282,18 @@ def test_covariance_placeholder_limits_are_monitored():
     with pytest.raises(ValueError, match="interfaces"):
         TopologyProblem(cantilever_domain((12, 3, 4), 1.0), {**problem, "covariance": PROBLEM["covariance"]})
     placeholder.close()
+
+def test_shared_static_factorization_matches_own_supports():
+    systems = [HexElasticity(tiny_domain(), share_static=share) for share in (False, True)]
+    density = np.random.default_rng(3).uniform(0.2, 1.0, systems[0].nelem)
+    own, shared = (system.solve(density, metrics=True) for system in systems)
+    assert systems[1].diagnostics()["factorization_groups"] == 2 and systems[0].diagnostics()["factorization_groups"] == 4
+    stiffness = systems[1].matrix(np.full(systems[1].nelem, 1.0))
+    for sign in (1.0, -1.0):
+        modes = systems[1]._rigid_modes(sign)
+        assert modes.shape[1] == 3 and np.abs(stiffness @ modes).max() < 1e-9 * np.abs(stiffness).max()
+    assert own.keys() == shared.keys()
+    for name in own:
+        assert shared[name]["compliance_n_mm"] == pytest.approx(own[name]["compliance_n_mm"], rel=1e-10)
+        assert np.linalg.norm(shared[name]["derivative"] - own[name]["derivative"]) <= 1e-10 * np.linalg.norm(own[name]["derivative"])
+        assert shared[name]["max_displacement_mm"] == pytest.approx(own[name]["max_displacement_mm"], rel=1e-10)

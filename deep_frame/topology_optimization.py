@@ -310,13 +310,14 @@ def select_nodes(points, region):
     return selected
 
 class HexElasticity:
-    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident"):
+    def __init__(self, domain, interface_node_policy="allowed_adjacent", linear_solver="cpu_superlu", gpu_solver_residency="resident", share_static=True):
         if linear_solver not in ("cpu_superlu", "cuda_cudss"):
             raise ValueError("Unknown topology linear_solver")
         if gpu_solver_residency not in ("resident", "transient"):
             raise ValueError("Unknown topology gpu_solver_residency")
         self.linear_solver = linear_solver
         self.gpu_solver_residency = gpu_solver_residency
+        self.share_static, self.shared = share_static, None
         self.gpu_solvers = {}
         self.gpu_reanalyses = 0
         self.gpu_transient_releases = 0
@@ -408,7 +409,7 @@ class HexElasticity:
         if not self.groups:
             raise ValueError("Topology optimization requires at least one static case")
     def _register(self, compiled, fixed, force, mirrored, split=None):
-        compiled["force"] = force
+        compiled["force"], self.shared = force, None
         for fixed_part, part_force, sign in self._parts(fixed, force, mirrored, split):
             part_free = np.setdiff1d(self.active_dofs, fixed_part, assume_unique=True)
             if np.linalg.norm(part_force[part_free]) > 1e-12 * np.linalg.norm(force + mirrored):
@@ -426,6 +427,35 @@ class HexElasticity:
         self._register(compiled, source["fixed"], force, mirrored, compiled["split"])
         self.cases.append(compiled)
         return compiled
+    def _rigid_modes(self, sign):
+        center = self.points[self.active_nodes].mean(axis=0)
+        if self.symmetry is not None:
+            center[self.axis] = float(self.symmetry.get("plane_mm", 0.0))
+        modes = np.zeros((self.ndof, 6))
+        for index in range(3):
+            modes[index::3, index] = 1
+            modes[:, 3 + index] = np.cross(np.eye(3)[index], self.points - center).ravel()
+        modes[np.setdiff1d(np.arange(self.ndof), self.active_dofs)] = 0
+        if self.symmetry is None:
+            return modes
+        _, values, vectors = np.linalg.svd(modes[self._plane_dofs(sign)])
+        return modes @ vectors[np.count_nonzero(values > 1e-9 * values[0]):].T
+    def _share_plan(self):
+        hosts, plan = {}, {}
+        for key, members in self.groups.items():
+            if self.share_static and any("inertia_relief" in case for case, _ in members):
+                hosts.setdefault(members[0][1]["sign"], key)
+        for key, members in self.groups.items():
+            sign, fixed = members[0][1]["sign"], members[0][1]["fixed"]
+            if hosts.get(sign, key) == key:
+                continue
+            host = self.groups[hosts[sign]][0][1]
+            support = np.setdiff1d(np.intersect1d(host["fixed"], self.active_dofs), self._plane_dofs(sign) if self.symmetry is not None else [])
+            constrained = np.intersect1d(np.setdiff1d(fixed, host["fixed"]), host["free"])
+            modes, held = self._rigid_modes(sign), np.isin(support, fixed)
+            if len(support) == modes.shape[1] and np.linalg.matrix_rank(modes[support]) == len(support) and not any(np.any(part["force"][support]) for _, part in members) and np.linalg.matrix_rank(modes[np.union1d(constrained, support[held])]) == len(support):
+                plan[key] = {"host": hosts[sign], "constrained": constrained, "positions": np.searchsorted(host["free"], constrained), "modes": modes, "released": np.linalg.inv(modes[support].T)[~held], "held": modes[support[held]]}
+        return plan
     def _flip(self):
         flip = np.ones(3)
         flip[self.axis] = -1
@@ -581,26 +611,36 @@ class HexElasticity:
         stiffness = self.matrix(moduli)
         moduli[~self.active_elements] = 0
         derivative[~self.active_elements] = 0
-        factor = 1.0 if self.symmetry is None else 2.0
-        accumulated = {}
-        for members in self.groups.values():
+        if self.shared is None:
+            self.shared = self._share_plan()
+        guests, accumulated = defaultdict(list), {}
+        for key, entry in self.shared.items():
+            guests[entry["host"]].append(key)
+        for key, members in self.groups.items():
+            if key in self.shared:
+                continue
             free = members[0][1]["free"]
-            forces = np.column_stack([part["force"][free] for _, part in members])
             reduced = stiffness[free, :][:, free].tocsc()
-            solutions = self._linear_solve(members[0][1]["fixed"].tobytes(), reduced, forces)
-            residual = np.linalg.norm(reduced @ solutions - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
-            tolerance = 1e-6 if self.linear_solver == "cuda_cudss" else 1e-4
-            if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
-                raise RuntimeError(f"Topology linear solve failed residual check: {residual.tolist()}")
-            for column, (case, part) in enumerate(members):
-                displacement = np.zeros(self.ndof)
-                displacement[free] = solutions[:, column]
-                element_displacement = displacement[self.dofs]
-                entry = accumulated.setdefault(case["name"], {"case": case, "compliance": 0.0, "energy": np.zeros(self.nelem), "residual": 0.0, "fields": []})
-                entry["compliance"] += factor * float(np.dot(part["force"], displacement))
-                entry["energy"] += factor * np.einsum("ei,ij,ej->e", element_displacement, self.ke, element_displacement, optimize=True)
-                entry["residual"] = max(entry["residual"], float(residual[column]))
-                entry["fields"].append((part["sign"], displacement))
+            blocks = [np.column_stack([part["force"][free] for _, part in members])]
+            for guest in guests[key]:
+                unit = np.zeros((len(free), len(self.shared[guest]["constrained"])))
+                unit[self.shared[guest]["positions"], np.arange(unit.shape[1])] = 1
+                blocks += [np.column_stack([part["force"][free] for _, part in self.groups[guest]]), unit]
+            solutions = self._linear_solve(key, reduced, np.hstack(blocks))
+            self._collect(accumulated, members, free, reduced, solutions[:, :len(members)])
+            offset = len(members)
+            for guest in guests[key]:
+                plan, rest = self.shared[guest], self.groups[guest]
+                count, size, modes = len(rest), len(plan["constrained"]), plan["modes"]
+                direct, coupling = solutions[:, offset:offset + count], solutions[:, offset + count:offset + count + size]
+                offset += count + size
+                rigid, released, held = modes[plan["constrained"]], plan["released"], plan["held"]
+                system = np.block([[coupling[plan["positions"]], rigid], [released @ rigid.T, np.zeros((len(released), rigid.shape[1]))], [np.zeros((len(held), size)), held]])
+                multipliers = np.linalg.solve(system, -np.vstack([direct[plan["positions"]], released @ modes.T @ np.column_stack([part["force"] for _, part in rest]), np.zeros((len(held), count))]))
+                full = modes @ multipliers[size:]
+                full[free] += direct + coupling @ multipliers[:size]
+                guest_free = rest[0][1]["free"]
+                self._collect(accumulated, rest, guest_free, stiffness[guest_free, :][:, guest_free].tocsc(), full[guest_free])
         results = {}
         for name, entry in accumulated.items():
             if not np.isfinite(entry["compliance"]) or entry["compliance"] <= 0:
@@ -614,6 +654,22 @@ class HexElasticity:
                 result.update(self._metrics([direct] if self.symmetry is None else [direct, mirror], moduli, entry["case"]))
             results[name] = result
         return results
+    def _collect(self, accumulated, members, free, reduced, solutions):
+        forces = np.column_stack([part["force"][free] for _, part in members])
+        residual = np.linalg.norm(reduced @ solutions - forces, axis=0) / np.maximum(np.linalg.norm(forces, axis=0), 1e-30)
+        tolerance = 1e-6 if self.linear_solver == "cuda_cudss" else 1e-4
+        if not np.all(np.isfinite(solutions)) or np.any(residual > tolerance):
+            raise RuntimeError(f"Topology linear solve failed residual check: {residual.tolist()}")
+        factor = 1.0 if self.symmetry is None else 2.0
+        for column, (case, part) in enumerate(members):
+            displacement = np.zeros(self.ndof)
+            displacement[free] = solutions[:, column]
+            element_displacement = displacement[self.dofs]
+            entry = accumulated.setdefault(case["name"], {"case": case, "compliance": 0.0, "energy": np.zeros(self.nelem), "residual": 0.0, "fields": []})
+            entry["compliance"] += factor * float(np.dot(part["force"], displacement))
+            entry["energy"] += factor * np.einsum("ei,ij,ej->e", element_displacement, self.ke, element_displacement, optimize=True)
+            entry["residual"] = max(entry["residual"], float(residual[column]))
+            entry["fields"].append((part["sign"], displacement))
     def _linear_solve(self, key, reduced, forces):
         if self.linear_solver == "cpu_superlu":
             return splu(reduced, permc_spec="MMD_AT_PLUS_A", options={"SymmetricMode": True}).solve(forces)
@@ -680,7 +736,7 @@ class HexElasticity:
             errors.extend(solver.close())
         return errors
     def diagnostics(self):
-        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups)})
+        return _json_copy({"nodes": len(self.points), "active_nodes": len(self.active_nodes), "elements": self.nelem, "active_elements": int(np.count_nonzero(self.active_elements)), "dofs": self.ndof, "active_dofs": len(self.active_dofs), "interface_node_policy": self.interface_node_policy, "linear_solver": self.linear_solver, "gpu_symbolic_reanalyses": self.gpu_reanalyses, "gpu_solver_residency": self.gpu_solver_residency, "gpu_transient_releases": self.gpu_transient_releases, "gpu_solver_details": self.gpu_solver_history + [solver.diagnostics() for solver in self.gpu_solvers.values()], "independent_fixtures": len(self.groups), "selector_expansions": self.selector_expansions, "selector_filtering": self.selector_filtering, "cases": [{"name": case["name"], "analysis": case["analysis"], "fixed_nodes": len(case["fixed"]) // 3, "load_nodes": [len(direct) + len(mirror) for direct, mirror, _ in case["load_regions"]], "solved_parts": len(case["parts"]), **({"inertia_relief": case["inertia_relief"]} if "inertia_relief" in case else {})} for case in self.cases], "symmetry": self.symmetry, "factorization_groups": len(self.groups) - len(self.shared or {}), "shared_static_groups": len(self.shared or {})})
 
 def volume_weights(points, discs):
     weights = np.ones(len(points))

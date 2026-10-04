@@ -410,7 +410,8 @@ def factor_inventory(tp):
     system, rows = tp.system, []
     for key, members in system.groups.items():
         part = members[0][1]
-        rows.append({"solver": "static", "sign": part["sign"], "cases": [case["name"] for case, _ in members], "rhs": len(members), "fixed_dofs": len(part["fixed"]), "free_dofs": len(part["free"]), "key": key})
+        rows.append({"solver": "static", "sign": part["sign"], "cases": [case["name"] for case, _ in members], "rhs": len(members), "fixed_dofs": len(part["fixed"]), "free_dofs": len(part["free"]), "key": key,
+                     **({"factorized_with": [case["name"] for case, _ in system.groups[system.shared[key]["host"]]][:1], "constraint_columns": len(system.shared[key]["constrained"])} if key in (system.shared or {}) else {})})
     for part in tp.modal.parts if tp.modal is not None else []:
         rows.append({"solver": "modal", "sign": part["sign"], "cases": [tp.problem["modal"]["case"]], "rhs": tp.problem["modal"]["modes"], "fixed_dofs": len(system.active_dofs) - len(part["free"]), "free_dofs": len(part["free"]), "key": part["key"]})
     for row in rows:
