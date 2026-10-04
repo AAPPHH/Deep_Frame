@@ -272,6 +272,17 @@ def test_covariance_rank_one_and_gradients_match_finite_differences():
         assert result["constraint_gradients"][index] @ direction == pytest.approx((plus["constraints"][index] - minus["constraints"][index]) / (2 * step), rel=1e-5), name
     tested.close()
 
+def test_covariance_calibration_is_keyed_by_battery_support():
+    from deep_frame.topology_problem import COVARIANCE
+    assert set(COVARIANCE["limits"]["calibration"]) == {"rails", "free"}
+    domain, problem = covariance_cantilever((12, 3, 4), limits={"mean_n_mm": 0.05, "worst_n_mm": 0.04, "calibration": {"rails": {"mean_n_mm": 2.0, "worst_n_mm": 3.0}, "free": {"mean_n_mm": 5.0, "worst_n_mm": 7.0}}})
+    rails = TopologyProblem(domain, problem)
+    rows = {row["name"]: row for row in rails.evaluate(np.full(rails.map.n, 0.5))["rows"]}
+    assert rows["load_mean"]["limit"] == pytest.approx(0.1) and rows["load_worst"]["limit"] == pytest.approx(0.12)
+    rails.covariance.battery = object()
+    assert rails.covariance.calibration() == {"mean_n_mm": 5.0, "worst_n_mm": 7.0}
+    rails.close()
+
 def test_covariance_placeholder_limits_are_monitored():
     domain, problem = covariance_cantilever((12, 3, 4))
     placeholder = TopologyProblem(domain, problem)

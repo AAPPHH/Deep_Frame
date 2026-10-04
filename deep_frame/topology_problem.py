@@ -13,8 +13,11 @@ COVARIANCE = {
     "support": "stiffness_arm_tip", "interfaces": ["motor_front_left", "motor_front_right", "motor_rear_left", "motor_rear_right", "battery", "camera"],
     "sigma": None, "labels": None, "model": None, "prefix": "sigma_", "ks": 50.0, "ks_cutoff": 1e-9,
     "limits": {"mean_n_mm": LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"], "worst_n_mm": LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"], "source": LOAD_COVARIANCE_LIMITS["source"],
-               "calibration": {"mean_n_mm": 1.384, "worst_n_mm": 1.374},
-               "calibration_source": "stable after iteration 3 (run simp_mma_cov3 with this factor: 18.2 g field / 15.7 g raw body, optimizer 0.94671 / 0.30808 N mm / evaluator full 0.68695 / 0.21967 N mm = 1.378 / 1.402, -0.4 % / +2.1 %, below 10 %, factor kept); "
+               "calibration": {"rails": {"mean_n_mm": 1.384, "worst_n_mm": 1.374}, "free": {"mean_n_mm": 1.317, "worst_n_mm": 1.365}},
+               "calibration_key": "TOPOLOGY_CONFIG battery_support of the formulation: 'free' when the problem carries the BatterySupport body, else 'rails'",
+               "calibration_source_free": "free battery support, 2026-10-04 (feature/layout-battery a9c434a/46abec1): optimizer measure of the converged battery_free field (exports/runs/battery_free_opt/fine/result.json, eroded, 19.7 g: tr 0.95012, lambda_max 0.31444 N mm, run with the rails factor) / "
+                                          "evaluator full-coupled measure of its raw body with the whole-footprint battery selector (exports/runs/battery_free_raw_2/evaluation.json sigma, 17.0 g: 0.72151 / 0.23041 N mm) = 1.317 / 1.365 (-4.9 % / -0.7 % against rails); one iteration, not yet re-checked on a run with this factor",
+               "calibration_source": "rails: stable after iteration 3 (run simp_mma_cov3 with this factor: 18.2 g field / 15.7 g raw body, optimizer 0.94671 / 0.30808 N mm / evaluator full 0.68695 / 0.21967 N mm = 1.378 / 1.402, -0.4 % / +2.1 %, below 10 %, factor kept); "
                                      "iteration 2 on the 18.5 g load-model field / 15.9 g raw body without accessory seats (run simp_mma_cov2 with factor 1.247 / 1.235): optimizer 0.85631 / 0.25736 N mm / evaluator full 0.61892 / 0.18733 N mm = 1.384 / 1.374 (+11.0 % / +11.2 % against iteration 1); "
                                      "iteration 1 on the 26.6 g load-model frame (baff3e1): optimizer measure of its fine eroded field (exports/runs/simp_mma_cov_opt/fine/result.json: tr 0.23219, lambda_max 0.058508 N mm) / evaluator full-coupled measure of its raw body (simp_mma_cov_raw_1: 0.18621 / 0.047386 N mm); "
                                      "iteration 0 was optimizer / evaluator diagonal on the 17.2 g SIMP-MMA design (0.5952 / 0.3928, as full 0.735 / 0.685) and did not transfer; per key because the worst-case modes differ"},
@@ -611,9 +614,13 @@ class InterfaceCovariance:
             element = (field @ vector)[self.system.dofs]
             total += np.einsum("ei,ij,ej->e", element, self.system.ke, element, optimize=True)
         return -self.factor * derivative * total
+    def calibration(self):
+        calibration = self.settings["limits"].get("calibration", 1.0)
+        calibration = calibration.get("rails" if self.battery is None else "free", calibration) if isinstance(calibration, dict) else calibration
+        return {key: calibration[key] if isinstance(calibration, dict) else calibration for key in ("mean_n_mm", "worst_n_mm")}
     def measure(self, solutions):
-        calibration, s = self.settings["limits"].get("calibration", 1.0), self.settings["ks"]
-        factor = lambda key: calibration[key] if isinstance(calibration, dict) else calibration
+        calibration, s = self.calibration(), self.settings["ks"]
+        factor = calibration.get
         limits = {key: self.settings["limits"][key] and self.settings["limits"][key] * factor(key) for key in ("mean_n_mm", "worst_n_mm")}
         flexibility, stacked = self.matrix(solutions)
         mean = float(np.trace(flexibility))

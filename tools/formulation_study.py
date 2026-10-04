@@ -687,7 +687,7 @@ def cov_compare(cfg):
               "manafly3": body_summary(None, spec["manafly_sigma"], spec), "aether4": body_summary(None, spec["aether4_sigma"], spec)}
     stages = {"old": old_fine, "previous": read(spec["previous_fine"]), "new": fine}
     values = lambda stage, name: ({row["name"]: row for row in stage.get("rows", [])}.get(name) or {}).get("value")
-    limits = COVARIANCE["limits"]
+    limits = {**COVARIANCE["limits"], "calibration": COVARIANCE["limits"]["calibration"]["free" if free_battery() else "rails"]}
     record = {"optimizer": {**{key: {"mass_g": stage.get("mass_g"), "status": stage.get("status"), "iterations": stage.get("iterations"), "table": stage.get("table"),
                                      "load_worst_info": ({row["name"]: row for row in stage.get("rows", [])}.get("load_worst") or {}).get("info")} for key, stage in stages.items()},
                             "monitored": {name: [values(stage, name) for stage in stages.values()] for name in ("thrust_all", "torsion_yaw", "twist", "f1_intermediate", "arm_tip_stiffness")}},
