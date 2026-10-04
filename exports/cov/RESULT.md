@@ -1,6 +1,6 @@
 # Frame mit Lastmodell als Verteilung, Kalibrierschleife (SIMP+MMA, 4/3 mm)
 
-Stand 04.10. 04:10. Kalibrierschleife abgeschlossen und stabil (3 Läufe). Ergebnis ist der **Rohkörper 15,7 g** (`simp_mma_cov3_raw_1`). **Rekonstruktion v3 steht aus:** recon3 hat um 02:13 den Nachweis 879713d committet, aber SIMP+MMA liegt dort nicht innerhalb 10 % vom Rohkörper (Masse +12,4 %, Armspitze −19,0 %, f1 −9,4 %; nur neural_v06_f1 besteht). Nach Regel wird gewartet; der 1:1-Körper ist **nicht** das Ergebnis, nur Vergleich. Bilder mit v3 und das v3-STL fehlen deshalb.
+Stand 04.10. 05:20. Kalibrierschleife abgeschlossen und stabil (3 Läufe). Ergebnis ist **recon v3 des Endlaufs, 17,6 g** (`simp_mma_cov3_v3_1`), aus dem Rohkörper 15,7 g (`simp_mma_cov3_raw_1`). v3 = feature/recon-v3 879713d mit Standardwerten (Übergangsradius 1,5 mm, Schalen ≥ 2,0 mm, Ankerfang, Brücken), plus die Sitz-Entfernung aus 2bafe8f (siehe unten). **v3 liegt nicht überall innerhalb 10 % vom Rohkörper und verfehlt λmax** (0,247 > 0,229 N mm, 108 %). Das wird berichtet, nicht ersetzt; 1:1 bleibt nur Vergleich.
 
 ## Zur Frage "wieso sind die Halter noch dran?"
 
@@ -39,7 +39,7 @@ Lauf 2 lag knapp über der 10-%-Schwelle, daher Lauf 3. Lauf 3 bestätigt den Fa
 | Optimierer (Feld) | 17,18 g | 29,36 g | 18,45 g | **18,22 g** |
 | Rohkörper (STL) | 14,56 g | 26,56 g | 15,88 g | **15,72 g** |
 | 1:1 (nur Vergleich) | 16,39 g | 26,34 g | – | 16,28 g |
-| recon v3 | – | – | – | ausstehend |
+| recon v3 | – | – | – | **17,63 g** |
 
 ## Nebenbedingungen Endlauf (Optimierer, fein)
 
@@ -72,7 +72,8 @@ Aktiv sind tr und zwei Arm-Crash-Fälle. f1 hat 7 % Reserve; die robuste Mindest
 | Iteration 2 roh | 15,9 g | 0,619 | 0,187 | 0,728 | 0,266 | erfüllt (90 % / 82 %) |
 | **Endlauf roh** | **15,7 g** | **0,687** | **0,220** | **0,809** | **0,305** | **erfüllt (100,0 % / 96 %)** |
 | Endlauf 1:1 (Vergleich) | 16,3 g | – | – | – | – | nicht gerechnet: Tet-Vernetzung scheiterte in allen 6 Versuchen |
-| Endlauf recon v3 | | ausstehend | | | | |
+| **Endlauf recon v3** (Ersatz-FEA) | **17,6 g** | **0,646** | **0,247** | 0,747 | 0,297 | **tr erfüllt (94 %), λmax verfehlt (108 %)** |
+| Endlauf roh (Ersatz-FEA, Vergleichsbasis) | 15,7 g | 0,686 | 0,220 | 0,807 | 0,304 | erfüllt (99,8 % / 96 %) |
 | ManaFly 3 | | 0,859 | 0,286 | 1,248 | 0,579 | Referenz (Grenze = × 0,8) |
 | Aether4 (unskaliert) | | 0,391 | 0,143 | 0,528 | 0,242 | nur Vergleich |
 
@@ -133,6 +134,7 @@ Weit unter ManaFly bleiben die Richtungen, die Σ kaum gewichtet:
 | Lastmodell 26,6 g roh | 0,086 | 46,3 |
 | Iteration 2 roh | 0,282 | 14,2 |
 | **Endlauf roh** | **0,328** | **12,2** |
+| **Endlauf recon v3** | **0,307** | **13,0** |
 | ManaFly 3 | 0,236 | 16,9 |
 | Aether4 (unskaliert) | 0,120 | 33,2 |
 
@@ -146,11 +148,47 @@ Der Endlauf ist um den Faktor 1,8 verwindungssteifer als der 17,2-g-Rahmen, lieg
   - Warnungen: loops, cog_offset.
   - Wandregel: tiefer Anteil 1,14 %, größte Komponente 49,3 mm³, Motorzonen 0 (17,2 g: 3,09 % / 230 mm³; 26,6 g: 0,86 % / 19,3 mm³).
   - FEA-Oberfläche: Warnung, 0,27 mm > 0,20 mm.
-  - Die Fehlpunkte sind dieselben wie beim 26,6-g-Rohkörper. Bohrbilder und Keep-outs verfehlt der Rohkörper grundsätzlich; das soll die Rekonstruktion (v3) liefern.
+  - Die Fehlpunkte sind dieselben wie beim 26,6-g-Rohkörper. Bohrbilder und Keep-outs verfehlt der Rohkörper grundsätzlich; v3 erfüllt sie (siehe oben).
 - **Endlauf 1:1** (`simp_mma_cov3_recon_1`, nur Vergleich):
   - 16,3 g; Bohrbilder 20/20.
   - FEA nicht lösbar: gmsh scheiterte in allen 6 Vernetzungsversuchen. Deshalb fehlen fea_solved, die Crash-Festigkeiten und die Zielwerte (Armspitze, f1, Σ).
-- **Datenblätter** (10 Felder + Neun-Kriterien-Zeile + Oberflächenwarnung): `exports/runs/simp_mma_cov3_raw_1/datasheet.md`, `exports/runs/simp_mma_cov3_recon_1/datasheet.md`. Das v3-Datenblatt steht aus.
+- **Datenblätter** (10 Felder + Neun-Kriterien-Zeile + Oberflächenwarnung): `exports/runs/simp_mma_cov3_raw_1/datasheet.md`, `exports/runs/simp_mma_cov3_recon_1/datasheet.md`, `exports/runs/simp_mma_cov3_v3_1/datasheet.md`.
+
+## Rekonstruktion v3 des Endlaufs
+
+**Quelle.** v3 wird per `git archive` gebaut. recon3 (879713d) zweigt vor dem Merge 2bafe8f ab und hat deshalb noch XT30-, Balancer- und Antennensitze als Preserve. Der erste v3-Bau enthielt sie: 4 Körper, drei lose Sitzblöcke hinten in der Mitte (264 / 226 / 160 mm³), exakte Booleans nicht bestanden. Dieser Bau ist verworfen (`exports/runs/simp_mma_cov3_v3_seats_discarded`).
+
+Neu gebaut auf Commit af19376 (Branch `recon-v3-noseats`): 879713d plus genau die Änderung von 2bafe8f, konfliktfrei. Sonst keine Änderung an v3. Ergebnis: 1 Körper, 15 Knoten, 30 Glieder, 7 Schalen, Kontinuität bestanden, exakte Booleans bestanden. Override: `exports/cov/post_v3.json`.
+
+**FEA.** Die Standard-Evaluator-FEA konnte v3 nicht vernetzen (remesh 2,0 mm: Volumenabweichung −1,015 % > 1 %; refine/direct: Elementbudget 9728 MB überschritten; classify: Topologiefehler). Daher läuft die recon3-Ersatz-FEA (`fea_memory_budget_mb` 16384, remesh 2,0/1,5/1,2/1,0 mm) **identisch für roh und v3**, inkl. Σ (`evaluation_fallback/` je Lauf). Bei beiden greift `refine_hxt` bei 2,0 mm. Roh mit Ersatz-FEA weicht ≤ 0,6 % vom Standardwert ab.
+
+| Größe | roh (Ersatz-FEA) | recon v3 (Ersatz-FEA) | Abweichung | innerhalb 10 %? |
+|---|---|---|---|---|
+| Masse | 15,72 g | 17,63 g | +12,2 % | nein |
+| Armspitze | 10,82 N/mm | 9,40 N/mm | −13,2 % | nein |
+| f1 | 407,0 Hz | 521,3 Hz | +28,1 % | nein |
+| Σ tr voll | 0,686 N mm | 0,646 N mm | −5,7 % | ja |
+| Σ λmax voll | 0,220 N mm | 0,247 N mm | +12,5 % | nein |
+| Σ tr / λmax diag. | 0,807 / 0,304 | 0,747 / 0,297 | −7,3 % / −2,1 % | ja / ja |
+| Verwindung | 12,2 N/mm | 13,0 N/mm | +6,7 % | ja |
+
+Gegen die ManaFly-×-0,8-Grenzen: tr 0,646 ≤ 0,687 (94 %) erfüllt, **λmax 0,247 > 0,229 (108 %) verfehlt**. Der Rohkörper lag schon bei 96 %; v3 verschiebt Steifigkeit (tr und Verwindung besser, schwächste Richtung schlechter). f1 steigt stark (die ersten Moden 407/408 Hz des Rohkörpers sind ein Paar, bei v3 liegt das Paar bei 521/536 Hz). Das Muster ähnelt dem alten 14,6-g-Nachweis (+12,4 % Masse, −19 % Armspitze), nur ohne f1-Verlust.
+
+**Neun Kriterien v3** (`exports/runs/simp_mma_cov3_v3_1/datasheet.md`, Bewertung aus der Ersatz-FEA):
+
+- Werte: 17,6 g; Armspitze 9,4 N/mm; Σ tr 0,646 / λmax 0,247 N mm; f1 521 Hz; Spannungen front 6,3 / arm 12,1 / back 2,0 MPa (SF 2).
+- Verfehlt: target:symmetry, target:sigma_worst.
+- Gegenüber roh neu erfüllt: bolt_patterns (20/20, Passung ok), keep_outs_free, wall_deep_fraction, wall_deep_component (Wandregel: tiefer Anteil 0,00 %).
+- Warnungen: loops, cog_offset. FEA-Oberfläche: Warnung, 0,28 mm > 0,20 mm (nur Rechenmodell).
+- Die Manifest-Stufe `evaluation` steht auf failed (Standard-FEA); `evaluation.json` und Datenblatt enthalten die Ersatz-FEA.
+
+**Sichtprüfung v3** (`cov_4views.png`, `recon_1to1_vs_v3.png`):
+
+- Topologie wie roh: vier Arme, zwei Akkuschienen, Querriegel, Bügel. Kein Glied fehlt; Schlaufen 15 statt 16.
+- Seitenansicht: der Fachwerkträger mit Pfosten und Schrägstreben vorn und hinten bleibt erhalten, ebenso die Diagonalen.
+- Draufsicht: wie roh kein X über die Rumpfmitte. Der hintere Querriegel ist bei v3 eine flache Schale zwischen den Schienen.
+- Querschnitte: Glieder als gefüllte, runde bis ovale Splines (geschlossen, keine C-Profile). Arme glatter und gleichmäßiger dick als roh. Die Motorpads haben die vollen Bohrbilder.
+- Gegen 1:1: gleiche Gliederführung, v3 glatter, dickere Knoten.
 
 ## Form (Sichtprüfung der Renders, Rohkörper)
 
@@ -161,15 +199,13 @@ Der Endlauf ist um den Faktor 1,8 verwindungssteifer als der 17,2-g-Rahmen, lieg
 
 ## Bilder und STLs
 
-- Rohkörper-STL: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov2/geometry.stl` (= `simp_mma_cov3_raw_1/frame.stl`, Endlauf).
-- 1:1 nur als Vergleich: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov2_1to1/geometry.stl`.
-- v3: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov2_recon/geometry.stl`, **ausstehend**.
-- `exports/cov/cov_4views.png` (roh | v3 | ManaFly) und `exports/cov/recon_1to1_vs_v3.png`: **ausstehend** bis v3 bewiesen ist. Es gibt bewusst kein Ersatzbild mit 1:1 an der v3-Stelle.
-- Renders des Rohkörpers: `exports/runs/simp_mma_cov3_raw_1/renders/{iso,top,side,front}.png`.
+- Rohkörper-STL: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov3/geometry.stl` (= `simp_mma_cov3_raw_1/frame.stl`).
+- v3-STL (Ergebnis): `/c/clones/Deep_Frame-neural/exports/simp_mma_cov3_v3/geometry.stl` (= `simp_mma_cov3_v3_1/frame.stl`).
+- 1:1 nur als Vergleich: `/c/clones/Deep_Frame-neural/exports/simp_mma_cov3_1to1/geometry.stl` (= `simp_mma_cov3_recon_1/frame.stl`).
+- `exports/cov/cov_4views.png` (roh | v3 | ManaFly; iso/top/side/front) und `exports/cov/recon_1to1_vs_v3.png`.
+- Renders je Lauf: `exports/runs/simp_mma_cov3_{raw,v3}_1/renders/{iso,top,side,front}.png`.
 
-## Abschluss, sobald recon3 einen bestandenen Nachweis committet hat
+## Reproduktion
 
-Bedingung: SIMP+MMA und neural_v06_f1 beide innerhalb 10 % vom Rohkörper.
-
-1. Override `cov3_post.json` (wie hier, `mma.bodies` = `["raw", "recon", "v3"]`, `v3.ref` = SHA des Nachweis-Commits) und `python tools/formulation_study.py frame_runs <override>`. Fertige raw- und 1:1-Läufe werden wiederverwendet. v3 entsteht aus einem git archive des recon3-Commits mit Evaluator inkl. Σ, Datenblatt und Renders; das STL geht nach `simp_mma_cov2_recon`.
-2. Danach `compose` mit derselben Override-Datei (beide Bilder) und `cov_compare`; dann v3 hier eintragen, auch die Abweichung v3 zu roh bei f1 und Armspitze.
+1. `python tools/formulation_study.py frame_runs exports/cov/post_v3.json` (`v3.ref` = `recon-v3-noseats`), dann `compose` und `cov_compare` mit derselben Datei.
+2. Ersatz-FEA für roh und v3: `evaluation/frame.json` mit `fea_memory_budget_mb` 16384 nach `evaluation_fallback/`, Teile `fea` und `sigma` über Ray (Typ `reconstruction`), dann `report`; v3-`evaluation.json` in den Lauf kopiert und `run.py datasheet` neu.

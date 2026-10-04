@@ -1,0 +1,54 @@
+{
+ "reference_density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_opt/fine/density_half.npz",
+ "mma": {
+  "root": "exports/runs/simp_mma_cov3_opt",
+  "variant": "simp_mma_cov3",
+  "method": "simp_mma_cov3",
+  "bodies": [
+   "raw",
+   "recon",
+   "v3"
+  ],
+  "viewer_names": {
+   "raw": "simp_mma_cov3",
+   "recon": "simp_mma_cov3_1to1",
+   "v3": "simp_mma_cov3_v3"
+  },
+  "figures": [
+   {
+    "output": "C:/clones/Deep_Frame-cov/exports/cov/cov_4views.png",
+    "panels": [
+     "raw",
+     "v3",
+     "manafly"
+    ],
+    "labels": [
+     "SIMP-MMA Lastmodell roh",
+     "SIMP-MMA Lastmodell recon v3",
+     "ManaFly"
+    ]
+   },
+   {
+    "output": "C:/clones/Deep_Frame-cov/exports/cov/recon_1to1_vs_v3.png",
+    "panels": [
+     "recon",
+     "v3"
+    ],
+    "labels": [
+     "Vergleich: recon 1:1",
+     "Ergebnis: recon v3"
+    ]
+   }
+  ]
+ },
+ "v3": {
+  "ref": "recon-v3-noseats"
+ },
+ "comparison": {
+  "previous": {
+   "raw": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_raw_1",
+   "recon_1to1": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_recon_1"
+  },
+  "previous_fine": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_opt/fine/result.json"
+ }
+}
