@@ -29,6 +29,8 @@ Lauf `exports/runs/simp_mma_cov3_v3_2` (feature/recon-v3b b74dcf2), aus dem Rohk
 | simp_mma_cov3_v3_2 | 17,6 g | SP z 22,1 mm; Ixx/Iyy/Izz 76/94/148 kg·mm² (K) | 5,6 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | Überh. 20,1 %, Öffn. r=1 0,03 %/2,8 mm³/Motorzonen 0,Stütze 16,29 cm³, 242 min | Strebe 1,9/2,8/5,2 mm, H/B 1,00, offen 76 %, Höhe 28,0 mm, Körper 1, Schlaufen 20, Sym. 0,22 mm, Rauh. 0,138/mm | 10,5 N/mm; Σ tr 0,602/λmax 0,207 N·mm (A) | f1 473 Hz; 481/525/538 (A) | front 6,3/3,4 MPa; arm 13,5/3,0 MPa; back 2,2/0,8 MPa (SF 2,0, A) | keine; Warnung: cog_offset |
 | ManaFly 3 BETA V4 | 29,3 g | SP z 21,3 mm; Ixx/Iyy/Izz 172/127/273 kg·mm² (K) | 11,0 % (76 mm) | Bohrb. 24/24, Passung ok, Werkzeug ok, Stecker n/a | Überh. 16,1 %, Öffn. r=1 5,06 %, Stütze 30,23 cm³, 462 min | Strebe 1,2/2,5/3,6 mm, H/B 1,12, offen 71 %, Höhe 32,4 mm, Körper 1, Schlaufen 26, Sym. 0,04 mm, Rauh. 0,168/mm | 6,6 N/mm (A) | f1 344 Hz; 417/549/778 (A) | front 12,4/4,6 MPa; arm 10,1/2,0 MPa; back 2,7/0,7 MPa (SF 2,0, A) | keine |
 
+Symmetrie: Der Rohkörper verfehlte target:symmetry (0,33 mm) nur wegen eines Extraktionsfehlers um eine halbe Zelle. Nach dem Fix 544334c liegt er bei 0,05 mm (0,00040 × Radstand) und besteht. v3b besteht unverändert mit 0,22 mm (siehe `RESULT.md`, Symmetrie-Kriterium).
+
 | Warnung | Wert |
 |---|---|
 | FEA-Oberfläche | 0,31 mm > 0,20 mm: WARNUNG; betrifft nur das FEA-Rechenmodell, nicht die Druckgeometrie |

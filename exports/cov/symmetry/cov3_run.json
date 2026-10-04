@@ -1,0 +1,3 @@
+{"reference_density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_opt/fine/density_half.npz",
+ "mma": {"root": "exports/runs/simp_mma_cov3_opt", "variant": "simp_mma_cov3", "method": "simp_mma_cov3", "bodies": ["raw"],
+         "viewer_names": {"raw": "simp_mma_cov2", "recon": "simp_mma_cov2_1to1", "v3": "simp_mma_cov2_recon"}}}

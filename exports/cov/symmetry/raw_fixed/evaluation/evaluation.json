@@ -1,0 +1,4104 @@
+{
+ "name": "simp_mma_cov3_raw_1_symfix",
+ "stl": "C:\\clones\\Deep_Frame-cov\\exports\\cov\\symmetry\\raw_fixed\\geometry.stl",
+ "print_axis": [
+  0.0,
+  0.0,
+  1.0
+ ],
+ "material": {
+  "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+  "young_modulus_mpa": 4430.0,
+  "poisson_ratio": 0.3,
+  "density_g_cm3": 1.09,
+  "orthotropic": {
+   "e_xy_mpa": 4430.0,
+   "e_z_mpa": 2170.0,
+   "nu_xy": 0.3,
+   "nu_xz": 0.3,
+   "g_xy_mpa": 1703.8,
+   "g_z_mpa": 834.6
+  },
+  "strength_xy_mpa": 102.0,
+  "strength_z_mpa": 48.0,
+  "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+  "measured": [
+   "E_xy 4430 +/- 310 MPa",
+   "E_z 2170 +/- 230 MPa",
+   "tensile strength XY 102 +/- 7 MPa",
+   "tensile strength Z 48 +/- 6 MPa",
+   "density 1.09 g/cm3"
+  ],
+  "assumptions": {
+   "nu_xy": "0.30 not in the TDS",
+   "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+   "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+   "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+   "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+  }
+ },
+ "geometry": {
+  "mass": {
+   "frame_mass_g": 15.647070785297352,
+   "frame_volume_mm3": 14355.110812199404,
+   "total_mass_g": 84.94707078529737,
+   "component_mass_g": 69.30000000000001,
+   "center_of_mass_mm": [
+    0.00456431469912695,
+    2.0784924529259463,
+    22.42486379572595
+   ],
+   "frame_center_of_mass_mm": [
+    0.024779408820559345,
+    6.139286186119292,
+    13.537416658396161
+   ],
+   "inertia_g_mm2": [
+    [
+     73645.25506538179,
+     59.97723018942179,
+     11.797619197591025
+    ],
+    [
+     59.97723018942179,
+     91938.51571048303,
+     1325.344230332961
+    ],
+    [
+     11.797619197591025,
+     1325.344230332961,
+     145625.36602222174
+    ]
+   ],
+   "principal_inertia_g_mm2": [
+    73645.05765046521,
+    91906.01238980693,
+    145658.06675781438
+   ],
+   "components": [
+    {
+     "name": "aio15",
+     "type": "aio15",
+     "mass_g": 7.2,
+     "center_mm": [
+      9.404120364122206e-16,
+      -6.367373163207745e-17,
+      8.5
+     ],
+     "size_mm": [
+      31.3,
+      31.3,
+      6.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "camera",
+     "type": "camera",
+     "mass_g": 2.3,
+     "center_mm": [
+      1.166513031294608e-16,
+      35.0,
+      13.47198934878104
+     ],
+     "size_mm": [
+      16.0,
+      14.0,
+      14.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "battery",
+     "type": "battery",
+     "mass_g": 37.0,
+     "center_mm": [
+      -1.6781509643504353e-16,
+      -3.0144237274670914e-16,
+      33.5
+     ],
+     "size_mm": [
+      30.0,
+      63.0,
+      11.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "motor_front_left",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      -53.45466183516625,
+      39.13644884360386,
+      14.283333333333333
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_front_left",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      -53.45466183516625,
+      39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_front_right",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      53.45466183516625,
+      39.13644884360386,
+      14.283333333333335
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_front_right",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      53.45466183516625,
+      39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_rear_left",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      -53.45466183516625,
+      -39.13644884360386,
+      14.283333333333335
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_rear_left",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      -53.45466183516625,
+      -39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_rear_right",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      53.45466183516625,
+      -39.13644884360386,
+      14.283333333333333
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_rear_right",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      53.45466183516624,
+      -39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    }
+   ],
+   "model": "frame: exact mesh volume integrals x density; components: homogeneous boxes (props: discs) with parallel-axis theorem about the total centre of mass"
+  },
+  "airflow": {
+   "projected_area_mm2": 2842.5600000000004,
+   "bbox_share": 0.24292394782180654,
+   "hull_share": 0.24832965251181116,
+   "prop_disc_share": 0.10516205542280331,
+   "prop_ring_share": 0.05412123526554532,
+   "prop_diameter_mm": 63.5,
+   "hub_radius_mm": 7.88,
+   "discs_overlap": false,
+   "method": "top-view silhouette of the winding-number voxel grid; prop share = material inside the four prop discs / disc area, ring share excludes the motor hub radius"
+  },
+  "assembly": {
+   "bolt_patterns": [
+    {
+     "name": "motor_front_left",
+     "expected": 4,
+     "found": 1,
+     "holes": [
+      {
+       "position_mm": [
+        -56.643725766102875,
+        35.9615675474923
+       ],
+       "centroid_mm": [
+        -56.64412204005198,
+        35.961173035881245
+       ],
+       "diameter_mm": 2.0098140350968556
+      }
+     ],
+     "material_in_section": true,
+     "passed": false,
+     "tool_reachable": [
+      true
+     ]
+    },
+    {
+     "name": "motor_front_right",
+     "expected": 4,
+     "found": 0,
+     "holes": [],
+     "material_in_section": true,
+     "passed": false,
+     "tool_reachable": []
+    },
+    {
+     "name": "motor_rear_left",
+     "expected": 4,
+     "found": 0,
+     "holes": [],
+     "material_in_section": true,
+     "passed": false,
+     "tool_reachable": []
+    },
+    {
+     "name": "motor_rear_right",
+     "expected": 4,
+     "found": 1,
+     "holes": [
+      {
+       "position_mm": [
+        56.63284311660662,
+        -35.950673625183384
+       ],
+       "centroid_mm": [
+        56.633261518710555,
+        -35.9502542233507
+       ],
+       "diameter_mm": 2.0058506827187097
+      }
+     ],
+     "material_in_section": true,
+     "passed": false,
+     "tool_reachable": [
+      true
+     ]
+    },
+    {
+     "name": "stack",
+     "expected": 4,
+     "found": 0,
+     "holes": [],
+     "material_in_section": true,
+     "passed": false,
+     "tool_reachable": []
+    }
+   ],
+   "keep_out_material_mm3": {
+    "aio15_envelope": 0.0,
+    "camera_envelope": 0.0,
+    "battery_envelope": 0.0,
+    "motor_front_left_envelope": 0.0,
+    "prop_front_left_swept_clearance": 0.0,
+    "motor_front_right_envelope": 0.0,
+    "prop_front_right_swept_clearance": 0.0,
+    "motor_rear_left_envelope": 0.0,
+    "prop_rear_left_swept_clearance": 0.0,
+    "motor_rear_right_envelope": 0.0,
+    "prop_rear_right_swept_clearance": 0.0,
+    "front_left_shaft_clearance": 0.0,
+    "front_left_motor_screw_0": 0.0,
+    "front_left_motor_screw_1": 0.0,
+    "front_left_motor_screw_2": 0.0,
+    "front_left_motor_screw_3": 0.0,
+    "front_left_motor_leads": 0.0,
+    "front_right_shaft_clearance": 0.0,
+    "front_right_motor_screw_0": 0.0,
+    "front_right_motor_screw_1": 0.0,
+    "front_right_motor_screw_2": 0.0,
+    "front_right_motor_screw_3": 0.0,
+    "front_right_motor_leads": 0.0,
+    "rear_left_shaft_clearance": 0.0,
+    "rear_left_motor_screw_0": 0.0,
+    "rear_left_motor_screw_1": 0.0,
+    "rear_left_motor_screw_2": 0.0,
+    "rear_left_motor_screw_3": 0.0,
+    "rear_left_motor_leads": 0.0,
+    "rear_right_shaft_clearance": 0.0,
+    "rear_right_motor_screw_0": 0.0,
+    "rear_right_motor_screw_1": 0.0,
+    "rear_right_motor_screw_2": 0.0,
+    "rear_right_motor_screw_3": 0.0,
+    "rear_right_motor_leads": 0.0,
+    "aio_screw_0": 1.6000000000000003,
+    "aio_screw_1": 0.8960000000000002,
+    "aio_screw_2": 1.4080000000000004,
+    "aio_screw_3": 0.9600000000000002,
+    "elrs_antenna_clearance": 0.0,
+    "battery_insertion": 0.0,
+    "camera_screw_axis": 3.392000000000001,
+    "camera_tool_access_-1": 0.0,
+    "camera_tool_access_1": 0.0,
+    "camera_front_access": 0.0,
+    "aio_side_assembly_access": 0.0
+   },
+   "connector_reachable": {},
+   "fit_tolerance_mm3": 1.0,
+   "bolt_patterns_passed": false,
+   "tools_passed": true,
+   "fit_passed": false,
+   "connectors_checked": false,
+   "method": "holes from an exact plane section rasterised at the section voxel; reachability = 9 parallel rays (axis plus screw-head or connector radius) from the hole or connector along the tool axis must not re-enter material beyond the tool skip distance (the pad itself); fit = material voxels inside each keep-out shrunk by one voxel"
+  },
+  "printability": {
+   "overhang_area_mm2": 2630.900448765687,
+   "overhang_share": 0.21734453139155369,
+   "bed_contact_mm2": 127.21608637159291,
+   "print_height_mm": 28.444880727678537,
+   "print_footprint_mm": [
+    122.37261581420898,
+    95.58502197265625
+   ],
+   "overhang_deg": 45.0,
+   "method": "faces whose normal lies within 45 deg of straight down above the bed, area share of the surface"
+  },
+  "form": {
+   "strut_width_mm": {
+    "p10": 1.8627416997969526,
+    "p50": 2.8000000000000003,
+    "p90": 4.659644256269408
+   },
+   "share_below_2mm": 0.15254237288135594,
+   "section_ratio": {
+    "p10": 0.5892556509887895,
+    "p50": 0.9805806756909201,
+    "p90": 3.7053559924999373
+   },
+   "upright_share": 0.25010334849111204,
+   "flat_share": 0.17155849524596942,
+   "skeleton_voxels": 2419,
+   "method": "widths 2 x EDT on the 3D skeleton minus one voxel; section ratio = vertical material run / in-plane width at each skeleton voxel (> 1 upright, < 1 flat)",
+   "loops": {
+    "closing_radius_mm": 3.0,
+    "voxel_mm": 0.4,
+    "bodies": 1,
+    "cavities": 0,
+    "loops": 16,
+    "method": "first Betti number b1 = b0 + b2 - chi of the voxel solid after a morphological closing that fills bores and slots up to 2 x the closing radius"
+   },
+   "mesh_bodies": 1,
+   "mesh_genus": 37,
+   "flight_height_mm": 28.444880727678537,
+   "symmetry": {
+    "plane_x_mm": 0.0,
+    "rms_mm": 0.05237788744251555,
+    "p95_mm": 0.11154450520686403,
+    "max_mm": 0.20153567235913183,
+    "samples": 5000,
+    "method": "surface samples mirrored at x = mean motor x, distance to the original surface"
+   },
+   "roughness": {
+    "curvature_neighbour_rms_per_mm": 0.12009670434238987,
+    "mean_abs_curvature_per_mm": {
+     "max": 1.067909533883783,
+     "p50": 0.1854243264321655,
+     "p95": 0.47365388605965403,
+     "p99": 0.7044530643381519,
+     "mean": 0.21293546718213088
+    },
+    "radius_mm": 1.0,
+    "method": "Cohen-Steiner/Morvan mean curvature measure of each ball around evenly sampled surface points divided by the disc area pi r^2 (sphere 1/R, cylinder 1/(2R), plane 0); RMS of the |H| differences of sample pairs closer than 1.5 r; independent of the triangulation, record only"
+   }
+  },
+  "voxel_mm": 0.4,
+  "unbalanced_columns": 0,
+  "runtime_s": 3.779089200004819
+ },
+ "walls": {
+  "voxel_mm": 0.1,
+  "opening_radius_mm": 1.0,
+  "deep_depth_mm": 0.45,
+  "grid_shape": [
+   1248,
+   980,
+   309
+  ],
+  "unbalanced_columns": 0,
+  "part_volume_mm3": 14342.168000000003,
+  "removed_volume_mm3": 250.668,
+  "components": 15656,
+  "deep_components": 6,
+  "deep_volume_mm3": 164.76800000000003,
+  "deep_fraction": 0.011488360755500842,
+  "largest_deep_mm3": 49.28500000000001,
+  "shallow_volume_mm3": 85.90000000000003,
+  "motor_zone_hits": {},
+  "motor_zones": [
+   "motor_front_left",
+   "motor_front_right",
+   "motor_rear_left",
+   "motor_rear_right"
+  ],
+  "largest_deep_components": [
+   {
+    "volume_mm3": 49.28500000000001,
+    "max_depth_mm": 0.9,
+    "centroid_mm": [
+     -29.825,
+     -27.878,
+     0.987
+    ],
+    "extent_mm": [
+     23.4,
+     18.7,
+     2.0
+    ]
+   },
+   {
+    "volume_mm3": 44.88600000000001,
+    "max_depth_mm": 0.9899494936611666,
+    "centroid_mm": [
+     30.045,
+     -28.015,
+     0.942
+    ],
+    "extent_mm": [
+     22.9,
+     19.6,
+     2.0
+    ]
+   },
+   {
+    "volume_mm3": 33.58200000000001,
+    "max_depth_mm": 0.9,
+    "centroid_mm": [
+     11.683,
+     -0.44,
+     0.728
+    ],
+    "extent_mm": [
+     5.2,
+     20.7,
+     2.0
+    ]
+   },
+   {
+    "volume_mm3": 30.73700000000001,
+    "max_depth_mm": 0.8124038404635961,
+    "centroid_mm": [
+     -11.671,
+     -0.495,
+     0.712
+    ],
+    "extent_mm": [
+     4.7,
+     21.5,
+     1.9
+    ]
+   },
+   {
+    "volume_mm3": 3.315000000000001,
+    "max_depth_mm": 0.8,
+    "centroid_mm": [
+     10.656,
+     33.508,
+     19.284
+    ],
+    "extent_mm": [
+     2.3,
+     2.6,
+     4.2
+    ]
+   },
+   {
+    "volume_mm3": 2.9630000000000005,
+    "max_depth_mm": 0.806225774829855,
+    "centroid_mm": [
+     -10.656,
+     33.512,
+     19.309
+    ],
+    "extent_mm": [
+     2.1,
+     2.8,
+     3.2
+    ]
+   }
+  ],
+  "limits": {
+   "deep_max_fraction": 0.005,
+   "deep_component_max_mm3": 5.0,
+   "motor_zone_margin_mm": 2.0
+  },
+  "elapsed_s": 79.69909370000096,
+  "method": "Winding-number voxelisation at h; exact EDT opening with a ball of the radius (erosion EDT >= r, dilation EDT <= r) tiled along x with halo; removed voxels grouped with 26-connectivity; deep components reach the depth below the original surface (true walls under 2 r), shallow ones are edge rounding",
+  "status": "Provisional: calibrated on the ManaFly 3 BETA V4 manufacturer geometry (no own test); final after own drop tests in M2",
+  "calibrated_rule_passed": false
+ },
+ "fea": {
+  "status": "ok",
+  "mass_g": 52.71854789184759,
+  "eigenfrequencies_hz": [
+   406.9983,
+   408.4605,
+   501.8442,
+   503.8014,
+   525.0688,
+   532.2723
+  ],
+  "max_displacement_mm": 1.557473109515641,
+  "max_von_mises_mpa": 20.59719156420863,
+  "stiffness_n_per_mm": 10.88217418166711,
+  "load_cases": {
+   "arm_tip": {
+    "analysis": "static",
+    "max_displacement_mm": 0.4475799203416902,
+    "max_von_mises_mpa": 4.758379400417624,
+    "von_mises_p99_mpa": 2.1918834766740143,
+    "print_normal_tension_p99_mpa": 0.5243919649999977,
+    "print_normal_abs_p99_mpa": 0.668014970999999,
+    "von_mises_p999_mpa": 3.4800432991567662,
+    "print_normal_tension_p999_mpa": 1.1344537280000375,
+    "print_normal_abs_p999_mpa": 1.2004306360000079,
+    "stress_samples": 954044,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 1265,
+      "force_n": [
+       0.0,
+       0.0,
+       3.6
+      ],
+      "mean_displacement_mm": [
+       -0.012631737862450613,
+       0.0006045428718,
+       0.33081624498023726
+      ],
+      "directional_displacement_mm": 0.33081624498023726,
+      "stiffness_n_per_mm": 10.88217418166711
+     }
+    ],
+    "stiffness_n_per_mm": 10.88217418166711,
+    "fixed_node_count": 2450
+   },
+   "modes": {
+    "analysis": "modal",
+    "eigenfrequencies_hz": [
+     406.9983,
+     408.4605,
+     501.8442,
+     503.8014,
+     525.0688,
+     532.2723
+    ],
+    "discarded_rigid_modes": 0,
+    "fixture": "all translations fixed on selected nodes",
+    "fixed_node_count": 11373
+   },
+   "crash_front": {
+    "analysis": "static",
+    "max_displacement_mm": 0.24062399161833384,
+    "max_von_mises_mpa": 12.017554258961345,
+    "von_mises_p99_mpa": 4.177920820791078,
+    "print_normal_tension_p99_mpa": 1.4616481399999999,
+    "print_normal_abs_p99_mpa": 1.9800649599999987,
+    "von_mises_p999_mpa": 6.485987542190671,
+    "print_normal_tension_p999_mpa": 3.1884616700000166,
+    "print_normal_abs_p999_mpa": 3.9477410720000368,
+    "stress_samples": 954044,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 7317,
+      "force_n": [
+       0.0,
+       -30.64578125,
+       0.0
+      ],
+      "mean_displacement_mm": [
+       -0.004978892084324183,
+       -0.14378209382260468,
+       0.1121039482520157
+      ],
+      "directional_displacement_mm": 0.14378209382260468,
+      "stiffness_n_per_mm": 213.14045744673965
+     }
+    ],
+    "stiffness_n_per_mm": 213.14045744673965,
+    "fixed_node_count": 2450
+   },
+   "crash_arm": {
+    "analysis": "static",
+    "max_displacement_mm": 1.557473109515641,
+    "max_von_mises_mpa": 20.59719156420863,
+    "von_mises_p99_mpa": 8.866029709085955,
+    "print_normal_tension_p99_mpa": 1.1294067899999976,
+    "print_normal_abs_p99_mpa": 1.6158424099999942,
+    "von_mises_p999_mpa": 14.19844579499049,
+    "print_normal_tension_p999_mpa": 2.589855882000001,
+    "print_normal_abs_p999_mpa": 3.8398857780000717,
+    "stress_samples": 954044,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 1265,
+      "force_n": [
+       2.2077626326054296,
+       -14.27686502418177,
+       -5.107630208333331
+      ],
+      "mean_displacement_mm": [
+       -0.3806136671936755,
+       -1.0056326607114607,
+       -0.4795016381818183
+      ],
+      "directional_displacement_mm": 1.0419766460429178,
+      "stiffness_n_per_mm": 14.705598904919087
+     }
+    ],
+    "stiffness_n_per_mm": 14.705598904919087,
+    "fixed_node_count": 2450
+   },
+   "crash_back": {
+    "analysis": "static",
+    "max_displacement_mm": 0.03685146431974657,
+    "max_von_mises_mpa": 6.309938279661212,
+    "von_mises_p99_mpa": 1.0571582093119154,
+    "print_normal_tension_p99_mpa": 0.1251122629999997,
+    "print_normal_abs_p99_mpa": 0.3376386899999976,
+    "von_mises_p999_mpa": 1.7506981241768902,
+    "print_normal_tension_p999_mpa": 0.3760366956000048,
+    "print_normal_abs_p999_mpa": 0.5738205317000025,
+    "stress_samples": 954044,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 526,
+      "force_n": [
+       0.0,
+       0.0,
+       -15.322890625
+      ],
+      "mean_displacement_mm": [
+       -0.000644125095627376,
+       0.0010319553313688213,
+       -0.032221375874524706
+      ],
+      "directional_displacement_mm": 0.032221375874524706,
+      "stiffness_n_per_mm": 475.5504757050051
+     }
+    ],
+    "stiffness_n_per_mm": 475.5504757050051,
+    "fixed_node_count": 11373
+   }
+  },
+  "diagnostics": [],
+  "artifacts": {
+   "directory": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62",
+   "arm_tip": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_0.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_0.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_0.log"
+   },
+   "modes": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_1.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_1.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_1.log"
+   },
+   "crash_front": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_2.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_2.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_2.log"
+   },
+   "crash_arm": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_3.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_3.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_3.log"
+   },
+   "crash_back": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_4.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_4.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\case_4.log"
+   },
+   "result": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\fea\\evaluation_wuo53f62\\result.json"
+  },
+  "linear_solver": null,
+  "solver_threads": 4,
+  "mesh": {
+   "attempts": [
+    {
+     "name": "remesh_hxt",
+     "target_mm": 2.0,
+     "status": "failed",
+     "timeout_s": 900.0,
+     "diagnostic": "RuntimeError: C:\\clones\\Deep_Frame-cov\\deep_frame\\fea.py\", line 807, in <module>\n    generate_mesh(sys.argv[1])\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^\n  File \"C:\\clones\\Deep_Frame-cov\\deep_frame\\fea.py\", line 634, in generate_mesh\n    surface.update(_boundary_report(gmsh, source, settings))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\clones\\Deep_Frame-cov\\deep_frame\\fea.py\", line 593, in _boundary_report\n    raise ValueError(f\"Tetrahedral body deviates {fidelity['maximum_sampled_deviation_mm']:.4g} mm and {report['tet_volume_relative_change']:.4%} in volume from the input surface (limits {settings['surface_deviation_mm']} mm, {settings['relative_volume_change']:.2%})\")\nValueError: Tetrahedral body deviates 0.1218 mm and -1.0515% in volume from the input surface (limits 0.2 mm, 1.00%)\n",
+     "attempt": "remesh_hxt",
+     "prepared_surface": {
+      "refined_input": false,
+      "target_mm": 2.0,
+      "merge_tolerance_mm": 1.5796089854889092e-07,
+      "cleanup_applied": false,
+      "face_count": 27946,
+      "minimum_angle_deg": 7.081179668265261,
+      "topology": {
+       "input": {
+        "watertight": true,
+        "winding_consistent": true,
+        "body_count": 1,
+        "euler_number": -72
+       },
+       "remeshed": {
+        "watertight": true,
+        "winding_consistent": true,
+        "body_count": 1,
+        "euler_number": -72
+       },
+       "prepared": {
+        "watertight": true,
+        "winding_consistent": true,
+        "body_count": 1,
+        "euler_number": -72
+       }
+      },
+      "topology_changed": false,
+      "rejected_steps": {},
+      "topology_passed": true,
+      "self_intersections_passed": true,
+      "folded_edges": 0,
+      "runtime_s": 12.779166300002544,
+      "passed": true
+     },
+     "linear_element_count": 50852,
+     "element_budget": 250356,
+     "over_budget": false,
+     "surface_failed": false,
+     "runtime_s": 18.359445199999755
+    },
+    {
+     "name": "remesh_delaunay",
+     "target_mm": 2.0,
+     "status": "failed",
+     "timeout_s": 900.0,
+     "diagnostic": "RuntimeError: C:\\clones\\Deep_Frame-cov\\deep_frame\\fea.py\", line 807, in <module>\n    generate_mesh(sys.argv[1])\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^\n  File \"C:\\clones\\Deep_Frame-cov\\deep_frame\\fea.py\", line 634, in generate_mesh\n    surface.update(_boundary_report(gmsh, source, settings))\n                   ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\clones\\Deep_Frame-cov\\deep_frame\\fea.py\", line 593, in _boundary_report\n    raise ValueError(f\"Tetrahedral body deviates {fidelity['maximum_sampled_deviation_mm']:.4g} mm and {report['tet_volume_relative_change']:.4%} in volume from the input surface (limits {settings['surface_deviation_mm']} mm, {settings['relative_volume_change']:.2%})\")\nValueError: Tetrahedral body deviates 0.1218 mm and -1.0515% in volume from the input surface (limits 0.2 mm, 1.00%)\n",
+     "attempt": "remesh_delaunay",
+     "prepared_surface": {
+      "refined_input": false,
+      "target_mm": 2.0,
+      "merge_tolerance_mm": 1.5796089854889092e-07,
+      "cleanup_applied": false,
+      "face_count": 27946,
+      "minimum_angle_deg": 7.081179668265261,
+      "topology": {
+       "input": {
+        "watertight": true,
+        "winding_consistent": true,
+        "body_count": 1,
+        "euler_number": -72
+       },
+       "remeshed": {
+        "watertight": true,
+        "winding_consistent": true,
+        "body_count": 1,
+        "euler_number": -72
+       },
+       "prepared": {
+        "watertight": true,
+        "winding_consistent": true,
+        "body_count": 1,
+        "euler_number": -72
+       }
+      },
+      "topology_changed": false,
+      "rejected_steps": {},
+      "topology_passed": true,
+      "self_intersections_passed": true,
+      "folded_edges": 0,
+      "runtime_s": 10.434362600000895,
+      "passed": true
+     },
+     "linear_element_count": 46543,
+     "element_budget": 250356,
+     "over_budget": false,
+     "surface_failed": false,
+     "runtime_s": 15.729548799998156
+    },
+    {
+     "name": "refine_hxt",
+     "target_mm": 2.0,
+     "status": "ok",
+     "timeout_s": 900.0,
+     "linear_element_count": 238511,
+     "runtime_s": 45.21592149999924
+    }
+   ],
+   "input_face_count": 105456,
+   "input_minimum_angle_deg": 20.245621834971864,
+   "memory_budget": {
+    "elements": 250356,
+    "solver_memory_mb": 9290.58203125,
+    "process_mb": 437.41796875,
+    "available_mb": 28906.03515625,
+    "memory_budget_mb": 9728.0,
+    "memory_per_element_kb": 38.0
+   },
+   "gmsh_version": "4.15.2",
+   "element_type": "C3D10",
+   "element_count": 238511,
+   "minimum_jacobian_mm3": 0.014269106533199644,
+   "mesh_size_mm": 3.0,
+   "second_order_linear": false,
+   "high_order_optimize": 0,
+   "boundary_geometry": "quadratic boundary nodes projected to CAD",
+   "attempt": "refine_hxt",
+   "target_mm": 2.0,
+   "prepared_surface": {
+    "refined_input": true,
+    "target_mm": 2.0,
+    "merge_tolerance_mm": 1.5796089854889092e-07,
+    "cleanup_applied": false,
+    "face_count": 80294,
+    "minimum_angle_deg": 10.583980025587461,
+    "topology": {
+     "input": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -72
+     },
+     "remeshed": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -72
+     },
+     "prepared": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -72
+     }
+    },
+    "topology_changed": false,
+    "rejected_steps": {},
+    "topology_passed": true,
+    "self_intersections_passed": true,
+    "folded_edges": 0,
+    "runtime_s": 32.17043099999864,
+    "passed": true
+   },
+   "linear_element_count": 238511,
+   "element_budget": 250356,
+   "over_budget": false,
+   "boundary_node_count": 40075,
+   "boundary_node_deviation_mm": 3.019806626980426e-14,
+   "boundary_fidelity": {
+    "method": "bidirectional vertices, centroids and all edge midpoints; exact nearest-surface distance by MeshLab per-vertex distance",
+    "reference_to_approximation": {
+     "sample_count": 474480,
+     "surface_distance_mm": {
+      "max": 0.02884199097752571,
+      "p50": 0.0006504387711174786,
+      "p95": 0.007845740765333176,
+      "p99": 0.011041945777833462,
+      "mean": 0.0020373710705183395
+     }
+    },
+    "approximation_to_reference": {
+     "sample_count": 361251,
+     "surface_distance_mm": {
+      "max": 0.023463750258088112,
+      "p50": 3.552713678800501e-15,
+      "p95": 0.007272239774465561,
+      "p99": 0.009550776798278093,
+      "mean": 0.0014594370772355709
+     }
+    },
+    "maximum_sampled_deviation_mm": 0.02884199097752571,
+    "relative_volume_change": -0.000518335028071637,
+    "runtime_s": 1.4575427999989188
+   },
+   "input_volume_mm3": 14420.686139309715,
+   "tet_volume_mm3": 14413.211392554884,
+   "tet_volume_relative_change": -0.000518335028071637,
+   "minimum_sicn": 0.24729493432934177,
+   "elements_below_sicn": 0,
+   "node_count": 399460
+  },
+  "point_mass_coupling": [
+   {
+    "name": "battery",
+    "mass_g": 37.0,
+    "position_mm": [
+     -1.6781509643504353e-16,
+     -3.0144237274670914e-16,
+     33.5
+    ],
+    "attachment_nodes": 526,
+    "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+   }
+  ],
+  "frame_mass_g": 15.71854789184759,
+  "model_frame_mass_g": 15.710400417884825,
+  "point_mass_g": 37.0,
+  "solver_version": "2.22",
+  "runtime_s": 414.62752949999776,
+  "sliver_cleanup": null,
+  "fea_surface": {
+   "trials": [
+    {
+     "surface_mm": 0.5,
+     "taubin": 10,
+     "volume_mm": 2.0,
+     "feature_deg": 40.0,
+     "deviation_mm": 0.2731574475765228,
+     "relative_volume_change": 0.00010331294609278174,
+     "deviation_within_limit": false,
+     "passed": true
+    }
+   ],
+   "choice": {
+    "fea_remesh_targets_mm": [
+     2.0
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "volume_mm3": 14420.686139309715
+  },
+  "model": {
+   "material": {
+    "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+    "young_modulus_mpa": 4430.0,
+    "poisson_ratio": 0.3,
+    "density_g_cm3": 1.09,
+    "orthotropic": {
+     "e_xy_mpa": 4430.0,
+     "e_z_mpa": 2170.0,
+     "nu_xy": 0.3,
+     "nu_xz": 0.3,
+     "g_xy_mpa": 1703.8,
+     "g_z_mpa": 834.6
+    },
+    "strength_xy_mpa": 102.0,
+    "strength_z_mpa": 48.0,
+    "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+    "measured": [
+     "E_xy 4430 +/- 310 MPa",
+     "E_z 2170 +/- 230 MPa",
+     "tensile strength XY 102 +/- 7 MPa",
+     "tensile strength Z 48 +/- 6 MPa",
+     "density 1.09 g/cm3"
+    ],
+    "assumptions": {
+     "nu_xy": "0.30 not in the TDS",
+     "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+     "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+     "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+     "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+    },
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "point_masses": [
+    {
+     "name": "battery",
+     "mass_g": 37.0,
+     "position_mm": [
+      -1.6781509643504353e-16,
+      -3.0144237274670914e-16,
+      33.5
+     ],
+     "attachment_region": {
+      "kind": "box",
+      "min_mm": [
+       -20.1,
+       -2.0,
+       27.5
+      ],
+      "max_mm": [
+       20.1,
+       2.0,
+       28.51
+      ]
+     }
+    }
+   ],
+   "load_cases": [
+    {
+     "name": "arm_tip",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        15.95,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        15.95,
+        0.51
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -63.05466183516625,
+         29.536448843603857,
+         8.823333333333334
+        ],
+        "max_mm": [
+         -43.85466183516625,
+         48.73644884360386,
+         9.343333333333334
+        ]
+       },
+       "force_n": [
+        0.0,
+        0.0,
+        3.6
+       ]
+      }
+     ]
+    },
+    {
+     "name": "modes",
+     "analysis": "modal",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        6.656666666666668
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        43.85466183516625,
+        29.536448843603857,
+        6.656666666666668
+       ],
+       "max_mm": [
+        63.05466183516625,
+        48.73644884360386,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        -48.73644884360386,
+        6.656666666666668
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        -29.536448843603857,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        43.85466183516625,
+        -48.73644884360386,
+        6.656666666666668
+       ],
+       "max_mm": [
+        63.05466183516625,
+        -29.536448843603857,
+        7.166666666666668
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_front",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        15.95,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        15.95,
+        0.51
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -12.01,
+         26.5,
+         19.5
+        ],
+        "max_mm": [
+         12.01,
+         43.5,
+         26.01
+        ]
+       },
+       "force_n": [
+        0.0,
+        -30.64578125,
+        0.0
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_arm",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        15.95,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        15.95,
+        0.51
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -63.05466183516625,
+         29.536448843603857,
+         8.823333333333334
+        ],
+        "max_mm": [
+         -43.85466183516625,
+         48.73644884360386,
+         9.343333333333334
+        ]
+       },
+       "force_n": [
+        2.2077626326054296,
+        -14.27686502418177,
+        -5.107630208333331
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_back",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        6.656666666666668
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        43.85466183516625,
+        29.536448843603857,
+        6.656666666666668
+       ],
+       "max_mm": [
+        63.05466183516625,
+        48.73644884360386,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        -48.73644884360386,
+        6.656666666666668
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        -29.536448843603857,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        43.85466183516625,
+        -48.73644884360386,
+        6.656666666666668
+       ],
+       "max_mm": [
+        63.05466183516625,
+        -29.536448843603857,
+        7.166666666666668
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -20.1,
+         -2.0,
+         27.5
+        ],
+        "max_mm": [
+         20.1,
+         2.0,
+         28.51
+        ]
+       },
+       "force_n": [
+        0.0,
+        0.0,
+        -15.322890625
+       ]
+      }
+     ]
+    }
+   ],
+   "loads": {
+    "arm_tip_force_n": 3.6,
+    "all_up_mass_g": 125.0,
+    "standard_gravity_m_s2": 9.80665,
+    "crash_front_g": 25.0,
+    "crash_arm_g": 12.5,
+    "crash_back_g": 12.5,
+    "safety_factor": 2.0,
+    "sources": {
+     "arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+     "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+     "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+     "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+     "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"
+    }
+   },
+   "support": {
+    "arm_tip": "centre mount undersides fixed (all translations)",
+    "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
+    "crash_front": "centre mount undersides fixed",
+    "crash_arm": "centre mount undersides fixed",
+    "crash_back": "four motor seat undersides fixed"
+   }
+  }
+ },
+ "sigma": {
+  "mean_compliance_n_mm": 0.6869528018194226,
+  "worst_case_compliance_n_mm": 0.2196738312840407,
+  "top_eigenvalues_n_mm": [
+   0.2196738312840407,
+   0.144148498337321,
+   0.10117414697135285
+  ],
+  "worst_case_load": {
+   "motor_front_left My": -5.000282290114076,
+   "motor_front_left Mz": -4.491588748846203,
+   "motor_front_right My": 5.00193491120293,
+   "motor_front_right Mz": 4.540664729933258,
+   "motor_rear_left My": 4.985949141825836,
+   "motor_rear_left Mz": 4.173265469830554,
+   "motor_rear_right My": -4.985789245984644,
+   "motor_rear_right Mz": -4.140647333291659,
+   "battery Fz": 1.1925386843972883
+  },
+  "all_dofs": {
+   "mean_compliance_n_mm": 0.6876662796361704,
+   "worst_case_compliance_n_mm": 0.21994218107154803,
+   "top_eigenvalues_n_mm": [
+    0.21994218107154803,
+    0.14414869460774615,
+    0.10124491490617707
+   ],
+   "worst_case_load": {
+    "motor_front_left My": -4.988783028700734,
+    "motor_front_left Mz": -4.494012218515693,
+    "motor_front_right My": 4.990437934613175,
+    "motor_front_right Mz": 4.542992691527589,
+    "motor_rear_left My": 4.974466912665733,
+    "motor_rear_left Mz": 4.1762112724669125,
+    "motor_rear_right My": -4.974301029051985,
+    "motor_rear_right Mz": -4.143636069295571,
+    "battery Fz": 1.1932710093855012
+   }
+  },
+  "groups": {
+   "stack_fixed": {
+    "mean_compliance_n_mm": 0.6869528018194226,
+    "worst_case_compliance_n_mm": 0.2196738312840407,
+    "top_eigenvalues_n_mm": [
+     0.2196738312840407,
+     0.144148498337321,
+     0.10117414697135285
+    ],
+    "worst_case_load": {
+     "motor_front_left My": -5.000282290114076,
+     "motor_front_left Mz": -4.491588748846203,
+     "motor_front_right My": 5.00193491120293,
+     "motor_front_right Mz": 4.540664729933258,
+     "motor_rear_left My": 4.985949141825836,
+     "motor_rear_left Mz": 4.173265469830554,
+     "motor_rear_right My": -4.985789245984644,
+     "motor_rear_right Mz": -4.140647333291659,
+     "battery Fz": 1.1925386843972883
+    }
+   },
+   "motor_pads_fixed": {
+    "mean_compliance_n_mm": 0.0007134778167478557,
+    "worst_case_compliance_n_mm": 0.0004451878985433013,
+    "top_eigenvalues_n_mm": [
+     0.0004451878985433013,
+     0.00018302093613648665,
+     8.526898206806784e-05
+    ],
+    "worst_case_load": {
+     "stack Fz": -0.30009542054521354,
+     "stack Mx": -0.14158249753391786
+    }
+   }
+  },
+  "mean_by_interface_n_mm": {
+   "motor_front_left": 0.1737274320157712,
+   "motor_front_right": 0.18234970431785946,
+   "motor_rear_left": 0.10451682224749227,
+   "motor_rear_right": 0.09915157213643803,
+   "stack": 0.0007134778167478557,
+   "battery": 0.12704302163461684,
+   "camera": 0.00016424946724479406
+  },
+  "scaled_to_arm_mm": null,
+  "scaled": {
+   "mean_compliance_n_mm": 0.6869528018194226,
+   "worst_case_compliance_n_mm": 0.2196738312840407,
+   "top_eigenvalues_n_mm": [
+    0.2196738312840407,
+    0.144148498337321,
+    0.10117414697135285
+   ],
+   "worst_case_load": {
+    "motor_front_left My": -5.000282290114076,
+    "motor_front_left Mz": -4.491588748846203,
+    "motor_front_right My": 5.00193491120293,
+    "motor_front_right Mz": 4.540664729933258,
+    "motor_rear_left My": 4.985949141825836,
+    "motor_rear_left Mz": 4.173265469830554,
+    "motor_rear_right My": -4.985789245984644,
+    "motor_rear_right Mz": -4.140647333291659,
+    "battery Fz": 1.1925386843972883
+   },
+   "all_dofs": {
+    "mean_compliance_n_mm": 0.6876662796361704,
+    "worst_case_compliance_n_mm": 0.21994218107154803,
+    "top_eigenvalues_n_mm": [
+     0.21994218107154803,
+     0.14414869460774615,
+     0.10124491490617707
+    ],
+    "worst_case_load": {
+     "motor_front_left My": -4.988783028700734,
+     "motor_front_left Mz": -4.494012218515693,
+     "motor_front_right My": 4.990437934613175,
+     "motor_front_right Mz": 4.542992691527589,
+     "motor_rear_left My": 4.974466912665733,
+     "motor_rear_left Mz": 4.1762112724669125,
+     "motor_rear_right My": -4.974301029051985,
+     "motor_rear_right Mz": -4.143636069295571,
+     "battery Fz": 1.1932710093855012
+    }
+   },
+   "groups": {
+    "stack_fixed": {
+     "mean_compliance_n_mm": 0.6869528018194226,
+     "worst_case_compliance_n_mm": 0.2196738312840407,
+     "top_eigenvalues_n_mm": [
+      0.2196738312840407,
+      0.144148498337321,
+      0.10117414697135285
+     ],
+     "worst_case_load": {
+      "motor_front_left My": -5.000282290114076,
+      "motor_front_left Mz": -4.491588748846203,
+      "motor_front_right My": 5.00193491120293,
+      "motor_front_right Mz": 4.540664729933258,
+      "motor_rear_left My": 4.985949141825836,
+      "motor_rear_left Mz": 4.173265469830554,
+      "motor_rear_right My": -4.985789245984644,
+      "motor_rear_right Mz": -4.140647333291659,
+      "battery Fz": 1.1925386843972883
+     }
+    },
+    "motor_pads_fixed": {
+     "mean_compliance_n_mm": 0.0007134778167478557,
+     "worst_case_compliance_n_mm": 0.0004451878985433013,
+     "top_eigenvalues_n_mm": [
+      0.0004451878985433013,
+      0.00018302093613648665,
+      8.526898206806784e-05
+     ],
+     "worst_case_load": {
+      "stack Fz": -0.30009542054521354,
+      "stack Mx": -0.14158249753391786
+     }
+    }
+   },
+   "mean_by_interface_n_mm": {
+    "motor_front_left": 0.1737274320157712,
+    "motor_front_right": 0.18234970431785946,
+    "motor_rear_left": 0.10451682224749227,
+    "motor_rear_right": 0.09915157213643803,
+    "stack": 0.0007134778167478557,
+    "battery": 0.12704302163461684,
+    "camera": 0.00016424946724479406
+   },
+   "scaled_to_arm_mm": 66.25
+  },
+  "diagonal": {
+   "mean_compliance_n_mm": 0.8087954170548496,
+   "worst_case_compliance_n_mm": 0.30504032592211683,
+   "top_eigenvalues_n_mm": [
+    0.30504032592211683,
+    0.15188654281545108,
+    0.12334694609735607
+   ],
+   "worst_case_load": {
+    "motor_front_left Mz": -4.970270583395186,
+    "motor_front_right Mz": 5.002739419140497,
+    "motor_rear_left Mz": 4.819905640030073,
+    "motor_rear_right Mz": -4.796043840410362,
+    "battery Fz": 1.4528358749377213
+   },
+   "all_dofs": {
+    "mean_compliance_n_mm": 0.8094869545899155,
+    "worst_case_compliance_n_mm": 0.3053805202581669,
+    "top_eigenvalues_n_mm": [
+     0.3053805202581669,
+     0.15188654284069153,
+     0.12334694610257038
+    ],
+    "worst_case_load": {
+     "motor_front_left Mz": -4.970211363240389,
+     "motor_front_right Mz": 5.002637490927418,
+     "motor_rear_left Mz": 4.820023304824647,
+     "motor_rear_right Mz": -4.796191619926193,
+     "battery Fz": 1.452761329870477
+    }
+   },
+   "groups": {
+    "stack_fixed": {
+     "mean_compliance_n_mm": 0.8087954170548496,
+     "worst_case_compliance_n_mm": 0.30504032592211683,
+     "top_eigenvalues_n_mm": [
+      0.30504032592211683,
+      0.15188654281545108,
+      0.12334694609735607
+     ],
+     "worst_case_load": {
+      "motor_front_left Mz": -4.970270583395186,
+      "motor_front_right Mz": 5.002739419140497,
+      "motor_rear_left Mz": 4.819905640030073,
+      "motor_rear_right Mz": -4.796043840410362,
+      "battery Fz": 1.4528358749377213
+     }
+    },
+    "motor_pads_fixed": {
+     "mean_compliance_n_mm": 0.0006915375350659619,
+     "worst_case_compliance_n_mm": 0.0004392582310770936,
+     "top_eigenvalues_n_mm": [
+      0.0004392582310770936,
+      0.00017566867720565608,
+      7.661062678321231e-05
+     ],
+     "worst_case_load": {
+      "stack Fz": 0.3035387364845179
+     }
+    }
+   },
+   "mean_by_interface_n_mm": {
+    "motor_front_left": 0.19909978262274197,
+    "motor_front_right": 0.20839488866334802,
+    "motor_rear_left": 0.13538101512050302,
+    "motor_rear_right": 0.12981620532045354,
+    "stack": 0.0006915375350659619,
+    "battery": 0.13597561665464675,
+    "camera": 0.00012790867315625153
+   },
+   "scaled_to_arm_mm": null
+  },
+  "arm_mm": 66.25,
+  "stiffness": {
+   "motor_front_left Fx": 59.30735495911571,
+   "motor_front_left Fy": 11.683695950659226,
+   "motor_front_left Fz": 9.72408884621018,
+   "motor_front_left Mx": 3431.8494046908536,
+   "motor_front_left My": 4238.490609220404,
+   "motor_front_left Mz": 7713.881239759658,
+   "motor_front_right Fx": 57.691652105021625,
+   "motor_front_right Fy": 11.413746205476244,
+   "motor_front_right Fz": 9.325008749302288,
+   "motor_front_right Mx": 3267.1806716716746,
+   "motor_front_right My": 4002.3831355184716,
+   "motor_front_right Mz": 7433.0316353889175,
+   "motor_rear_left Fx": 29.89499302917557,
+   "motor_rear_left Fy": 9.271038383896578,
+   "motor_rear_left Fz": 19.21130294015456,
+   "motor_rear_left Mx": 3737.2498598649645,
+   "motor_rear_left My": 4709.421447263004,
+   "motor_rear_left Mz": 6207.602100436969,
+   "motor_rear_right Fx": 31.077968568127357,
+   "motor_rear_right Fy": 9.386679887783519,
+   "motor_rear_right Fz": 20.23560571369162,
+   "motor_rear_right Mx": 3951.8765166524504,
+   "motor_rear_right My": 4764.588481817905,
+   "motor_rear_right Mz": 6326.210916831295,
+   "stack Fx": 407.0368230173373,
+   "stack Fy": 162.60508529890552,
+   "stack Fz": 209.7530746793154,
+   "stack Mx": 40117.977088174106,
+   "stack My": 58387.115555778124,
+   "stack Mz": 72832.47184647241,
+   "battery Fx": 117.5353209966974,
+   "battery Fy": 193.68680691678082,
+   "battery Fz": 439.12075657459394,
+   "battery Mx": 24907.489410351496,
+   "battery My": 88681.13473274144,
+   "battery Mz": 71595.3153395617,
+   "camera Fx": 48.6011655661763,
+   "camera Fy": 210.07987524753662,
+   "camera Fz": 148.15119421314168,
+   "camera Mx": 14000.788248599434,
+   "camera My": 29043.169473420076,
+   "camera Mz": 58435.43694521209
+  },
+  "labels": [
+   [
+    "motor_front_left",
+    "Fx"
+   ],
+   [
+    "motor_front_left",
+    "Fy"
+   ],
+   [
+    "motor_front_left",
+    "Fz"
+   ],
+   [
+    "motor_front_left",
+    "Mx"
+   ],
+   [
+    "motor_front_left",
+    "My"
+   ],
+   [
+    "motor_front_left",
+    "Mz"
+   ],
+   [
+    "motor_front_right",
+    "Fx"
+   ],
+   [
+    "motor_front_right",
+    "Fy"
+   ],
+   [
+    "motor_front_right",
+    "Fz"
+   ],
+   [
+    "motor_front_right",
+    "Mx"
+   ],
+   [
+    "motor_front_right",
+    "My"
+   ],
+   [
+    "motor_front_right",
+    "Mz"
+   ],
+   [
+    "motor_rear_left",
+    "Fx"
+   ],
+   [
+    "motor_rear_left",
+    "Fy"
+   ],
+   [
+    "motor_rear_left",
+    "Fz"
+   ],
+   [
+    "motor_rear_left",
+    "Mx"
+   ],
+   [
+    "motor_rear_left",
+    "My"
+   ],
+   [
+    "motor_rear_left",
+    "Mz"
+   ],
+   [
+    "motor_rear_right",
+    "Fx"
+   ],
+   [
+    "motor_rear_right",
+    "Fy"
+   ],
+   [
+    "motor_rear_right",
+    "Fz"
+   ],
+   [
+    "motor_rear_right",
+    "Mx"
+   ],
+   [
+    "motor_rear_right",
+    "My"
+   ],
+   [
+    "motor_rear_right",
+    "Mz"
+   ],
+   [
+    "stack",
+    "Fx"
+   ],
+   [
+    "stack",
+    "Fy"
+   ],
+   [
+    "stack",
+    "Fz"
+   ],
+   [
+    "stack",
+    "Mx"
+   ],
+   [
+    "stack",
+    "My"
+   ],
+   [
+    "stack",
+    "Mz"
+   ],
+   [
+    "battery",
+    "Fx"
+   ],
+   [
+    "battery",
+    "Fy"
+   ],
+   [
+    "battery",
+    "Fz"
+   ],
+   [
+    "battery",
+    "Mx"
+   ],
+   [
+    "battery",
+    "My"
+   ],
+   [
+    "battery",
+    "Mz"
+   ],
+   [
+    "camera",
+    "Fx"
+   ],
+   [
+    "camera",
+    "Fy"
+   ],
+   [
+    "camera",
+    "Fz"
+   ],
+   [
+    "camera",
+    "Mx"
+   ],
+   [
+    "camera",
+    "My"
+   ],
+   [
+    "camera",
+    "Mz"
+   ]
+  ],
+  "flexibility": [
+   [
+    0.016861315104835864,
+    0.033276450303565124,
+    -0.011699599043063889,
+    1.0020036904525238e-05,
+    -0.00034950254355806565,
+    -0.0010571397755030003,
+    0.0020893487829156373,
+    -0.0036712342424991174,
+    0.001255796029325803,
+    8.424833957289093e-05,
+    2.0996501853159195e-05,
+    -5.861671655135898e-05,
+    -0.001474110021531945,
+    0.002648485570420049,
+    0.0007621407211789623,
+    -0.00011673320813625133,
+    -5.4268795001764916e-05,
+    -5.299675702082598e-05,
+    -0.0020675276837274974,
+    -0.003719797481821391,
+    -0.00018173322912107306,
+    0.000113906650183551,
+    -6.350892031062478e-05,
+    -9.016171145428874e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.0006574578984821744,
+    5.321527895164137e-05,
+    -7.92222606141899e-05,
+    2.907970239039887e-06,
+    -4.949218034592305e-05,
+    -0.000188294051959054,
+    0.004120538955877162,
+    -0.00034752408683374515,
+    0.00026670468122132017,
+    -1.8345224775855983e-05,
+    -0.00013412887130956583,
+    -0.00017501418633956937
+   ],
+   [
+    0.03327645042710907,
+    0.08558935496293682,
+    -5.3802120943522766e-05,
+    0.0005904018958348041,
+    0.00015168282899029299,
+    -0.002856390965760678,
+    0.003701763025767737,
+    -0.00759166926509001,
+    0.005818087571831981,
+    0.0001455097046593717,
+    -5.1680239399929405e-05,
+    -0.0001322545059654077,
+    -0.002816621097776209,
+    0.004891136242499118,
+    0.0010714185648429226,
+    -0.00027119674606424285,
+    -0.00014611226925520648,
+    -9.075367027179669e-05,
+    -0.0038470606671373105,
+    -0.006324900522061419,
+    0.0016979349269325803,
+    0.00018868248340981293,
+    -0.00016062023720437698,
+    -0.00015585490349452876,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.0028048708464525236,
+    0.0010209145566184258,
+    -0.0005689976037416166,
+    -9.086271722668549e-07,
+    -0.00013506811020120015,
+    -0.00040106163720437696,
+    0.0065136247458524536,
+    0.00013903404283822804,
+    -0.00014715937092834452,
+    -3.495160176491352e-05,
+    -0.0002936443294387575,
+    -0.00037788803378044475
+   ],
+   [
+    -0.011699599065654783,
+    -5.380212980833038e-05,
+    0.10283739852806212,
+    0.0016482454691033534,
+    0.003409454812919167,
+    -0.00018641334844373455,
+    -0.0013745520805153548,
+    0.0059857242897988,
+    -0.007600714386516061,
+    0.0001542766866219555,
+    0.0002451602795270032,
+    0.000154040413836922,
+    0.002773342490998941,
+    -0.005719166831980233,
+    -0.00436384369325803,
+    0.00039535918655135896,
+    0.00012428778184256971,
+    8.575309113307448e-05,
+    0.0002396894711613131,
+    -0.002153892717613837,
+    -0.00918394372714437,
+    0.00012668621057536182,
+    0.00017941797995058243,
+    -2.556411142957995e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.005328655307800917,
+    -0.005651714484645252,
+    -2.5684348021743734e-05,
+    -8.681816546770209e-05,
+    9.673870807624427e-05,
+    0.00028276759827038474,
+    0.004713143769855277,
+    -0.0050929180871867276,
+    0.0046576504373455705,
+    0.0002089634660430639,
+    0.0003132380903282739,
+    0.000286187831591952
+   ],
+   [
+    1.0020035522823968e-05,
+    0.0005904018971164029,
+    0.0016482453980509128,
+    0.00029138807741188794,
+    -1.7929755650984186e-05,
+    -9.310121630496293e-06,
+    -8.741487395509754e-05,
+    0.00014979832960103717,
+    0.00015840887182893057,
+    7.345589406988467e-06,
+    2.06352062455026e-07,
+    4.271931907304075e-06,
+    0.00015351201560183535,
+    -0.0003588173631769218,
+    -0.0003548142816211333,
+    1.5512683892467342e-05,
+    -5.872505155016769e-07,
+    6.60742734995063e-06,
+    1.654912152327465e-05,
+    -2.7657903936290494e-05,
+    -0.00021377075110355385,
+    5.425666468003271e-06,
+    2.721924558991221e-06,
+    5.839326907159188e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.747881347601885e-05,
+    -0.00021785665220461998,
+    -3.475897474801346e-05,
+    -4.2926020981723695e-06,
+    -1.7482986896365451e-06,
+    7.4095874006741664e-06,
+    -6.319265796490869e-05,
+    -0.00019492439238748833,
+    0.0002685472670478557,
+    9.631701670241442e-06,
+    1.473009437188422e-05,
+    7.188495359569509e-06
+   ],
+   [
+    -0.0003495025554753631,
+    0.00015168283105843611,
+    0.0034094549185063774,
+    -1.792975885283778e-05,
+    0.00023593304602931102,
+    -1.7278961199582753e-05,
+    1.9560171524979295e-05,
+    5.3955297086626805e-05,
+    -0.00024667795495608404,
+    -2.6912465982299603e-07,
+    5.202129018479077e-06,
+    1.0975847126126125e-06,
+    -9.972036028649647e-06,
+    4.1401373229631485e-05,
+    7.294186043596913e-05,
+    1.1088287194711496e-06,
+    2.8623136132860988e-06,
+    -1.188875486511985e-06,
+    -2.002115268456934e-06,
+    -3.1472815675080464e-05,
+    -9.439010263047596e-05,
+    -6.082145742816236e-08,
+    2.6521250616669763e-06,
+    -7.961095972715336e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0001091485008591411,
+    -1.40137109835912e-05,
+    8.513419375439106e-06,
+    -2.3169446447919015e-07,
+    2.5790306517289037e-06,
+    2.672239566281471e-06,
+    0.0001423680352637089,
+    -1.342733350338092e-05,
+    -3.6028319595321244e-05,
+    6.300724590459194e-08,
+    -5.077822490070394e-07,
+    2.8833833598430715e-06
+   ],
+   [
+    -0.001057139766705365,
+    -0.0028563910065353,
+    -0.00018641335960594882,
+    -9.310121753423445e-06,
+    -1.727896102942123e-05,
+    0.00012963642671158846,
+    -5.8250924641796756e-05,
+    0.0001305476587889529,
+    -0.00015090716153818475,
+    -4.162099860829527e-06,
+    1.063402122602032e-06,
+    1.644067581685711e-06,
+    6.312052231911288e-05,
+    -0.00010680350163209815,
+    -1.304751219322936e-05,
+    4.97400306045865e-06,
+    2.848602995174053e-06,
+    2.016662399925175e-06,
+    9.158557093976687e-05,
+    0.0001602134920510533,
+    -6.109981290081098e-06,
+    -5.337550498183791e-06,
+    3.3907478392198097e-06,
+    3.830108430162143e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    5.5733005497981766e-05,
+    3.5147335475684233e-06,
+    -9.78766950027922e-07,
+    -2.652478941602699e-07,
+    2.2401202595331245e-06,
+    8.787383158022668e-06,
+    -0.000146076474055441,
+    2.5297735108819704e-05,
+    -2.5131007042576056e-07,
+    9.703305091244603e-07,
+    8.14108661239985e-06,
+    8.063013455059677e-06
+   ],
+   [
+    0.002089348781295488,
+    0.0037017630218340613,
+    -0.0013745520848253276,
+    -8.741487262372636e-05,
+    1.9560171593886465e-05,
+    -5.8250924996360994e-05,
+    0.01733353030312955,
+    -0.034145802387190685,
+    0.011913299297671034,
+    -1.3738526347993087e-05,
+    -0.0003630395381368268,
+    -0.0010998041336608443,
+    -0.0021140553857350803,
+    0.0037947057601892286,
+    0.00033339325669577875,
+    -0.00011707423076419215,
+    -6.176559057496361e-05,
+    -9.18028499308588e-05,
+    -0.0013818247593886464,
+    -0.0024774932758369725,
+    -0.0005835123968704512,
+    0.000109957666426492,
+    -5.445562537481805e-05,
+    -4.938355339519651e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.0008051803728893742,
+    -0.0006078050272561863,
+    0.000244156914992722,
+    -6.616103113173217e-06,
+    -4.723424669213974e-05,
+    -0.00018273840422125182,
+    0.004830016808588064,
+    -0.00022092728649927222,
+    0.00019305897246395197,
+    3.6416337994905384e-05,
+    -0.00013893111765283844,
+    -0.00019277367536390104
+   ],
+   [
+    -0.003671234225982533,
+    -0.007591669268195051,
+    0.005985724295487628,
+    0.00014979832849344979,
+    5.395529644832606e-05,
+    0.0001305476591339156,
+    -0.03414580227802038,
+    0.08761365304585153,
+    0.000755476893161754,
+    0.0006397409098617176,
+    -0.00016485975989537848,
+    0.0029514240029112084,
+    0.003898971181586609,
+    -0.006393608878093159,
+    0.0014611685895196506,
+    0.0001919946193231441,
+    0.00015748595221979622,
+    0.00015723213548034934,
+    0.002625686541120815,
+    0.004540446971979622,
+    0.0007175927944323145,
+    -0.0002564361075691412,
+    0.0001451107423580786,
+    8.319619869723436e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0030704561630276565,
+    0.00220901137845706,
+    -0.0010093310876637554,
+    -8.235082235385735e-07,
+    0.0001294968770014556,
+    0.0003879003475254731,
+    -0.008077043173944688,
+    0.0013938161215429404,
+    -0.0011880619966885009,
+    -6.99523355349345e-05,
+    0.00030068598682678313,
+    0.0004131216536754003
+   ],
+   [
+    0.00125579603930131,
+    0.005818087572052402,
+    -0.007600714374090248,
+    0.00015840887532751093,
+    -0.0002466779550946143,
+    -0.00015090716229985445,
+    0.01191329936790393,
+    0.0007554768984985444,
+    0.10723850528020379,
+    0.0017912464535491267,
+    -0.003589212944687045,
+    0.0002039161174992722,
+    -0.00016177151696870453,
+    -0.0023910260604075692,
+    -0.009586265119723436,
+    0.0001343546983842795,
+    -0.00018726281768558954,
+    3.066230922852984e-05,
+    -0.0026335973668122274,
+    -0.005432048854439593,
+    -0.0039013651724890833,
+    0.0003871905151382824,
+    -0.00013010240782387192,
+    -7.910572406841339e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.00566455156077147,
+    -0.006562462611717613,
+    0.000345846003562591,
+    -6.314630769650655e-05,
+    -0.00010350895154294032,
+    -0.0002709899731441048,
+    -0.005298799339883552,
+    -0.0061668100305676855,
+    0.005864974358806405,
+    0.00026172730454876274,
+    -0.0003072579053857351,
+    -0.00026972998100436684
+   ],
+   [
+    8.424834155968056e-05,
+    0.00014550970276249142,
+    0.00015427668914532277,
+    7.345589349569485e-06,
+    -2.691245735026175e-07,
+    -4.162099743345002e-06,
+    -1.3738533414749118e-05,
+    0.0006397409076447213,
+    0.0017912464263197263,
+    0.0003060742886582833,
+    8.242645163183724e-06,
+    1.0302098193185918e-05,
+    -1.5838269263084492e-05,
+    -3.1699567645675266e-05,
+    -0.00022448738585852454,
+    5.492878436392167e-06,
+    -2.982095519177078e-06,
+    -4.898778029804694e-07,
+    -0.00014505973477681769,
+    -0.00034012944108613566,
+    -0.00032567904987731495,
+    1.49658499905753e-05,
+    1.2308238709479595e-07,
+    -6.230255599090408e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -2.4752070877359015e-05,
+    -0.00023809587789070898,
+    -3.8808721129698075e-05,
+    -4.685766033101031e-06,
+    1.369785640118634e-06,
+    -7.023356607724405e-06,
+    5.933296153035693e-05,
+    -0.00021690432851632636,
+    0.0003152169744282307,
+    1.1073936403947147e-05,
+    -1.403781870119599e-05,
+    -6.587245413130865e-06
+   ],
+   [
+    2.0996502448516627e-05,
+    -5.168024190052997e-05,
+    0.00024516027873652444,
+    2.0635190093905887e-07,
+    5.20212911223702e-06,
+    1.063402268460386e-06,
+    -0.0003630395436498155,
+    -0.00016485975976430467,
+    -0.0035892129141240504,
+    8.242641259662634e-06,
+    0.00024985114271686517,
+    -1.7423956529214853e-05,
+    -3.4102569788338957e-06,
+    3.459036410788949e-05,
+    9.719188533487594e-05,
+    -4.931012565824481e-08,
+    2.690266571186728e-06,
+    -8.626169102888023e-07,
+    -9.638905398213272e-06,
+    -4.0221792631180065e-05,
+    -7.052613966786349e-05,
+    -1.1391319966199337e-06,
+    2.776796756742304e-06,
+    -1.1788034508516828e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.00011324655488630149,
+    2.3369122524759194e-05,
+    -1.7409487806212506e-05,
+    -4.38111113156328e-07,
+    2.5588570413870607e-06,
+    2.563065109310852e-06,
+    0.00015540968768397,
+    2.5845689544297116e-05,
+    3.391718903931989e-05,
+    -5.632035397620308e-07,
+    -3.3288704561611386e-07,
+    2.75547767035342e-06
+   ],
+   [
+    -5.861671729632388e-05,
+    -0.00013225450562559882,
+    0.00015404041438890655,
+    4.271931960799664e-06,
+    1.0975848940631193e-06,
+    1.6440674877824784e-06,
+    -0.001099804128533922,
+    0.0029514239581587523,
+    0.00020391611939681587,
+    1.0302098331516155e-05,
+    -1.742395640404413e-05,
+    0.0001345346083607348,
+    9.320301505286188e-05,
+    -0.00016269714623731653,
+    -4.755015832876798e-07,
+    5.445025641585177e-06,
+    3.3044380673811028e-06,
+    3.884255931469975e-06,
+    5.88465732838191e-05,
+    9.890994637606654e-05,
+    5.270119184174969e-06,
+    -4.66500343992358e-06,
+    2.843229296267694e-06,
+    1.8575805487727407e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    6.131410867731018e-05,
+    2.2308459963768568e-05,
+    -6.499237915305537e-06,
+    3.5442835283628567e-07,
+    2.121332699818692e-06,
+    8.50345236199019e-06,
+    -0.0001869229404318167,
+    1.5659480307497583e-06,
+    -2.773589715362618e-05,
+    -1.9501933814735266e-06,
+    8.25517359616553e-06,
+    8.991469735143992e-06
+   ],
+   [
+    -0.0014741100232479785,
+    -0.0028166210865902966,
+    0.002773342482142857,
+    0.00015351201782345014,
+    -9.972036824561996e-06,
+    6.312052374663073e-05,
+    -0.002114055384097035,
+    0.0038989711933962268,
+    -0.00016177151711819744,
+    -1.583826935309973e-05,
+    -3.410256943491914e-06,
+    9.320301579514825e-05,
+    0.03345041756738545,
+    -0.0575175136657682,
+    0.0021986451772531336,
+    -0.0002178602242587601,
+    -3.094678532328167e-05,
+    0.0019101830169474395,
+    0.004239611209231806,
+    0.004853870331873316,
+    -0.0057018782361859845,
+    1.8818830292715636e-05,
+    0.00017060441553234503,
+    8.412586584568734e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0001229585043046833,
+    -0.0011978567219676551,
+    -0.0009297326831199461,
+    2.823107008423181e-05,
+    -6.810349150943396e-05,
+    0.00014676670518867926,
+    -0.0016138419966307278,
+    -0.0010030374802560648,
+    0.0010046636368598383,
+    6.491111731469003e-05,
+    0.00013411930760107816,
+    0.00013213877945754719
+   ],
+   [
+    0.0026484855832210243,
+    0.004891136249663073,
+    -0.005719166832884097,
+    -0.00035881736239892184,
+    4.140137377695418e-05,
+    -0.00010680350121967655,
+    0.0037947057486522914,
+    -0.006393608865902965,
+    -0.0023910260606469004,
+    -3.1699569541778976e-05,
+    3.459036284366577e-05,
+    -0.000162697144541779,
+    -0.057517513706199466,
+    0.10786278285040432,
+    -0.002374732668029987,
+    8.700063726014152e-05,
+    -6.118196903770215e-05,
+    -0.003677599462938006,
+    -0.004756887547506739,
+    -0.005216464132749327,
+    0.005631920274595688,
+    -9.79278857412399e-05,
+    -0.00013877463911725067,
+    -7.475263700134771e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.002400285419811321,
+    0.0037099636583557954,
+    0.002070415466981132,
+    -4.794996660714286e-05,
+    0.00015756771613881403,
+    -0.00027712495714285717,
+    0.003006563769878706,
+    0.0031123280559299193,
+    -0.0030997162836927227,
+    -0.0001815325730121294,
+    -0.0002568270851752022,
+    -0.00025216114794474395
+   ],
+   [
+    0.0007621407206893532,
+    0.0010714185744238546,
+    -0.004363843701145553,
+    -0.0003548142832884097,
+    7.294185885781671e-05,
+    -1.3047512092719004e-05,
+    0.00033339325702661725,
+    0.0014611685990849731,
+    -0.009586265153638815,
+    -0.0002244873811320755,
+    9.719188659366578e-05,
+    -4.7550152463814013e-07,
+    0.0021986451820080865,
+    -0.0023747326785714287,
+    0.052052690185309974,
+    -0.0003350754283496631,
+    0.0018159009538072778,
+    0.00036559919265498656,
+    0.005635073075471698,
+    0.0057021383106469,
+    -0.011100465855121294,
+    -0.00015953605189016174,
+    0.0004179708337938006,
+    7.826116411051213e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.008604156383760109,
+    0.006197083174191375,
+    0.001693345941037736,
+    1.6865020452152967e-05,
+    0.0001396963134332884,
+    -9.211374317048518e-05,
+    0.0008462368656334232,
+    0.00519255789690027,
+    -0.005163159906334232,
+    -0.0002610912493261456,
+    -9.586987973719677e-05,
+    -8.945227824460917e-05
+   ],
+   [
+    -0.000116733208698714,
+    -0.00027119674663839935,
+    0.00039535918813625985,
+    1.5512684075698034e-05,
+    1.1088288254526694e-06,
+    4.974003167640761e-06,
+    -0.00011707423185141548,
+    0.00019199461945176445,
+    0.00013435470704109914,
+    5.492878088536184e-06,
+    -4.931006997537385e-08,
+    5.445025644289383e-06,
+    -0.00021786022252428058,
+    8.700063867351672e-05,
+    -0.0003350754228406065,
+    0.00026757643655009257,
+    9.718007957120774e-05,
+    1.3078266586416424e-05,
+    -3.460667126409236e-05,
+    -0.00011636463327813357,
+    -0.00012629067638136133,
+    7.169590019980855e-06,
+    -8.705185360219057e-08,
+    -2.9352551810603096e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.3589688604652066e-05,
+    -0.0002153291501431553,
+    -3.41270447233223e-05,
+    -2.1849647042609845e-06,
+    -2.1328661709620696e-06,
+    9.07408897325265e-06,
+    -7.000323273435502e-05,
+    -0.00018731245800204577,
+    0.00018119195463498004,
+    9.013962022513063e-06,
+    8.41206310446973e-06,
+    8.47448939210369e-06
+   ],
+   [
+    -5.4268796113148796e-05,
+    -0.00014611226852895276,
+    0.00012428778148157362,
+    -5.872507650553111e-07,
+    2.862313694224518e-06,
+    2.8486029749511927e-06,
+    -6.176559105597738e-05,
+    0.00015748595482254342,
+    -0.0001872628178082389,
+    -2.9820955466626855e-06,
+    2.6902663186935234e-06,
+    3.3044381131947885e-06,
+    -3.0946786366493906e-05,
+    -6.11819693988939e-05,
+    0.0018159009676737964,
+    9.71800813176154e-05,
+    0.00021234030786970119,
+    2.4232823201849875e-05,
+    0.00016002400589608775,
+    0.00012960965418506214,
+    -0.0004022806344017123,
+    -7.925170317840882e-07,
+    1.2301489650746606e-05,
+    1.5617572899397938e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.00022897606902692825,
+    4.2963342521675284e-05,
+    3.220074821287847e-05,
+    -1.0516194815921267e-06,
+    3.0345648222668507e-06,
+    2.932479019112687e-06,
+    -1.9494343497170852e-05,
+    3.164028759988144e-05,
+    -3.5103266177366124e-05,
+    -1.921428889247562e-06,
+    2.4120352956357785e-06,
+    2.6739392448265767e-06
+   ],
+   [
+    -5.2996757297258735e-05,
+    -9.075367049133738e-05,
+    8.575309098354926e-05,
+    6.6074273097549015e-06,
+    -1.1888755189855737e-06,
+    2.016662416542103e-06,
+    -9.18028498165057e-05,
+    0.00015723213581900818,
+    3.06623086200737e-05,
+    -4.898777958972319e-07,
+    -8.62616910836579e-07,
+    3.884256018419247e-06,
+    0.0019101830208286962,
+    -0.003677599522404735,
+    0.0003655991930707503,
+    1.3078266382117559e-05,
+    2.423282311459886e-05,
+    0.00016109279941277284,
+    7.725623200634615e-05,
+    6.750638091464596e-05,
+    -7.133745047308882e-05,
+    2.521139271134651e-06,
+    1.6486906484304631e-06,
+    -5.38707925516797e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -6.9993014725774e-05,
+    -5.607451117824188e-05,
+    -3.846333378925951e-05,
+    1.5145518363685604e-06,
+    -3.105183701002147e-06,
+    5.983838225596157e-06,
+    -6.937390900819414e-05,
+    -4.722519457567276e-05,
+    4.600893274653009e-05,
+    2.942820724617483e-06,
+    5.542548266491753e-06,
+    5.5437758994145185e-06
+   ],
+   [
+    -0.0020675276862210097,
+    -0.0038470606637107775,
+    0.0002396894721691678,
+    1.6549121599590725e-05,
+    -2.0021151980116303e-06,
+    9.158557025238745e-05,
+    -0.00138182476159618,
+    0.0026256865412687585,
+    -0.002633597357776262,
+    -0.000145059732946794,
+    -9.638904321828104e-06,
+    5.8846574641882674e-05,
+    0.004239611205661665,
+    -0.004756887545020464,
+    0.005635073071964529,
+    -3.460667340723056e-05,
+    0.0001600240063096862,
+    7.725623172919508e-05,
+    0.03217713531718963,
+    0.05612154298431105,
+    -0.002761886111678513,
+    0.00018643128311732606,
+    -2.3599445234311053e-06,
+    0.0018601200536834926,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    9.354943238038881e-05,
+    0.0016698822489768076,
+    0.0011654247185197816,
+    -3.648233086630286e-05,
+    -5.818221184856753e-05,
+    0.00014200433587994543,
+    -0.0013597911357435199,
+    0.0014221209226466577,
+    -0.001437518290893588,
+    -9.894823054911324e-05,
+    0.00013092873272510232,
+    0.0001244045354638472
+   ],
+   [
+    -0.0037197974764665758,
+    -0.0063249005064802185,
+    -0.002153892729877217,
+    -2.765790375170532e-05,
+    -3.147281321282401e-05,
+    0.00016021349307639837,
+    -0.0024774932690995906,
+    0.004540446984993179,
+    -0.005432048861869031,
+    -0.00034012944212141884,
+    -4.022179012619373e-05,
+    9.890994762960437e-05,
+    0.0048538703386766715,
+    -0.005216464146316507,
+    0.005702138305252387,
+    -0.00011636463594815826,
+    0.00012960965245566167,
+    6.75063803069577e-05,
+    0.05612154300136426,
+    0.10653394085607094,
+    -0.0030473068953983627,
+    5.142636396250682e-05,
+    9.157992160665758e-05,
+    0.003639125328785812,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.0024082297141882676,
+    0.004501373782401091,
+    0.0026184460733287857,
+    -6.181896612892224e-05,
+    -0.00013707872547748977,
+    0.0002689141457025921,
+    -0.0025129447237380626,
+    0.0038767480446793997,
+    -0.0038991813206002727,
+    -0.0002526492673942701,
+    0.0002512900507844475,
+    0.00023753445607094134
+   ],
+   [
+    -0.00018173322842902456,
+    0.001697934929359311,
+    -0.009183943686903139,
+    -0.00021377075146657571,
+    -9.439009824693043e-05,
+    -6.109979114757845e-06,
+    -0.0005835123998306616,
+    0.0007175927945982265,
+    -0.003901365175170532,
+    -0.0003256790482946794,
+    -7.052614031036835e-05,
+    5.270119230085266e-06,
+    -0.005701878246248295,
+    0.0056319202738744885,
+    -0.011100465840381992,
+    -0.0001262906679126876,
+    -0.00040228062094133695,
+    -7.133744996589359e-05,
+    -0.0027618861030013642,
+    -0.0030473069123465213,
+    0.049417843683492495,
+    -0.00022543742895747272,
+    -0.0017841835519440655,
+    -0.00037351710497953615,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.008408911806957709,
+    0.005956590448158254,
+    0.0020998013062755796,
+    2.321545407435198e-05,
+    -0.00012420781911664394,
+    7.81954880341064e-05,
+    -0.0006248457194065484,
+    0.005189695383356071,
+    -0.005195467751705321,
+    -0.0002921607745566166,
+    8.362111360845839e-05,
+    7.587334810368349e-05
+   ],
+   [
+    0.00011390665030354635,
+    0.0001886824830773297,
+    0.00012668620085587613,
+    5.425666147853427e-06,
+    -6.08215030960045e-08,
+    -5.337550413560131e-06,
+    0.00010995766712127958,
+    -0.00025643610595528575,
+    0.0003871905145814211,
+    1.4965849872177041e-05,
+    -1.1391320558804714e-06,
+    -4.665003297567282e-06,
+    1.8818831601087337e-05,
+    -9.792788838399754e-05,
+    -0.0001595360669654386,
+    7.1695901792037275e-06,
+    -7.925171409117778e-07,
+    2.5211392712602603e-06,
+    0.00018643128514306793,
+    5.142636003763276e-05,
+    -0.00022543744190926644,
+    0.0002530443438164608,
+    -9.564037083300958e-05,
+    -1.0860006970357538e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    3.1224592501318546e-06,
+    -0.00024094177982767072,
+    -4.185687306451047e-05,
+    -1.8704573501935271e-06,
+    1.7634049705156198e-06,
+    -8.800779146705303e-06,
+    5.961857605072824e-05,
+    -0.00021346476163509602,
+    0.00020861752615995604,
+    1.1232615839821857e-05,
+    -8.153860383786189e-06,
+    -7.995632933216504e-06
+   ],
+   [
+    -6.350891992402872e-05,
+    -0.00016062023715069233,
+    0.00017941797109935815,
+    2.7219249904048715e-06,
+    2.6521251624685464e-06,
+    3.3907479643807544e-06,
+    -5.445562513684796e-05,
+    0.00014511074308877047,
+    -0.00013010240902583915,
+    1.2308241009424657e-07,
+    2.776796727828038e-06,
+    2.8432291872672544e-06,
+    0.00017060441548693827,
+    -0.00013877463889999287,
+    0.00041797083886904333,
+    -8.705163807781206e-08,
+    1.2301489484841692e-05,
+    1.648690660778528e-06,
+    -2.359945384750192e-06,
+    9.157991941747055e-05,
+    -0.0017841835519168026,
+    -9.564037316201e-05,
+    0.00020988171461524733,
+    2.2291194276356118e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.00022897479717353303,
+    -2.1179609587671392e-05,
+    -3.9780047351413686e-05,
+    8.361340930439746e-07,
+    2.805192244305627e-06,
+    3.1038407128462157e-06,
+    -1.9491419280203808e-05,
+    -1.5878592717759482e-05,
+    1.9640093272009496e-05,
+    1.4847002455254134e-06,
+    2.578988083120981e-06,
+    2.7433973805613267e-06
+   ],
+   [
+    -9.01617122159163e-05,
+    -0.0001558549036570152,
+    -2.5564111553780117e-05,
+    5.839327124480787e-07,
+    -7.961095848596131e-07,
+    3.830108203138715e-06,
+    -4.93835535081439e-05,
+    8.319619803938461e-05,
+    -7.910572530008518e-05,
+    -6.230255486195943e-06,
+    -1.1788035230796107e-06,
+    1.8575805549892392e-06,
+    8.412586606554541e-05,
+    -7.475263818855068e-05,
+    7.826116376703101e-05,
+    -2.935255013506342e-06,
+    1.5617573619655253e-06,
+    -5.387079390219867e-07,
+    0.0018601200594067693,
+    0.003639125356392449,
+    -0.0003735171042948905,
+    -1.0860006998342098e-05,
+    2.2291194298372602e-05,
+    0.0001580725039279729,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -6.966576206190936e-05,
+    7.33441422655295e-05,
+    5.0557390437386276e-05,
+    -1.7539644823161942e-06,
+    -2.6597612816574598e-06,
+    5.8461832924026235e-06,
+    -5.6155068089126934e-05,
+    6.408655920193295e-05,
+    -6.368282973339914e-05,
+    -4.550776059954365e-06,
+    5.4819640544566715e-06,
+    5.196988699125591e-06
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.002456780181672669,
+    -6.0365990810724294e-05,
+    5.9261089179671874e-05,
+    1.9351327849863947e-06,
+    2.9279462024809926e-05,
+    9.564947790316128e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -6.0365981192476995e-05,
+    0.006149869164065627,
+    -0.0012583654374549822,
+    -4.4067917911164466e-05,
+    -5.5542598279311725e-06,
+    -1.128180268107243e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    5.926108733772709e-05,
+    -0.0012583654356336136,
+    0.004767510567026811,
+    -7.507548203281313e-05,
+    7.800918487394958e-06,
+    5.642814582036815e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.935132721989492e-06,
+    -4.4067918101849086e-05,
+    -7.507548231931458e-05,
+    2.492648115836274e-05,
+    -4.814275225907796e-07,
+    3.6411660768589063e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    2.927946173399047e-05,
+    -5.554260074584475e-06,
+    7.800918965276527e-06,
+    -4.81427460702772e-07,
+    1.7127066313880233e-05,
+    4.241749949682576e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    9.564947854930079e-05,
+    -1.128180276774126e-05,
+    5.642814955134034e-06,
+    3.641166534275781e-07,
+    4.241749973116362e-06,
+    1.3730139519470864e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    -0.0006574579006270872,
+    -0.0028048708256029685,
+    0.005328655306122449,
+    1.7478812838589983e-05,
+    0.00010914850283858999,
+    5.5733005899814474e-05,
+    -0.0008051804002467532,
+    0.0030704561688311687,
+    -0.005664551562152133,
+    -2.475207016697588e-05,
+    0.00011324655484230056,
+    6.131410777365491e-05,
+    0.00012295850621521335,
+    0.002400285419294991,
+    0.008604156356215214,
+    -1.3589682886512059e-05,
+    0.0002289760625231911,
+    -6.999301523191095e-05,
+    9.354943185899814e-05,
+    -0.002408229716141002,
+    -0.008408911827458256,
+    3.122460491651206e-06,
+    0.00022897480037105752,
+    -6.966576165120594e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.00850808073283859,
+    0.00024819421851576996,
+    -0.00010649990955473098,
+    -3.2953375269016695e-05,
+    9.809530856827459e-06,
+    7.191486410018553e-05,
+    0.0012789952586270872,
+    0.00017025063668237478,
+    -0.0001902469255398887,
+    -9.675652040816327e-06,
+    6.125078625231911e-05,
+    5.786580322820037e-05
+   ],
+   [
+    5.321528756957329e-05,
+    0.0010209145695732839,
+    -0.005651714484230056,
+    -0.00021785665510204083,
+    -1.4013712282003711e-05,
+    3.5147361781076064e-06,
+    -0.0006078050166975881,
+    0.0022090113747680893,
+    -0.006562462625231911,
+    -0.00023809588089053805,
+    2.336912371057514e-05,
+    2.230846048237477e-05,
+    -0.0011978567150278294,
+    0.0037099636539888684,
+    0.00619708319109462,
+    -0.00021532915064935066,
+    4.296334265348794e-05,
+    -5.607451003710575e-05,
+    0.001669882250463822,
+    0.004501373773469388,
+    0.005956590456400742,
+    -0.00024094177829313545,
+    -2.1179608372282003e-05,
+    7.334414410018553e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0002481942228200371,
+    0.00516297426716141,
+    0.0004730266582560297,
+    4.925778165120594e-05,
+    1.5068050092764379e-06,
+    2.045205064935065e-05,
+    -0.00012225088886827457,
+    0.004503896721706865,
+    -0.004369031070500928,
+    -0.0002133462853432282,
+    1.8773703525046384e-05,
+    1.8109720222634508e-05
+   ],
+   [
+    -7.92222599257885e-05,
+    -0.0005689976113172542,
+    -2.568432894248608e-05,
+    -3.475897497217069e-05,
+    8.513419628942486e-06,
+    -9.787668274582562e-07,
+    0.00024415691632653064,
+    -0.001009331091651206,
+    0.0003458459896103896,
+    -3.880872109461967e-05,
+    -1.740948771799629e-05,
+    -6.499237532467532e-06,
+    -0.0009297326891243042,
+    0.0020704154710463824,
+    0.0016933459539332097,
+    -3.412704401601113e-05,
+    3.2200749017810764e-05,
+    -3.8463332356215216e-05,
+    0.0011654247234766234,
+    0.002618446064640074,
+    0.0020998013057064936,
+    -4.1856874363636365e-05,
+    -3.9780048810018556e-05,
+    5.055738892549536e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.00010649991277736549,
+    0.000473026658812616,
+    0.0022772779128014844,
+    -1.3772561627142858e-05,
+    -1.2813350092764378e-05,
+    5.689067773654916e-07,
+    1.4841679159554725e-06,
+    0.0002357364536734694,
+    -0.0004770856345083488,
+    -6.916916749536178e-05,
+    1.8157457569573283e-06,
+    -8.15762325844156e-08
+   ],
+   [
+    2.9079678692878444e-06,
+    -9.086246805440822e-07,
+    -8.681816268293714e-05,
+    -4.292602130483075e-06,
+    -2.3169434196903923e-07,
+    -2.6524831745939346e-07,
+    -6.616101845661387e-06,
+    -8.234987055399509e-07,
+    -6.31462870530687e-05,
+    -4.685766299810529e-06,
+    -4.381111626726544e-07,
+    3.5442867387024814e-07,
+    2.8231069048820008e-05,
+    -4.794996129933609e-05,
+    1.6865011441645444e-05,
+    -2.184964299456438e-06,
+    -1.0516195574540187e-06,
+    1.514551588313788e-06,
+    -3.648233187296006e-05,
+    -6.181895865485092e-05,
+    2.3215467613934537e-05,
+    -1.8704577821477845e-06,
+    8.361341490369668e-07,
+    -1.7539648793743668e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -3.295337582423298e-05,
+    4.925777824089849e-05,
+    -1.3772562349609082e-05,
+    4.0148566703170104e-05,
+    9.043317689947742e-07,
+    -1.208676502689542e-07,
+    -1.8607006774742727e-05,
+    5.756695405938492e-05,
+    -6.413426990117452e-05,
+    -5.523618141809638e-06,
+    -5.016410175509226e-08,
+    2.2974406895501494e-08
+   ],
+   [
+    -4.949218042566216e-05,
+    -0.0001350681113182323,
+    9.6738709960649e-05,
+    -1.7482987096578375e-06,
+    2.5790307484421075e-06,
+    2.2401203653750065e-06,
+    -4.723424674932888e-05,
+    0.0001294968781112135,
+    -0.0001035089507470788,
+    1.3697855310629256e-06,
+    2.5588571171819676e-06,
+    2.1213326776413214e-06,
+    -6.810349189787297e-05,
+    0.00015756771602730004,
+    0.00013969631416244158,
+    -2.1328660916018147e-06,
+    3.0345648375469452e-06,
+    -3.1051836166657435e-06,
+    -5.818221207873576e-05,
+    -0.00013707872497639774,
+    -0.00012420781898630267,
+    1.7634050452679086e-06,
+    2.805192250168472e-06,
+    -2.6597613294480586e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    9.80953111843129e-06,
+    1.5068049755850442e-06,
+    -1.2813348807164507e-05,
+    9.043305981639195e-07,
+    1.1276355484328235e-05,
+    -1.2080123233992778e-06,
+    -3.5569917885596864e-07,
+    2.4017042002353255e-06,
+    -5.105345835284212e-07,
+    3.652702801601949e-07,
+    -1.5563176582760456e-06,
+    -3.426039310681283e-07
+   ],
+   [
+    -0.0001882940498144447,
+    -0.0004010616385295414,
+    0.0002827675974087111,
+    7.409587346925688e-06,
+    2.672239562971952e-06,
+    8.7873831504188e-06,
+    -0.0001827384056772266,
+    0.0003879003471906576,
+    -0.00027098997364134443,
+    -7.023356511816925e-06,
+    2.563064954940838e-06,
+    8.503452254720344e-06,
+    0.00014676670507912488,
+    -0.00027712495689965436,
+    -9.211374262771975e-05,
+    9.0740890699473e-06,
+    2.9324790339783213e-06,
+    5.983838000970407e-06,
+    0.00014200433664865287,
+    0.0002689141459063735,
+    7.81954870861789e-05,
+    -8.800779026837649e-06,
+    3.1038406622660803e-06,
+    5.846183477765955e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    7.19148638890861e-05,
+    2.0452046944635367e-05,
+    5.689065762989592e-07,
+    -1.2086724121522514e-07,
+    -1.208012325179886e-06,
+    1.3967394308652848e-05,
+    -8.855458500136409e-05,
+    2.091957706154726e-05,
+    -2.1526715944904063e-05,
+    -1.414999230169955e-06,
+    1.2681289234600777e-05,
+    1.273453246426665e-05
+   ],
+   [
+    0.004120538950149416,
+    0.0065136247698994836,
+    0.004713143776826949,
+    -6.319265644148328e-05,
+    0.00014236803487503396,
+    -0.00014607647350719914,
+    0.004830016825862537,
+    -0.008077043155800054,
+    -0.005298799342434121,
+    5.933296179472697e-05,
+    0.00015540968808340125,
+    -0.0001869229396685683,
+    -0.0016138419913202934,
+    0.0030065637759847867,
+    0.0008462368696414017,
+    -7.000323358231458e-05,
+    -1.9494343639481837e-05,
+    -6.93739108190709e-05,
+    -0.0013597911367834827,
+    -0.00251294471863624,
+    -0.0006248457203477316,
+    5.961857632550013e-05,
+    -1.9491419303700624e-05,
+    -5.615506802444988e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.001278995259168704,
+    -0.00012225087811860907,
+    1.4841680601806572e-06,
+    -1.860700535329462e-05,
+    -3.5569908070456395e-07,
+    -8.855458403688399e-05,
+    0.020575638224938873,
+    0.00021997623390383048,
+    -0.00040958636096049303,
+    -0.0001508501052932627,
+    5.295132022220864e-06,
+    -0.00015080452776492528
+   ],
+   [
+    -0.00034752408543873946,
+    0.00013903404360228198,
+    -0.005092918090192882,
+    -0.00019492439238793805,
+    -1.3427333508557456e-05,
+    2.5297735146699265e-05,
+    -0.00022092728524857375,
+    0.0013938161143710948,
+    -0.00616681002716653,
+    -0.00021690433021461558,
+    2.5845690366340667e-05,
+    1.5659475224123877e-06,
+    -0.0010030374820415647,
+    0.0031123280538576472,
+    0.005192557889296387,
+    -0.00018731245672914967,
+    3.1640287567517e-05,
+    -4.7225195615660554e-05,
+    0.0014221209174680792,
+    0.0038767480564248845,
+    0.005189695377750611,
+    -0.00021346475989948382,
+    -1.587859107470796e-05,
+    6.408655848963596e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0001702506373132301,
+    0.004503896722086389,
+    0.00023573645366600516,
+    5.7566950759304535e-05,
+    2.4017041956969572e-06,
+    2.0919576365118173e-05,
+    0.00021997623170107308,
+    0.004760094220456397,
+    -0.003720522535180657,
+    -0.0001234955996326179,
+    1.7461884849225752e-05,
+    1.794978357783211e-05
+   ],
+   [
+    0.0002667046842977452,
+    -0.00014715937245313773,
+    0.0046576504372045635,
+    0.0002685472635832654,
+    -3.602831893778864e-05,
+    -2.5131008014126605e-07,
+    0.00019305897393371365,
+    -0.0011880619827492529,
+    0.005864974374381961,
+    0.0003152169737666395,
+    3.3917188280358597e-05,
+    -2.7735897177397446e-05,
+    0.001004663642446346,
+    -0.003099716290546047,
+    -0.0051631599073621295,
+    0.00018119195268948655,
+    -3.510326749020538e-05,
+    4.600893223713773e-05,
+    -0.0014375182976908449,
+    -0.003899181315688671,
+    -0.005195467739065471,
+    0.00020861752335506656,
+    1.964009314491986e-05,
+    -6.368283040626188e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.00019024692700353164,
+    -0.004369031056098886,
+    -0.00047708563313914694,
+    -6.413427250638414e-05,
+    -5.105346469434936e-07,
+    -2.152671520374898e-05,
+    -0.0004095863626850041,
+    -0.003720522535180657,
+    0.0067498612165172505,
+    0.00034799307520444445,
+    -6.59199700353165e-05,
+    -7.878669822059222e-06
+   ],
+   [
+    -1.8345224497609513e-05,
+    -3.49516023600128e-05,
+    0.00020896346811996662,
+    9.63170169930544e-06,
+    6.300707384001477e-08,
+    9.703305173222508e-07,
+    3.641633769770469e-05,
+    -6.995233393924644e-05,
+    0.0002617273036944813,
+    1.1073936393446016e-05,
+    -5.632035043096696e-07,
+    -1.9501934091957236e-06,
+    6.49111163246654e-05,
+    -0.0001815325742596508,
+    -0.000261091248288693,
+    9.01396198165392e-06,
+    -1.921428867289629e-06,
+    2.9428207129972087e-06,
+    -9.894822981515916e-05,
+    -0.00025264926864302577,
+    -0.0002921607738277028,
+    1.1232616098098184e-05,
+    1.48470008438543e-06,
+    -4.550776010846371e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -9.67565198162427e-06,
+    -0.00021334628736059067,
+    -6.916916743531164e-05,
+    -5.52361795115848e-06,
+    3.6527028323460373e-07,
+    -1.4149992715789818e-06,
+    -0.00015085010416850442,
+    -0.0001234956002007077,
+    0.0003479930762294085,
+    7.14245499784653e-05,
+    -6.089430611217354e-06,
+    2.904278507094501e-06
+   ],
+   [
+    -0.0001341288712829137,
+    -0.00029364433077767144,
+    0.0003132380916677268,
+    1.4730094380368219e-05,
+    -5.077823907609332e-07,
+    8.141086563629905e-06,
+    -0.00013893111630621454,
+    0.00030068598661288733,
+    -0.0003072579063342866,
+    -1.4037818677697687e-05,
+    -3.3288706192776884e-07,
+    8.255173610746023e-06,
+    0.00013411930686614521,
+    -0.0002568270847578121,
+    -9.58698804495498e-05,
+    8.412063220139214e-06,
+    2.412035202576837e-06,
+    5.542548224197305e-06,
+    0.00013092873233526745,
+    0.00025129005051540424,
+    8.362111437243168e-05,
+    -8.153860463553848e-06,
+    2.5789881665261848e-06,
+    5.4819640957299316e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    6.125078632133852e-05,
+    1.8773703669883045e-05,
+    1.8157456335019677e-06,
+    -5.016362166330788e-08,
+    -1.556317651524866e-06,
+    1.2681289319425355e-05,
+    5.295131778495475e-06,
+    1.7461884156013653e-05,
+    -6.591997059060614e-05,
+    -6.089430615781234e-06,
+    3.443150379696633e-05,
+    9.69074332160224e-06
+   ],
+   [
+    -0.00017501418764920317,
+    -0.0003778880346768466,
+    0.0002861878312676026,
+    7.188495331624607e-06,
+    2.883383501713754e-06,
+    8.063013366038904e-06,
+    -0.00019277367646981284,
+    0.0004131216524593281,
+    -0.00026972998136361344,
+    -6.587245607385482e-06,
+    2.7554777323449265e-06,
+    8.991469844490351e-06,
+    0.00013213877942518042,
+    -0.0002521611489797392,
+    -8.9452278104876e-05,
+    8.474489354239023e-06,
+    2.6739393616407494e-06,
+    5.54377593610139e-06,
+    0.00012440453645062418,
+    0.00023753445589948743,
+    7.587334819914692e-05,
+    -7.99563284515553e-06,
+    2.7433974034542077e-06,
+    5.196988728880635e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    5.7865803242808004e-05,
+    1.8109722089295688e-05,
+    -8.157626930196748e-08,
+    2.2973999868605398e-08,
+    -3.426039418965136e-07,
+    1.2734532547451892e-05,
+    -0.00015080452845412124,
+    1.7949783657439014e-05,
+    -7.878669434630667e-06,
+    2.904278470257591e-06,
+    9.69074332396608e-06,
+    1.7112903612538745e-05
+   ]
+  ],
+  "centroids_mm": {
+   "motor_front_left": [
+    -53.45045582755997,
+    38.59892865467935,
+    6.908351834513648
+   ],
+   "motor_front_right": [
+    52.87969261277807,
+    38.7012893829236,
+    6.909956292890206
+   ],
+   "motor_rear_left": [
+    -53.230621777049436,
+    -39.23431579793949,
+    6.904757040789032
+   ],
+   "motor_rear_right": [
+    52.84119126075029,
+    -39.183983360214754,
+    6.904798168000084
+   ],
+   "battery": [
+    1.6986295883553466,
+    0.02598610891206389,
+    28.09093243735052
+   ],
+   "camera": [
+    1.5726134259052251,
+    35.61159503331527,
+    23.123859407517315
+   ],
+   "stack": [
+    -0.5043594089706711,
+    -0.5762495405709405,
+    0.2539501001676105
+   ]
+  },
+  "runs": [
+   {
+    "group": "stack_fixed",
+    "steps": 36,
+    "fixed_nodes": 2499,
+    "interface_nodes": {
+     "motor_front_left": 2833,
+     "motor_front_right": 2748,
+     "motor_rear_left": 2968,
+     "motor_rear_right": 2932,
+     "battery": 539,
+     "camera": 7362
+    },
+    "runtime_s": 854.8164966999975,
+    "reused_factorisation": true,
+    "reciprocity_error": 1.1453806646005098e-09
+   },
+   {
+    "group": "motor_pads_fixed",
+    "steps": 6,
+    "fixed_nodes": 11481,
+    "interface_nodes": {
+     "stack": 2499
+    },
+    "runtime_s": 132.65441160000046,
+    "reused_factorisation": true,
+    "reciprocity_error": 1.563975922591801e-09
+   }
+  ],
+  "peak_memory_gb": 11.540779113769531,
+  "mesh": {
+   "source": "evaluation mesh pipeline",
+   "path": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\sigma\\mesh\\mesh.inp",
+   "surface_choice": {
+    "fea_remesh_targets_mm": [
+     2.0
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "nodes": 399837,
+   "elements": 238874
+  },
+  "definition": "F = interface flexibility (42 x 42, LOAD_COVARIANCE order): unit force split equally over the selector nodes, unit moment as minimum-norm couple field about the selector node centroid (Sigma's reference point is taken at that centroid); F_ij = a_i . u_j (work-conjugate). Support per group as the evaluator arm-tip/crash fixtures: stack mount undersides fixed for motor pads, battery, camera; four motor seat undersides fixed for the stack; F is block-diagonal across the two groups (stack <-> rest coupling zero by construction). Mean compliance tr(Sigma F) = sum_k l_k^T F l_k, worst-case compliance lambda_max(Sigma^1/2 F Sigma^1/2), both in N mm. The limits and the evaluator targets use limit_group (36 x 36: motors, battery, camera with the stack fixed, as the optimizer's COVARIANCE support); the stack block is reported under groups and all_dofs (about 0.1 % of tr for ManaFly and Aether4)"
+ },
+ "slicer": {
+  "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
+  "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed",
+  "options": [
+   "--nozzle-diameter",
+   "0.4",
+   "--layer-height",
+   "0.2",
+   "--first-layer-height",
+   "0.2",
+   "--perimeters",
+   "2",
+   "--fill-density",
+   "15%",
+   "--filament-diameter",
+   "1.75",
+   "--filament-density",
+   "1.09",
+   "--bed-shape",
+   "0x0,256x0,256x256,0x256",
+   "--max-print-height",
+   "256",
+   "--center",
+   "128,128"
+  ],
+  "supports": {
+   "returncode": 0,
+   "runtime_s": 2.128429899999901,
+   "log_tail": "10 => Processing triangulated mesh\n20 => Generating perimeters\n30 => Preparing infill\n45 => Making infill\n65 => Searching support spots\n69 => Alert if supports needed\n70 => Generating support material\n89 => Calculating overhanging perimeters\n88 => Generating skirt and brim\n90 => Exporting G-code to C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\slicer\\supports.gcode\nSlicing result exported to C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\slicer\\supports.gcode\n",
+   "print_time": "3h 51m 12s",
+   "print_time_min": 231.2,
+   "filament_mm3": 27930.0,
+   "filament_g": 30.44
+  },
+  "no_supports": {
+   "returncode": 0,
+   "runtime_s": 1.095203799999581,
+   "log_tail": "10 => Processing triangulated mesh\n20 => Generating perimeters\n30 => Preparing infill\n45 => Making infill\n65 => Searching support spots\n69 => Alert if supports needed\nprint warning: Detected print stability issues:\n\nprinted.stl\nFloating object part, Floating bridge anchors, Low bed adhesion, Loose extrusions\n\nConsider enabling supports.\nAlso consider enabling brim.\n89 => Calculating overhanging perimeters\n88 => Generating skirt and brim\n90 => Exporting G-code to C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\slicer\\no_supports.gcode\nSlicing result exported to C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_raw_1\\evaluation\\slicer\\no_supports.gcode\n",
+   "print_time": "2h 0m 5s",
+   "print_time_min": 120.08333333333333,
+   "filament_mm3": 11270.0,
+   "filament_g": 12.28
+  },
+  "support_mm3": 16660.0,
+  "passed": true
+ },
+ "scaled": {
+  "arm_mm": 66.25,
+  "wheelbase_mm": 132.5,
+  "arm_tip_slope": 0.004993452754418676,
+  "support_per_volume": 1.1605622706751824,
+  "print_min_per_g": 14.775928553812467,
+  "symmetry_per_wheelbase": 0.00039530481088690983,
+  "cog_offset_per_wheelbase": 0.015686773316810218,
+  "height_per_wheelbase": 0.214678345114555,
+  "izz_per_mass_arm2": 0.3905861658462617
+ },
+ "assessment": {
+  "conditions": {
+   "one_body": true,
+   "bolt_patterns": false,
+   "keep_outs_free": false,
+   "tools_reachable": true,
+   "fea_solved": true,
+   "slicer": true,
+   "wall_deep_fraction": false,
+   "wall_deep_component": false,
+   "wall_motor_zones": true,
+   "crash_front_strength": true,
+   "crash_arm_strength": true,
+   "crash_back_strength": true,
+   "target:airflow": true,
+   "target:overhang": true,
+   "target:support": true,
+   "target:strut_min": true,
+   "target:symmetry": true,
+   "target:arm_tip_slope": true,
+   "target:f1": true,
+   "target:sigma_mean": true,
+   "target:sigma_worst": true
+  },
+  "missed": [
+   "bolt_patterns",
+   "keep_outs_free",
+   "wall_deep_fraction",
+   "wall_deep_component"
+  ],
+  "good": false,
+  "warnings": [
+   "section_ratio",
+   "loops",
+   "cog_offset"
+  ],
+  "crash": {
+   "crash_front": {
+    "von_mises_p999_mpa": 6.485987542190671,
+    "print_normal_p999_mpa": 3.9477410720000368,
+    "utilisation_xy": 0.12717622631746414,
+    "utilisation_z": 0.16448921133333486
+   },
+   "crash_arm": {
+    "von_mises_p999_mpa": 14.19844579499049,
+    "print_normal_p999_mpa": 3.8398857780000717,
+    "utilisation_xy": 0.27840089794099,
+    "utilisation_z": 0.159995240750003
+   },
+   "crash_back": {
+    "von_mises_p999_mpa": 1.7506981241768902,
+    "print_normal_p999_mpa": 0.5738205317000025,
+    "utilisation_xy": 0.034327414199546866,
+    "utilisation_z": 0.023909188820833437
+   }
+  },
+  "safety_factor": 2.0,
+  "targets": {
+   "airflow": [
+    "geometry.airflow.prop_ring_share",
+    null,
+    0.15
+   ],
+   "overhang": [
+    "geometry.printability.overhang_share",
+    null,
+    0.25
+   ],
+   "support": [
+    "scaled.support_per_volume",
+    null,
+    1.5
+   ],
+   "strut_min": [
+    "geometry.form.strut_width_mm.p10",
+    1.19,
+    null
+   ],
+   "symmetry": [
+    "scaled.symmetry_per_wheelbase",
+    null,
+    0.0025
+   ],
+   "arm_tip_slope": [
+    "scaled.arm_tip_slope",
+    null,
+    0.007
+   ],
+   "f1": [
+    "fea.eigenfrequencies_hz.0",
+    330.0,
+    null
+   ],
+   "sigma_mean": [
+    "sigma.mean_compliance_n_mm",
+    null,
+    0.687
+   ],
+   "sigma_worst": [
+    "sigma.worst_case_compliance_n_mm",
+    null,
+    0.229
+   ]
+  },
+  "warning_ranges": {
+   "strut_max": [
+    "geometry.form.strut_width_mm.p90",
+    null,
+    6.5
+   ],
+   "section_ratio": [
+    "geometry.form.section_ratio.p50",
+    1.0,
+    1.4
+   ],
+   "top_view_material": [
+    "geometry.airflow.bbox_share",
+    null,
+    0.45
+   ],
+   "loops": [
+    "geometry.form.loops.loops",
+    20,
+    null
+   ],
+   "roughness": [
+    "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+    null,
+    0.18
+   ],
+   "height": [
+    "scaled.height_per_wheelbase",
+    null,
+    0.4
+   ],
+   "cog_offset": [
+    "scaled.cog_offset_per_wheelbase",
+    null,
+    0.01
+   ],
+   "inertia_z": [
+    "scaled.izz_per_mass_arm2",
+    null,
+    0.45
+   ],
+   "print_time": [
+    "scaled.print_min_per_g",
+    null,
+    16.0
+   ]
+  },
+  "wall_rule": {
+   "deep_max_fraction": 0.005,
+   "deep_component_max_mm3": 5.0,
+   "motor_zone_margin_mm": 2.0,
+   "opening_radius_mm": 1.0,
+   "deep_depth_mm": 0.45,
+   "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+  },
+  "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+ },
+ "line": "| simp_mma_cov3_raw_1_symfix | 15,6 g | SP z 22,4 mm; Ixx/Iyy/Izz 74/92/146 kg\u00b7mm\u00b2 (K) | 5,4 % (64 mm) | Bohrb. 2/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 21,7 %, \u00d6ffn. r=1 1,15 %/49,3 mm\u00b3/Motorzonen 0,St\u00fctze 16,66 cm\u00b3, 231 min | Strebe 1,9/2,8/4,7 mm, H/B 0,98, offen 76 %, H\u00f6he 28,4 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,05 mm, Rauh. 0,120/mm | 10,9 N/mm; \u03a3 tr 0,687/\u03bbmax 0,220 N\u00b7mm (A) | f1 407 Hz; 408/502/504 (A) | front 6,5/3,9 MPa; arm 14,2/3,8 MPa; back 1,8/0,6 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component; Warnung: section_ratio, loops, cog_offset |"
+}

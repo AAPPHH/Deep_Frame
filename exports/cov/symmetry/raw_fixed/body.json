@@ -1,0 +1,47 @@
+{
+ "prop_disc_share": 0.20368438095923433,
+ "prop_disc_top_share": 0.07934734018775146,
+ "mass_g": 15.6470707912981,
+ "mesh_volume_mm3": 14355.110817704677,
+ "volume_fraction_mesh": 0.036956166119301775,
+ "watertight": true,
+ "bodies": 1,
+ "connectivity": {
+  "components_raw": 1,
+  "anchor_components": 1,
+  "dropped_count": 0,
+  "dropped_volume_mm3": 0.0,
+  "largest_dropped_mm3": 0.0
+ },
+ "member_width": {
+  "threshold": 0.5,
+  "method": "2 x Euclidean distance on the 3D skeleton minus one cell, skeleton cells within two cells of preserve/forbidden excluded",
+  "p05_mm": 2.0,
+  "p10_mm": 2.0,
+  "p25_mm": 2.0,
+  "p50_mm": 3.3333333333333335,
+  "p75_mm": 4.1407350339519855,
+  "p90_mm": 4.830807500823547,
+  "fraction_below_2mm": 0.04918032786885246,
+  "skeleton_cells": 610
+ },
+ "width_height_ratio": {
+  "p10": 0.15789473684210528,
+  "p50": 0.8749999999999999,
+  "p90": 1.977211441209552
+ },
+ "chord": {
+  "box": {
+   "half_width_mm": 20.0,
+   "z_max_mm": 10.0,
+   "y_span_mm": [
+    -25.0,
+    25.0
+   ]
+  },
+  "spanning_components": 1,
+  "lower_chord": true,
+  "y_slice_coverage": 0.9342105263157895,
+  "solid_volume_mm3": 1968.0
+ }
+}

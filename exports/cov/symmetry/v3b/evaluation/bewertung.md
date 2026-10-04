@@ -1,0 +1,5 @@
+| Frame | 1 Masse | 2 Schwerpunkt, Trägheit | 3 Luftstrom (Material im Propkreis) | 4 Montage | 5 Druckbarkeit | 6 Form | 7 Steifigkeit Armspitze; Lastmodell Σ | 8 Resonanz | 9 Crash p99,9 v. Mises/σ_Druckachse | Verfehlt |
+|---|---|---|---|---|---|---|---|---|---|---|
+| simp_mma_cov3_v3_2 | 17,6 g | SP z 22,1 mm; Ixx/Iyy/Izz 76/94/148 kg·mm² (K) | 5,6 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | Überh. 20,1 %, Öffn. r=1 0,03 %/2,8 mm³/Motorzonen 0,Stütze 16,29 cm³, 242 min | Strebe 1,9/2,8/5,2 mm, H/B 1,00, offen 76 %, Höhe 28,0 mm, Körper 1, Schlaufen 20, Sym. 0,22 mm, Rauh. 0,138/mm | 10,5 N/mm; Σ tr 0,602/λmax 0,207 N·mm (A) | f1 473 Hz; 481/525/538 (A) | front 6,3/3,4 MPa; arm 13,5/3,0 MPa; back 2,2/0,8 MPa (SF 2,0, A) | keine; Warnung: cog_offset |
+
+(A) beruht auf Materialannahmen: ν = 0,30 und G13/G23 = E_z/(2(1+ν)) sind nicht im Bambu-PA6-CF-Datenblatt; E_xy, E_z, Festigkeiten und Dichte stammen aus dem Datenblatt. (K) Komponentenmassen und -maße aus unserer Hardware-Konfiguration, bei Referenzen auf deren Aufnahmen gesetzt. Crash: Spannung als 99,9-%-Wert der Integrationspunkte; Grenze σ_xy 102 MPa und σ_z 48 MPa geteilt durch SF.

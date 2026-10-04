@@ -1,0 +1,4167 @@
+{
+ "name": "simp_mma_cov3_v3_2",
+ "stl": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\frame.stl",
+ "print_axis": [
+  0.0,
+  0.0,
+  1.0
+ ],
+ "material": {
+  "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+  "young_modulus_mpa": 4430.0,
+  "poisson_ratio": 0.3,
+  "density_g_cm3": 1.09,
+  "orthotropic": {
+   "e_xy_mpa": 4430.0,
+   "e_z_mpa": 2170.0,
+   "nu_xy": 0.3,
+   "nu_xz": 0.3,
+   "g_xy_mpa": 1703.8,
+   "g_z_mpa": 834.6
+  },
+  "strength_xy_mpa": 102.0,
+  "strength_z_mpa": 48.0,
+  "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+  "measured": [
+   "E_xy 4430 +/- 310 MPa",
+   "E_z 2170 +/- 230 MPa",
+   "tensile strength XY 102 +/- 7 MPa",
+   "tensile strength Z 48 +/- 6 MPa",
+   "density 1.09 g/cm3"
+  ],
+  "assumptions": {
+   "nu_xy": "0.30 not in the TDS",
+   "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+   "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+   "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+   "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+  }
+ },
+ "geometry": {
+  "mass": {
+   "frame_mass_g": 17.620800936283516,
+   "frame_volume_mm3": 16165.872418608727,
+   "total_mass_g": 86.92080093628353,
+   "component_mass_g": 69.30000000000001,
+   "center_of_mass_mm": [
+    0.028289069843226027,
+    1.992610628537034,
+    22.09389850428877
+   ],
+   "frame_center_of_mass_mm": [
+    0.1395457912161349,
+    5.2607887758217835,
+    12.90030907888368
+   ],
+   "inertia_g_mm2": [
+    [
+     75564.26116695166,
+     86.17461815533989,
+     32.8424335129299
+    ],
+    [
+     86.17461815533989,
+     93658.51706168808,
+     1181.6349829353662
+    ],
+    [
+     32.8424335129299,
+     1181.6349829353662,
+     148441.35582846735
+    ]
+   ],
+   "principal_inertia_g_mm2": [
+    75563.84059263606,
+    93633.44577241047,
+    148466.84769206058
+   ],
+   "components": [
+    {
+     "name": "aio15",
+     "type": "aio15",
+     "mass_g": 7.2,
+     "center_mm": [
+      9.404120364122206e-16,
+      -6.367373163207745e-17,
+      8.5
+     ],
+     "size_mm": [
+      31.3,
+      31.3,
+      6.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "camera",
+     "type": "camera",
+     "mass_g": 2.3,
+     "center_mm": [
+      1.166513031294608e-16,
+      35.0,
+      13.47198934878104
+     ],
+     "size_mm": [
+      16.0,
+      14.0,
+      14.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "battery",
+     "type": "battery",
+     "mass_g": 37.0,
+     "center_mm": [
+      -1.6781509643504353e-16,
+      -3.0144237274670914e-16,
+      33.5
+     ],
+     "size_mm": [
+      30.0,
+      63.0,
+      11.0
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "motor_front_left",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      -53.45466183516625,
+      39.13644884360386,
+      14.283333333333333
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_front_left",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      -53.45466183516625,
+      39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_front_right",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      53.45466183516625,
+      39.13644884360386,
+      14.283333333333335
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_front_right",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      53.45466183516625,
+      39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_rear_left",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      -53.45466183516625,
+      -39.13644884360386,
+      14.283333333333335
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_rear_left",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      -53.45466183516625,
+      -39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    },
+    {
+     "name": "motor_rear_right",
+     "type": "motor",
+     "mass_g": 4.5,
+     "center_mm": [
+      53.45466183516625,
+      -39.13644884360386,
+      14.283333333333333
+     ],
+     "size_mm": [
+      15.76,
+      15.76,
+      9.9
+     ],
+     "shape": "box"
+    },
+    {
+     "name": "prop_rear_right",
+     "type": "prop",
+     "mass_g": 1.2,
+     "center_mm": [
+      53.45466183516624,
+      -39.13644884360386,
+      21.733333333333334
+     ],
+     "size_mm": [
+      63.5,
+      63.5,
+      5.0
+     ],
+     "shape": "disc"
+    }
+   ],
+   "model": "frame: exact mesh volume integrals x density; components: homogeneous boxes (props: discs) with parallel-axis theorem about the total centre of mass"
+  },
+  "airflow": {
+   "projected_area_mm2": 2864.4800000000005,
+   "bbox_share": 0.24479722153854566,
+   "hull_share": 0.24990577757925156,
+   "prop_disc_share": 0.10525046935361759,
+   "prop_ring_share": 0.05591136814053102,
+   "prop_diameter_mm": 63.5,
+   "hub_radius_mm": 7.88,
+   "discs_overlap": false,
+   "method": "top-view silhouette of the winding-number voxel grid; prop share = material inside the four prop discs / disc area, ring share excludes the motor hub radius"
+  },
+  "assembly": {
+   "bolt_patterns": [
+    {
+     "name": "motor_front_left",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -56.63664235050572,
+        35.954468328264404
+       ],
+       "centroid_mm": [
+        -56.63754280311917,
+        35.953567875650954
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -56.63664235050572,
+        42.31842935894332
+       ],
+       "centroid_mm": [
+        -56.63754280311917,
+        42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -50.27268131982679,
+        35.9544683282644
+       ],
+       "centroid_mm": [
+        -50.27178086721334,
+        35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -50.27268131982679,
+        42.31842935894332
+       ],
+       "centroid_mm": [
+        -50.27178086721334,
+        42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_front_right",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        50.27268131982679,
+        35.9544683282644
+       ],
+       "centroid_mm": [
+        50.271780867213344,
+        35.953567875650954
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        50.27268131982679,
+        42.31842935894333
+       ],
+       "centroid_mm": [
+        50.271780867213344,
+        42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        56.63664235050571,
+        35.95446832826439
+       ],
+       "centroid_mm": [
+        56.63754280311915,
+        35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        56.63664235050571,
+        42.31842935894333
+       ],
+       "centroid_mm": [
+        56.63754280311915,
+        42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_rear_left",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -56.63664235050572,
+        -42.31842935894332
+       ],
+       "centroid_mm": [
+        -56.63754280311917,
+        -42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -56.63664235050572,
+        -35.9544683282644
+       ],
+       "centroid_mm": [
+        -56.63754280311917,
+        -35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -50.27268131982679,
+        -42.31842935894332
+       ],
+       "centroid_mm": [
+        -50.27178086721334,
+        -42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -50.27268131982679,
+        -35.9544683282644
+       ],
+       "centroid_mm": [
+        -50.27178086721334,
+        -35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "motor_rear_right",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        50.27268131982679,
+        -42.31842935894333
+       ],
+       "centroid_mm": [
+        50.271780867213344,
+        -42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        50.27268131982679,
+        -35.95446832826439
+       ],
+       "centroid_mm": [
+        50.271780867213344,
+        -35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        56.63664235050571,
+        -42.31842935894333
+       ],
+       "centroid_mm": [
+        56.63754280311915,
+        -42.31932981155677
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        56.63664235050571,
+        -35.95446832826439
+       ],
+       "centroid_mm": [
+        56.63754280311915,
+        -35.95356787565095
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    {
+     "name": "stack",
+     "expected": 4,
+     "found": 4,
+     "holes": [
+      {
+       "position_mm": [
+        -12.749999999999998,
+        -12.749999999999998
+       ],
+       "centroid_mm": [
+        -12.750369421237993,
+        -12.750369421237993
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        -12.750369415885993,
+        12.749630573410318
+       ],
+       "centroid_mm": [
+        -12.750369421237993,
+        12.749630578762007
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        12.749630573410318,
+        -12.750369415885993
+       ],
+       "centroid_mm": [
+        12.749630578762007,
+        -12.750369421237993
+       ],
+       "diameter_mm": 2.20611834672353
+      },
+      {
+       "position_mm": [
+        12.750000000000002,
+        12.750000000000002
+       ],
+       "centroid_mm": [
+        12.749630578762007,
+        12.749630578762007
+       ],
+       "diameter_mm": 2.20611834672353
+      }
+     ],
+     "material_in_section": true,
+     "passed": true,
+     "tool_reachable": [
+      true,
+      true,
+      true,
+      true
+     ]
+    }
+   ],
+   "keep_out_material_mm3": {
+    "aio15_envelope": 0.0,
+    "camera_envelope": 0.0,
+    "battery_envelope": 0.0,
+    "motor_front_left_envelope": 0.0,
+    "prop_front_left_swept_clearance": 0.0,
+    "motor_front_right_envelope": 0.0,
+    "prop_front_right_swept_clearance": 0.0,
+    "motor_rear_left_envelope": 0.0,
+    "prop_rear_left_swept_clearance": 0.0,
+    "motor_rear_right_envelope": 0.0,
+    "prop_rear_right_swept_clearance": 0.0,
+    "front_left_shaft_clearance": 0.0,
+    "front_left_motor_screw_0": 0.0,
+    "front_left_motor_screw_1": 0.0,
+    "front_left_motor_screw_2": 0.0,
+    "front_left_motor_screw_3": 0.0,
+    "front_left_motor_leads": 0.0,
+    "front_right_shaft_clearance": 0.0,
+    "front_right_motor_screw_0": 0.0,
+    "front_right_motor_screw_1": 0.0,
+    "front_right_motor_screw_2": 0.0,
+    "front_right_motor_screw_3": 0.0,
+    "front_right_motor_leads": 0.0,
+    "rear_left_shaft_clearance": 0.0,
+    "rear_left_motor_screw_0": 0.0,
+    "rear_left_motor_screw_1": 0.0,
+    "rear_left_motor_screw_2": 0.0,
+    "rear_left_motor_screw_3": 0.0,
+    "rear_left_motor_leads": 0.0,
+    "rear_right_shaft_clearance": 0.0,
+    "rear_right_motor_screw_0": 0.0,
+    "rear_right_motor_screw_1": 0.0,
+    "rear_right_motor_screw_2": 0.0,
+    "rear_right_motor_screw_3": 0.0,
+    "rear_right_motor_leads": 0.0,
+    "aio_screw_0": 0.0,
+    "aio_screw_1": 0.0,
+    "aio_screw_2": 0.0,
+    "aio_screw_3": 0.0,
+    "elrs_antenna_clearance": 0.0,
+    "battery_insertion": 0.0,
+    "camera_screw_axis": 0.0,
+    "camera_tool_access_-1": 0.0,
+    "camera_tool_access_1": 0.0,
+    "camera_front_access": 0.0,
+    "aio_side_assembly_access": 0.0
+   },
+   "connector_reachable": {},
+   "fit_tolerance_mm3": 1.0,
+   "bolt_patterns_passed": true,
+   "tools_passed": true,
+   "fit_passed": true,
+   "connectors_checked": false,
+   "method": "holes from an exact plane section rasterised at the section voxel; reachability = 9 parallel rays (axis plus screw-head or connector radius) from the hole or connector along the tool axis must not re-enter material beyond the tool skip distance (the pad itself); fit = material voxels inside each keep-out shrunk by one voxel"
+  },
+  "printability": {
+   "overhang_area_mm2": 2611.7169144360996,
+   "overhang_share": 0.2012619484651559,
+   "bed_contact_mm2": 142.15294211977715,
+   "print_height_mm": 28.0,
+   "print_footprint_mm": [
+    122.33121490478516,
+    95.80152130126953
+   ],
+   "overhang_deg": 45.0,
+   "method": "faces whose normal lies within 45 deg of straight down above the bed, area share of the surface"
+  },
+  "form": {
+   "strut_width_mm": {
+    "p10": 1.8627416997969526,
+    "p50": 2.8000000000000003,
+    "p90": 5.2
+   },
+   "share_below_2mm": 0.11616571892770106,
+   "section_ratio": {
+    "p10": 0.6073493413365886,
+    "p50": 1.0,
+    "p90": 3.3415978118015737
+   },
+   "upright_share": 0.2737611697806661,
+   "flat_share": 0.1372867587327376,
+   "skeleton_voxels": 2462,
+   "method": "widths 2 x EDT on the 3D skeleton minus one voxel; section ratio = vertical material run / in-plane width at each skeleton voxel (> 1 upright, < 1 flat)",
+   "loops": {
+    "closing_radius_mm": 3.0,
+    "voxel_mm": 0.4,
+    "bodies": 1,
+    "cavities": 0,
+    "loops": 20,
+    "method": "first Betti number b1 = b0 + b2 - chi of the voxel solid after a morphological closing that fills bores and slots up to 2 x the closing radius"
+   },
+   "mesh_bodies": 1,
+   "mesh_genus": 37,
+   "flight_height_mm": 28.0,
+   "symmetry": {
+    "plane_x_mm": 0.0,
+    "rms_mm": 0.22491504941156756,
+    "p95_mm": 0.5076846692360644,
+    "max_mm": 1.2084351914541909,
+    "samples": 5000,
+    "method": "surface samples mirrored at x = mean motor x, distance to the original surface"
+   },
+   "roughness": {
+    "curvature_neighbour_rms_per_mm": 0.13833076874449357,
+    "mean_abs_curvature_per_mm": {
+     "max": 0.7904332533423792,
+     "p50": 0.18293895670187846,
+     "p95": 0.46741413035727913,
+     "p99": 0.5698537888022892,
+     "mean": 0.2087496877844607
+    },
+    "radius_mm": 1.0,
+    "method": "Cohen-Steiner/Morvan mean curvature measure of each ball around evenly sampled surface points divided by the disc area pi r^2 (sphere 1/R, cylinder 1/(2R), plane 0); RMS of the |H| differences of sample pairs closer than 1.5 r; independent of the triangulation, record only"
+   }
+  },
+  "voxel_mm": 0.4,
+  "unbalanced_columns": 0,
+  "runtime_s": 11.806907799997134
+ },
+ "walls": {
+  "voxel_mm": 0.1,
+  "opening_radius_mm": 1.0,
+  "deep_depth_mm": 0.45,
+  "grid_shape": [
+   1248,
+   983,
+   304
+  ],
+  "unbalanced_columns": 0,
+  "part_volume_mm3": 16129.935000000003,
+  "removed_volume_mm3": 199.389,
+  "components": 11691,
+  "deep_components": 2,
+  "deep_volume_mm3": 5.264000000000001,
+  "deep_fraction": 0.00032634973420537654,
+  "largest_deep_mm3": 2.7610000000000006,
+  "shallow_volume_mm3": 194.12500000000003,
+  "motor_zone_hits": {},
+  "motor_zones": [
+   "motor_front_left",
+   "motor_front_right",
+   "motor_rear_left",
+   "motor_rear_right"
+  ],
+  "largest_deep_components": [
+   {
+    "volume_mm3": 2.7610000000000006,
+    "max_depth_mm": 0.45825756949558405,
+    "centroid_mm": [
+     31.661,
+     -30.9,
+     1.279
+    ],
+    "extent_mm": [
+     8.4,
+     6.7,
+     2.0
+    ]
+   },
+   {
+    "volume_mm3": 2.5030000000000006,
+    "max_depth_mm": 0.5385164807134505,
+    "centroid_mm": [
+     9.996,
+     6.834,
+     1.215
+    ],
+    "extent_mm": [
+     1.2,
+     7.5,
+     2.0
+    ]
+   }
+  ],
+  "limits": {
+   "deep_max_fraction": 0.005,
+   "deep_component_max_mm3": 5.0,
+   "motor_zone_margin_mm": 2.0
+  },
+  "elapsed_s": 102.66788049999741,
+  "method": "Winding-number voxelisation at h; exact EDT opening with a ball of the radius (erosion EDT >= r, dilation EDT <= r) tiled along x with halo; removed voxels grouped with 26-connectivity; deep components reach the depth below the original surface (true walls under 2 r), shallow ones are edge rounding",
+  "status": "Provisional: calibrated on the ManaFly 3 BETA V4 manufacturer geometry (no own test); final after own drop tests in M2",
+  "calibrated_rule_passed": true
+ },
+ "fea": {
+  "status": "ok",
+  "mass_g": 54.621842405511096,
+  "eigenfrequencies_hz": [
+   472.8289,
+   480.5744,
+   524.5718,
+   537.9057,
+   542.2172,
+   555.0199
+  ],
+  "max_displacement_mm": 1.530401550952968,
+  "max_von_mises_mpa": 23.834422228651444,
+  "stiffness_n_per_mm": 10.46144252257219,
+  "load_cases": {
+   "arm_tip": {
+    "analysis": "static",
+    "max_displacement_mm": 0.4511207189797544,
+    "max_von_mises_mpa": 5.5168994692772415,
+    "von_mises_p99_mpa": 2.1427361523013277,
+    "print_normal_tension_p99_mpa": 0.4730682,
+    "print_normal_abs_p99_mpa": 0.562183275,
+    "von_mises_p999_mpa": 3.220464486217732,
+    "print_normal_tension_p999_mpa": 1.0012440000000156,
+    "print_normal_abs_p999_mpa": 1.067060125000001,
+    "stress_samples": 217876,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 1012,
+      "force_n": [
+       0.0,
+       0.0,
+       3.6
+      ],
+      "mean_displacement_mm": [
+       -0.01295487636462451,
+       0.007108877484888336,
+       0.3441208028656125
+      ],
+      "directional_displacement_mm": 0.3441208028656125,
+      "stiffness_n_per_mm": 10.46144252257219
+     }
+    ],
+    "stiffness_n_per_mm": 10.46144252257219,
+    "fixed_node_count": 1016
+   },
+   "modes": {
+    "analysis": "modal",
+    "eigenfrequencies_hz": [
+     472.8289,
+     480.5744,
+     524.5718,
+     537.9057,
+     542.2172,
+     555.0199
+    ],
+    "discarded_rigid_modes": 0,
+    "fixture": "all translations fixed on selected nodes",
+    "fixed_node_count": 3578
+   },
+   "crash_front": {
+    "analysis": "static",
+    "max_displacement_mm": 0.19965400415221646,
+    "max_von_mises_mpa": 12.517767603577095,
+    "von_mises_p99_mpa": 4.020316083454205,
+    "print_normal_tension_p99_mpa": 1.281489,
+    "print_normal_abs_p99_mpa": 1.72055975,
+    "von_mises_p999_mpa": 6.292357119705665,
+    "print_normal_tension_p999_mpa": 2.7848876250000747,
+    "print_normal_abs_p999_mpa": 3.418554000000181,
+    "stress_samples": 217876,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 2331,
+      "force_n": [
+       0.0,
+       -30.64578125,
+       0.0
+      ],
+      "mean_displacement_mm": [
+       -0.0019955393916773977,
+       -0.12288562694122718,
+       0.11112163284856277
+      ],
+      "directional_displacement_mm": 0.12288562694122718,
+      "stiffness_n_per_mm": 249.38458640616315
+     }
+    ],
+    "stiffness_n_per_mm": 249.38458640616315,
+    "fixed_node_count": 1016
+   },
+   "crash_arm": {
+    "analysis": "static",
+    "max_displacement_mm": 1.530401550952968,
+    "max_von_mises_mpa": 23.834422228651444,
+    "von_mises_p99_mpa": 8.003840196171495,
+    "print_normal_tension_p99_mpa": 0.9476406,
+    "print_normal_abs_p99_mpa": 1.338287,
+    "von_mises_p999_mpa": 13.484351659221808,
+    "print_normal_tension_p999_mpa": 2.0134551250000046,
+    "print_normal_abs_p999_mpa": 3.015344250000059,
+    "stress_samples": 217876,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 1012,
+      "force_n": [
+       2.2077626326054296,
+       -14.27686502418177,
+       -5.107630208333331
+      ],
+      "mean_displacement_mm": [
+       -0.35262727193675875,
+       -1.0050268973320162,
+       -0.5243709950592881
+      ],
+      "directional_displacement_mm": 1.060401041621378,
+      "stiffness_n_per_mm": 14.45009012964655
+     }
+    ],
+    "stiffness_n_per_mm": 14.45009012964655,
+    "fixed_node_count": 1016
+   },
+   "crash_back": {
+    "analysis": "static",
+    "max_displacement_mm": 0.03573934664227241,
+    "max_von_mises_mpa": 5.7745395367723376,
+    "von_mises_p99_mpa": 1.112818309735951,
+    "print_normal_tension_p99_mpa": 0.127900125,
+    "print_normal_abs_p99_mpa": 0.36149255,
+    "von_mises_p999_mpa": 2.2305180981863897,
+    "print_normal_tension_p999_mpa": 0.3341869125000016,
+    "print_normal_abs_p999_mpa": 0.7973140250000078,
+    "stress_samples": 217876,
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "loads": [
+     {
+      "node_count": 133,
+      "force_n": [
+       0.0,
+       0.0,
+       -15.322890625
+      ],
+      "mean_displacement_mm": [
+       1.8474847736842112e-06,
+       0.001908640263157895,
+       -0.03326750278195488
+      ],
+      "directional_displacement_mm": 0.03326750278195488,
+      "stiffness_n_per_mm": 460.5963581165315
+     }
+    ],
+    "stiffness_n_per_mm": 460.5963581165315,
+    "fixed_node_count": 3578
+   }
+  },
+  "diagnostics": [],
+  "artifacts": {
+   "directory": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt",
+   "arm_tip": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_0.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_0.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_0.log"
+   },
+   "modes": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_1.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_1.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_1.log"
+   },
+   "crash_front": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_2.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_2.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_2.log"
+   },
+   "crash_arm": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_3.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_3.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_3.log"
+   },
+   "crash_back": {
+    "input": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_4.inp",
+    "data": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_4.dat",
+    "log": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\case_4.log"
+   },
+   "result": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\fea\\evaluation_sg6fzgyt\\result.json"
+  },
+  "linear_solver": null,
+  "solver_threads": 4,
+  "mesh": {
+   "attempts": [
+    {
+     "name": "remesh_hxt",
+     "target_mm": 2.0,
+     "status": "ok",
+     "timeout_s": 900.0,
+     "linear_element_count": 54469,
+     "runtime_s": 16.537105599993083
+    }
+   ],
+   "input_face_count": 115772,
+   "input_minimum_angle_deg": 15.40449969997954,
+   "memory_budget": {
+    "elements": 247391,
+    "solver_memory_mb": 9180.52734375,
+    "process_mb": 547.47265625,
+    "available_mb": 29909.86328125,
+    "memory_budget_mb": 9728.0,
+    "memory_per_element_kb": 38.0
+   },
+   "gmsh_version": "4.15.2",
+   "element_type": "C3D10",
+   "element_count": 54469,
+   "minimum_jacobian_mm3": 0.0013486526092853365,
+   "mesh_size_mm": 3.0,
+   "second_order_linear": false,
+   "high_order_optimize": 0,
+   "boundary_geometry": "quadratic boundary nodes projected to CAD",
+   "attempt": "remesh_hxt",
+   "target_mm": 2.0,
+   "prepared_surface": {
+    "refined_input": false,
+    "target_mm": 2.0,
+    "merge_tolerance_mm": 1.579911369536762e-07,
+    "cleanup_applied": false,
+    "face_count": 29164,
+    "minimum_angle_deg": 5.456124893878567,
+    "topology": {
+     "input": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -72
+     },
+     "remeshed": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -72
+     },
+     "prepared": {
+      "watertight": true,
+      "winding_consistent": true,
+      "body_count": 1,
+      "euler_number": -72
+     }
+    },
+    "topology_changed": false,
+    "rejected_steps": {},
+    "topology_passed": true,
+    "self_intersections_passed": true,
+    "folded_edges": 0,
+    "runtime_s": 9.74998250000499,
+    "passed": true
+   },
+   "linear_element_count": 54469,
+   "element_budget": 247391,
+   "over_budget": false,
+   "boundary_node_count": 14510,
+   "boundary_node_deviation_mm": 2.5618982671915014e-14,
+   "boundary_fidelity": {
+    "method": "bidirectional vertices, centroids and all edge midpoints; exact nearest-surface distance by MeshLab per-vertex distance",
+    "reference_to_approximation": {
+     "sample_count": 520902,
+     "surface_distance_mm": {
+      "max": 0.1110571101307869,
+      "p50": 0.016867663711309433,
+      "p95": 0.04511859398335218,
+      "p99": 0.0566636361181736,
+      "mean": 0.019197317041883554
+     }
+    },
+    "approximation_to_reference": {
+     "sample_count": 131166,
+     "surface_distance_mm": {
+      "max": 0.10497472435235977,
+      "p50": 0.01784575916826725,
+      "p95": 0.04674769192934036,
+      "p99": 0.05706284195184709,
+      "mean": 0.019590179210896765
+     }
+    },
+    "maximum_sampled_deviation_mm": 0.1110571101307869,
+    "relative_volume_change": -0.009272322030730917,
+    "runtime_s": 0.8687119000023813
+   },
+   "input_volume_mm3": 16166.827894964308,
+   "tet_volume_mm3": 16016.923860506793,
+   "tet_volume_relative_change": -0.009272322030731028,
+   "minimum_sicn": 0.1324275739011868,
+   "elements_below_sicn": 0,
+   "node_count": 103243
+  },
+  "point_mass_coupling": [
+   {
+    "name": "battery",
+    "mass_g": 37.0,
+    "position_mm": [
+     -1.6781509643504353e-16,
+     -3.0144237274670914e-16,
+     33.5
+    ],
+    "attachment_nodes": 133,
+    "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+   }
+  ],
+  "frame_mass_g": 17.621842405511096,
+  "model_frame_mass_g": 17.458447007952408,
+  "point_mass_g": 37.0,
+  "solver_version": "2.22",
+  "runtime_s": 78.71562289999565,
+  "sliver_cleanup": null,
+  "fea_surface": {
+   "trials": [
+    {
+     "surface_mm": 0.5,
+     "taubin": 10,
+     "volume_mm": 2.0,
+     "feature_deg": 40.0,
+     "deviation_mm": 0.3136134743690491,
+     "relative_volume_change": 5.910453397373061e-05,
+     "deviation_within_limit": false,
+     "passed": true
+    }
+   ],
+   "choice": {
+    "fea_remesh_targets_mm": [
+     2.0
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "volume_mm3": 16166.827894964308
+  },
+  "model": {
+   "material": {
+    "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+    "young_modulus_mpa": 4430.0,
+    "poisson_ratio": 0.3,
+    "density_g_cm3": 1.09,
+    "orthotropic": {
+     "e_xy_mpa": 4430.0,
+     "e_z_mpa": 2170.0,
+     "nu_xy": 0.3,
+     "nu_xz": 0.3,
+     "g_xy_mpa": 1703.8,
+     "g_z_mpa": 834.6
+    },
+    "strength_xy_mpa": 102.0,
+    "strength_z_mpa": 48.0,
+    "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+    "measured": [
+     "E_xy 4430 +/- 310 MPa",
+     "E_z 2170 +/- 230 MPa",
+     "tensile strength XY 102 +/- 7 MPa",
+     "tensile strength Z 48 +/- 6 MPa",
+     "density 1.09 g/cm3"
+    ],
+    "assumptions": {
+     "nu_xy": "0.30 not in the TDS",
+     "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+     "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+     "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+     "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+    },
+    "print_axis": [
+     0.0,
+     0.0,
+     1.0
+    ]
+   },
+   "point_masses": [
+    {
+     "name": "battery",
+     "mass_g": 37.0,
+     "position_mm": [
+      -1.6781509643504353e-16,
+      -3.0144237274670914e-16,
+      33.5
+     ],
+     "attachment_region": {
+      "kind": "box",
+      "min_mm": [
+       -20.1,
+       -2.0,
+       27.5
+      ],
+      "max_mm": [
+       20.1,
+       2.0,
+       28.51
+      ]
+     }
+    }
+   ],
+   "load_cases": [
+    {
+     "name": "arm_tip",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        15.95,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        15.95,
+        0.51
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -63.05466183516625,
+         29.536448843603857,
+         8.823333333333334
+        ],
+        "max_mm": [
+         -43.85466183516625,
+         48.73644884360386,
+         9.343333333333334
+        ]
+       },
+       "force_n": [
+        0.0,
+        0.0,
+        3.6
+       ]
+      }
+     ]
+    },
+    {
+     "name": "modes",
+     "analysis": "modal",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        6.656666666666668
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        43.85466183516625,
+        29.536448843603857,
+        6.656666666666668
+       ],
+       "max_mm": [
+        63.05466183516625,
+        48.73644884360386,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        -48.73644884360386,
+        6.656666666666668
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        -29.536448843603857,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        43.85466183516625,
+        -48.73644884360386,
+        6.656666666666668
+       ],
+       "max_mm": [
+        63.05466183516625,
+        -29.536448843603857,
+        7.166666666666668
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_front",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        15.95,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        15.95,
+        0.51
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -12.01,
+         26.5,
+         19.5
+        ],
+        "max_mm": [
+         12.01,
+         43.5,
+         26.01
+        ]
+       },
+       "force_n": [
+        0.0,
+        -30.64578125,
+        0.0
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_arm",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -15.95,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        -9.55,
+        15.95,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        -15.95,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        -9.55,
+        0.51
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        9.55,
+        9.55,
+        -0.01
+       ],
+       "max_mm": [
+        15.95,
+        15.95,
+        0.51
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -63.05466183516625,
+         29.536448843603857,
+         8.823333333333334
+        ],
+        "max_mm": [
+         -43.85466183516625,
+         48.73644884360386,
+         9.343333333333334
+        ]
+       },
+       "force_n": [
+        2.2077626326054296,
+        -14.27686502418177,
+        -5.107630208333331
+       ]
+      }
+     ]
+    },
+    {
+     "name": "crash_back",
+     "analysis": "static",
+     "fixed_regions": [
+      {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        6.656666666666668
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        43.85466183516625,
+        29.536448843603857,
+        6.656666666666668
+       ],
+       "max_mm": [
+        63.05466183516625,
+        48.73644884360386,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        -48.73644884360386,
+        6.656666666666668
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        -29.536448843603857,
+        7.166666666666668
+       ]
+      },
+      {
+       "kind": "box",
+       "min_mm": [
+        43.85466183516625,
+        -48.73644884360386,
+        6.656666666666668
+       ],
+       "max_mm": [
+        63.05466183516625,
+        -29.536448843603857,
+        7.166666666666668
+       ]
+      }
+     ],
+     "loads": [
+      {
+       "region": {
+        "kind": "box",
+        "min_mm": [
+         -20.1,
+         -2.0,
+         27.5
+        ],
+        "max_mm": [
+         20.1,
+         2.0,
+         28.51
+        ]
+       },
+       "force_n": [
+        0.0,
+        0.0,
+        -15.322890625
+       ]
+      }
+     ]
+    }
+   ],
+   "loads": {
+    "arm_tip_force_n": 3.6,
+    "all_up_mass_g": 125.0,
+    "standard_gravity_m_s2": 9.80665,
+    "crash_front_g": 25.0,
+    "crash_arm_g": 12.5,
+    "crash_back_g": 12.5,
+    "safety_factor": 2.0,
+    "sources": {
+     "arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+     "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+     "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+     "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+     "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"
+    }
+   },
+   "support": {
+    "arm_tip": "centre mount undersides fixed (all translations)",
+    "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
+    "crash_front": "centre mount undersides fixed",
+    "crash_arm": "centre mount undersides fixed",
+    "crash_back": "four motor seat undersides fixed"
+   }
+  }
+ },
+ "sigma": {
+  "mean_compliance_n_mm": 0.601582087548817,
+  "worst_case_compliance_n_mm": 0.20718303901272683,
+  "top_eigenvalues_n_mm": [
+   0.20718303901272683,
+   0.12602794132485376,
+   0.07914097953918804
+  ],
+  "worst_case_load": {
+   "motor_front_left My": 5.266676427390525,
+   "motor_front_left Mz": 4.481888174098044,
+   "motor_front_right My": -5.267518177525437,
+   "motor_front_right Mz": -4.4407838130504595,
+   "motor_rear_left My": -5.250604274691845,
+   "motor_rear_left Mz": -4.082758803099815,
+   "motor_rear_right My": 5.250608138721305,
+   "motor_rear_right Mz": 4.086323769147424,
+   "battery Fz": -1.1879831913184802
+  },
+  "all_dofs": {
+   "mean_compliance_n_mm": 0.6020154413330663,
+   "worst_case_compliance_n_mm": 0.2073562771709801,
+   "top_eigenvalues_n_mm": [
+    0.2073562771709801,
+    0.12602794259698002,
+    0.079192581876114
+   ],
+   "worst_case_load": {
+    "motor_front_left My": 5.259440232074812,
+    "motor_front_left Mz": 4.483470865703745,
+    "motor_front_right My": -5.260285962275607,
+    "motor_front_right Mz": -4.4424025563939695,
+    "motor_rear_left My": -5.243384737263208,
+    "motor_rear_left Mz": -4.084741519141434,
+    "motor_rear_right My": 5.243384453154744,
+    "motor_rear_right Mz": 4.088298502788504,
+    "battery Fz": -1.1884843714068962
+   }
+  },
+  "groups": {
+   "stack_fixed": {
+    "mean_compliance_n_mm": 0.601582087548817,
+    "worst_case_compliance_n_mm": 0.20718303901272683,
+    "top_eigenvalues_n_mm": [
+     0.20718303901272683,
+     0.12602794132485376,
+     0.07914097953918804
+    ],
+    "worst_case_load": {
+     "motor_front_left My": 5.266676427390525,
+     "motor_front_left Mz": 4.481888174098044,
+     "motor_front_right My": -5.267518177525437,
+     "motor_front_right Mz": -4.4407838130504595,
+     "motor_rear_left My": -5.250604274691845,
+     "motor_rear_left Mz": -4.082758803099815,
+     "motor_rear_right My": 5.250608138721305,
+     "motor_rear_right Mz": 4.086323769147424,
+     "battery Fz": -1.1879831913184802
+    }
+   },
+   "motor_pads_fixed": {
+    "mean_compliance_n_mm": 0.00043335378424923596,
+    "worst_case_compliance_n_mm": 0.00029565563059532365,
+    "top_eigenvalues_n_mm": [
+     0.00029565563059532365,
+     8.83074803664334e-05,
+     4.9390673287479114e-05
+    ],
+    "worst_case_load": {
+     "stack Fz": -0.3007875777806429,
+     "stack Mx": -0.12615564515876704
+    }
+   }
+  },
+  "mean_by_interface_n_mm": {
+   "motor_front_left": 0.17182859584355376,
+   "motor_front_right": 0.16752753007391516,
+   "motor_rear_left": 0.07871966998046434,
+   "motor_rear_right": 0.07441435095724745,
+   "stack": 0.00043335378424923596,
+   "battery": 0.1090539164161315,
+   "camera": 3.802427750486619e-05
+  },
+  "scaled_to_arm_mm": null,
+  "scaled": {
+   "mean_compliance_n_mm": 0.601582087548817,
+   "worst_case_compliance_n_mm": 0.20718303901272683,
+   "top_eigenvalues_n_mm": [
+    0.20718303901272683,
+    0.12602794132485376,
+    0.07914097953918804
+   ],
+   "worst_case_load": {
+    "motor_front_left My": 5.266676427390525,
+    "motor_front_left Mz": 4.481888174098044,
+    "motor_front_right My": -5.267518177525437,
+    "motor_front_right Mz": -4.4407838130504595,
+    "motor_rear_left My": -5.250604274691845,
+    "motor_rear_left Mz": -4.082758803099815,
+    "motor_rear_right My": 5.250608138721305,
+    "motor_rear_right Mz": 4.086323769147424,
+    "battery Fz": -1.1879831913184802
+   },
+   "all_dofs": {
+    "mean_compliance_n_mm": 0.6020154413330663,
+    "worst_case_compliance_n_mm": 0.2073562771709801,
+    "top_eigenvalues_n_mm": [
+     0.2073562771709801,
+     0.12602794259698002,
+     0.079192581876114
+    ],
+    "worst_case_load": {
+     "motor_front_left My": 5.259440232074812,
+     "motor_front_left Mz": 4.483470865703745,
+     "motor_front_right My": -5.260285962275607,
+     "motor_front_right Mz": -4.4424025563939695,
+     "motor_rear_left My": -5.243384737263208,
+     "motor_rear_left Mz": -4.084741519141434,
+     "motor_rear_right My": 5.243384453154744,
+     "motor_rear_right Mz": 4.088298502788504,
+     "battery Fz": -1.1884843714068962
+    }
+   },
+   "groups": {
+    "stack_fixed": {
+     "mean_compliance_n_mm": 0.601582087548817,
+     "worst_case_compliance_n_mm": 0.20718303901272683,
+     "top_eigenvalues_n_mm": [
+      0.20718303901272683,
+      0.12602794132485376,
+      0.07914097953918804
+     ],
+     "worst_case_load": {
+      "motor_front_left My": 5.266676427390525,
+      "motor_front_left Mz": 4.481888174098044,
+      "motor_front_right My": -5.267518177525437,
+      "motor_front_right Mz": -4.4407838130504595,
+      "motor_rear_left My": -5.250604274691845,
+      "motor_rear_left Mz": -4.082758803099815,
+      "motor_rear_right My": 5.250608138721305,
+      "motor_rear_right Mz": 4.086323769147424,
+      "battery Fz": -1.1879831913184802
+     }
+    },
+    "motor_pads_fixed": {
+     "mean_compliance_n_mm": 0.00043335378424923596,
+     "worst_case_compliance_n_mm": 0.00029565563059532365,
+     "top_eigenvalues_n_mm": [
+      0.00029565563059532365,
+      8.83074803664334e-05,
+      4.9390673287479114e-05
+     ],
+     "worst_case_load": {
+      "stack Fz": -0.3007875777806429,
+      "stack Mx": -0.12615564515876704
+     }
+    }
+   },
+   "mean_by_interface_n_mm": {
+    "motor_front_left": 0.17182859584355376,
+    "motor_front_right": 0.16752753007391516,
+    "motor_rear_left": 0.07871966998046434,
+    "motor_rear_right": 0.07441435095724745,
+    "stack": 0.00043335378424923596,
+    "battery": 0.1090539164161315,
+    "camera": 3.802427750486619e-05
+   },
+   "scaled_to_arm_mm": 66.25
+  },
+  "diagonal": {
+   "mean_compliance_n_mm": 0.7053324156118309,
+   "worst_case_compliance_n_mm": 0.26379095560404203,
+   "top_eigenvalues_n_mm": [
+    0.26379095560404203,
+    0.1323892793383048,
+    0.10589374816530567
+   ],
+   "worst_case_load": {
+    "motor_front_left Mz": -5.015540633794641,
+    "motor_front_right Mz": 4.987094712275959,
+    "motor_rear_left Mz": 4.778921005621012,
+    "motor_rear_right Mz": -4.776945884674586,
+    "battery Fz": 1.4645257039820394
+   },
+   "all_dofs": {
+    "mean_compliance_n_mm": 0.7057782232473939,
+    "worst_case_compliance_n_mm": 0.2640160635918749,
+    "top_eigenvalues_n_mm": [
+     0.2640160635918749,
+     0.1323892793439532,
+     0.10589374816674203
+    ],
+    "worst_case_load": {
+     "motor_front_left Mz": 5.01546097494484,
+     "motor_front_right Mz": -4.987044165864612,
+     "motor_rear_left Mz": -4.779059077785672,
+     "motor_rear_right Mz": 4.777083631601853,
+     "battery Fz": -1.4644603851551847
+    }
+   },
+   "groups": {
+    "stack_fixed": {
+     "mean_compliance_n_mm": 0.7053324156118309,
+     "worst_case_compliance_n_mm": 0.26379095560404203,
+     "top_eigenvalues_n_mm": [
+      0.26379095560404203,
+      0.1323892793383048,
+      0.10589374816530567
+     ],
+     "worst_case_load": {
+      "motor_front_left Mz": -5.015540633794641,
+      "motor_front_right Mz": 4.987094712275959,
+      "motor_rear_left Mz": 4.778921005621012,
+      "motor_rear_right Mz": -4.776945884674586,
+      "battery Fz": 1.4645257039820394
+     }
+    },
+    "motor_pads_fixed": {
+     "mean_compliance_n_mm": 0.0004458076355632504,
+     "worst_case_compliance_n_mm": 0.0002919105995958388,
+     "top_eigenvalues_n_mm": [
+      0.0002919105995958388,
+      0.00010507816792601847,
+      4.8818868041393186e-05
+     ],
+     "worst_case_load": {
+      "stack Fz": 0.3035387364845179
+     }
+    }
+   },
+   "mean_by_interface_n_mm": {
+    "motor_front_left": 0.19201193194952457,
+    "motor_front_right": 0.18751736242155512,
+    "motor_rear_left": 0.10278262145925557,
+    "motor_rear_right": 0.09798743827635015,
+    "stack": 0.0004458076355632504,
+    "battery": 0.12494378092184558,
+    "camera": 8.928058329982131e-05
+   },
+   "scaled_to_arm_mm": null
+  },
+  "arm_mm": 66.25,
+  "stiffness": {
+   "motor_front_left Fx": 66.98976303860965,
+   "motor_front_left Fy": 12.923964201022047,
+   "motor_front_left Fz": 10.259002046560369,
+   "motor_front_left Mx": 3478.2477712374184,
+   "motor_front_left My": 4273.100713124135,
+   "motor_front_left Mz": 7604.566132753425,
+   "motor_front_right Fx": 69.80927003766384,
+   "motor_front_right Fy": 12.926451753529353,
+   "motor_front_right Fz": 10.82893995704682,
+   "motor_front_right Mx": 3415.186884444293,
+   "motor_front_right My": 4184.80360596546,
+   "motor_front_right Mz": 7500.528249889059,
+   "motor_rear_left Fx": 36.0021644757014,
+   "motor_rear_left Fy": 10.783312881003182,
+   "motor_rear_left Fz": 25.273423221966613,
+   "motor_rear_left Mx": 4945.621384842717,
+   "motor_rear_left My": 6434.624920957593,
+   "motor_rear_left Mz": 7244.32060434785,
+   "motor_rear_right Fx": 36.498291254487974,
+   "motor_rear_right Fy": 11.085895207283686,
+   "motor_rear_right Fz": 26.86401713211917,
+   "motor_rear_right Mx": 5209.379836694776,
+   "motor_rear_right My": 6620.493101108112,
+   "motor_rear_right Mz": 7277.291589157632,
+   "stack Fx": 620.3013165346515,
+   "stack Fy": 265.2164783780348,
+   "stack Fz": 315.6300753524642,
+   "stack Mx": 80922.60379034223,
+   "stack My": 103948.557189988,
+   "stack Mz": 152788.52484377666,
+   "battery Fx": 142.090071934383,
+   "battery Fy": 224.54079984340288,
+   "battery Fz": 433.2040452439716,
+   "battery Mx": 16133.8076664685,
+   "battery My": 84415.43737698435,
+   "battery Mz": 85994.25029371938,
+   "camera Fx": 95.21598932088301,
+   "camera Fy": 247.6094157557721,
+   "camera Fz": 179.79612921099093,
+   "camera Mx": 23366.627680916048,
+   "camera My": 39778.53928926902,
+   "camera Mz": 75610.3637200181
+  },
+  "labels": [
+   [
+    "motor_front_left",
+    "Fx"
+   ],
+   [
+    "motor_front_left",
+    "Fy"
+   ],
+   [
+    "motor_front_left",
+    "Fz"
+   ],
+   [
+    "motor_front_left",
+    "Mx"
+   ],
+   [
+    "motor_front_left",
+    "My"
+   ],
+   [
+    "motor_front_left",
+    "Mz"
+   ],
+   [
+    "motor_front_right",
+    "Fx"
+   ],
+   [
+    "motor_front_right",
+    "Fy"
+   ],
+   [
+    "motor_front_right",
+    "Fz"
+   ],
+   [
+    "motor_front_right",
+    "Mx"
+   ],
+   [
+    "motor_front_right",
+    "My"
+   ],
+   [
+    "motor_front_right",
+    "Mz"
+   ],
+   [
+    "motor_rear_left",
+    "Fx"
+   ],
+   [
+    "motor_rear_left",
+    "Fy"
+   ],
+   [
+    "motor_rear_left",
+    "Fz"
+   ],
+   [
+    "motor_rear_left",
+    "Mx"
+   ],
+   [
+    "motor_rear_left",
+    "My"
+   ],
+   [
+    "motor_rear_left",
+    "Mz"
+   ],
+   [
+    "motor_rear_right",
+    "Fx"
+   ],
+   [
+    "motor_rear_right",
+    "Fy"
+   ],
+   [
+    "motor_rear_right",
+    "Fz"
+   ],
+   [
+    "motor_rear_right",
+    "Mx"
+   ],
+   [
+    "motor_rear_right",
+    "My"
+   ],
+   [
+    "motor_rear_right",
+    "Mz"
+   ],
+   [
+    "stack",
+    "Fx"
+   ],
+   [
+    "stack",
+    "Fy"
+   ],
+   [
+    "stack",
+    "Fz"
+   ],
+   [
+    "stack",
+    "Mx"
+   ],
+   [
+    "stack",
+    "My"
+   ],
+   [
+    "stack",
+    "Mz"
+   ],
+   [
+    "battery",
+    "Fx"
+   ],
+   [
+    "battery",
+    "Fy"
+   ],
+   [
+    "battery",
+    "Fz"
+   ],
+   [
+    "battery",
+    "Mx"
+   ],
+   [
+    "battery",
+    "My"
+   ],
+   [
+    "battery",
+    "Mz"
+   ],
+   [
+    "camera",
+    "Fx"
+   ],
+   [
+    "camera",
+    "Fy"
+   ],
+   [
+    "camera",
+    "Fz"
+   ],
+   [
+    "camera",
+    "Mx"
+   ],
+   [
+    "camera",
+    "My"
+   ],
+   [
+    "camera",
+    "Mz"
+   ]
+  ],
+  "flexibility": [
+   [
+    0.014927653937567275,
+    0.029141800460710438,
+    -0.01210927315823466,
+    2.934495229892357e-05,
+    -0.0004084044597416577,
+    -0.0009913833755769645,
+    0.0008246707660925726,
+    -0.0013192864090419804,
+    0.0011182460977395047,
+    7.243323325080732e-05,
+    1.5238944693218513e-05,
+    -1.4909050193756726e-05,
+    -0.0008740910213132399,
+    0.0016198011571582345,
+    0.0007528261860064585,
+    -8.738073533907427e-05,
+    -3.785238891280947e-05,
+    -3.476430209903121e-05,
+    -0.0013163655696447792,
+    -0.0023656949612486542,
+    -0.00031645479300322925,
+    7.665129569429493e-05,
+    -3.968528091496232e-05,
+    -5.957354512378902e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.00037250725252960167,
+    0.00019080544951560817,
+    -0.00015840044542518835,
+    7.124078216361679e-06,
+    -4.729001902045209e-05,
+    -0.000135692400861141,
+    0.003050573876210979,
+    -0.00013028115504843917,
+    6.657674443799784e-05,
+    -1.909232317545748e-05,
+    -0.0001222385006889128,
+    -0.0001381905186975242
+   ],
+   [
+    0.02914180049515608,
+    0.07737563989235736,
+    0.002671539609257266,
+    0.0006904130544671689,
+    0.00018203543331539289,
+    -0.002744360614639397,
+    0.00133474137459634,
+    -0.0028850300247578037,
+    0.004391075075349838,
+    0.0001193158888159311,
+    -3.560058168998923e-05,
+    -4.052219600645856e-05,
+    -0.0016759007072120558,
+    0.003062497797631862,
+    0.0014531244757804089,
+    -0.0002004885073196986,
+    -9.368390081808395e-05,
+    -6.187367793326157e-05,
+    -0.0024547406114101182,
+    -0.0041044765274488694,
+    0.0005961066533907427,
+    0.00012393532419806242,
+    -9.384714547900968e-05,
+    -0.00010519230617868675,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.0015731919913885898,
+    0.0010537460984930032,
+    -0.0006242630363832077,
+    1.8867406576964476e-05,
+    -0.00011778821691065661,
+    -0.00028399726383207747,
+    0.005128914931108719,
+    0.000372236739181916,
+    -0.0004851770282023681,
+    -3.8758849956942946e-05,
+    -0.00025636453724434875,
+    -0.00029191108880516684
+   ],
+   [
+    -0.012109273143164692,
+    0.0026715395900215283,
+    0.09747536801937566,
+    0.001673983758945102,
+    0.0033290862680301395,
+    -0.00022138839315392894,
+    -0.001372179761033369,
+    0.004722931329386436,
+    -0.0038081301851453173,
+    0.00015077237679224972,
+    0.00015890272249730893,
+    0.00011867193632938642,
+    0.0021403990775026908,
+    -0.00477180346393972,
+    -0.005092435977395048,
+    0.0003535355192680301,
+    9.013199095801937e-05,
+    8.90265370290635e-05,
+    0.0005481235545748116,
+    -0.00045384601700753497,
+    -0.005731493750269106,
+    0.00010764156496232507,
+    8.629395046286329e-05,
+    6.8368108815931106e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.002839911485468245,
+    -0.005101665820236813,
+    0.0005372075318622174,
+    -0.00016290576867599568,
+    9.108592686759956e-05,
+    0.0002301687586652314,
+    0.002608364896663078,
+    -0.004866030243272336,
+    0.005108132135629709,
+    0.00020659623961248653,
+    0.00028542972346609256,
+    0.00023429035812701828
+   ],
+   [
+    2.9344957185506856e-05,
+    0.0006904130550124196,
+    0.0016739836872450354,
+    0.0002875010826627342,
+    -1.1315267391883516e-05,
+    -1.2117793386993231e-05,
+    -7.431093567380421e-05,
+    0.0001248379911899311,
+    0.00014319101365570803,
+    7.364177282951392e-06,
+    5.666910544027156e-07,
+    3.5531890673038404e-06,
+    0.00010692515031299196,
+    -0.00025633614533873683,
+    -0.000297914641377353,
+    1.4312722032392213e-05,
+    1.0872848993662745e-06,
+    5.259866154522191e-06,
+    1.7782389547908037e-05,
+    -6.926637703901409e-06,
+    -0.00016366509808462979,
+    5.1646173760270026e-06,
+    1.1711442171530306e-06,
+    6.769589221735145e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    3.5895074607242115e-06,
+    -0.00020741520294390636,
+    -1.7564409332014399e-06,
+    -8.266986502506738e-06,
+    -1.2175427975889194e-07,
+    6.589956405741625e-06,
+    -5.4015430413300673e-05,
+    -0.00019840020852091974,
+    0.0002642209123888195,
+    8.845239656136998e-06,
+    1.2487179820772189e-05,
+    6.846518380610108e-06
+   ],
+   [
+    -0.0004084044557642105,
+    0.00018203543337002567,
+    0.0033290864408428355,
+    -1.1315268564804545e-05,
+    0.00023402209943909405,
+    -1.66258000957019e-05,
+    1.0747822493846274e-05,
+    3.932464048309137e-05,
+    -0.0001538560017869795,
+    -4.2709787202760805e-07,
+    3.0838713210802596e-06,
+    7.273030537879824e-07,
+    -2.976221786619745e-06,
+    1.6100715463166974e-05,
+    3.2217921464137205e-05,
+    7.769184967136973e-07,
+    1.4076599896801896e-06,
+    -5.094290898378808e-07,
+    4.282746805800854e-06,
+    -4.033057392326997e-06,
+    -4.213361723732506e-05,
+    -3.395386670293304e-07,
+    1.3362754420747565e-06,
+    -1.275508658130713e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    6.057720405543949e-05,
+    -7.5327290999917634e-06,
+    7.899597760941575e-06,
+    1.684135169334908e-07,
+    1.8376393046921456e-06,
+    1.9177630275443228e-06,
+    8.963471533528722e-05,
+    -7.318829660910995e-06,
+    -2.2735732380544386e-05,
+    3.2698665568839255e-07,
+    9.349612465470323e-08,
+    1.9042722107823477e-06
+   ],
+   [
+    -0.0009913833594710467,
+    -0.0027443606171596554,
+    -0.00022138840238068765,
+    -1.2117793530471021e-05,
+    -1.6625800350586008e-05,
+    0.0001314999412909208,
+    -1.3713540751476807e-05,
+    3.749138254609533e-05,
+    -0.00011085962757661828,
+    -3.4476636931168473e-06,
+    6.290809112193787e-07,
+    6.488923933577936e-08,
+    3.91055040133057e-05,
+    -6.980855702304635e-05,
+    -2.5465913176475816e-05,
+    3.9688150630403765e-06,
+    1.950128093429119e-06,
+    1.4532969814504473e-06,
+    5.882630140675879e-05,
+    0.00010316871973286742,
+    5.397380012413924e-06,
+    -3.526393108009779e-06,
+    2.0731985213772e-06,
+    2.5785119692411393e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    3.1692199646505315e-05,
+    -7.688700091091712e-06,
+    5.008282507975488e-06,
+    -5.115425918247554e-07,
+    2.1816117323645734e-06,
+    6.40219253200145e-06,
+    -0.0001181659688339834,
+    9.602340809560437e-06,
+    8.151333836414864e-06,
+    9.992800734470817e-07,
+    6.956984622174125e-06,
+    6.528988723072844e-06
+   ],
+   [
+    0.0008246707660240965,
+    0.0013347413855421687,
+    -0.0013721797777108435,
+    -7.431093521686747e-05,
+    1.0747820508433736e-05,
+    -1.3713540542168676e-05,
+    0.014324745115662651,
+    -0.02868751782168675,
+    0.01057120186987952,
+    -5.760228090271085e-05,
+    -0.0003833339654216868,
+    -0.0009817368004349399,
+    -0.0012619227380722892,
+    0.0023200554228915665,
+    0.0004349638257831326,
+    -7.982251365060242e-05,
+    -3.899371204819277e-05,
+    -5.816180279518073e-05,
+    -0.0007540721480722892,
+    -0.0013673939950602412,
+    -0.0005911893789156627,
+    7.210200181927712e-05,
+    -3.197655956626506e-05,
+    -2.8653628710843374e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.00046972587879518077,
+    -0.0003171677526506024,
+    0.0001449285956626506,
+    -8.890201621096386e-07,
+    -3.978346563855422e-05,
+    -0.00012440484201204822,
+    0.003151868891566265,
+    0.00010717373378313253,
+    -1.6642805900361447e-05,
+    1.8356351614457834e-05,
+    -0.00011635786754216869,
+    -0.00012657739431325303
+   ],
+   [
+    -0.0013192863927710843,
+    -0.002885030027710844,
+    0.004722931338554217,
+    0.00012483799024096386,
+    3.932464208433735e-05,
+    3.749138085542169e-05,
+    -0.028687517951807233,
+    0.07736074980722893,
+    0.003906330121686747,
+    0.0007640180453012049,
+    -0.00021040070266265063,
+    0.002779948263855422,
+    0.002378824890361446,
+    -0.004065178355421687,
+    0.0003443049686746988,
+    0.0001315591608433735,
+    9.293569342168676e-05,
+    0.00010366401279518073,
+    0.0014692749277108435,
+    0.0026308436253012052,
+    0.0011690268313253012,
+    -0.00017122006963855423,
+    8.17469985060241e-05,
+    5.111536822891567e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0017334229192771085,
+    0.0013275320481927711,
+    -0.000607328453373494,
+    1.6283557595971085e-06,
+    0.00010156766377108435,
+    0.0002634102315662651,
+    -0.005363138087951808,
+    0.0004382076806024097,
+    -0.0005778038232530121,
+    -3.761619222891567e-05,
+    0.00024599406795180724,
+    0.00026935885795180723
+   ],
+   [
+    0.001118246096746988,
+    0.004391075063855422,
+    -0.0038081302012048196,
+    0.0001431910150120482,
+    -0.00015385600277108435,
+    -0.00011085962861445784,
+    0.01057120181927711,
+    0.0039063301117590364,
+    0.0923451421807229,
+    0.0016485117814060242,
+    -0.003299730125301205,
+    0.00027548320201204823,
+    -0.0005094789968674699,
+    -0.0005963689425301206,
+    -0.005898589893975904,
+    0.00010569991386746989,
+    -9.261065649397592e-05,
+    -1.7951452306348194e-06,
+    -0.001889495903614458,
+    -0.0040937467927710846,
+    -0.004267038042168675,
+    0.0003155086043373494,
+    -8.734976025301205e-05,
+    -7.134625890361447e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.003106228015662651,
+    -0.005214235189156627,
+    0.0005235158837349398,
+    -0.00015012019939759038,
+    -8.251947646987953e-05,
+    -0.00020911523445783136,
+    -0.0028689538493975905,
+    -0.004857734303614458,
+    0.005079157878313254,
+    0.00020137277638554218,
+    -0.00026882239674698796,
+    -0.00021825915144578316
+   ],
+   [
+    7.243323057023767e-05,
+    0.00011931588869768564,
+    0.0001507723784523072,
+    7.364177543935838e-06,
+    -4.2709788952877146e-07,
+    -3.44766340693528e-06,
+    -5.7602257955696295e-05,
+    0.0007640180378146391,
+    0.0016485119247747295,
+    0.00029280974477703187,
+    9.767731562018007e-06,
+    1.4561081140569525e-05,
+    -1.707546092977276e-05,
+    -1.3020589526813323e-05,
+    -0.00018029118041400157,
+    5.3454444504521265e-06,
+    -1.5169221884202163e-06,
+    -4.801076463288594e-07,
+    -9.917238592799725e-05,
+    -0.00023217213843571355,
+    -0.00026772509986470355,
+    1.3214192669587147e-05,
+    -1.1789690870302705e-06,
+    -4.620026256081822e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.3835650671681415e-05,
+    -0.00021554358710591933,
+    -4.2386078229253735e-06,
+    -8.366167233481192e-06,
+    2.1914082367892844e-07,
+    -5.979964914112674e-06,
+    4.804219120092237e-05,
+    -0.00020310453868200342,
+    0.00027239977007574866,
+    8.820930162068747e-06,
+    -1.1623380627846975e-05,
+    -6.284715765946938e-06
+   ],
+   [
+    1.5238942974006006e-05,
+    -3.560058456351863e-05,
+    0.00015890272452060735,
+    5.666908080767417e-07,
+    3.0838708909091297e-06,
+    6.29080999801522e-07,
+    -0.000383333954940127,
+    -0.00021040070157142253,
+    -0.003299730276064726,
+    9.767732450509132e-06,
+    0.00023895983997301444,
+    -1.7702606310551158e-05,
+    3.6649112423035742e-06,
+    4.671810824101006e-06,
+    3.887115469035383e-05,
+    4.5076961227243483e-07,
+    1.3252882932785189e-06,
+    -1.5177079113205852e-07,
+    -5.035165019891693e-06,
+    -2.0017302035679787e-05,
+    -3.6153949200119686e-05,
+    -4.80317549933568e-07,
+    1.3173197589434884e-06,
+    -6.076800225034741e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    6.238342680534701e-05,
+    6.666137842682872e-06,
+    -8.563662238649275e-06,
+    -4.341564464733574e-07,
+    1.7238622001666984e-06,
+    1.7546156037640354e-06,
+    9.247306412109401e-05,
+    5.390927915533649e-06,
+    2.6471329830088752e-05,
+    -2.5320787477031923e-07,
+    2.1561909159932373e-07,
+    1.8375544507632482e-06
+   ],
+   [
+    -1.4909050215547145e-05,
+    -4.052219429235213e-05,
+    0.00011867193685835698,
+    3.553189288778757e-06,
+    7.273029887013611e-07,
+    6.488922819244892e-08,
+    -0.0009817368124399053,
+    0.0027799482910170303,
+    0.00027548320675819415,
+    1.4561080963808759e-05,
+    -1.7702606314764933e-05,
+    0.0001333239428855949,
+    5.693189054067145e-05,
+    -0.00010209910931293408,
+    -1.1057766871874512e-05,
+    3.7009196923522453e-06,
+    2.053722311804039e-06,
+    2.542923504928265e-06,
+    3.371446770369529e-05,
+    5.858704383105653e-05,
+    1.845841884256522e-05,
+    -3.2892806759247168e-06,
+    1.684628528056991e-06,
+    1.180218516929435e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    3.595556885798311e-05,
+    1.3875913530026483e-05,
+    -4.11949297373014e-06,
+    1.9021791653813856e-07,
+    1.8485912443089396e-06,
+    5.918781010616396e-06,
+    -0.00012526525935021006,
+    -7.910967352869622e-06,
+    -1.0817959496843093e-05,
+    -9.743340186749342e-07,
+    6.615806090652757e-06,
+    5.997603641909676e-06
+   ],
+   [
+    -0.0008740910225305216,
+    -0.0016759007169811321,
+    0.0021403990699223087,
+    0.00010692515604883463,
+    -2.9762183979667036e-06,
+    3.910550526082131e-05,
+    -0.0012619227372918978,
+    0.002378824896781354,
+    -0.0005094789990011099,
+    -1.7075460599334072e-05,
+    3.6649112796892343e-06,
+    5.6931893374028855e-05,
+    0.027776107758046616,
+    -0.048959326403995564,
+    0.0016436124538335183,
+    -0.00020425242264150945,
+    -3.813915541286349e-05,
+    0.0016665724351831298,
+    0.0021872533374028857,
+    0.0023812695327413984,
+    -0.0030469797902330743,
+    -8.020662459489457e-06,
+    0.00010080575365149834,
+    3.8765452086570476e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.00030702655517869036,
+    -0.0008855459024417314,
+    -0.0008505017238623751,
+    4.2136428801331856e-05,
+    -4.79133477136515e-05,
+    0.00011286376608213097,
+    -0.0008046277607103219,
+    -0.0007425980160932297,
+    0.0007684603355160932,
+    5.147810091009989e-05,
+    0.00010466658629300777,
+    9.770228901220866e-05
+   ],
+   [
+    0.0016198011742508324,
+    0.0030624977902330743,
+    -0.004771803485016648,
+    -0.0002563361472807991,
+    1.610071653718091e-05,
+    -6.980855629300777e-05,
+    0.0023200554228634852,
+    -0.004065178359600444,
+    -0.0005963689418423974,
+    -1.3020589688124307e-05,
+    4.671810650388457e-06,
+    -0.00010209910932297447,
+    -0.04895932650388457,
+    0.09273587913429523,
+    -0.0018515252872952275,
+    0.00018320782552719203,
+    -8.709980896980022e-05,
+    -0.0032322820399556047,
+    -0.0023640900865704775,
+    -0.0025023716625971145,
+    0.0022761127391786903,
+    -2.929634567147614e-05,
+    -6.816441852386238e-05,
+    -2.9438802508324084e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0024922343174250835,
+    0.0027203159067702553,
+    0.0017693828612652608,
+    -5.60393207991121e-05,
+    0.00010956356210876804,
+    -0.00022091449445061043,
+    0.0015374814572697005,
+    0.002299417781354051,
+    -0.0023832105749167594,
+    -0.00014430133873473918,
+    -0.00020440402497225307,
+    -0.00019164796448390678
+   ],
+   [
+    0.0007528261826748058,
+    0.0014531244553285239,
+    -0.005092435977802442,
+    -0.0002979146412874584,
+    3.221792349611543e-05,
+    -2.5465910502395116e-05,
+    0.0004349638254683685,
+    0.0003443049653485017,
+    -0.005898589906770255,
+    -0.00018029118423973364,
+    3.887115596004439e-05,
+    -1.1057767232397337e-05,
+    0.0016436124553407326,
+    -0.0018515253069256382,
+    0.03956725573806881,
+    -0.0003683667544683685,
+    0.0012933831397225306,
+    0.0002853535621531632,
+    0.0030992535926748057,
+    0.0023853175860155383,
+    -0.008792911253052165,
+    -0.0001153743974472808,
+    0.0003157305337402886,
+    2.4601641528301887e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.006863136887902331,
+    0.004952917628190899,
+    0.001043584242619312,
+    0.00010108293612652609,
+    9.705263955604883e-05,
+    -0.00010484569375138735,
+    0.0006060163607103219,
+    0.004238973635960044,
+    -0.004423466942286349,
+    -0.00022781749855715872,
+    -9.635604754716981e-05,
+    -9.258627523862375e-05
+   ],
+   [
+    -8.738073446839076e-05,
+    -0.00020048850774095556,
+    0.00035353552189078415,
+    1.4312721654066433e-05,
+    7.769184896984252e-07,
+    3.968815291053695e-06,
+    -7.982251432860466e-05,
+    0.0001315591600773457,
+    0.00010569991180219853,
+    5.345444083721737e-06,
+    4.5076950340889997e-07,
+    3.700919856856959e-06,
+    -0.000204252421607234,
+    0.00018320781978780636,
+    -0.000368366720775379,
+    0.00020219906098448788,
+    6.843841489182494e-05,
+    5.446743375408219e-06,
+    1.331250236968582e-06,
+    -3.441752243067681e-05,
+    -9.18168974394856e-05,
+    5.364661102652825e-06,
+    -3.772408835842737e-07,
+    -7.661216250589886e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -4.034439890877369e-05,
+    -0.0001966940898879448,
+    -2.404968880865703e-05,
+    -5.006725897016747e-06,
+    -1.4768397727196765e-06,
+    8.102965918766815e-06,
+    -4.958694262468136e-05,
+    -0.00017379609842307035,
+    0.0001806936885296465,
+    9.164237644131521e-06,
+    7.747554294202396e-06,
+    7.280459144259261e-06
+   ],
+   [
+    -3.785238892876498e-05,
+    -9.368389890282903e-05,
+    9.013199129731358e-05,
+    1.0872848765110014e-06,
+    1.4076597662992464e-06,
+    1.950128046578588e-06,
+    -3.899371233687776e-05,
+    9.293569285977765e-05,
+    -9.261065747850568e-05,
+    -1.5169221974369299e-06,
+    1.3252883956407715e-06,
+    2.0537221322558435e-06,
+    -3.813915615404611e-05,
+    -8.709981011720903e-05,
+    0.001293383147135719,
+    6.843841370044158e-05,
+    0.00015540921379006832,
+    1.844804076254344e-05,
+    9.779277444637621e-05,
+    6.681748036484761e-05,
+    -0.00030068578079008864,
+    -2.1161918300995898e-07,
+    8.64410880325498e-06,
+    8.710027606363523e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0001558408203410965,
+    9.095441892332915e-06,
+    1.5583085138096432e-05,
+    -7.099711393203744e-07,
+    1.8854989668040401e-06,
+    2.370099106549442e-06,
+    -1.5883363067374363e-05,
+    4.170922088007964e-06,
+    -4.747316368709478e-06,
+    -3.634449308904164e-07,
+    2.3936824590481293e-06,
+    2.2002254693302565e-06
+   ],
+   [
+    -3.476430040269303e-05,
+    -6.187367752310305e-05,
+    8.902653715341417e-05,
+    5.259865789577637e-06,
+    -5.094288848114358e-07,
+    1.453297015436166e-06,
+    -5.816180157950584e-05,
+    0.00010366401317842199,
+    -1.795145392140939e-06,
+    -4.801076530462494e-07,
+    -1.517707943795568e-07,
+    2.542923544062338e-06,
+    0.0016665724184986403,
+    -0.003232281998049938,
+    0.0002853535596796216,
+    5.44674348255946e-06,
+    1.844804083786186e-05,
+    0.0001380391695254109,
+    3.576228551694588e-05,
+    2.5297760821960942e-05,
+    -2.1587036168571043e-05,
+    6.936392449862397e-07,
+    8.862394031680656e-07,
+    -6.131101034272154e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -6.995361877326242e-05,
+    -4.80435519739866e-05,
+    -4.0126424848777295e-05,
+    1.9548302660353516e-06,
+    -2.368989631006732e-06,
+    5.178077849582583e-06,
+    -3.6934966806643765e-05,
+    -4.044756743220259e-05,
+    4.14365278494739e-05,
+    2.7148942716969943e-06,
+    4.808707513752865e-06,
+    4.527510425989262e-06
+   ],
+   [
+    -0.0013163655631696428,
+    -0.002454740611607143,
+    0.0005481235553571428,
+    1.7782389441964286e-05,
+    4.282746891741071e-06,
+    5.882630051339285e-05,
+    -0.0007540721452008928,
+    0.0014692749319196428,
+    -0.0018894959062499999,
+    -9.917238858258927e-05,
+    -5.03516742110491e-06,
+    3.3714467444196424e-05,
+    0.002187253345982143,
+    -0.002364090095982143,
+    0.0030992536060267853,
+    1.3312513232845982e-06,
+    9.779277434151786e-05,
+    3.576228504464286e-05,
+    0.027398542935267854,
+    0.04806586515625,
+    -0.001605378613547991,
+    0.00023768328069196428,
+    -7.115846749091517e-05,
+    0.0016584482978794642,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.0005194783251545759,
+    0.0010799121876116072,
+    0.0010352202563616072,
+    -4.098657722098214e-05,
+    -4.095021603794643e-05,
+    0.00010709508782366071,
+    -0.0007706795421875,
+    0.0008275344404017857,
+    -0.0008247045618303571,
+    -5.632835746651785e-05,
+    9.964251051339285e-05,
+    9.343615761160713e-05
+   ],
+   [
+    -0.002365694979910714,
+    -0.004104476540178571,
+    -0.00045384601718749995,
+    -6.9266376473214284e-06,
+    -4.0330573046875e-06,
+    0.00010316871849330356,
+    -0.0013673939877232142,
+    0.0026308436395089283,
+    -0.0040937467834821425,
+    -0.00023217213604910712,
+    -2.0017300691964283e-05,
+    5.85870425e-05,
+    0.0023812695189732143,
+    -0.0025023716484375,
+    0.0023853175859375,
+    -3.441752453125e-05,
+    6.681747736607143e-05,
+    2.5297759944196427e-05,
+    0.04806586514508928,
+    0.09020471340401785,
+    -0.001756938129532366,
+    0.0002520387112723214,
+    1.8095932568805804e-05,
+    0.003191500141741071,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.002765357755580357,
+    0.002940879940848214,
+    0.0021403881205357142,
+    -5.917949206473214e-05,
+    -9.482924512276785e-05,
+    0.0002056895224330357,
+    -0.0014464444374999998,
+    0.0023453353761160715,
+    -0.0023703816294642858,
+    -0.00014792499140625,
+    0.00019085436339285713,
+    0.00017998290591517857
+   ],
+   [
+    -0.00031645479010848214,
+    0.0005961066532075893,
+    -0.005731493736607142,
+    -0.00016366509654017856,
+    -4.213361821428571e-05,
+    5.397379750848214e-06,
+    -0.000591189377610491,
+    0.0011690268242723213,
+    -0.0042670380323660715,
+    -0.0002677251037946428,
+    -3.615394598214286e-05,
+    1.8458420018370536e-05,
+    -0.0030469797857142857,
+    0.002276112714285714,
+    -0.0087929113828125,
+    -9.181691058035713e-05,
+    -0.0003006857977678571,
+    -2.158703590736607e-05,
+    -0.0016053786183265624,
+    -0.001756938129230915,
+    0.03722451467633928,
+    -0.0003060001180491071,
+    -0.0012400397521651785,
+    -0.0002870522890625,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.006662919606026785,
+    0.0046860129575892855,
+    0.0013633559574776784,
+    7.427047477678571e-05,
+    -9.566961136160714e-05,
+    9.263428595982142e-05,
+    -0.0005446120159598214,
+    0.003982187739955357,
+    -0.004132079112723214,
+    -0.00021737938013392856,
+    8.477250077008928e-05,
+    8.283324430803571e-05
+   ],
+   [
+    7.665129573022332e-05,
+    0.00012393532381778694,
+    0.00010764156321727503,
+    5.1646170390329396e-06,
+    -3.3953849905555873e-07,
+    -3.5263930786961725e-06,
+    7.21020016904888e-05,
+    -0.00017122006677564123,
+    0.00031550860355547837,
+    1.321419252615862e-05,
+    -4.80317715947992e-07,
+    -3.28928072794786e-06,
+    -8.020663611200928e-06,
+    -2.9296342970753386e-05,
+    -0.00011537440561242933,
+    5.364661208696037e-06,
+    -2.1161954876398175e-07,
+    6.93639317844565e-07,
+    0.00023768327964327363,
+    0.00025203870597003704,
+    -0.0003060000951324751,
+    0.00019196142945001216,
+    -6.77750815874093e-05,
+    -2.458279120491333e-07,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    3.056434297191683e-05,
+    -0.00020161366133366135,
+    -3.117194286885268e-05,
+    -5.174432994271345e-06,
+    1.4427709863063078e-06,
+    -7.264777557814877e-06,
+    4.482467891770824e-05,
+    -0.00017339709178381194,
+    0.00017838961928363153,
+    9.125519605960948e-06,
+    -6.955029447007715e-06,
+    -6.56908903320205e-06
+   ],
+   [
+    -3.9685281228751174e-05,
+    -9.384714358738342e-05,
+    8.629394798699345e-05,
+    1.1711439864689155e-06,
+    1.3362754141852573e-06,
+    2.0731984178662106e-06,
+    -3.1976558832261824e-05,
+    8.174700011502155e-05,
+    -8.734976039357358e-05,
+    -1.178968643448245e-06,
+    1.3173197469181766e-06,
+    1.684628532459193e-06,
+    0.00010080575248700615,
+    -6.816441754050873e-05,
+    0.00031573055576055716,
+    -3.7724081588581906e-07,
+    8.64410893451606e-06,
+    8.862394122681452e-07,
+    -7.115846611541216e-05,
+    1.8095935533371642e-05,
+    -0.0012400397426134266,
+    -6.777508181443963e-05,
+    0.0001510461509026607,
+    1.4585586066485398e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0001571671222056203,
+    1.0492542714564219e-06,
+    -2.0186631269064304e-05,
+    1.521352996330131e-06,
+    1.8703359443877866e-06,
+    2.1255171583911166e-06,
+    -1.4311747569885062e-05,
+    2.4441153576279772e-06,
+    -1.6078892575808528e-06,
+    1.2046849256749733e-07,
+    2.169407787261809e-06,
+    1.9767054917647778e-06
+   ],
+   [
+    -5.957354548973542e-05,
+    -0.00010519230610665582,
+    6.836810877980805e-06,
+    6.769589313062762e-07,
+    -1.2755084686820594e-07,
+    2.5785120684645354e-06,
+    -2.86536293507781e-05,
+    5.111536742325159e-05,
+    -7.134625568674104e-05,
+    -4.620026334857847e-06,
+    -6.076800595334093e-07,
+    1.1802185229980687e-06,
+    3.8765452198553395e-05,
+    -2.943880314500759e-05,
+    2.460163975833338e-05,
+    -7.6612163501882e-07,
+    8.710028114097757e-07,
+    -6.131100854476315e-07,
+    0.001658448293140335,
+    0.0031915001330765566,
+    -0.0002870522900820312,
+    -2.4582771523847296e-07,
+    1.4585586137735941e-05,
+    0.00013741376001614262,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -7.834682609079561e-05,
+    5.1821577634386867e-05,
+    4.918704539924251e-05,
+    -2.092853665096607e-06,
+    -1.999582281847667e-06,
+    4.80642773532708e-06,
+    -3.467243059244317e-05,
+    4.041205055759053e-05,
+    -4.0025811863064925e-05,
+    -2.7500494804017065e-06,
+    4.482912826593803e-06,
+    4.2393189719602445e-06
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0016121197446211412,
+    -0.00011557170270130964,
+    2.6179140196445275e-05,
+    -1.9991716557492985e-06,
+    2.6415094667913938e-06,
+    3.5652865444340504e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.00011557169167446211,
+    0.0037705047820392893,
+    -0.0006449937076707203,
+    4.427531226379794e-05,
+    -4.296589653882133e-06,
+    -7.779692207670721e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    2.6179140221889616e-05,
+    -0.0006449937151225445,
+    0.0031682658849391957,
+    -1.2416705893358278e-05,
+    9.482526950420954e-06,
+    4.9414888609167445e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -1.9991716794691086e-06,
+    4.427531240307568e-05,
+    -1.2416706722185059e-05,
+    1.235748669915322e-05,
+    -3.585377701480522e-07,
+    3.964891616597222e-08,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    2.6415093766397705e-06,
+    -4.296588710673246e-06,
+    9.482526383243923e-06,
+    -3.5853766411500296e-07,
+    9.620143146116865e-06,
+    2.958451305976542e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    3.565286515358742e-05,
+    -7.779692450169105e-06,
+    4.941488770532502e-06,
+    3.964892683250527e-08,
+    2.9584513081227983e-06,
+    6.544994141559263e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   [
+    -0.00037250725661481485,
+    -0.001573191962962963,
+    0.0028399114814814815,
+    3.5895032059259262e-06,
+    6.0577203851851855e-05,
+    3.16921991925926e-05,
+    -0.0004697258786592593,
+    0.0017334229185185185,
+    -0.0031062280074074075,
+    -1.383564808888889e-05,
+    6.238343037037037e-05,
+    3.595556840740741e-05,
+    -0.00030702655555555556,
+    0.002492234325925926,
+    0.006863136874074074,
+    -4.0344398e-05,
+    0.00015584082,
+    -6.995361777777779e-05,
+    -0.0005194783335555555,
+    -0.0027653577185185185,
+    -0.006662919607407408,
+    3.0564345037037035e-05,
+    0.00015716712666666668,
+    -7.834682518518518e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.007037789385185185,
+    0.00015949908888888888,
+    -6.012406962962963e-05,
+    2.0222408543703703e-05,
+    -5.7607303902222226e-06,
+    2.8996379333333335e-05,
+    0.0006998644244444445,
+    9.356951237777778e-05,
+    -0.00010287620960333334,
+    -3.988637925925926e-06,
+    2.6736619925925927e-05,
+    2.269270911111111e-05
+   ],
+   [
+    0.00019080545925925926,
+    0.0010537460814814814,
+    -0.0051016658074074074,
+    -0.00020741520666666668,
+    -7.5327297777777785e-06,
+    -7.68870014814815e-06,
+    -0.00031716775555555555,
+    0.0013275320444444446,
+    -0.0052142352,
+    -0.00021554357703703706,
+    6.6661402222222225e-06,
+    1.3875913703703705e-05,
+    -0.0008855458977777779,
+    0.0027203159148555555,
+    0.00495291762962963,
+    -0.00019669408340740742,
+    9.095442814814815e-06,
+    -4.8043552296296296e-05,
+    0.0010799121851851853,
+    0.0029408799291111114,
+    0.004686012948148148,
+    -0.0002016136620740741,
+    1.0492542962962962e-06,
+    5.182157585185186e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.00015949908422222223,
+    0.004453533614814815,
+    0.00011417365962962964,
+    0.0001265286874074074,
+    -2.687194118888889e-06,
+    7.123108888888889e-06,
+    -3.973031481481481e-05,
+    0.0038796482814814817,
+    -0.004023483103703704,
+    -0.00019259159407407407,
+    6.882449629629631e-06,
+    6.762529629629631e-06
+   ],
+   [
+    -0.0001584004488888889,
+    -0.0006242630214814815,
+    0.000537207482962963,
+    -1.7564411614814814e-06,
+    7.899598444444445e-06,
+    5.008282814814815e-06,
+    0.00014492859111111113,
+    -0.0006073284740740741,
+    0.0005235158881481481,
+    -4.2386073753333334e-06,
+    -8.563661703703704e-06,
+    -4.119492962962963e-06,
+    -0.000850501719,
+    0.0017693828626666667,
+    0.0010435842464814815,
+    -2.4049688736296296e-05,
+    1.55830862222e-05,
+    -4.0126424067333334e-05,
+    0.001035220259851852,
+    0.0021403881347407407,
+    0.0013633559685851853,
+    -3.117194392333333e-05,
+    -2.0186633978444445e-05,
+    4.918704601555556e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -6.0124072518518516e-05,
+    0.00011417365997037038,
+    0.00230838102962963,
+    -2.9857759614814814e-05,
+    -7.017754814814814e-06,
+    3.1928711896296296e-06,
+    -2.4198358814814816e-05,
+    -8.143636128888889e-05,
+    4.135588706666667e-05,
+    -3.763237866666667e-05,
+    2.5306803688888888e-06,
+    2.6622874325925928e-06
+   ],
+   [
+    7.124077018860938e-06,
+    1.88674065433508e-05,
+    -0.00016290576532537176,
+    -8.26698626616132e-06,
+    1.6841356401447764e-07,
+    -5.115431048441522e-07,
+    -8.890212041756571e-07,
+    1.628345582302363e-06,
+    -0.00015012020336637892,
+    -8.366167498844128e-06,
+    -4.341563708892408e-07,
+    1.9021769358023463e-07,
+    4.213643193886705e-05,
+    -5.603931087801824e-05,
+    0.00010108293736660326,
+    -5.006725967280112e-06,
+    -7.099709859356371e-07,
+    1.9548306847373865e-06,
+    -4.098658515123872e-05,
+    -5.9179508968478105e-05,
+    7.427048438524794e-05,
+    -5.1744331185708325e-06,
+    1.5213528035822152e-06,
+    -2.0928535253563122e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    2.0222413886994973e-05,
+    0.00012652869508885412,
+    -2.9857745230270952e-05,
+    6.198164876344335e-05,
+    -1.0602669486543122e-06,
+    1.2291622456168587e-07,
+    3.981354505329147e-06,
+    0.00013365808230936046,
+    -0.00014435594388319712,
+    -9.527757729094375e-06,
+    6.089928944690218e-08,
+    1.257864265696686e-07
+   ],
+   [
+    -4.7290019084631305e-05,
+    -0.00011778821614597714,
+    9.108592245459176e-05,
+    -1.2175425081585202e-07,
+    1.8376391974667825e-06,
+    2.181611558776442e-06,
+    -3.9783465472435364e-05,
+    0.00010156766244116656,
+    -8.251947680301759e-05,
+    2.1914076898856844e-07,
+    1.7238622141502387e-06,
+    1.8485912944233243e-06,
+    -4.7913347377517824e-05,
+    0.00010956356362385307,
+    9.705264048815171e-05,
+    -1.4768397689715638e-06,
+    1.8854990396901737e-06,
+    -2.3689897631920316e-06,
+    -4.0950216107824824e-05,
+    -9.482924714261643e-05,
+    -9.566961310568202e-05,
+    1.442771003310542e-06,
+    1.8703359741256183e-06,
+    -1.9995824242456964e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -5.760730371169544e-06,
+    -2.6871937970180585e-06,
+    -7.017755457057462e-06,
+    -1.0602694044507014e-06,
+    1.1846174480316647e-05,
+    -3.281422308935484e-07,
+    -9.320587245253644e-06,
+    -1.372749555072682e-06,
+    9.602010272065136e-07,
+    1.5162244565370504e-07,
+    1.9944714301523133e-07,
+    4.498380819502758e-07
+   ],
+   [
+    -0.0001356923995985078,
+    -0.00028399726390903533,
+    0.00023016875820428104,
+    6.589956760106154e-06,
+    1.9177628976745284e-06,
+    6.402192807670859e-06,
+    -0.00012440484196618533,
+    0.00026341023362688796,
+    -0.00020911523574958091,
+    -5.979964069341388e-06,
+    1.7546152926260815e-06,
+    5.918780828828521e-06,
+    0.00011286376629113827,
+    -0.0002209144943740928,
+    -0.00010484569132088123,
+    8.102965588901453e-06,
+    2.370098953945042e-06,
+    5.178077933031349e-06,
+    0.0001070950881890329,
+    0.00020568952126489117,
+    9.263428789438049e-05,
+    -7.264777802041348e-06,
+    2.1255171317116985e-06,
+    4.806427558559955e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    2.8996379209546456e-05,
+    7.123105911557352e-06,
+    3.192871398456248e-06,
+    1.2291688726993707e-07,
+    -3.2814222908187956e-07,
+    1.1628684436278357e-05,
+    -6.840922034423188e-05,
+    2.62653095492382e-06,
+    -1.3168692999264333e-06,
+    -8.745906440715715e-08,
+    1.1085208377645749e-05,
+    1.0427580499591061e-05
+   ],
+   [
+    0.0030505738640483385,
+    0.00512891493081571,
+    0.0026083648848511005,
+    -5.401542722960725e-05,
+    8.963471330168321e-05,
+    -0.00011816596898445404,
+    0.0031518688965904186,
+    -0.005363138153344843,
+    -0.0028689538534743203,
+    4.8042192927190335e-05,
+    9.247306856279672e-05,
+    -0.00012526525970651703,
+    -0.0008046277599007337,
+    0.0015374814495468278,
+    0.000606016363487268,
+    -4.9586942788347e-05,
+    -1.5883363043020112e-05,
+    -3.6934969227725506e-05,
+    -0.0007706795356495469,
+    -0.0014464444183858438,
+    -0.0005446120179542511,
+    4.4824678943892965e-05,
+    -1.4311747806784636e-05,
+    -3.4672428763055675e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0006998644232503237,
+    -3.9730322205438065e-05,
+    -2.419835788205438e-05,
+    3.981358426413466e-06,
+    -9.320587435288735e-06,
+    -6.840921932779456e-05,
+    0.010502437743202416,
+    6.5520513720328e-05,
+    -0.00015024193559102288,
+    -3.761952147229176e-05,
+    -4.2424912273267154e-05,
+    -9.205577007318084e-05
+   ],
+   [
+    -0.00013028115032369443,
+    0.0003722367531290462,
+    -0.004866030257229176,
+    -0.00019840020746655159,
+    -7.318829249028917e-06,
+    9.602341027190332e-06,
+    0.00010717373413897281,
+    0.00043820767242123434,
+    -0.004857734293482952,
+    -0.0002031045414760466,
+    5.390929274924472e-06,
+    -7.910966991799741e-06,
+    -0.000742598022442814,
+    0.002299417785792404,
+    0.004238973662494605,
+    -0.00017379609851963745,
+    4.170922257229176e-06,
+    -4.044756795727233e-05,
+    0.0008275344397496763,
+    0.0023453353867555027,
+    0.003982187737591713,
+    -0.00017339709167026328,
+    2.4441118515321535e-06,
+    4.041205134052654e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    9.356951411307725e-05,
+    0.003879648302977989,
+    -8.14363574275356e-05,
+    0.0001336580863185153,
+    -1.3727496945312905e-06,
+    2.6265289684937417e-06,
+    6.55205133380233e-05,
+    0.004038618632283125,
+    -0.00366740043720328,
+    -0.00013140674777740614,
+    4.047137591713422e-06,
+    5.20757695295641e-06
+   ],
+   [
+    6.657674751834268e-05,
+    -0.0004851770241691843,
+    0.005108132139706517,
+    0.00026422091653862756,
+    -2.2735732412602502e-05,
+    8.151333845489858e-06,
+    -1.6642813120414324e-05,
+    -0.0005778038221838584,
+    0.005079157857358654,
+    0.0002723997672205438,
+    2.6471330151920588e-05,
+    -1.0817959456193353e-05,
+    0.0007684603233491584,
+    -0.0023832105827233494,
+    -0.004423466925766077,
+    0.0001806936858826068,
+    -4.747316892533449e-06,
+    4.143652719032801e-05,
+    -0.0008247045546827794,
+    -0.0023703816217605523,
+    -0.004132079115666811,
+    0.0001783896212904618,
+    -1.6078863703064307e-06,
+    -4.002581132455762e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.00010287620925766077,
+    -0.004023483088908071,
+    4.1355890671743634e-05,
+    -0.00014435594968925335,
+    9.6020109336858e-07,
+    -1.3168717608977125e-06,
+    -0.00015024193563375056,
+    -0.0036674004346137247,
+    0.0055618549987052224,
+    0.00023568507880725075,
+    -1.0319950237375918e-05,
+    -6.032795079844626e-07
+   ],
+   [
+    -1.909232279799757e-05,
+    -3.875885000190803e-05,
+    0.00020659624495548027,
+    8.845239503421113e-06,
+    3.2698652459819847e-07,
+    9.992800849194912e-07,
+    1.8356350379446548e-05,
+    -3.7616195885436907e-05,
+    0.00020137277187855446,
+    8.820930151809522e-06,
+    -2.5320790128191156e-07,
+    -9.743340325045595e-07,
+    5.147809997809264e-05,
+    -0.00014430133707447136,
+    -0.00022781750048756258,
+    9.164237646033556e-06,
+    -3.6344479368674297e-07,
+    2.714894463096023e-06,
+    -5.6328356799909645e-05,
+    -0.00014792499092145412,
+    -0.00021737938009144738,
+    9.125519752099353e-06,
+    1.2046834403015426e-07,
+    -2.7500494912809566e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -3.988637998794426e-06,
+    -0.00019259159352506136,
+    -3.763237857138995e-05,
+    -9.527757746018088e-06,
+    1.516224266257522e-07,
+    -8.745916144162309e-08,
+    -3.761952245243607e-05,
+    -0.00013140674729115456,
+    0.00023568507699890415,
+    4.279607710858158e-05,
+    -1.3351875689548324e-06,
+    3.216986264016672e-07
+   ],
+   [
+    -0.00012223850272267264,
+    -0.0002563645403823643,
+    0.0002854297238376177,
+    1.2487179642933962e-05,
+    9.349617901621975e-08,
+    6.95698480175556e-06,
+    -0.0001163578681017681,
+    0.00024599406762975816,
+    -0.0002688223955017944,
+    -1.1623380540534744e-05,
+    2.156188716836726e-07,
+    6.615806371281702e-06,
+    0.00010466658690890516,
+    -0.00020440402419117678,
+    -9.635604751690869e-05,
+    7.747554254096006e-06,
+    2.393682592122332e-06,
+    4.808708002851293e-06,
+    9.964251066023513e-05,
+    0.00019085436270999858,
+    8.477250158222274e-05,
+    -6.955029533164507e-06,
+    2.169407919213886e-06,
+    4.482912637208389e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    2.6736619660825838e-05,
+    6.882447696653914e-06,
+    2.5306802180084362e-06,
+    6.089913341233368e-08,
+    1.9944713262591074e-07,
+    1.1085208350312512e-05,
+    -4.242491252197559e-05,
+    4.047138058681715e-06,
+    -1.031995072298369e-05,
+    -1.3351873755003788e-06,
+    2.5139183536328796e-05,
+    1.0271465301717482e-05
+   ],
+   [
+    -0.0001381905207852566,
+    -0.00029191108893428426,
+    0.0002342903570055894,
+    6.846518297462303e-06,
+    1.904272348401093e-06,
+    6.528988960796546e-06,
+    -0.00012657739445531854,
+    0.00026935885896545815,
+    -0.00021825915144068033,
+    -6.28471562304363e-06,
+    1.8375548235277802e-06,
+    5.997603546533758e-06,
+    9.770228875854382e-05,
+    -0.00019164796498566077,
+    -9.258627394288184e-05,
+    7.28045883559537e-06,
+    2.200225587612318e-06,
+    4.527510373911387e-06,
+    9.343615840644907e-05,
+    0.00017998290764949368,
+    8.283324489166334e-05,
+    -6.569089097425012e-06,
+    1.9767058741190555e-06,
+    4.239319311111115e-06,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    2.2692709522793853e-05,
+    6.762528570260684e-06,
+    2.6622874395828004e-06,
+    1.257863546709825e-07,
+    4.4983807423877235e-07,
+    1.042758059458867e-05,
+    -9.205576961754924e-05,
+    5.207577401670027e-06,
+    -6.03278151778598e-07,
+    3.216987137965946e-07,
+    1.0271465404587922e-05,
+    1.3225700165958157e-05
+   ]
+  ],
+  "centroids_mm": {
+   "motor_front_left": [
+    -53.18801999810375,
+    39.11063764545587,
+    6.886658612061146
+   ],
+   "motor_front_right": [
+    53.056575594790154,
+    39.01861118843369,
+    6.873794566913793
+   ],
+   "motor_rear_left": [
+    -53.547023153251466,
+    -39.173036710205686,
+    6.877610786540499
+   ],
+   "motor_rear_right": [
+    53.13762789589447,
+    -39.14527937783929,
+    6.880489060677866
+   ],
+   "battery": [
+    1.2388379941684,
+    0.012555924609186177,
+    27.87949636584511
+   ],
+   "camera": [
+    0.6534102322415851,
+    35.71904600921293,
+    22.891080622445145
+   ],
+   "stack": [
+    -0.35503399189316526,
+    0.7294900942021838,
+    0.2260336772534792
+   ]
+  },
+  "runs": [
+   {
+    "group": "stack_fixed",
+    "steps": 36,
+    "fixed_nodes": 1069,
+    "interface_nodes": {
+     "motor_front_left": 929,
+     "motor_front_right": 830,
+     "motor_rear_left": 901,
+     "motor_rear_right": 896,
+     "battery": 135,
+     "camera": 2317
+    },
+    "runtime_s": 114.23233790000086,
+    "reused_factorisation": true,
+    "reciprocity_error": 1.7728858020469709e-09
+   },
+   {
+    "group": "motor_pads_fixed",
+    "steps": 6,
+    "fixed_nodes": 3556,
+    "interface_nodes": {
+     "stack": 1069
+    },
+    "runtime_s": 21.00208019999991,
+    "reused_factorisation": true,
+    "reciprocity_error": 2.924501668429383e-09
+   }
+  ],
+  "peak_memory_gb": 2.648548126220703,
+  "mesh": {
+   "source": "evaluation mesh pipeline",
+   "path": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\sigma\\mesh\\mesh.inp",
+   "surface_choice": {
+    "fea_remesh_targets_mm": [
+     2.0
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "nodes": 103323,
+   "elements": 54511
+  },
+  "definition": "F = interface flexibility (42 x 42, LOAD_COVARIANCE order): unit force split equally over the selector nodes, unit moment as minimum-norm couple field about the selector node centroid (Sigma's reference point is taken at that centroid); F_ij = a_i . u_j (work-conjugate). Support per group as the evaluator arm-tip/crash fixtures: stack mount undersides fixed for motor pads, battery, camera; four motor seat undersides fixed for the stack; F is block-diagonal across the two groups (stack <-> rest coupling zero by construction). Mean compliance tr(Sigma F) = sum_k l_k^T F l_k, worst-case compliance lambda_max(Sigma^1/2 F Sigma^1/2), both in N mm. The limits and the evaluator targets use limit_group (36 x 36: motors, battery, camera with the stack fixed, as the optimizer's COVARIANCE support); the stack block is reported under groups and all_dofs (about 0.1 % of tr for ManaFly and Aether4)"
+ },
+ "slicer": {
+  "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
+  "profile": "PrusaSlicer built-in defaults (generic FFF printer, default speeds) with nozzle 0.4, layer 0.2 mm, 2 perimeters, 15 % infill, automatic supports on a 256 x 256 x 256 mm bed",
+  "options": [
+   "--nozzle-diameter",
+   "0.4",
+   "--layer-height",
+   "0.2",
+   "--first-layer-height",
+   "0.2",
+   "--perimeters",
+   "2",
+   "--fill-density",
+   "15%",
+   "--filament-diameter",
+   "1.75",
+   "--filament-density",
+   "1.09",
+   "--bed-shape",
+   "0x0,256x0,256x256,0x256",
+   "--max-print-height",
+   "256",
+   "--center",
+   "128,128"
+  ],
+  "supports": {
+   "returncode": 0,
+   "runtime_s": 4.134079899995413,
+   "log_tail": "10 => Processing triangulated mesh\n20 => Generating perimeters\n30 => Preparing infill\n45 => Making infill\n65 => Searching support spots\n69 => Alert if supports needed\n70 => Generating support material\n89 => Calculating overhanging perimeters\n88 => Generating skirt and brim\n90 => Exporting G-code to C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\slicer\\supports.gcode\nSlicing result exported to C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\slicer\\supports.gcode\n",
+   "print_time": "4h 1m 46s",
+   "print_time_min": 241.76666666666668,
+   "filament_mm3": 28810.0,
+   "filament_g": 31.41
+  },
+  "no_supports": {
+   "returncode": 0,
+   "runtime_s": 2.1283346000054735,
+   "log_tail": "10 => Processing triangulated mesh\n20 => Generating perimeters\n30 => Preparing infill\n45 => Making infill\n65 => Searching support spots\n69 => Alert if supports needed\nprint warning: Detected print stability issues:\n\nprinted.stl\nFloating bridge anchors, Low bed adhesion, Loose extrusions\n\nConsider enabling supports.\nAlso consider enabling brim.\n89 => Calculating overhanging perimeters\n88 => Generating skirt and brim\n90 => Exporting G-code to C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\slicer\\no_supports.gcode\nSlicing result exported to C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\evaluation\\slicer\\no_supports.gcode\n",
+   "print_time": "2h 12m 4s",
+   "print_time_min": 132.06666666666666,
+   "filament_mm3": 12520.0,
+   "filament_g": 13.65
+  },
+  "support_mm3": 16290.0,
+  "passed": true
+ },
+ "scaled": {
+  "arm_mm": 66.25,
+  "wheelbase_mm": 132.5,
+  "arm_tip_slope": 0.005194276269669622,
+  "support_per_volume": 1.0076783719540177,
+  "print_min_per_g": 13.720526526625571,
+  "symmetry_per_wheelbase": 0.0016974720710306987,
+  "cog_offset_per_wheelbase": 0.015040086250692577,
+  "height_per_wheelbase": 0.21132075471698114,
+  "izz_per_mass_arm2": 0.3890983845601821
+ },
+ "assessment": {
+  "conditions": {
+   "one_body": true,
+   "bolt_patterns": true,
+   "keep_outs_free": true,
+   "tools_reachable": true,
+   "fea_solved": true,
+   "slicer": true,
+   "wall_deep_fraction": true,
+   "wall_deep_component": true,
+   "wall_motor_zones": true,
+   "crash_front_strength": true,
+   "crash_arm_strength": true,
+   "crash_back_strength": true,
+   "target:airflow": true,
+   "target:overhang": true,
+   "target:support": true,
+   "target:strut_min": true,
+   "target:symmetry": true,
+   "target:arm_tip_slope": true,
+   "target:f1": true,
+   "target:sigma_mean": true,
+   "target:sigma_worst": true
+  },
+  "missed": [],
+  "good": true,
+  "warnings": [
+   "cog_offset"
+  ],
+  "crash": {
+   "crash_front": {
+    "von_mises_p999_mpa": 6.292357119705665,
+    "print_normal_p999_mpa": 3.418554000000181,
+    "utilisation_xy": 0.12337955136677774,
+    "utilisation_z": 0.14243975000000755
+   },
+   "crash_arm": {
+    "von_mises_p999_mpa": 13.484351659221808,
+    "print_normal_p999_mpa": 3.015344250000059,
+    "utilisation_xy": 0.2643990521416041,
+    "utilisation_z": 0.12563934375000246
+   },
+   "crash_back": {
+    "von_mises_p999_mpa": 2.2305180981863897,
+    "print_normal_p999_mpa": 0.7973140250000078,
+    "utilisation_xy": 0.04373564898404686,
+    "utilisation_z": 0.03322141770833366
+   }
+  },
+  "safety_factor": 2.0,
+  "targets": {
+   "airflow": [
+    "geometry.airflow.prop_ring_share",
+    null,
+    0.15
+   ],
+   "overhang": [
+    "geometry.printability.overhang_share",
+    null,
+    0.25
+   ],
+   "support": [
+    "scaled.support_per_volume",
+    null,
+    1.5
+   ],
+   "strut_min": [
+    "geometry.form.strut_width_mm.p10",
+    1.19,
+    null
+   ],
+   "symmetry": [
+    "scaled.symmetry_per_wheelbase",
+    null,
+    0.0025
+   ],
+   "arm_tip_slope": [
+    "scaled.arm_tip_slope",
+    null,
+    0.007
+   ],
+   "f1": [
+    "fea.eigenfrequencies_hz.0",
+    330.0,
+    null
+   ],
+   "sigma_mean": [
+    "sigma.mean_compliance_n_mm",
+    null,
+    0.687
+   ],
+   "sigma_worst": [
+    "sigma.worst_case_compliance_n_mm",
+    null,
+    0.229
+   ]
+  },
+  "warning_ranges": {
+   "strut_max": [
+    "geometry.form.strut_width_mm.p90",
+    null,
+    6.5
+   ],
+   "section_ratio": [
+    "geometry.form.section_ratio.p50",
+    1.0,
+    1.4
+   ],
+   "top_view_material": [
+    "geometry.airflow.bbox_share",
+    null,
+    0.45
+   ],
+   "loops": [
+    "geometry.form.loops.loops",
+    20,
+    null
+   ],
+   "roughness": [
+    "geometry.form.roughness.curvature_neighbour_rms_per_mm",
+    null,
+    0.18
+   ],
+   "height": [
+    "scaled.height_per_wheelbase",
+    null,
+    0.4
+   ],
+   "cog_offset": [
+    "scaled.cog_offset_per_wheelbase",
+    null,
+    0.01
+   ],
+   "inertia_z": [
+    "scaled.izz_per_mass_arm2",
+    null,
+    0.45
+   ],
+   "print_time": [
+    "scaled.print_min_per_g",
+    null,
+    16.0
+   ]
+  },
+  "wall_rule": {
+   "deep_max_fraction": 0.005,
+   "deep_component_max_mm3": 5.0,
+   "motor_zone_margin_mm": 2.0,
+   "opening_radius_mm": 1.0,
+   "deep_depth_mm": 0.45,
+   "status": "provisional, calibrated on ManaFly 3 BETA V4 (docs/validation/wall_calibration_manafly.md); final after own drop tests in M2"
+  },
+  "rule": "a frame is good only if every condition holds; unevaluable conditions count as missed; warnings do not decide"
+ },
+ "line": "| simp_mma_cov3_v3_2 | 17,6 g | SP z 22,1 mm; Ixx/Iyy/Izz 76/94/148 kg\u00b7mm\u00b2 (K) | 5,6 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 20,1 %, \u00d6ffn. r=1 0,03 %/2,8 mm\u00b3/Motorzonen 0,St\u00fctze 16,29 cm\u00b3, 242 min | Strebe 1,9/2,8/5,2 mm, H/B 1,00, offen 76 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 20, Sym. 0,22 mm, Rauh. 0,138/mm | 10,5 N/mm; \u03a3 tr 0,602/\u03bbmax 0,207 N\u00b7mm (A) | f1 473 Hz; 481/525/538 (A) | front 6,3/3,4 MPa; arm 13,5/3,0 MPa; back 2,2/0,8 MPa (SF 2,0, A) | keine; Warnung: cog_offset |"
+}

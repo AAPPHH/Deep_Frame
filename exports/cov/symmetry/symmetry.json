@@ -1,0 +1,153 @@
+{
+ "criterion": "target:symmetry = geometry.form.symmetry.rms_mm / wheelbase <= 0.0025 (132.5 mm -> 0.331 mm); rms distance of 20000 surface samples mirrored at x = mean motor x (0) to the original surface, frame.stl as evaluated",
+ "cause": "raw extraction tools/neural_study.py surface(): vertices + origin - spacing after a one-cell pad put the mesh half a fine cell (0.333 mm at 0.667 mm) low in x, y and z; density_fine.npz is exactly mirror-symmetric (max |d - d[::-1]| = 0)",
+ "fix": "origin - spacing / 2 (544334c), same line in tools/multi_crash_study.py",
+ "fea_slicer": "raw_fixed reuses fea/sigma/slicer of simp_mma_cov3_raw_1 (mesh translated by 0.33 mm, not remeshed); geometry and walls re-run on the re-extracted body",
+ "v3b": "v3b STL unchanged (report re-run from its parts); feature/recon-v3b reads the raw geometry.stl as section_body (cross-section orientation, fork webs, raw-body hull), so v3b carries part of the old offset until it is rebuilt from a re-extracted raw body",
+ "bodies": {
+  "raw_before": {
+   "source": "exports/runs/simp_mma_cov3_raw_1/evaluation.json",
+   "rms_mm": 0.33353915511951665,
+   "p95_mm": 0.6494024403877845,
+   "max_mm": 0.7224261475436097,
+   "samples": 5000,
+   "per_wheelbase": 0.0025172766424114462,
+   "symmetry_passed": false,
+   "missed": [
+    "bolt_patterns",
+    "keep_outs_free",
+    "wall_deep_fraction",
+    "wall_deep_component",
+    "target:symmetry"
+   ],
+   "warnings": [
+    "loops",
+    "cog_offset"
+   ],
+   "mass_g": 15.716924130112192,
+   "bounds_x_mm": [
+    -61.519927978515625,
+    60.85268783569336
+   ],
+   "z_min_mm": -0.27821406722068787
+  },
+  "raw_fixed": {
+   "source": "exports/cov/symmetry/raw_fixed/evaluation/evaluation.json",
+   "rms_mm": 0.05237788744251555,
+   "p95_mm": 0.11154450520686403,
+   "max_mm": 0.20153567235913183,
+   "samples": 5000,
+   "per_wheelbase": 0.00039530481088690983,
+   "symmetry_passed": true,
+   "missed": [
+    "bolt_patterns",
+    "keep_outs_free",
+    "wall_deep_fraction",
+    "wall_deep_component"
+   ],
+   "warnings": [
+    "section_ratio",
+    "loops",
+    "cog_offset"
+   ],
+   "mass_g": 15.647070785297352,
+   "bounds_x_mm": [
+    -61.18659591674805,
+    61.18601989746094
+   ],
+   "z_min_mm": 0.05511927232146263
+  },
+  "recon_1to1": {
+   "source": "exports/runs/simp_mma_cov3_recon_1/evaluation.json",
+   "rms_mm": 0.1561784345084618,
+   "p95_mm": 0.3841002524450665,
+   "max_mm": 1.1193942956424527,
+   "samples": 5000,
+   "per_wheelbase": 0.0011787051661015986,
+   "symmetry_passed": true,
+   "missed": [
+    "fea_solved",
+    "wall_deep_fraction",
+    "wall_deep_component",
+    "wall_motor_zones",
+    "crash_front_strength",
+    "crash_arm_strength",
+    "crash_back_strength",
+    "target:arm_tip_slope",
+    "target:f1",
+    "target:sigma_mean",
+    "target:sigma_worst"
+   ],
+   "warnings": [
+    "loops",
+    "cog_offset"
+   ],
+   "mass_g": 16.27772937409481,
+   "bounds_x_mm": null
+  },
+  "v3_af19376": {
+   "source": "exports/runs/simp_mma_cov3_v3_1/evaluation.json",
+   "rms_mm": 0.3643427793963726,
+   "p95_mm": 0.647735544336111,
+   "max_mm": 2.45726164346017,
+   "samples": 5000,
+   "per_wheelbase": 0.0027497568256330007,
+   "symmetry_passed": false,
+   "missed": [
+    "target:symmetry",
+    "target:sigma_worst"
+   ],
+   "warnings": [
+    "loops",
+    "cog_offset"
+   ],
+   "mass_g": 17.63299109417663,
+   "bounds_x_mm": null
+  },
+  "v3b_before": {
+   "source": "exports/runs/simp_mma_cov3_v3_2/evaluation.json",
+   "rms_mm": 0.22491504941156756,
+   "p95_mm": 0.5076846692360644,
+   "max_mm": 1.2084351914541909,
+   "samples": 5000,
+   "per_wheelbase": 0.0016974720710306987,
+   "symmetry_passed": true,
+   "missed": [],
+   "warnings": [
+    "cog_offset"
+   ],
+   "mass_g": 17.620800936283516,
+   "bounds_x_mm": [
+    -61.16560745239258,
+    61.16560745239258
+   ],
+   "z_min_mm": 0.0
+  },
+  "v3b_after": {
+   "source": "exports/cov/symmetry/v3b/evaluation/evaluation.json",
+   "rms_mm": 0.22491504941156756,
+   "p95_mm": 0.5076846692360644,
+   "max_mm": 1.2084351914541909,
+   "samples": 5000,
+   "per_wheelbase": 0.0016974720710306987,
+   "symmetry_passed": true,
+   "missed": [],
+   "warnings": [
+    "cog_offset"
+   ],
+   "mass_g": 17.620800936283516,
+   "bounds_x_mm": null
+  },
+  "manafly3": {
+   "source": "docs/validation/frame_evaluation_manafly3.json",
+   "rms_mm": 0.03840986223368033,
+   "p95_mm": 0.048256065051767445,
+   "max_mm": 0.6014979461892184,
+   "samples": 5000,
+   "per_wheelbase": 0.0002399282159883077,
+   "wheelbase_mm": 160.08897526063436,
+   "symmetry_passed": true,
+   "missed": []
+  }
+ }
+}

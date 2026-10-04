@@ -222,6 +222,25 @@ Gegen die ManaFly-×-0,8-Grenzen: tr 0,602 ≤ 0,687 (88 %) und **λmax 0,207 �
 
 Die Masse ist besser. Die Armspitze liegt nicht mehr innerhalb 10 %, und zwar auf der steifen Seite. Gegen den 10-%-Maßstab ist das eine Regression, gegen das Bauteil keine. Vermutete Ursache: Stege und 2,5-mm-Kerne an dünnen Rohgliedern. Nicht weiter untersucht. Ein Basislauf von af19376 auf dieser Dichte (ohne Sitze) wurde aus Zeitgründen nicht gerechnet; der 879713d-Wert stammt noch aus dem Lauf mit Sitzen.
 
+## Symmetrie-Kriterium (target:symmetry)
+
+**Was gemessen wird:** 20 000 Oberflächenpunkte von `frame.stl` werden an x = mittleres Motor-x (= 0) gespiegelt. Gemessen wird der RMS-Abstand zur Originaloberfläche. Grenze: RMS / Radstand ≤ 0,0025, also 0,331 mm bei 132,5 mm. Der Evaluator ist korrekt: Ebene, Metrik und Netz passen, und die Grenze liegt bei einer halben feinen Zelle (0,667 mm). Er bleibt unverändert.
+
+**Ursache (Extraktion, nicht Evaluator):** `tools/neural_study.py surface()` setzt die Marching-Cubes-Ecken nach dem 1-Zellen-Pad auf `origin − spacing` statt `origin − spacing/2`. Dadurch liegt der Rohkörper in x, y und z um eine halbe feine Zelle (0,333 mm) zu tief: x −61,52 … +60,85, z_min −0,28. Die Dichte `density_fine.npz` ist exakt spiegelsymmetrisch (max |d − d[::−1]| = 0). Allein diese Verschiebung ergibt 0,33 mm RMS. Dieselbe Zeile steht in `tools/multi_crash_study.py`.
+
+**Fix 544334c:** `origin − spacing/2` in beiden Tools, dazu ein Test (Zellflächen auf dem Gitter, Spiegelgrenzen). Den Rohkörper habe ich mit derselben Dichte neu extrahiert: `exports/cov/symmetry/raw_fixed/`, x ±61,19, z_min 0,06, 15,65 g. Geometrie und Wandregel liefen neu. FEA, Σ und Slicer stammen aus `simp_mma_cov3_raw_1`, denn das Netz ist nur um 0,33 mm verschoben und wurde nicht neu vernetzt. Der Ray-Head nahm keine Jobs an („No available agent“), deshalb liefen beide CPU-Schritte direkt.
+
+| Körper | RMS mm | p95 mm | max mm | RMS/Radstand | ≤ 0,0025 | Verfehlt |
+|---|---|---|---|---|---|---|
+| roh vorher (`simp_mma_cov3_raw_1`) | 0,334 | 0,649 | 0,722 | 0,00252 | nein | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, target:symmetry |
+| **roh nach Fix** (`symmetry/raw_fixed`) | **0,052** | 0,112 | 0,202 | **0,00040** | **ja** | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component (Warnung neu: section_ratio H/B 0,98) |
+| recon 1:1 | 0,156 | 0,384 | 1,119 | 0,00118 | ja | (FEA-Kriterien, siehe oben) |
+| recon v3 (af19376) | 0,364 | 0,648 | 2,457 | 0,00275 | nein | target:symmetry, target:sigma_worst |
+| **recon v3b** (vorher = nachher, STL unverändert) | 0,225 | 0,508 | 1,208 | 0,00170 | ja | keine |
+| ManaFly 3 (`docs/validation`, 5000 Punkte, Radstand 160,1 mm) | 0,038 | 0,048 | 0,601 | 0,00024 | ja | keine |
+
+v3b liest den Rohkörper `geometry.stl` als `section_body` (Querschnittsorientierung, Gabelstege, Rohkörper-Hülle). Ein Teil der alten Verschiebung steckt also noch in v3b (Schwerpunkt x +0,14 mm). Das verschwindet erst, wenn v3b aus dem neu extrahierten Rohkörper gebaut wird. Diesen Neubau habe ich nicht gestartet. Zahlen: `exports/cov/symmetry/symmetry.json`.
+
 ## Rekonstruktion v3 des Endlaufs (af19376, abgelöst durch v3b)
 
 **Quelle.** v3 wird per `git archive` gebaut. recon3 (879713d) zweigt vor dem Merge 2bafe8f ab und hat deshalb noch XT30-, Balancer- und Antennensitze als Preserve. Der erste v3-Bau enthielt sie: 4 Körper, drei lose Sitzblöcke hinten in der Mitte (264 / 226 / 160 mm³), exakte Booleans nicht bestanden. Dieser Bau ist verworfen (`exports/runs/simp_mma_cov3_v3_seats_discarded`).

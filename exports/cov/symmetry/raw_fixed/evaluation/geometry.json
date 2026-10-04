@@ -1,0 +1,425 @@
+{
+ "mass": {
+  "frame_mass_g": 15.647070785297352,
+  "frame_volume_mm3": 14355.110812199404,
+  "total_mass_g": 84.94707078529737,
+  "component_mass_g": 69.30000000000001,
+  "center_of_mass_mm": [
+   0.00456431469912695,
+   2.0784924529259463,
+   22.42486379572595
+  ],
+  "frame_center_of_mass_mm": [
+   0.024779408820559345,
+   6.139286186119292,
+   13.537416658396161
+  ],
+  "inertia_g_mm2": [
+   [
+    73645.25506538179,
+    59.97723018942179,
+    11.797619197591025
+   ],
+   [
+    59.97723018942179,
+    91938.51571048303,
+    1325.344230332961
+   ],
+   [
+    11.797619197591025,
+    1325.344230332961,
+    145625.36602222174
+   ]
+  ],
+  "principal_inertia_g_mm2": [
+   73645.05765046521,
+   91906.01238980693,
+   145658.06675781438
+  ],
+  "components": [
+   {
+    "name": "aio15",
+    "type": "aio15",
+    "mass_g": 7.2,
+    "center_mm": [
+     9.404120364122206e-16,
+     -6.367373163207745e-17,
+     8.5
+    ],
+    "size_mm": [
+     31.3,
+     31.3,
+     6.0
+    ],
+    "shape": "box"
+   },
+   {
+    "name": "camera",
+    "type": "camera",
+    "mass_g": 2.3,
+    "center_mm": [
+     1.166513031294608e-16,
+     35.0,
+     13.47198934878104
+    ],
+    "size_mm": [
+     16.0,
+     14.0,
+     14.0
+    ],
+    "shape": "box"
+   },
+   {
+    "name": "battery",
+    "type": "battery",
+    "mass_g": 37.0,
+    "center_mm": [
+     -1.6781509643504353e-16,
+     -3.0144237274670914e-16,
+     33.5
+    ],
+    "size_mm": [
+     30.0,
+     63.0,
+     11.0
+    ],
+    "shape": "box"
+   },
+   {
+    "name": "motor_front_left",
+    "type": "motor",
+    "mass_g": 4.5,
+    "center_mm": [
+     -53.45466183516625,
+     39.13644884360386,
+     14.283333333333333
+    ],
+    "size_mm": [
+     15.76,
+     15.76,
+     9.9
+    ],
+    "shape": "box"
+   },
+   {
+    "name": "prop_front_left",
+    "type": "prop",
+    "mass_g": 1.2,
+    "center_mm": [
+     -53.45466183516625,
+     39.13644884360386,
+     21.733333333333334
+    ],
+    "size_mm": [
+     63.5,
+     63.5,
+     5.0
+    ],
+    "shape": "disc"
+   },
+   {
+    "name": "motor_front_right",
+    "type": "motor",
+    "mass_g": 4.5,
+    "center_mm": [
+     53.45466183516625,
+     39.13644884360386,
+     14.283333333333335
+    ],
+    "size_mm": [
+     15.76,
+     15.76,
+     9.9
+    ],
+    "shape": "box"
+   },
+   {
+    "name": "prop_front_right",
+    "type": "prop",
+    "mass_g": 1.2,
+    "center_mm": [
+     53.45466183516625,
+     39.13644884360386,
+     21.733333333333334
+    ],
+    "size_mm": [
+     63.5,
+     63.5,
+     5.0
+    ],
+    "shape": "disc"
+   },
+   {
+    "name": "motor_rear_left",
+    "type": "motor",
+    "mass_g": 4.5,
+    "center_mm": [
+     -53.45466183516625,
+     -39.13644884360386,
+     14.283333333333335
+    ],
+    "size_mm": [
+     15.76,
+     15.76,
+     9.9
+    ],
+    "shape": "box"
+   },
+   {
+    "name": "prop_rear_left",
+    "type": "prop",
+    "mass_g": 1.2,
+    "center_mm": [
+     -53.45466183516625,
+     -39.13644884360386,
+     21.733333333333334
+    ],
+    "size_mm": [
+     63.5,
+     63.5,
+     5.0
+    ],
+    "shape": "disc"
+   },
+   {
+    "name": "motor_rear_right",
+    "type": "motor",
+    "mass_g": 4.5,
+    "center_mm": [
+     53.45466183516625,
+     -39.13644884360386,
+     14.283333333333333
+    ],
+    "size_mm": [
+     15.76,
+     15.76,
+     9.9
+    ],
+    "shape": "box"
+   },
+   {
+    "name": "prop_rear_right",
+    "type": "prop",
+    "mass_g": 1.2,
+    "center_mm": [
+     53.45466183516624,
+     -39.13644884360386,
+     21.733333333333334
+    ],
+    "size_mm": [
+     63.5,
+     63.5,
+     5.0
+    ],
+    "shape": "disc"
+   }
+  ],
+  "model": "frame: exact mesh volume integrals x density; components: homogeneous boxes (props: discs) with parallel-axis theorem about the total centre of mass"
+ },
+ "airflow": {
+  "projected_area_mm2": 2842.5600000000004,
+  "bbox_share": 0.24292394782180654,
+  "hull_share": 0.24832965251181116,
+  "prop_disc_share": 0.10516205542280331,
+  "prop_ring_share": 0.05412123526554532,
+  "prop_diameter_mm": 63.5,
+  "hub_radius_mm": 7.88,
+  "discs_overlap": false,
+  "method": "top-view silhouette of the winding-number voxel grid; prop share = material inside the four prop discs / disc area, ring share excludes the motor hub radius"
+ },
+ "assembly": {
+  "bolt_patterns": [
+   {
+    "name": "motor_front_left",
+    "expected": 4,
+    "found": 1,
+    "holes": [
+     {
+      "position_mm": [
+       -56.643725766102875,
+       35.9615675474923
+      ],
+      "centroid_mm": [
+       -56.64412204005198,
+       35.961173035881245
+      ],
+      "diameter_mm": 2.0098140350968556
+     }
+    ],
+    "material_in_section": true,
+    "passed": false,
+    "tool_reachable": [
+     true
+    ]
+   },
+   {
+    "name": "motor_front_right",
+    "expected": 4,
+    "found": 0,
+    "holes": [],
+    "material_in_section": true,
+    "passed": false,
+    "tool_reachable": []
+   },
+   {
+    "name": "motor_rear_left",
+    "expected": 4,
+    "found": 0,
+    "holes": [],
+    "material_in_section": true,
+    "passed": false,
+    "tool_reachable": []
+   },
+   {
+    "name": "motor_rear_right",
+    "expected": 4,
+    "found": 1,
+    "holes": [
+     {
+      "position_mm": [
+       56.63284311660662,
+       -35.950673625183384
+      ],
+      "centroid_mm": [
+       56.633261518710555,
+       -35.9502542233507
+      ],
+      "diameter_mm": 2.0058506827187097
+     }
+    ],
+    "material_in_section": true,
+    "passed": false,
+    "tool_reachable": [
+     true
+    ]
+   },
+   {
+    "name": "stack",
+    "expected": 4,
+    "found": 0,
+    "holes": [],
+    "material_in_section": true,
+    "passed": false,
+    "tool_reachable": []
+   }
+  ],
+  "keep_out_material_mm3": {
+   "aio15_envelope": 0.0,
+   "camera_envelope": 0.0,
+   "battery_envelope": 0.0,
+   "motor_front_left_envelope": 0.0,
+   "prop_front_left_swept_clearance": 0.0,
+   "motor_front_right_envelope": 0.0,
+   "prop_front_right_swept_clearance": 0.0,
+   "motor_rear_left_envelope": 0.0,
+   "prop_rear_left_swept_clearance": 0.0,
+   "motor_rear_right_envelope": 0.0,
+   "prop_rear_right_swept_clearance": 0.0,
+   "front_left_shaft_clearance": 0.0,
+   "front_left_motor_screw_0": 0.0,
+   "front_left_motor_screw_1": 0.0,
+   "front_left_motor_screw_2": 0.0,
+   "front_left_motor_screw_3": 0.0,
+   "front_left_motor_leads": 0.0,
+   "front_right_shaft_clearance": 0.0,
+   "front_right_motor_screw_0": 0.0,
+   "front_right_motor_screw_1": 0.0,
+   "front_right_motor_screw_2": 0.0,
+   "front_right_motor_screw_3": 0.0,
+   "front_right_motor_leads": 0.0,
+   "rear_left_shaft_clearance": 0.0,
+   "rear_left_motor_screw_0": 0.0,
+   "rear_left_motor_screw_1": 0.0,
+   "rear_left_motor_screw_2": 0.0,
+   "rear_left_motor_screw_3": 0.0,
+   "rear_left_motor_leads": 0.0,
+   "rear_right_shaft_clearance": 0.0,
+   "rear_right_motor_screw_0": 0.0,
+   "rear_right_motor_screw_1": 0.0,
+   "rear_right_motor_screw_2": 0.0,
+   "rear_right_motor_screw_3": 0.0,
+   "rear_right_motor_leads": 0.0,
+   "aio_screw_0": 1.6000000000000003,
+   "aio_screw_1": 0.8960000000000002,
+   "aio_screw_2": 1.4080000000000004,
+   "aio_screw_3": 0.9600000000000002,
+   "elrs_antenna_clearance": 0.0,
+   "battery_insertion": 0.0,
+   "camera_screw_axis": 3.392000000000001,
+   "camera_tool_access_-1": 0.0,
+   "camera_tool_access_1": 0.0,
+   "camera_front_access": 0.0,
+   "aio_side_assembly_access": 0.0
+  },
+  "connector_reachable": {},
+  "fit_tolerance_mm3": 1.0,
+  "bolt_patterns_passed": false,
+  "tools_passed": true,
+  "fit_passed": false,
+  "connectors_checked": false,
+  "method": "holes from an exact plane section rasterised at the section voxel; reachability = 9 parallel rays (axis plus screw-head or connector radius) from the hole or connector along the tool axis must not re-enter material beyond the tool skip distance (the pad itself); fit = material voxels inside each keep-out shrunk by one voxel"
+ },
+ "printability": {
+  "overhang_area_mm2": 2630.900448765687,
+  "overhang_share": 0.21734453139155369,
+  "bed_contact_mm2": 127.21608637159291,
+  "print_height_mm": 28.444880727678537,
+  "print_footprint_mm": [
+   122.37261581420898,
+   95.58502197265625
+  ],
+  "overhang_deg": 45.0,
+  "method": "faces whose normal lies within 45 deg of straight down above the bed, area share of the surface"
+ },
+ "form": {
+  "strut_width_mm": {
+   "p10": 1.8627416997969526,
+   "p50": 2.8000000000000003,
+   "p90": 4.659644256269408
+  },
+  "share_below_2mm": 0.15254237288135594,
+  "section_ratio": {
+   "p10": 0.5892556509887895,
+   "p50": 0.9805806756909201,
+   "p90": 3.7053559924999373
+  },
+  "upright_share": 0.25010334849111204,
+  "flat_share": 0.17155849524596942,
+  "skeleton_voxels": 2419,
+  "method": "widths 2 x EDT on the 3D skeleton minus one voxel; section ratio = vertical material run / in-plane width at each skeleton voxel (> 1 upright, < 1 flat)",
+  "loops": {
+   "closing_radius_mm": 3.0,
+   "voxel_mm": 0.4,
+   "bodies": 1,
+   "cavities": 0,
+   "loops": 16,
+   "method": "first Betti number b1 = b0 + b2 - chi of the voxel solid after a morphological closing that fills bores and slots up to 2 x the closing radius"
+  },
+  "mesh_bodies": 1,
+  "mesh_genus": 37,
+  "flight_height_mm": 28.444880727678537,
+  "symmetry": {
+   "plane_x_mm": 0.0,
+   "rms_mm": 0.05237788744251555,
+   "p95_mm": 0.11154450520686403,
+   "max_mm": 0.20153567235913183,
+   "samples": 5000,
+   "method": "surface samples mirrored at x = mean motor x, distance to the original surface"
+  },
+  "roughness": {
+   "curvature_neighbour_rms_per_mm": 0.12009670434238987,
+   "mean_abs_curvature_per_mm": {
+    "max": 1.067909533883783,
+    "p50": 0.1854243264321655,
+    "p95": 0.47365388605965403,
+    "p99": 0.7044530643381519,
+    "mean": 0.21293546718213088
+   },
+   "radius_mm": 1.0,
+   "method": "Cohen-Steiner/Morvan mean curvature measure of each ball around evenly sampled surface points divided by the disc area pi r^2 (sphere 1/R, cylinder 1/(2R), plane 0); RMS of the |H| differences of sample pairs closer than 1.5 r; independent of the triangulation, record only"
+  }
+ },
+ "voxel_mm": 0.4,
+ "unbalanced_columns": 0,
+ "runtime_s": 3.779089200004819
+}
