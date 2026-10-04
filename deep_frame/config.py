@@ -748,7 +748,7 @@ EVALUATION_CONFIG = {
                           "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"}},
     "fea_settings": {"threads": 4, "mesh_threads": 4, "mesh_timeout_s": 900.0, "solver_timeout_s": 900.0, "fea_memory_budget_mb": 9728.0, "mesh_minimum_sicn": 0.005, "fea_remesh_targets_mm": [2.0, 1.5], "num_modes": 6},
     "fea_surface": {"targets_mm": [0.5, 0.6], "taubin": 10, "feature_degs": [40.0, 60.0, 89.0],
-                    "graded": {"voxel_mm": 0.125, "pad_cells": 4, "sigma_cells": 0.0, "block_faces": 50000, "sizing_stride": 2, "tiers": [[0.75, 0.5], [1.5, 1.0]], "coarse_mm": 1.6, "collapse_mm": 0.02, "repair_rounds": 3, "repair_rings": 4, "repair_feature_deg": 60.0,
+                    "graded": {"voxel_mm": 0.125, "pad_cells": 4, "sigma_cells": 0.0, "block_faces": 50000, "sizing_stride": 2, "tiers": [[0.75, 0.5], [1.5, 1.0]], "coarse_mm": 1.6, "collapse_mm": 0.02, "repair_rounds": 3, "repair_rings": 4, "repair_feature_deg": 60.0, "snap_mm": 0.1, "snap_normal_z": 0.9, "snap_selector_mm": 0.1,
                                "iterations": 8, "feature_deg": 30.0, "max_surface_distance_mm": 0.05, "minimum_angle_deg": 1.0}},
     "slicer": {"executable": "C:/clones/prusaslicer/PrusaSlicer-2.9.6/prusa-slicer-console.exe", "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
                "options": ["--nozzle-diameter", "0.4", "--layer-height", "0.2", "--first-layer-height", "0.2", "--perimeters", "2", "--fill-density", "15%", "--filament-diameter", "1.75", "--filament-density", "1.09",

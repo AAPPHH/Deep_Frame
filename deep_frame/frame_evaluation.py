@@ -279,7 +279,9 @@ def mechanics(spec, config=None):
     settings.update(chosen)
     graded = None
     if not chosen and config["fea_surface"].get("graded"):
-        surface, graded = graded_surface(mesh, settings, config["fea_surface"]["graded"])
+        boxes = [box for value in spec["selectors"].values() for box in (value if isinstance(value, list) else [value]) if isinstance(box, dict) and box.get("kind") == "box"]
+        planes = sorted({round((box["min_mm"][2]+box["max_mm"][2])/2, 6) for box in boxes if box["max_mm"][2]-box["min_mm"][2] <= config["fea_surface"]["graded"]["snap_selector_mm"]})
+        surface, graded = graded_surface(mesh, settings, config["fea_surface"]["graded"], planes)
         if graded["passed"]:
             mesh, chosen = surface, {"tet_attempts": ["direct_hxt"], "fea_direct_minimum_angle_deg": config["fea_surface"]["graded"]["minimum_angle_deg"]}
             settings.update(chosen)

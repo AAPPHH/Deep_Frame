@@ -631,7 +631,7 @@ def _repair_intersections(mesh, target, plan):
         mesh = candidate
     return mesh, repaired
 
-def graded_surface(mesh, settings, plan):
+def graded_surface(mesh, settings, plan, planes=()):
     import trimesh
     from scipy.ndimage import gaussian_filter
     from skimage.measure import marching_cubes
@@ -666,9 +666,14 @@ def graded_surface(mesh, settings, plan):
     if _topology(collapsed) == _topology(surface) and collapsed.face_angles.min() > surface.face_angles.min():
         surface = collapsed
     surface, repaired = _repair_intersections(surface, sizes[0], plan)
+    vertices, normals, snapped = np.array(surface.vertices), surface.vertex_normals, 0
+    for z in planes:
+        snap = (np.abs(vertices[:, 2]-z) <= plan["snap_mm"]) & (np.abs(normals[:, 2]) >= plan["snap_normal_z"])
+        vertices[snap, 2], snapped = z, snapped+int(snap.sum())
+    surface = trimesh.Trimesh(vertices, surface.faces, process=False)
     checks, fidelity = mesh_checks(surface), surface_fidelity(mesh, surface)
     level = _levels(np.asarray(surface.vertices), depths, low, h*stride, plan["tiers"])
-    report = {"voxel_mm": h, "grid_shape": shape.tolist(), "inconsistent_columns": bad_columns, "voxel_face_count": len(voxel.faces), "voxel_volume_change": float(voxel.volume/mesh.volume-1), "sizes_mm": sizes, "tier_vertex_counts": np.bincount(level, minlength=len(sizes)).tolist(), "dropped_parts": len(parts)-1, "dropped_volume_mm3": dropped, "intersection_repairs": repaired,
+    report = {"voxel_mm": h, "grid_shape": shape.tolist(), "inconsistent_columns": bad_columns, "voxel_face_count": len(voxel.faces), "voxel_volume_change": float(voxel.volume/mesh.volume-1), "sizes_mm": sizes, "tier_vertex_counts": np.bincount(level, minlength=len(sizes)).tolist(), "dropped_parts": len(parts)-1, "dropped_volume_mm3": dropped, "intersection_repairs": repaired, "snapped_planes_mm": list(planes), "snapped_vertices": snapped,
               "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())), "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179))),
               "topology": {"input": _topology(mesh), "graded": _topology(surface)}, "checks_passed": checks["passed"], "self_intersections_passed": checks["self_intersections"]["passed"],
               "print_deviation_mm": fidelity["maximum_sampled_deviation_mm"], "print_to_fea_mm": fidelity["reference_to_approximation"]["surface_distance_mm"], "fea_to_print_mm": fidelity["approximation_to_reference"]["surface_distance_mm"],
