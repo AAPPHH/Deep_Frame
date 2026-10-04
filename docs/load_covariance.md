@@ -164,3 +164,23 @@ Standard bleibt `"prescribed"` (Bügelpfad, Laschen, Aufprallkontakte als feste 
 - Prüfung:
   - `tests/test_topology_problem.py::test_free_camera_support_equilibrium_and_gradients` (Gleichgewicht der Zonenlast mit Relief, FD aller Zeilen);
   - `tools/formulation_study.py camera_fd` (Rahmengitter).
+
+### Grenzen des freien Kamerakäfigs aus ManaFly (`formulation_study.py camera_limits` → `docs/validation/camera_limits_manafly.json`)
+
+Messaufbau für ManaFly 3:
+- dieselben Definitionen und derselbe Code wie im Optimierer;
+- Halbmodell, binäre 4/3-mm-Voxel (Volumenanteil ≥ 50 %, größte flächenverbundene Komponente; 11 Inselzellen verworfen);
+- Inertia Relief über Rahmenmasse (29,3 g), AIO, Motoren + Props, Akku (Punktmasse am Deck) und Kamera;
+- Lux in der Evaluator-Platzierung (0, 50, 16), 20° gekippt;
+- Federn an den Innenflächen der Seitenplatten (x = 10,67 mm); der Spalt zwischen Kameraseite und Platte gilt als starr überbrückt (Schraube/Distanz).
+
+| Größe | ManaFly 20° | ManaFly 0° | Grenze | Akku-Analogon |
+|---|---|---|---|---|
+| Kameraverschiebung frontal (mm) | 0,0866 | 0,0873 | ≤ 0,0866 | 0,5 |
+| Kameraverschiebung schräg 45° (mm) | 0,3816 | 0,3926 | ≤ 0,3816 | 0,5 |
+| Frontabdeckung (× Frontfläche 16 × 14 mm) | 0,4227 | 0,4071 | ≥ 0,4227 | – |
+| Montagefläche (Anteil des 4-mm-Patches) | 1,00 | 1,00 | ≥ 1,0 | – |
+
+Im reinen Silhouettenfenster der Kamera hat ManaFly 0 % Abdeckung, weil das Sichtfeld und der Einschubkorridor das verbieten. Das Maß zählt deshalb das Fenster mit 6 mm Rand seitlich und oben. Werte über 1 sind möglich.
+
+Crash-Referenzen der Zonenfälle: Nachgiebigkeit der Formulierungs-Referenzdichte (r4_neural_v06_f1) im Freikamera-Gebiet unter den Zonenlasten. Ergebnis: `crash_front` 10,09 N mm (alte Patch-Definition 6,18), `crash_below` 103,0 N mm (alt 27,52). Die Grenze ist wie bisher 1,5 × Referenz. `crash_camera_oblique` hat keine Nachgiebigkeitszeile, nur die Kameraverschiebung.

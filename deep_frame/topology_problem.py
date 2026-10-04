@@ -254,8 +254,9 @@ class TopologyProblem:
         return value, gradient, delta
     def camera_rows(self, solutions):
         settings, rows = self.problem["camera"], []
-        limit, minimum = settings["limit_mm"], settings["min_area_mm2"]
+        limits, minimum = settings["limit_mm"], settings["min_area_mm2"] or (settings["min_area_fraction"] and settings["min_area_fraction"] * float(np.sum(self.camera.area)))
         for name in self.domain["camera"]["displacement_cases"]:
+            limit = limits.get(name) if isinstance(limits, dict) else limits
             value, gradient, delta = self.camera_shift(name, solutions)
             rows.append({"name": "camera_shift_" + name, "g": None if limit is None else value / limit - 1, "gradient": gradient / (limit or 1.0), "value": value, "limit": limit, "unit": "mm", "sense": "<=", "info": {"delta_mm": delta.tolist()}})
         area, slope = self.camera.contact_area()

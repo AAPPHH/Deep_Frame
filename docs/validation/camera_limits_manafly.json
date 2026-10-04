@@ -1,0 +1,144 @@
+{
+ "statement": "ManaFly camera cage measured with the CAMERA_SUPPORT definitions (half model, binary 4/3 mm voxels at >= 50 % volume fraction, inertia relief over frame, AIO, motors, battery and camera), springs on the inner plate faces (gap camera side to plate bridged rigidly by the screw/spacer); crash references for the zone cases = compliance of the formulation reference density in the free-camera domain under the zone loads",
+ "manafly": {
+  "tilt_20": {
+   "plate_face_x_mm": 10.666666666666666,
+   "camera_cells_cut": 0,
+   "island_cells_dropped": 11,
+   "solid_cells_half": 5787,
+   "frame_mass_g": 29.321081799227418,
+   "grid": {
+    "origin_mm": [
+     0.0,
+     -78.66666666666666,
+     0.0
+    ],
+    "spacing_mm": [
+     1.3333333333333333,
+     1.3333333333333333,
+     1.3333333333333333
+    ],
+    "shape": [
+     52,
+     111,
+     26
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+   },
+   "tilt_deg": 20.0,
+   "zone": {
+    "kind": "box",
+    "min_mm": [
+     -14.5,
+     50.0,
+     16.0
+    ],
+    "max_mm": [
+     14.5,
+     68.71976216634114,
+     31.47198934878104
+    ]
+   },
+   "crash_front": 2.8908945226047913,
+   "camera_shift_crash_front": 0.08663720579669777,
+   "camera_shift_crash_camera_oblique": 0.3816467222642241,
+   "camera_mount_area": 74.66666666666666,
+   "volume": 1.0,
+   "camera_coverage": 0.4227087081589153,
+   "mount_patch_area_mm2": 74.66666666666666,
+   "mount_fraction": 1.0,
+   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| crash_front | 2.891 |  | N mm | monitored |  |\n| camera_shift_crash_front | 0.08664 |  | mm | monitored |  |\n| camera_shift_crash_camera_oblique | 0.3816 |  | mm | monitored |  |\n| camera_mount_area | 74.67 |  | mm2 | monitored |  |\n| volume | 1 | <= 0.1 | - | violated | -900.0 % |\n| camera_coverage | 0.4227 |  | - | monitored |  |",
+   "spring_nodes": {
+    "nodes": 42,
+    "patch_area_mm2": 74.66666666666666,
+    "face_x_mm": 10.666666666666666,
+    "keep_out_cells_mm": [
+     [
+      0.0,
+      40.00000000000001,
+      5.333333333333333
+     ],
+     [
+      10.666666666666666,
+      60.00000000000001,
+      26.666666666666668
+     ]
+    ]
+   }
+  },
+  "tilt_0": {
+   "plate_face_x_mm": 10.666666666666666,
+   "camera_cells_cut": 0,
+   "island_cells_dropped": 11,
+   "solid_cells_half": 5787,
+   "frame_mass_g": 29.321081799227418,
+   "grid": {
+    "origin_mm": [
+     0.0,
+     -78.66666666666666,
+     0.0
+    ],
+    "spacing_mm": [
+     1.3333333333333333,
+     1.3333333333333333,
+     1.3333333333333333
+    ],
+    "shape": [
+     52,
+     111,
+     26
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+   },
+   "tilt_deg": 0.0,
+   "zone": {
+    "kind": "box",
+    "min_mm": [
+     -14.5,
+     50.0,
+     16.0
+    ],
+    "max_mm": [
+     14.5,
+     68.71976216634114,
+     29.5
+    ]
+   },
+   "crash_front": 2.8984434312961276,
+   "camera_shift_crash_front": 0.08728805397688211,
+   "camera_shift_crash_camera_oblique": 0.3925526778756267,
+   "camera_mount_area": 74.66666666666666,
+   "volume": 1.0,
+   "camera_coverage": 0.4070749438750278,
+   "mount_patch_area_mm2": 74.66666666666666,
+   "mount_fraction": 1.0,
+   "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| crash_front | 2.898 |  | N mm | monitored |  |\n| camera_shift_crash_front | 0.08729 |  | mm | monitored |  |\n| camera_shift_crash_camera_oblique | 0.3926 |  | mm | monitored |  |\n| camera_mount_area | 74.67 |  | mm2 | monitored |  |\n| volume | 1 | <= 0.1 | - | violated | -900.0 % |\n| camera_coverage | 0.4071 |  | - | monitored |  |",
+   "spring_nodes": {
+    "nodes": 42,
+    "patch_area_mm2": 74.66666666666666,
+    "face_x_mm": 10.666666666666666,
+    "keep_out_cells_mm": [
+     [
+      0.0,
+      41.333333333333336,
+      7.999999999999999
+     ],
+     [
+      10.666666666666666,
+      58.666666666666664,
+      24.0
+     ]
+    ]
+   }
+  }
+ },
+ "crash_reference_n_mm": {
+  "crash_front": 10.087518852814165,
+  "crash_below": 103.00262828939346,
+  "crash_camera_oblique": 66.94449736151529
+ },
+ "reference_density": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1/density_half.npz",
+ "sha": "6418d645e10328d0a28d18e77824a46881408aad"
+}
