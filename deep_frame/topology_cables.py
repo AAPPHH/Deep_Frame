@@ -3,6 +3,7 @@ from itertools import count
 from time import perf_counter
 
 import numpy as np
+import trimesh
 from scipy.ndimage import gaussian_filter1d, label, maximum_filter1d
 
 from deep_frame.config import CABLES, COMPONENT_LIBRARY, IMPLICIT_CONFIG
@@ -33,6 +34,82 @@ def pinch_points(mesh):
     edges = {tuple(edge) for edge in np.sort(mesh.edges_unique, axis=1).tolist()}
     loose = np.array([tuple(sorted(pair)) not in edges for pair in pairs.tolist()], dtype=bool)
     return mesh.vertices[pairs[loose if loose.any() else slice(None), 1]]
+
+def folded_edges(mesh, limit_deg=CABLES["fold_deg"]):
+    return int(np.sum(mesh.face_adjacency_angles > np.radians(limit_deg)))
+
+def _collapse(mesh, pairs):
+    mapping = np.arange(len(mesh.vertices))
+    mapping[pairs[:, 0]] = pairs[:, 1]
+    faces = mapping[mesh.faces]
+    faces = faces[(faces[:, 0] != faces[:, 1]) & (faces[:, 1] != faces[:, 2]) & (faces[:, 0] != faces[:, 2])]
+    _, inverse, counts = np.unique(np.sort(faces, axis=1), axis=0, return_inverse=True, return_counts=True)
+    result = trimesh.Trimesh(mesh.vertices, faces[counts[inverse.ravel()] == 1], process=False)
+    result.remove_unreferenced_vertices()
+    return result if result.is_watertight and result.is_winding_consistent and result.euler_number == mesh.euler_number and result.body_count == mesh.body_count else None
+
+def _flip_caps(mesh, faces, limit_deg):
+    faces, flipped = mesh.faces.copy(), 0
+    edges = {tuple(e) for e in np.sort(mesh.edges_unique, axis=1).tolist()}
+    owner = {(int(a), int(b)): i for i, row in enumerate(faces) for a, b in ((row[0], row[1]), (row[1], row[2]), (row[2], row[0]))}
+    done = set()
+    for f in _caps(mesh, faces, limit_deg):
+        k = int(np.argmax(mesh.face_angles[f]))
+        x, u, w = (faces[f][(k+i) % 3] for i in range(3))
+        g = owner.get((int(w), int(u)))
+        if g is None or {f, g} & done:
+            continue
+        y = next(int(v) for v in faces[g] if v not in (u, w))
+        if tuple(sorted((int(x), y))) in edges:
+            continue
+        faces[f], faces[g] = (u, y, x), (y, w, x)
+        done |= {f, g}
+        edges.add(tuple(sorted((int(x), y))))
+        flipped += 1
+    return trimesh.Trimesh(mesh.vertices, faces, process=False), flipped
+
+def _caps(mesh, faces, limit_deg):
+    folded = np.unique(mesh.face_adjacency[mesh.face_adjacency_angles > np.radians(limit_deg)])
+    return [int(f) for f in folded if mesh.face_angles[f].max() > np.radians(limit_deg)]
+
+def weld_folds(mesh, keepouts, config=CABLES):
+    report = {"method": "knife-edge slivers (face pairs folded by more than limit_deg) removed by collapsing their shortest edge onto an existing vertex when it is shorter than weld_mm (caps with a near-180 deg angle and no short edge: their longest edge flipped, vertices unchanged), at least weld_keepout_mm away from every keep-out and preserve and the result stays closed, oriented, single-body and of equal Euler characteristic",
+              "weld_mm": config["weld_mm"], "collapsed_edges": 0, "flipped_edges": 0, "skipped_long": 0, "skipped_keepout": 0, "rejected": 0, "folded_before": folded_edges(mesh, config["fold_deg"])}
+    for _ in range(config["weld_rounds"]):
+        folded = mesh.face_adjacency_angles > np.radians(config["fold_deg"])
+        if not folded.any():
+            break
+        faces = mesh.faces[np.unique(mesh.face_adjacency[folded])]
+        lengths = np.linalg.norm(mesh.vertices[faces]-mesh.vertices[np.roll(faces, -1, axis=1)], axis=2)
+        j = np.argmin(lengths, axis=1)
+        short = lengths[np.arange(len(j)), j] < config["weld_mm"]
+        report["skipped_long"] += int((~short).sum())
+        pairs = np.unique(np.sort(np.stack([faces[np.arange(len(j)), j], faces[np.arange(len(j)), (j+1) % 3]], axis=1)[short], axis=1), axis=0)
+        near = np.any([region_contains(mesh.vertices[pairs].reshape(-1, 3), r, config["weld_keepout_mm"]).reshape(-1, 2).any(axis=1) for r in keepouts], axis=0) if keepouts and len(pairs) else np.zeros(len(pairs), dtype=bool)
+        report["skipped_keepout"] += int(near.sum())
+        used, chosen = set(), []
+        for a, b in pairs[~near].tolist():
+            if a not in used and b not in used:
+                used |= {a, b}
+                chosen.append((a, b))
+        if not chosen:
+            flipped, count = _flip_caps(mesh, mesh.faces, config["fold_deg"])
+            if not count or folded_edges(flipped, config["fold_deg"]) >= folded.sum() or not flipped.is_watertight or not flipped.is_winding_consistent:
+                break
+            mesh = flipped
+            report["flipped_edges"] += count
+            continue
+        merged = _collapse(mesh, np.array(chosen))
+        if merged is None:
+            for pair in chosen:
+                single = _collapse(mesh, np.array([pair]))
+                report["rejected"] += single is None
+                mesh = mesh if single is None else single
+        else:
+            mesh = merged
+        report["collapsed_edges"] += len(chosen)
+    report["folded_after"] = folded_edges(mesh, config["fold_deg"])
+    return mesh, report
 
 def grown(region, distance):
     if region["kind"] == "box":
@@ -67,8 +144,12 @@ class ChannelProfile:
         angles = np.linspace(np.pi-self.half_angle, 2*np.pi+self.half_angle, n)
         return np.stack([radius*np.cos(angles), radius*np.sin(angles)], axis=1)
 
-    def cavity(self):
-        return np.vstack([[[0.0, self.tip]], self._arc(self.radius)])
+    def cavity(self, depth=0.0):
+        if not (self.guide and depth):
+            return np.vstack([[[0.0, self.tip]], self._arc(self.radius)])
+        angles = np.linspace(0.0, self.half_angle, (self.config["profile_segments"]-2)//2)
+        side = self.radius*np.stack([np.cos(angles), np.sin(angles)], axis=1)
+        return np.vstack([[[0.0, self.tip]], side[::-1]*[-1, 1], [[-self.radius, -depth], [self.radius, -depth]], side])
 
     def shell(self):
         arc = self._arc(self.outer)
@@ -79,7 +160,7 @@ class ChannelProfile:
         return np.vstack([[[x, self.top], [-x, self.top]], arc])
 
     def slot_cut(self, depth):
-        half = self.slot/2
+        half = min(self.slot, self.bundle-self.config["slot_interference_mm"])/2
         return np.array([[-half, 0.0], [half, 0.0], [half, -depth], [-half, -depth]])
 
 def profile_frames(points, axis=CABLES["print_axis"]):
@@ -295,40 +376,49 @@ class CableChannels:
             path["swept"] = own
             swept |= set(int(i) for i in path["owner"])
             runs = np.split(np.arange(len(own)), np.flatnonzero(np.diff(own.astype(int)))+1)
+            outside = maximum_filter1d((~path["inside"]).astype(np.uint8), 3).astype(bool)
+            overlap = self.config["sweep_overlap_mm"]
             for run in (r for r in runs if own[r[0]] and len(r) > 1):
-                profiles = [path["profiles"][k] for k in run]
+                profiles, depth = [path["profiles"][k] for k in run], path["slot_depth"][run]
                 args = (path["points"][run], path["u"][run], path["v"][run])
-                shells.append(sweep(*args, [p.shell() for p in profiles]))
-                cavities.append(sweep(*args, [p.cavity() for p in profiles], self.config["cavity_extend_mm"]))
-                cavities.append(sweep(*args, [p.slot_cut(d) for p, d in zip(profiles, path["slot_depth"][run])], self.config["cavity_extend_mm"]))
+                for part in (r for r in np.split(np.arange(len(run)), np.flatnonzero(np.diff(outside[run].astype(int)))+1) if outside[run][r[0]] and len(r) > 1):
+                    shells.append(sweep(*(x[part] for x in args), [profiles[k].shell() for k in part], 0.0, overlap))
+                cavities.append(sweep(*args, [p.cavity(d) for p, d in zip(profiles, depth)], self.config["cavity_extend_mm"], 3*overlap))
+                cavities.append(sweep(*args, [p.slot_cut(d) for p, d in zip(profiles, depth)], self.config["cavity_extend_mm"], 5*overlap))
         return shells, cavities
 
     def apply(self, body, core):
-        from manifold3d import Manifold, OpType
+        from manifold3d import Error, Manifold, OpType
         started = perf_counter()
         shells, cavities = self.solids()
-        margin = float32_margin(self.domain)
-        keep = Manifold.batch_boolean([region_manifold(grown(r, self.config["keep_margin_mm"]), IMPLICIT_CONFIG["segment_tolerance_mm"], margin, 1, 1)[0] for r in self.preserves.values()], OpType.Add)
-        shell = Manifold.batch_boolean(shells, OpType.Add)
+        margin, tolerance = float32_margin(self.domain), IMPLICIT_CONFIG["segment_tolerance_mm"]
+        keep = Manifold.batch_boolean([region_manifold(grown(r, self.config["keep_margin_mm"]), tolerance, margin, 1, 1)[0] for r in self.preserves.values()], OpType.Add)
+        forbidden = [region_manifold(r, tolerance, margin, 1, 1)[0] for r in core["regions"] if r["role"] == "forbidden"]
+        raw = Manifold.batch_boolean(shells, OpType.Add)
+        clear = Manifold.batch_boolean([raw, Manifold.batch_boolean(forbidden, OpType.Add)], OpType.Subtract) if forbidden else raw
+        shell = Manifold.batch_boolean([clear, region_manifold(_envelope(core), tolerance, side=-1)[0]], OpType.Intersect)
         cavity = Manifold.batch_boolean([Manifold.batch_boolean(cavities, OpType.Add), keep], OpType.Subtract)
         solid = _manifold(body)
         joined = Manifold.batch_boolean([solid, shell], OpType.Add)
         carved = Manifold.batch_boolean([joined, cavity], OpType.Subtract)
-        mesh, booleans = exact_booleans(_trimesh(carved), dict(core, regions=[r for r in core["regions"] if r["role"] != "preserve"]), IMPLICIT_CONFIG)
-        parts = sorted(_manifold(mesh).decompose(), key=lambda part: -part.volume())
-        largest, booleans["pinch_cuts"] = parts[0], []
+        parts = sorted(carved.decompose(), key=lambda part: -part.volume())
+        largest = parts[0]
+        keepouts = [r for r in core["regions"] if r["role"] in ("forbidden", "preserve")]
+        booleans = {"method": "body already passed exact_booleans; channel shells minus forbidden (cylinders grown by the binary32 margin) and clipped to the envelope before the union, cavities minus the grown preserves; binary32 rounding of the result, then knife-edge welding onto existing binary32 vertices",
+                    "status": str(carved.status()), "components": len(parts), "forbidden_removed_mm3": float(raw.volume()-clear.volume()), "envelope_removed_mm3": float(clear.volume()-shell.volume()), "pinch_cuts": []}
         for _ in range(self.config["pinch_rounds"]):
             mesh, booleans["float32_largest"] = _round_float32(_trimesh(largest), margin)
             if booleans["float32_largest"]["passed"]:
                 break
             points = pinch_points(_trimesh(largest))
             booleans["pinch_cuts"] += np.round(points, 3).tolist()
-            largest = sorted(Manifold.batch_boolean([largest, Manifold.batch_boolean([Manifold.sphere(self.config["pinch_radius_mm"], 8).translate(tuple(point)) for point in points], OpType.Add)], OpType.Subtract).decompose(), key=lambda part: -part.volume())[0]
-        booleans = {key: booleans[key] for key in ("status", "components", "forbidden_removed_mm3", "envelope_removed_mm3", "float32", "float32_largest", "pinch_cuts") if key in booleans}
-        booleans.update(shell_outside_body_mm3=float(joined.volume()-solid.volume()), removed_from_body_mm3=float(joined.volume()-carved.volume()), float32_passed=bool(booleans["float32_largest"]["passed"]))
+            spheres = Manifold.batch_boolean([Manifold.sphere(self.config["pinch_radius_mm"], 24).translate(tuple(point)) for point in points], OpType.Add)
+            largest = sorted(Manifold.batch_boolean([largest, Manifold.batch_boolean([spheres, keep], OpType.Subtract)], OpType.Subtract).decompose(), key=lambda part: -part.volume())[0]
+        mesh, booleans["weld"] = weld_folds(mesh, keepouts, self.config)
+        booleans.update(shell_outside_body_mm3=float(joined.volume()-solid.volume()), removed_from_body_mm3=float(joined.volume()-carved.volume()), float32_passed=bool(carved.status() == Error.NoError and booleans["float32_largest"]["passed"]))
         minor = [{"volume_mm3": float(part.volume()), "bounds_mm": np.round(np.reshape(part.bounding_box(), (2, 3)), 2).tolist()} for part in parts[1:]]
         reference = exact_booleans(body, core, IMPLICIT_CONFIG)[1]
-        return mesh, {"shell_mm3": float(shell.volume()), "cavity_mm3": float(cavity.volume()), "bodies": len(parts), "dropped_bodies": minor[:6], "dropped_volume_mm3": float(sum(part["volume_mm3"] for part in minor)), "watertight": bool(mesh.is_watertight), "volume_mm3": float(mesh.volume), "booleans": booleans,
+        return mesh, {"shell_mm3": float(shell.volume()), "cavity_mm3": float(cavity.volume()), "bodies": len(parts), "dropped_bodies": minor[:6], "dropped_volume_mm3": float(sum(part["volume_mm3"] for part in minor)), "watertight": bool(mesh.is_watertight), "volume_mm3": float(mesh.volume), "folded_edges": folded_edges(mesh), "booleans": booleans,
                       "body_preserve_deficit_mm3": reference["preserve_added_mm3"], "runtime_s": perf_counter()-started}
 
     def check(self, mesh):

@@ -16,7 +16,7 @@ from scipy.ndimage import gaussian_filter
 
 from deep_frame.config import CABLES, CABLES_KINDS, DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, RUN_SETTINGS, STAGES, SPLINE_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_KINDS, command_line, configure
 from deep_frame.frame_run import FrameRun, _git
-from deep_frame.topology_cables import CableChannels
+from deep_frame.topology_cables import CableChannels, folded_edges
 from deep_frame.topology_reconstruction import body_weights, bumps, core_domain, load_paths, reconstruct, reconstruct_splines, reference_body, spline_graph, stored_domain
 
 RUN_CONFIG = {**DESIGN_RECONSTRUCTION_CONFIG, "domain": None, "study": {}, "geometry": None, "panels": None, "labels": None, "fea_surface_targets_mm": [0.5, 0.6], "fea_volume_targets_mm": [1.5, 1.2, 1.0], "fea_feature_degs": [40.0, 60.0, 89.0]}
@@ -499,7 +499,7 @@ def cable_section(mesh, before, path, out):
         local = local[np.all(np.abs(local) < 9, axis=(1, 2))]
         for k, segment in enumerate(local):
             ax.plot(segment[:, 0], segment[:, 1], **style, label=label if k == 0 else None)
-    for polygon, color, label in ((profile.cavity(), "tab:blue", "Innenraum (Tropfen)"), (profile.slot_cut(path["slot_depth"][i]), "tab:red", "Klemmschlitz"), (profile.shell(), "tab:green", "Kanalschale")):
+    for polygon, color, label in ((profile.cavity(path["slot_depth"][i]), "tab:blue", "Innenraum (Tropfen)"), (profile.slot_cut(path["slot_depth"][i]), "tab:red", "Klemmschlitz"), (profile.shell(), "tab:green", "Kanalschale")):
         closed = np.vstack([polygon, polygon[:1]])
         ax.plot(closed[:, 0], closed[:, 1], color=color, lw=0.8, ls=":", label=label)
     ax.add_patch(plt.Circle((0, 0), profile.bundle/2, color="tab:orange", alpha=0.35, label=f"Bündel {profile.bundle:.2f} mm"))
@@ -543,7 +543,7 @@ def cables_main(overrides):
     report = {**channels.report(mesh, body), "apply": applied, "body": str(config["body"]), "mass_before_g": float(body.volume)*domain["material"]["density_g_cm3"]/1000, "mass_after_g": float(mesh.volume)*domain["material"]["density_g_cm3"]/1000}
     mesh.export(out/"frame.stl")
     reloaded = trimesh.load_mesh(out/"frame.stl", process=True)
-    report["reload"] = {"watertight": bool(reloaded.is_watertight), "winding_consistent": bool(reloaded.is_winding_consistent), "bodies": int(reloaded.body_count), "volume_mm3": float(reloaded.volume)}
+    report["reload"] = {"watertight": bool(reloaded.is_watertight), "winding_consistent": bool(reloaded.is_winding_consistent), "bodies": int(reloaded.body_count), "volume_mm3": float(reloaded.volume), "folded_edges": folded_edges(reloaded)}
     for path in channels.paths:
         if path["routed"] and path["name"] in config["section_paths"]:
             cable_section(mesh, body, path, out/f"section_{path['name']}.png")
@@ -552,7 +552,7 @@ def cables_main(overrides):
     peaks["render"] = peak()
     report["peak_gb"] = peaks
     report["runtime_s"], report["peak_rss_gb"] = perf_counter()-started, peak()
-    report["delivered"] = bool(applied["booleans"]["float32_passed"] and report["reload"]["watertight"] and report["reload"]["bodies"] == 1)
+    report["delivered"] = bool(applied["booleans"]["float32_passed"] and report["reload"]["watertight"] and report["reload"]["bodies"] == 1 and report["reload"]["folded_edges"] == 0)
     (out/"cables.json").write_text(json.dumps({**report, "config": {"cables": cables, "body": str(config["body"]), "source": str(config["source"])}}, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value) if isinstance(value, np.floating) else str(value)), encoding="utf-8")
     print(json.dumps({"delivered": report["delivered"], "steckbrief": report["steckbrief"], "printability": report["printability"], "mass_g": [report["mass_before_g"], report["mass_after_g"]], "apply": applied, "reload": report["reload"], "peak_gb": peaks}, default=float), flush=True)
 

@@ -1,9 +1,11 @@
 import networkx as nx
 import numpy as np
 import pytest
+import trimesh
+from scipy.spatial import ConvexHull
 
 from deep_frame.config import CABLES, COMPONENT_LIBRARY
-from deep_frame.topology_cables import CableRouter, ChannelProfile, bundle_diameter, profile_frames
+from deep_frame.topology_cables import CableRouter, ChannelProfile, bundle_diameter, folded_edges, profile_frames, weld_folds
 
 MOTOR = COMPONENT_LIBRARY["GTS V3 1203"]["cable"]["bundle_diameter_mm"]
 
@@ -90,3 +92,33 @@ def test_prop_proximity_cost():
     assert inside["prop_mm"] > 0 and hub["prop_mm"] == 0 and outside["prop_mm"] == 0
     assert inside["cost"] == pytest.approx(inside["length_mm"]+CABLES["prop_weight"]*inside["prop_mm"])
     assert inside["cost"] > outside["cost"]
+
+def test_weld_folds_removes_knife_edge_and_respects_keepouts():
+    box = trimesh.creation.box((4, 4, 2)).subdivide().subdivide()
+    box.merge_vertices()
+    p, q = box.edges_unique[0]
+    vertices = box.vertices.copy()
+    vertices[q] = vertices[p]-[0, 0, 1e-4]
+    mesh = trimesh.Trimesh(vertices, box.faces, process=False)
+    assert folded_edges(mesh) > 0
+    welded, report = weld_folds(mesh, [])
+    assert folded_edges(welded) == report["folded_after"] == 0 and report["collapsed_edges"] == 1
+    assert welded.is_watertight and welded.is_winding_consistent and welded.euler_number == mesh.euler_number
+    kept, report = weld_folds(mesh, [{"kind": "box", "min_mm": (vertices[p]-0.05).tolist(), "max_mm": (vertices[p]+0.05).tolist()}])
+    assert report["skipped_keepout"] == 1 and folded_edges(kept) > 0
+
+def test_guide_opening_is_one_convex_polygon_with_the_slot_inside():
+    guide, plain = ChannelProfile(2.2, CABLES, True), ChannelProfile(2.2, CABLES)
+    opening = guide.cavity(3.0)
+    assert len(opening) == len(plain.cavity(3.0)) and opening[:, 1].min() == pytest.approx(-3.0) and np.abs(opening[:, 0]).max() == pytest.approx(guide.radius)
+    hull = ConvexHull(opening)
+    assert len(hull.vertices) == len(opening)
+    assert np.abs(guide.slot_cut(3.0)[:, 0]).max() < guide.radius
+
+def test_weld_folds_flips_cap_without_moving_vertices():
+    vertices = np.array([[0, 0, 0], [2, 0, 0], [1, -1e-5, 0], [1, -1, 0], [1, 0.5, 1]], dtype=float)
+    mesh = trimesh.Trimesh(vertices, [[0, 1, 2], [1, 0, 3], [0, 2, 4], [2, 1, 4], [1, 3, 4], [3, 0, 4]], process=False)
+    assert mesh.is_watertight and folded_edges(mesh) == 1
+    welded, report = weld_folds(mesh, [], dict(CABLES, weld_mm=1e-9))
+    assert np.array_equal(welded.vertices, mesh.vertices) and welded.is_watertight and welded.is_winding_consistent
+    assert report["flipped_edges"] == 1 and folded_edges(welded) == report["folded_after"] == 0
