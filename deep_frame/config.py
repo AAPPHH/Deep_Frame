@@ -899,7 +899,8 @@ TOPOLOGY_CONFIG = {
     "battery_contact_length_mm": 50.0,
     "battery_contact_y_mm": 0.0,
     "battery_rail_edge_inset_mm": 0.0,
-    "battery_support": "rails",
+    "battery_support": "free",
+    "battery_support_modes": {"free": "rigid battery on density-dependent contact springs, no prescribed geometry (BATTERY_SUPPORT); user decision 2026-10-04: standard", "rails": "two prescribed 3.5 x 50 mm longitudinal strap rails (battery_contact_*), selectable"},
     "connection_proof_force_n": 0.05,
     "manufacturing": {
         "nozzle_width_mm": 0.4,

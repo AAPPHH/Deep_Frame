@@ -11,7 +11,7 @@ from time import perf_counter
 import numpy as np
 
 from deep_frame.config import (COMPONENT_DEFAULTS, COMPONENT_LIBRARY, DURABILITY, FRAME_COMPONENT_KINDS, FRAME_DEFAULTS, FRAME_LAYOUT_KINDS, FRAME_PRINT_KINDS, FRAME_REQUEST,
-                               FRAME_REQUEST_KINDS, IMPLICIT_CONFIG, LAYOUT_DEFAULT, LAYOUT_OPTIMIZATION, LAYOUT_OVERRIDES, LAYOUT_REFERENCES, LAYOUT_RULES, LIBRARY_FIELDS, MATERIALS, MOUNTING_TYPES, RUN_GRIDS, RUN_SETTINGS, STAGES, STYLES, component_spec,
+                               FRAME_REQUEST_KINDS, IMPLICIT_CONFIG, LAYOUT_DEFAULT, LAYOUT_OPTIMIZATION, LAYOUT_OVERRIDES, LAYOUT_REFERENCES, LAYOUT_RULES, LIBRARY_FIELDS, MATERIALS, MOUNTING_TYPES, RUN_GRIDS, RUN_SETTINGS, STAGES, STYLES, TOPOLOGY_CONFIG, component_spec,
                                configure, prop_spec)
 from deep_frame.frame import camera_mount_z, motor_positions, prop_plane_z
 from deep_frame.frame_evaluation import component_inertia, rigid_assembly
@@ -338,18 +338,20 @@ class FrameLayout:
     def summary(self):
         f = {**FRAME_DEFAULTS, **self.frame}
         return {"request": self.request, "frame": self.frame, "motors_mm": self.motors(), "hoop": self.hoop() if self.style["hoops"] else None, "checks": self.checks,
-                "battery": {"mount": self.request["layout"]["battery_mount"], "deck_top_mm": f["deck_top_mm"], "position_mm": [0.0, f["battery_y_mm"], f["deck_top_mm"]]},
+                "battery": {"mount": self.request["layout"]["battery_mount"], "support": self.support(), "deck_top_mm": f["deck_top_mm"], "position_mm": [0.0, f["battery_y_mm"], f["deck_top_mm"]]},
                 "stack": {"position_mm": [0.0, 0.0, f["base_thickness_mm"] + f["aio_standoff_mm"]]}, "camera": {"y_mm": f["camera_y_mm"], "bottom_clearance_mm": f["camera_bottom_clearance_mm"], "tilt_deg": self.components["camera"]["tilt_deg"]}, "agility": self.agility(),
                 "style": self.style, "durability": self.durability, "material": self.material, "parts": {role: part["source"] for role, part in self.parts.items()}, "notes": self.notes}
+
+    def support(self):
+        return self._override("battery", "support", TOPOLOGY_CONFIG["battery_support"])
 
     def patch(self, crash_cases=()):
         material = {key: self.material[key] for key in ("density_g_cm3", "young_modulus_mpa", "poisson_ratio")}
         weights = {name: self.durability["crash_weight"] for name in crash_cases}
         patch = {"FRAME_DEFAULTS": self.frame, "COMPONENT_DEFAULTS": self.components, "FEA_CONFIG": {"material": material},
-                 "TOPOLOGY_CONFIG": {"manufacturing": {"nozzle_width_mm": self.request["print"]["nozzle_mm"], "minimum_feature_mm": self.durability["minimum_width_mm"]}},
+                 "TOPOLOGY_CONFIG": {"manufacturing": {"nozzle_width_mm": self.request["print"]["nozzle_mm"], "minimum_feature_mm": self.durability["minimum_width_mm"]},
+                                     "battery_support": self.support()},
                  "INTEGRATION_CONFIG": {"crash_directions": list(self.style["crash_directions"])}}
-        if "support" in self.overrides.get("battery", {}):
-            patch["TOPOLOGY_CONFIG"]["battery_support"] = self.overrides["battery"]["support"]
         if weights:
             patch["TOPOLOGY_CONFIG"]["optimizer"] = {"case_weights": weights}
         return patch
@@ -651,7 +653,7 @@ def datasheet(manifest_path):
         ("5 Offenheit", measured(f"Material in Draufsicht {100 * m['top_fraction']:.0f} % der Bounding-Box, {m['openings_100']} Öffnungen ≥ 100 mm² (größte {m['largest_opening_mm2']:.0f} mm²), {m['openings_20_100']} mit 20–100 mm²") if m else missing, "gemessen (Draufsicht-Projektion)"),
         ("6 Arme", f"{request['layout']['x_type']} mit Armwinkel {np.degrees(np.arctan(frame['lateral_longitudinal_ratio'])):.1f}° zur Längsachse, Motorpads Oberkante z = {frame['arm_height_mm']:.2f} mm (Vorgabe), Armform aus der Optimierung", "Layoutregeln; Form siehe Renders"),
         ("7 Kamera und Schutz", f"Kamera {request['components']['camera']} bei y = {layout['camera']['y_mm']:.1f} mm, Neigung {layout['camera']['tilt_deg']:g}°; Bügel " + (measured(f"vorgegeben, Material im Bügelkanal {m['hoop_volume_mm3']:.0f} mm³") if layout["hoop"] else "nicht vorgegeben"), "Layoutregeln + gemessen"),
-        ("8 Akku und Stack", f"Akku {request['components']['battery']} {request['layout']['battery_mount']}, Deckoberkante z = {layout['battery']['deck_top_mm']:.1f} mm, Stack {request['components']['aio']} zentriert bei z = {layout['stack']['position_mm'][2]:.1f} mm, Antennen {request['components']['antennas']}, XT30 und Balancer ohne vorgeschriebenen Sitz (Gummiband, frei platziert)", "Layoutregeln"),
+        ("8 Akku und Stack", f"Akku {request['components']['battery']} {request['layout']['battery_mount']}, Deckoberkante z = {layout['battery']['deck_top_mm']:.1f} mm, Akkuauflage {'frei (ohne Vorgabegeometrie)' if layout['battery'].get('support') == 'free' else 'Schienen'}, Stack {request['components']['aio']} zentriert bei z = {layout['stack']['position_mm'][2]:.1f} mm, Antennen {request['components']['antennas']}, XT30 und Balancer ohne vorgeschriebenen Sitz (Gummiband, frei platziert)", "Layoutregeln"),
         ("9 Masse", measured(f"{_number(mass)} g = {m['volume_mm3'] / 1000:.2f} cm³ × {material['density_g_cm3']} g/cm³ ({request['material']}); Komponenten {layout['checks']['component_mass_g']:.1f} g") if m else missing, "gemessen (STL)"),
         ("10 Druckbarkeit", measured(f"{'wasserdicht' if m['watertight'] else 'NICHT wasserdicht'}, {m['bodies']} Körper, Überhang > 45°: {m['overhang_mm2']:.0f} mm² = {100 * m['overhang_fraction']:.0f} % der Oberfläche; Wandregel: {({True: 'bestanden', False: 'nicht bestanden', None: 'nicht geprüft'})[manifest.get('wall_rule_passed')]}; Düse {request['print']['nozzle_mm']} mm, Schicht {request['print']['layer_mm']} mm") if m else missing, "gemessen (STL, Normalen) + Wandregel (int)"),
     ]

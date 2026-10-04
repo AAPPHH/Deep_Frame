@@ -14,7 +14,20 @@ from deep_frame.topology_geometry import build_design_domain, grid_centers, pres
 
 @pytest.fixture(scope="module")
 def domain():
-    return build_design_domain(reference_parameters())
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
+        return build_design_domain(reference_parameters())
+
+@pytest.fixture
+def rails(monkeypatch):
+    monkeypatch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
+
+def test_free_battery_support_is_the_default_without_prescribed_rails():
+    assert TOPOLOGY_CONFIG["battery_support"] == "free"
+    built = build_design_domain(reference_parameters())
+    names = {region["name"]: region for region in built["regions"]}
+    assert names["battery_contact"]["role"] == "allowed" and not any(name.startswith("battery_rail_") for name in names)
+    assert not any(case["name"].startswith("connection_battery_rail_") for case in built["load_cases"])
 
 def test_domain_is_free_connected_3d_space_with_small_preserve_fraction(domain):
     assert domain["grid"]["shape"] == [34, 32, 8]
@@ -36,6 +49,7 @@ def test_no_v0_shape_call_or_shape_parameter_dependency(monkeypatch, domain):
     monkeypatch.setattr("deep_frame.frame.build_frame", fail)
     monkeypatch.setattr("deep_frame.frame.build_geometry", fail)
     monkeypatch.setattr("deep_frame.fea.build_geometry", fail)
+    monkeypatch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
     parameters = reference_parameters()
     parameters["frame"].update(arm_width_mm=0.001, arm_root_mm=80.0, body_width_mm=1.0, body_length_mm=1.0, base_window_mm=999.0, wall_window_height_mm=999.0, deck_window_width_mm=999.0)
     changed = build_design_domain(parameters)
@@ -146,7 +160,7 @@ def test_field_offsets_stay_inside_the_component_clearance():
     assert IMPLICIT_CONFIG["preserve_inflation_mm"] + IMPLICIT_CONFIG["constraint_offset_mm"] < TOPOLOGY_CONFIG["component_clearance_mm"]
 
 @pytest.mark.parametrize("spacing", [2.0, 4 / 3, 1.0])
-def test_battery_rails_and_deck_loads_resolve_on_every_study_grid(spacing):
+def test_battery_rails_and_deck_loads_resolve_on_every_study_grid(spacing, rails):
     from deep_frame.topology_optimization import HexElasticity
     parameters = reference_parameters()
     parameters["topology"] = {"grid": {**TOPOLOGY_CONFIG["grid"], "spacing_mm": [spacing] * 3, "shape": [round(136 / spacing), round(128 / spacing), round(32 / spacing)]}}

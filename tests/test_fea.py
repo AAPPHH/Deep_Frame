@@ -9,7 +9,7 @@ import pytest
 import trimesh
 from build123d import Align, Box, Pos, Solid
 
-from deep_frame.config import CONFIG, CRASH_DIRECTIONS, FEA_CONFIG, IMPLICIT_CONFIG, PRINT_MATERIAL
+from deep_frame.config import CONFIG, CRASH_DIRECTIONS, FEA_CONFIG, IMPLICIT_CONFIG, INTEGRATION_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG
 from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, clean_slivers, _prepare_surface, _read_mesh, _run, _select, _topology, _volume_mesh, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
 from tests.test_frame import frame
@@ -245,8 +245,12 @@ def test_crash_directions_replace_both_crash_cases_with_equal_magnitude():
     with pytest.raises(ValueError, match="Unknown crash directions"):
         prepare_frame_case(parameters)
 
-def test_every_fixture_load_and_mass_selector_meets_real_frame(frame):
-    model = prepare_frame_case(reference_parameters())
+def test_every_fixture_load_and_mass_selector_meets_real_frame(frame, monkeypatch):
+    parameters = reference_parameters()
+    free = prepare_frame_case(parameters)["point_masses"][0]["attachment_region"]
+    assert free["max_mm"][1] - free["min_mm"][1] == pytest.approx(parameters["components"]["battery"]["length_mm"] + 2 * INTEGRATION_CONFIG["battery_attachment_margin_mm"])
+    monkeypatch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
+    model = prepare_frame_case(parameters)
     regions = [model["point_masses"][0]["attachment_region"]]
     for case in model["load_cases"]:
         regions.extend(case["fixed_regions"])

@@ -76,6 +76,7 @@ def test_presets_translate_deterministically():
     assert len(patch["INTEGRATION_CONFIG"]["crash_directions"]) == 9 and patch["TOPOLOGY_CONFIG"]["manufacturing"]["minimum_feature_mm"] == 2.4
     light = FrameLayout(request(durability="light")).patch(["crash_front"])
     assert light["TOPOLOGY_CONFIG"]["optimizer"]["case_weights"]["crash_front"] < 1.0 and light["TOPOLOGY_CONFIG"]["manufacturing"]["minimum_feature_mm"] == 2.0
+    assert patch["TOPOLOGY_CONFIG"]["battery_support"] == "free" and FrameLayout(request(overrides={"battery": {"support": "rails"}})).patch()["TOPOLOGY_CONFIG"]["battery_support"] == "rails"
     stretched = FrameLayout(request(layout={"x_type": "stretched_x", "battery_mount": "top"})).motors()["front_right"]
     assert stretched[1] > stretched[0] and FrameLayout(request(layout={"x_type": "true_x"})).motors()["front_right"][0] == pytest.approx(FrameLayout(request(layout={"x_type": "true_x"})).motors()["front_right"][1])
 

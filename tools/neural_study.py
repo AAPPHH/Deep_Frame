@@ -94,6 +94,8 @@ class R2Domain:
                 continue
             suffix = self.relief["attachments"][prefix]
             targets = [name.split("_", 1)[1] + suffix] if suffix.startswith("_") else [key for key in regions if key.startswith(suffix)]
+            if not targets:
+                raise ValueError(f"{name}: no {suffix}* region in the domain (free battery support needs the SIMP formulation, tools/formulation_study.py frame_mma, or TOPOLOGY_CONFIG battery_support 'rails')")
             items += [{"name": name, "region": bounds(regions[key]), "mass_g": component["mass_g"] / len(targets)} for key in targets]
         frame = fraction * domain["metadata"]["allowed_volume_mm3"] * domain["material"]["density_g_cm3"] / 1000 if self.relief["frame_mass"] == "target" else 0.0
         return {"point_masses": items, "preserve_mass_g": frame}

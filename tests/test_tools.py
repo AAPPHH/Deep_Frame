@@ -13,7 +13,7 @@ import trimesh
 
 import deep_frame
 from deep_frame import topology_pipeline, topology_surface
-from deep_frame.config import command_line, configure
+from deep_frame.config import TOPOLOGY_CONFIG, command_line, configure
 from deep_frame.topology_optimization import _settings
 from deep_frame.topology_pipeline import _artifact, _file_digest, _read, _save
 from deep_frame.topology_surface import SurfaceReconstructionError
@@ -994,7 +994,11 @@ def test_diagnostic_fea_runs_only_when_features_is_the_only_failing_check(tmp_pa
     line, = ledger(tmp_path / "run_log.jsonl")
     assert line["status"] == "geometry_invalid" and not line["success"]
 
-def test_implicit_study_flags_sources_built_on_older_prescribed_geometry():
+@pytest.fixture
+def rails(monkeypatch):
+    monkeypatch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
+
+def test_implicit_study_flags_sources_built_on_older_prescribed_geometry(rails):
     from deep_frame.topology_geometry import build_design_domain
     parameters = topology_study.study_parameters([34, 32, 8])
     built = build_design_domain(parameters)
@@ -1071,7 +1075,7 @@ def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
     with pytest.raises(SystemExit):
         compute.main(["unknown", "--", "x"])
 
-def test_round2_domain_lifts_pads_and_adds_camera_hoops():
+def test_round2_domain_lifts_pads_and_adds_camera_hoops(rails):
     full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
     z = neural_study.grid_centers(full["grid"])[..., 2]
     pads = neural_study.anchors(full)
@@ -1083,7 +1087,7 @@ def test_round2_domain_lifts_pads_and_adds_camera_hoops():
     assert "crash_hoop" in cases and half["optimizer_settings"]["case_weights"]["crash_hoop"] == 1.0
     assert all(box["min_mm"][2] == pytest.approx(bottom - 0.01) for box in cases["battery_impact"]["fixed_regions"])
 
-def test_round3_domain_turns_flight_and_crash_cases_into_inertia_relief():
+def test_round3_domain_turns_flight_and_crash_cases_into_inertia_relief(rails):
     full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16], 0.05)
     cases = {case["name"]: case for case in half["load_cases"]}
     relief = [name for name, case in cases.items() if "inertia_relief" in case]
@@ -1093,7 +1097,7 @@ def test_round3_domain_turns_flight_and_crash_cases_into_inertia_relief():
     assert sum(item["mass_g"] for item in masses["point_masses"]) == pytest.approx(37.0 + 7.2 + 2.3 + 4 * (4.5 + 1.2))
     assert masses["preserve_mass_g"] == pytest.approx(0.05 * full["metadata"]["allowed_volume_mm3"] * 1.09 / 1000)
 
-def test_round4_hard_prop_keep_out_keeps_corridor_pads_and_connectivity():
+def test_round4_hard_prop_keep_out_keeps_corridor_pads_and_connectivity(rails):
     cfg = neural_study.configure({"prop_discs": {"mode": "hard"}})
     full, half = neural_study.R2Domain(cfg).build([68, 64, 16])
     soft, _ = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])
@@ -1122,7 +1126,7 @@ def test_frame_request_accepts_round4_optimizer_options_and_reconstruction_switc
     with pytest.raises(ValueError):
         validate_request({"overrides": {"optimizer": {"prop_discs": "corridor"}}})
 
-def test_round4_stiffness_case_keeps_the_evaluator_support_and_request_options():
+def test_round4_stiffness_case_keeps_the_evaluator_support_and_request_options(rails):
     from deep_frame.frame_run import validate_request
     cfg = neural_study.configure({"stiffness": {"min_n_per_mm": 10.0}})
     _, half = neural_study.R2Domain(cfg).build([68, 64, 16], 0.08)
