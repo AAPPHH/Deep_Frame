@@ -3025,6 +3025,321 @@
     },
     "path": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov_recon_1\\evaluation\\sigma.json"
    }
+  },
+  "simp_mma_cov2_raw_1": {
+   "role": "evaluator only",
+   "status": "ok",
+   "arm_mm": 66.25,
+   "evaluator": {
+    "full": {
+     "mean_compliance_n_mm": 0.6189231851841426,
+     "worst_case_compliance_n_mm": 0.1873306980347035,
+     "top_eigenvalues_n_mm": [
+      0.1873306980347035,
+      0.14047068038161276,
+      0.09430426087010295
+     ],
+     "worst_case_load": {
+      "motor_front_left My": -5.199296988072678,
+      "motor_front_left Mz": -4.459399182829744,
+      "motor_front_right My": 5.200478122237177,
+      "motor_front_right Mz": 4.503459125010677,
+      "motor_rear_left My": 5.186635984341187,
+      "motor_rear_left Mz": 4.184133208459679,
+      "motor_rear_right My": -5.186960524738134,
+      "motor_rear_right Mz": -4.147032508010267,
+      "battery Fz": 1.178736824593148
+     },
+     "all_dofs": {
+      "mean_compliance_n_mm": 0.6197214440444112,
+      "worst_case_compliance_n_mm": 0.18761013862116488,
+      "top_eigenvalues_n_mm": [
+       0.18761013862116488,
+       0.1404708819107208,
+       0.09438250896440796
+      ],
+      "worst_case_load": {
+       "motor_front_left My": -5.1834995487737805,
+       "motor_front_left Mz": -4.462808280944779,
+       "motor_front_right My": 5.184677254517266,
+       "motor_front_right Mz": 4.50676777117791,
+       "motor_rear_left My": 5.170848382571429,
+       "motor_rear_left Mz": 4.188161146649174,
+       "motor_rear_right My": -5.1711714959871555,
+       "motor_rear_right Mz": -4.1511108448087395,
+       "battery Fz": 1.17974207612201
+      }
+     },
+     "groups": {
+      "stack_fixed": {
+       "mean_compliance_n_mm": 0.6189231851841426,
+       "worst_case_compliance_n_mm": 0.1873306980347035,
+       "top_eigenvalues_n_mm": [
+        0.1873306980347035,
+        0.14047068038161276,
+        0.09430426087010295
+       ],
+       "worst_case_load": {
+        "motor_front_left My": -5.199296988072678,
+        "motor_front_left Mz": -4.459399182829744,
+        "motor_front_right My": 5.200478122237177,
+        "motor_front_right Mz": 4.503459125010677,
+        "motor_rear_left My": 5.186635984341187,
+        "motor_rear_left Mz": 4.184133208459679,
+        "motor_rear_right My": -5.186960524738134,
+        "motor_rear_right Mz": -4.147032508010267,
+        "battery Fz": 1.178736824593148
+       }
+      },
+      "motor_pads_fixed": {
+       "mean_compliance_n_mm": 0.0007982588602685491,
+       "worst_case_compliance_n_mm": 0.0004628354660642363,
+       "top_eigenvalues_n_mm": [
+        0.0004628354660642363,
+        0.00023977125281475427,
+        9.565214138955856e-05
+       ],
+       "worst_case_load": {
+        "stack Fz": -0.3030715939857545
+       }
+      }
+     },
+     "mean_by_interface_n_mm": {
+      "motor_front_left": 0.147279386745937,
+      "motor_front_right": 0.1537110458059517,
+      "motor_rear_left": 0.1076138607348366,
+      "motor_rear_right": 0.10104122928668996,
+      "stack": 0.0007982588602685491,
+      "battery": 0.1091424338610125,
+      "camera": 0.00013522874971480707
+     },
+     "scaled_to_arm_mm": null
+    },
+    "scaled": {
+     "mean_compliance_n_mm": 0.6189231851841426,
+     "worst_case_compliance_n_mm": 0.1873306980347035,
+     "top_eigenvalues_n_mm": [
+      0.1873306980347035,
+      0.14047068038161276,
+      0.09430426087010295
+     ],
+     "worst_case_load": {
+      "motor_front_left My": -5.199296988072678,
+      "motor_front_left Mz": -4.459399182829744,
+      "motor_front_right My": 5.200478122237177,
+      "motor_front_right Mz": 4.503459125010677,
+      "motor_rear_left My": 5.186635984341187,
+      "motor_rear_left Mz": 4.184133208459679,
+      "motor_rear_right My": -5.186960524738134,
+      "motor_rear_right Mz": -4.147032508010267,
+      "battery Fz": 1.178736824593148
+     },
+     "all_dofs": {
+      "mean_compliance_n_mm": 0.6197214440444112,
+      "worst_case_compliance_n_mm": 0.18761013862116488,
+      "top_eigenvalues_n_mm": [
+       0.18761013862116488,
+       0.1404708819107208,
+       0.09438250896440796
+      ],
+      "worst_case_load": {
+       "motor_front_left My": -5.1834995487737805,
+       "motor_front_left Mz": -4.462808280944779,
+       "motor_front_right My": 5.184677254517266,
+       "motor_front_right Mz": 4.50676777117791,
+       "motor_rear_left My": 5.170848382571429,
+       "motor_rear_left Mz": 4.188161146649174,
+       "motor_rear_right My": -5.1711714959871555,
+       "motor_rear_right Mz": -4.1511108448087395,
+       "battery Fz": 1.17974207612201
+      }
+     },
+     "groups": {
+      "stack_fixed": {
+       "mean_compliance_n_mm": 0.6189231851841426,
+       "worst_case_compliance_n_mm": 0.1873306980347035,
+       "top_eigenvalues_n_mm": [
+        0.1873306980347035,
+        0.14047068038161276,
+        0.09430426087010295
+       ],
+       "worst_case_load": {
+        "motor_front_left My": -5.199296988072678,
+        "motor_front_left Mz": -4.459399182829744,
+        "motor_front_right My": 5.200478122237177,
+        "motor_front_right Mz": 4.503459125010677,
+        "motor_rear_left My": 5.186635984341187,
+        "motor_rear_left Mz": 4.184133208459679,
+        "motor_rear_right My": -5.186960524738134,
+        "motor_rear_right Mz": -4.147032508010267,
+        "battery Fz": 1.178736824593148
+       }
+      },
+      "motor_pads_fixed": {
+       "mean_compliance_n_mm": 0.0007982588602685491,
+       "worst_case_compliance_n_mm": 0.0004628354660642363,
+       "top_eigenvalues_n_mm": [
+        0.0004628354660642363,
+        0.00023977125281475427,
+        9.565214138955856e-05
+       ],
+       "worst_case_load": {
+        "stack Fz": -0.3030715939857545
+       }
+      }
+     },
+     "mean_by_interface_n_mm": {
+      "motor_front_left": 0.147279386745937,
+      "motor_front_right": 0.1537110458059517,
+      "motor_rear_left": 0.1076138607348366,
+      "motor_rear_right": 0.10104122928668996,
+      "stack": 0.0007982588602685491,
+      "battery": 0.1091424338610125,
+      "camera": 0.00013522874971480707
+     },
+     "scaled_to_arm_mm": 66.25
+    },
+    "diagonal": {
+     "mean_compliance_n_mm": 0.7278745971477651,
+     "worst_case_compliance_n_mm": 0.2664569430584045,
+     "top_eigenvalues_n_mm": [
+      0.2664569430584045,
+      0.14771275020997018,
+      0.11452933045685391
+     ],
+     "worst_case_load": {
+      "motor_front_left Mz": -4.9541497030985555,
+      "motor_front_right Mz": 4.9829116587592965,
+      "motor_rear_left Mz": 4.872048259146207,
+      "motor_rear_right Mz": -4.845991861984779,
+      "battery Fz": 1.458832212845733
+     },
+     "all_dofs": {
+      "mean_compliance_n_mm": 0.7286489963252094,
+      "worst_case_compliance_n_mm": 0.2668164935534628,
+      "top_eigenvalues_n_mm": [
+       0.2668164935534628,
+       0.14771275024051167,
+       0.11452933046457599
+      ],
+      "worst_case_load": {
+       "motor_front_left Mz": -4.954084696351262,
+       "motor_front_right Mz": 4.9828011813618724,
+       "motor_rear_left Mz": 4.872100570066976,
+       "motor_rear_right Mz": -4.846083932613578,
+       "battery Fz": 1.4587282877632894
+      }
+     },
+     "groups": {
+      "stack_fixed": {
+       "mean_compliance_n_mm": 0.7278745971477651,
+       "worst_case_compliance_n_mm": 0.2664569430584045,
+       "top_eigenvalues_n_mm": [
+        0.2664569430584045,
+        0.14771275020997018,
+        0.11452933045685391
+       ],
+       "worst_case_load": {
+        "motor_front_left Mz": -4.9541497030985555,
+        "motor_front_right Mz": 4.9829116587592965,
+        "motor_rear_left Mz": 4.872048259146207,
+        "motor_rear_right Mz": -4.845991861984779,
+        "battery Fz": 1.458832212845733
+       }
+      },
+      "motor_pads_fixed": {
+       "mean_compliance_n_mm": 0.0007743991774442239,
+       "worst_case_compliance_n_mm": 0.0004621490373245402,
+       "top_eigenvalues_n_mm": [
+        0.0004621490373245402,
+        0.00021379199611186157,
+        9.845814400782213e-05
+       ],
+       "worst_case_load": {
+        "stack Fz": 0.3035387364845179
+       }
+      }
+     },
+     "mean_by_interface_n_mm": {
+      "motor_front_left": 0.1676174648459155,
+      "motor_front_right": 0.17447265655755784,
+      "motor_rear_left": 0.1386745026972398,
+      "motor_rear_right": 0.13202045198434428,
+      "stack": 0.0007743991774442239,
+      "battery": 0.11498939347948667,
+      "camera": 0.00010012758322107495
+     },
+     "scaled_to_arm_mm": null
+    },
+    "peak_memory_gb": 11.390777587890625,
+    "runs": [
+     {
+      "group": "stack_fixed",
+      "steps": 36,
+      "fixed_nodes": 2437,
+      "interface_nodes": {
+       "motor_front_left": 2855,
+       "motor_front_right": 2768,
+       "motor_rear_left": 2974,
+       "motor_rear_right": 2837,
+       "battery": 573,
+       "camera": 7299
+      },
+      "runtime_s": 807.1986669999987,
+      "reused_factorisation": true,
+      "reciprocity_error": 1.2372226419647012e-09
+     },
+     {
+      "group": "motor_pads_fixed",
+      "steps": 6,
+      "fixed_nodes": 11434,
+      "interface_nodes": {
+       "stack": 2437
+      },
+      "runtime_s": 144.4595145000003,
+      "reused_factorisation": true,
+      "reciprocity_error": 1.0158567075650016e-09
+     }
+    ],
+    "centroids_mm": {
+     "motor_front_left": [
+      -53.49288164308288,
+      38.72774395655033,
+      6.908663965619898
+     ],
+     "motor_front_right": [
+      52.953660820596006,
+      38.645162725351184,
+      6.909948161220148
+     ],
+     "motor_rear_left": [
+      -53.358610567127776,
+      -39.35490475854066,
+      6.906560237601573
+     ],
+     "motor_rear_right": [
+      52.76642632120863,
+      -39.182636024498485,
+      6.907584188611668
+     ],
+     "battery": [
+      1.2972731779817717,
+      0.05509187239448408,
+      28.07162953526016
+     ],
+     "camera": [
+      1.619713368410493,
+      35.423364635283846,
+      23.06498053064441
+     ],
+     "stack": [
+      -0.31551932648307035,
+      -0.4212513260604894,
+      0.25458364445322074
+     ]
+    },
+    "path": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov2_raw_1\\evaluation\\sigma.json"
+   }
   }
  },
  "definition": "F = interface flexibility (42 x 42, LOAD_COVARIANCE order): unit force split equally over the selector nodes, unit moment as minimum-norm couple field about the selector node centroid (Sigma's reference point is taken at that centroid); F_ij = a_i . u_j (work-conjugate). Support per group as the evaluator arm-tip/crash fixtures: stack mount undersides fixed for motor pads, battery, camera; four motor seat undersides fixed for the stack; F is block-diagonal across the two groups (stack <-> rest coupling zero by construction). Mean compliance tr(Sigma F) = sum_k l_k^T F l_k, worst-case compliance lambda_max(Sigma^1/2 F Sigma^1/2), both in N mm. The limits and the evaluator targets use limit_group (36 x 36: motors, battery, camera with the stack fixed, as the optimizer's COVARIANCE support); the stack block is reported under groups and all_dofs (about 0.1 % of tr for ManaFly and Aether4)",
@@ -3045,7 +3360,8 @@
    "simp_mma_raw_1": "C:\\clones\\Deep_Frame-cov\\exports\\cov\\eval\\simp_mma_raw_1\\sigma.json",
    "simp_mma_recon_1": "C:\\clones\\Deep_Frame-cov\\exports\\cov\\eval\\simp_mma_recon_1\\sigma.json",
    "simp_mma_cov_raw_1": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov_raw_1\\evaluation\\sigma.json",
-   "simp_mma_cov_recon_1": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov_recon_1\\evaluation\\sigma.json"
+   "simp_mma_cov_recon_1": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov_recon_1\\evaluation\\sigma.json",
+   "simp_mma_cov2_raw_1": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov2_raw_1\\evaluation\\sigma.json"
   },
   "output": "C:\\clones\\Deep_Frame-cov\\exports\\cov"
  }

@@ -15,7 +15,7 @@ GAP = Path("C:/clones/Deep_Frame-gap/exports")
 gap = lambda *names: str(next((path for path in (GAP / folder / name / "interface_stiffness.json" for folder in ("gap", "interface_stiffness") for name in names) if path.exists()), GAP / "gap" / names[0] / "interface_stiffness.json"))
 LIMITS = {"references": {"manafly3": gap("manafly3"), "aether4": gap("aether4")}, "candidates": {"simp_mma_raw_1": gap("simp_mma_raw", "simp_mma_raw_1"), "simp_mma_recon_1": gap("simp_mma_recon", "simp_mma_recon_1")},
           "evaluations": {name: str(ROOT / "exports" / "cov" / "eval" / name / "sigma.json") for name in ("manafly3", "aether4", "simp_mma_raw_1", "simp_mma_recon_1")}
-                          | {name: str(ROOT / "exports" / "runs" / name / "evaluation" / "sigma.json") for name in ("simp_mma_cov_raw_1", "simp_mma_cov_recon_1")}, "output": str(ROOT / "exports" / "cov")}
+                          | {name: str(ROOT / "exports" / "runs" / name / "evaluation" / "sigma.json") for name in ("simp_mma_cov_raw_1", "simp_mma_cov_recon_1", "simp_mma_cov2_raw_1")}, "output": str(ROOT / "exports" / "cov")}
 LIMITS_KINDS = {"references": "object", "candidates": "object", "evaluations": "object", "output": "path"}
 
 def spec_of(overrides):

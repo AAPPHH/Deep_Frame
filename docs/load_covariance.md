@@ -123,6 +123,7 @@ Spur Σ = 1761 (zentriert 1685). Eigenwerte (Rang 29): 543,4 ×2 (Kreiselmomente
 | Iteration | Entwurf | Optimierer tr / λmax N mm | Evaluator tr / λmax N mm | Faktor tr / λmax | Evaluator-Grenze | Optimierer-Grenze |
 |---|---|---|---|---|---|---|
 | 0 | SIMP+MMA 17,2 g (Feld) / 14,6 g roh | 0,8551 / 0,1967 | diag. 1,437 / 0,501 (voll 1,163 / 0,287) | 0,5952 / 0,3928 (voll 0,735 / 0,685) | 0,390 / 0,168 (Aether4 skaliert, diag.) | 0,232 / 0,066 |
-| 1 | Lastmodell 29,4 g (Feld) / 26,6 g roh (baff3e1) | 0,2322 / 0,05851 | voll 0,1862 / 0,04739 | **1,247 / 1,235** | **0,687 / 0,229** | **0,857 / 0,283** |
+| 1 | Lastmodell 29,4 g (Feld) / 26,6 g roh (baff3e1, noch mit Zubehörsitzen) | 0,2322 / 0,05851 | voll 0,1862 / 0,04739 | 1,247 / 1,235 | 0,687 / 0,229 | 0,857 / 0,283 |
+| 2 | Lastmodell ohne Sitze, Lauf mit Faktor 1: 18,5 g (Feld) / 15,9 g roh (simp_mma_cov2) | 0,8563 / 0,2574 | voll 0,6189 / 0,1873 | **1,384 / 1,374** | **0,687 / 0,229** | **0,951 / 0,315** |
 
-Faktor 0 → 1 gegen das volle Maß: +70 % / +80 % (> 10 %, nächster Lauf mit Faktor 1 nötig, danach erneut kalibrieren). Der 26,6-g-Rahmen liegt im Evaluator bei 27 % / 21 % der neuen Grenzen, war also etwa 3,7× / 4,8× steifer als nötig.
+Faktor 0 → 1 gegen das volle Maß: +70 % / +80 % (> 10 %, nächster Lauf mit Faktor 1 nötig, danach erneut kalibrieren). Faktor 1 → 2: +11,0 % / +11,2 % (knapp > 10 %, dritter und letzter Lauf mit Faktor 2). Der 15,9-g-Rohkörper liegt im Evaluator bei 90 % / 82 % der Grenzen. Der 26,6-g-Rahmen liegt im Evaluator bei 27 % / 21 % der neuen Grenzen, war also etwa 3,7× / 4,8× steifer als nötig.
