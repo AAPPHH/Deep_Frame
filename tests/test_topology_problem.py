@@ -5,7 +5,8 @@ import pytest
 from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, COMPONENT_DEFAULTS, PRINT_MATERIAL
 from deep_frame.topology_optimization import HexElasticity, elasticity_matrix, hexahedron_matrices, orthotropic_matrix
 from deep_frame.topology_stability import FOUR_FEET, StandStability, stand_design, stand_domain
-from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
+from deep_frame.topology_neural import cell_centers
+from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, corridor_weights, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
     return {"kind": "box", "min_mm": list(map(float, low)), "max_mm": list(map(float, high))}
@@ -489,3 +490,72 @@ def test_stand_rows_in_the_shared_formulation():
     live = {row["name"]: row for row in on.geometry(np.full(on.map.n, 0.5)) if row["name"].startswith("stand_")}
     assert np.any(live["stand_reserve"]["gradient"]) and live["stand_reserve"]["value"] == gated["stand_reserve"]["value"]
     on.close()
+
+def corridor(paths, minimum=2.0, radius=1.0, taper=1.0):
+    return {"minimum_mm": minimum, "radius_mm": radius, "taper_mm": taper, "sample_mm": 0.1, "paths_mm": paths, "source": None}
+
+def test_corridor_weights_and_mirror():
+    points = np.array([[0.0, 0.0, 0.0], [0.0, 2.5, 0.0], [0.0, 3.0, 0.0], [-5.0, 0.0, 0.0], [5.0, 0.0, 0.0]])
+    weights = corridor_weights(points, corridor([[[-5.0, 0.0, 0.0], [-5.0, 0.0, 10.0]], [[0.0, -1.0, 0.0], [0.0, 1.0, 0.0]]]))
+    assert weights.tolist() == pytest.approx([1.0, 0.5, 0.0, 1.0, 0.0], abs=0.06)
+    mirrored = corridor_weights(points, corridor([[[-5.0, 0.0, 0.0], [-5.0, 0.0, 10.0]]]), {"axis": 0, "plane_mm": 0.0})
+    assert mirrored[3] == mirrored[4] == 1.0 and mirrored[0] == 0.0
+    assert not np.any(corridor_weights(points, corridor([])))
+
+def test_cable_corridor_gradients_match_finite_differences():
+    problem = tiny_problem()
+    problem["width"]["corridor"] = corridor([[[0.5, -4.0, 2.0], [3.5, 4.0, 2.0]]])
+    tiny = TopologyProblem(tiny_domain(), problem)
+    blend = tiny.map.blend
+    assert blend is not None and np.any(blend == 1) and np.any((blend > 0) & (blend < 1)) and np.any(blend == 0)
+    assert tiny.corridor["radius_mm"] == pytest.approx(filter_radius({**problem["width"], "minimum_mm": 2.0}, [1.0] * 3)) and tiny.corridor["radius_mm"] > tiny.radius
+    random = np.random.default_rng(3)
+    design = random.uniform(0.3, 0.7, tiny.map.n)
+    direction = random.standard_normal(tiny.map.n) * tiny.map.free
+    plain = TopologyProblem(tiny_domain(), tiny_problem())
+    assert not np.allclose(tiny.map.filtered(design), plain.map.filtered(design))
+    assert np.allclose(tiny.map.filtered(design)[blend == 0], plain.map.filtered(design)[blend == 0])
+    plain.close()
+    result = tiny.evaluate(design)
+    step = 1e-5
+    plus, minus = tiny.evaluate(design + step * direction), tiny.evaluate(design - step * direction)
+    assert result["objective_gradient"] @ direction == pytest.approx((plus["objective"] - minus["objective"]) / (2 * step), rel=1e-6)
+    for name, g_plus, g_minus, gradient in zip(result["names"], plus["constraints"], minus["constraints"], result["constraint_gradients"]):
+        assert gradient @ direction == pytest.approx((g_plus - g_minus) / (2 * step), rel=1e-4, abs=1e-9), name
+    sensitivity = random.standard_normal(tiny.map.n)
+    fields = lambda x: tiny.map.fields(x)[0]["eroded"][0]
+    derivative = tiny.map.fields(design)[0]["eroded"][1]
+    assert tiny.map.pullback(sensitivity, derivative) @ direction == pytest.approx(sensitivity @ (fields(design + step * direction) - fields(design - step * direction)) / (2 * step), rel=1e-6)
+    tiny.close()
+
+def test_cable_corridor_member_width():
+    domain = cantilever_domain((48, 2, 2), 0.25)
+    widths = {}
+    for label, paths in (("outside", []), ("inside", [[[6.0, -1.0, 0.25], [6.0, 1.0, 0.25]]])):
+        problem = cantilever_problem(1.0)
+        problem["width"].update(minimum_mm=1.0, corridor=corridor(paths, 2.0, 3.0, 1.0))
+        problem["continuation"]["beta_schedule"] = [256.0]
+        mapping = TopologyProblem(domain, problem).map
+        assert (mapping.blend is None) == (label == "outside")
+        widths[label] = []
+        for cells in range(1, 16):
+            design = np.zeros((48, 2, 2))
+            design[24 - cells // 2:24 - cells // 2 + cells] = 1
+            fields, _ = mapping.fields(design.ravel())
+            eroded, intermediate = (fields[name][0].reshape(48, 2, 2)[:, 0, 0] for name in ("eroded", "intermediate"))
+            if eroded.max() > 0.5:
+                widths[label].append(np.count_nonzero(intermediate > 0.5) * 0.25)
+    assert 1.0 - 0.25 <= min(widths["outside"]) < 2.0 - 0.25 <= min(widths["inside"])
+
+@pytest.mark.skipif(not __import__("importlib").util.find_spec("torch") or not __import__("torch").cuda.is_available(), reason="needs torch with CUDA")
+def test_cable_corridor_convolution_matches_sparse():
+    from deep_frame.topology_optimization import DensityMap, _settings
+    domain = cantilever_domain((14, 11, 9), 0.75)
+    weights = corridor_weights(cell_centers(domain["grid"]), corridor([[[1.0, 0.0, 3.0], [9.0, 8.0, 3.0]]], 3.0, 1.5, 1.0))
+    sparse, convolution = (DensityMap(domain, _settings({"filter_radius_mm": 1.6, "projection_beta": 4.0, "density_filter": name, "corridor": {"weights": weights, "radius_mm": 3.4}})) for name in ("sparse", "convolution"))
+    rng = np.random.default_rng(5)
+    design, sensitivity = rng.uniform(size=sparse.n), rng.normal(size=sparse.n)
+    projection = sparse.physical(design)[1]
+    assert sparse.corridor_filter is not None and convolution.corridor_convolution is not None
+    assert np.max(np.abs(convolution.filtered(design) - sparse.filtered(design))) < 1e-12
+    assert np.max(np.abs(convolution.pullback(sensitivity, projection) - sparse.pullback(sensitivity, projection))) < 1e-12 * np.max(np.abs(sparse.pullback(sensitivity, projection)))

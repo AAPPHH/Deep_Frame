@@ -1,0 +1,511 @@
+{
+ "statement": "cable corridor minimum width (CABLE_WIDTH, PROBLEM width.corridor): blend weights from the previous frames' cable centre lines on the coarse and fine frame half domains; central finite differences of a random linear functional of the eroded and intermediate projections through the blended filter pullback along one random direction at several beta",
+ "settings": {
+  "enabled": false,
+  "source": null,
+  "kinds": [
+   "motor",
+   "camera"
+  ],
+  "minimum_mm": 4.5,
+  "radius_mm": 3.5,
+  "taper_mm": 2.0,
+  "sample_mm": 0.25,
+  "minimum_source": "user cable-channel spec step 4: minimum width 4-5 mm along the cable paths; 4.5 mm covers the C channel outer width of one motor bundle (4.4 mm = 2.2 mm bundle + 0.2 mm + 2 x 1.0 mm shell); members shared by two bundles need 6.6 mm and are not covered",
+  "source_note": "cables.json of the cable-channel stage on the previous frame (feature/cable-channels, paths[].centerline_mm, full-frame mm), routed paths of the listed kinds; half models get the mirrored copies as well",
+  "definition": {
+   "weight": "c_e = clip((r + t - d_e) / t, 0, 1), d_e = distance of the cell centre to the nearest cable centre line (polylines sampled every sample_mm), r = radius_mm, t = taper_mm; design-independent",
+   "filter": "rho~_e = (1 - c_e) (F_R rho)_e / (F_R 1)_e + c_e (F_Rc rho)_e / (F_Rc 1)_e with cone filters F_R (R = filter_radius of the global minimum width) and F_Rc (Rc = filter_radius with minimum_mm); linear in rho, pullback F_R^T((1 - c) s / F_R 1) + F_Rc^T(c s / F_Rc 1)",
+   "width": "where c = 1 the robust eroded / intermediate / dilated projections see only F_Rc, so the intermediate design has the robust minimum member width minimum_mm there (same length-scale argument as the global width); in the taper band the length scale lies between both"
+  }
+ },
+ "cases": {
+  "rail_v3b_68x64x24": {
+   "grid": {
+    "origin_mm": [
+     0.0,
+     -64.0,
+     -4.0
+    ],
+    "spacing_mm": [
+     2.0,
+     2.0,
+     1.3333333333333333
+    ],
+    "shape": [
+     34,
+     64,
+     27
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+   },
+   "symmetry": {
+    "axis": 0,
+    "plane_mm": 0.0
+   },
+   "paths": [
+    "rear_left",
+    "rear_right",
+    "front_right",
+    "front_left",
+    "camera"
+   ],
+   "filter": "sparse",
+   "radius_mm": 3.0,
+   "corridor_radius_mm": 5.113636363636363,
+   "core_cells": 804,
+   "taper_cells": 1059,
+   "allowed_cells": 38506,
+   "filter_nnz": 720302,
+   "corridor_filter_nnz": 175220,
+   "finite_differences": {
+    "beta_1_eroded": {
+     "analytic": 5.120403390370694,
+     "finite_difference": {
+      "0.0001": 5.12040331457797,
+      "1e-05": 5.120403385205918,
+      "1e-06": 5.120403329783585
+     },
+     "relative_error": {
+      "0.0001": 1.4802100255051004e-08,
+      "1e-05": 1.0086657018169515e-09,
+      "1e-06": 1.183248755249387e-08
+     }
+    },
+    "beta_1_intermediate": {
+     "analytic": 5.346632644817653,
+     "finite_difference": {
+      "0.0001": 5.346632564382503,
+      "1e-05": 5.346632637071025,
+      "1e-06": 5.346632534042328
+     },
+     "relative_error": {
+      "0.0001": 1.504407664590024e-08,
+      "1e-05": 1.4488798377630836e-09,
+      "1e-06": 2.07187092450584e-08
+     }
+    },
+    "beta_8_eroded": {
+     "analytic": -8.49425946364839,
+     "finite_difference": {
+      "0.0001": -8.494253107134142,
+      "1e-05": -8.494259400571025,
+      "1e-06": -8.494259502001
+     },
+     "relative_error": {
+      "0.0001": 7.48331156150392e-07,
+      "1e-05": 7.425881713567506e-09,
+      "1e-06": 4.515121061196717e-09
+     }
+    },
+    "beta_8_intermediate": {
+     "analytic": 34.730757441232726,
+     "finite_difference": {
+      "0.0001": 34.73075263215719,
+      "1e-05": 34.73075740458853,
+      "1e-06": 34.73075729232278
+     },
+     "relative_error": {
+      "0.0001": 1.3846735730648452e-07,
+      "1e-05": 1.0550934667755576e-09,
+      "1e-06": 4.287552564157894e-09
+     }
+    },
+    "beta_32_eroded": {
+     "analytic": 42.784131034278815,
+     "finite_difference": {
+      "0.0001": 42.78415084066012,
+      "1e-05": 42.7841312331978,
+      "1e-06": 42.784131036199824
+     },
+     "relative_error": {
+      "0.0001": 4.629373474495303e-07,
+      "1e-05": 4.649363604809753e-09,
+      "1e-06": 4.490003847269723e-11
+     }
+    },
+    "beta_32_intermediate": {
+     "analytic": 156.03024322855052,
+     "finite_difference": {
+      "0.0001": 156.03002622768258,
+      "1e-05": 156.03024106667363,
+      "1e-06": 156.03024307608848
+     },
+     "relative_error": {
+      "0.0001": 1.3907635163609477e-06,
+      "1e-05": 1.3855499279084008e-08,
+      "1e-06": 9.77131310438891e-10
+     }
+    }
+   },
+   "max_relative_error": 4.515121061196717e-09
+  },
+  "battery_free_68x64x24": {
+   "grid": {
+    "origin_mm": [
+     0.0,
+     -64.0,
+     -4.0
+    ],
+    "spacing_mm": [
+     2.0,
+     2.0,
+     1.3333333333333333
+    ],
+    "shape": [
+     34,
+     64,
+     27
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+   },
+   "symmetry": {
+    "axis": 0,
+    "plane_mm": 0.0
+   },
+   "paths": [
+    "rear_left",
+    "front_right",
+    "front_left",
+    "rear_right",
+    "camera"
+   ],
+   "filter": "sparse",
+   "radius_mm": 3.0,
+   "corridor_radius_mm": 5.113636363636363,
+   "core_cells": 732,
+   "taper_cells": 970,
+   "allowed_cells": 38506,
+   "filter_nnz": 720302,
+   "corridor_filter_nnz": 151652,
+   "finite_differences": {
+    "beta_1_eroded": {
+     "analytic": 2.349172553413318,
+     "finite_difference": {
+      "0.0001": 2.349172490525575,
+      "1e-05": 2.34917254431366,
+      "1e-06": 2.349172447679848
+     },
+     "relative_error": {
+      "0.0001": 2.6770168332354865e-08,
+      "1e-05": 3.8735587720424124e-09,
+      "1e-06": 4.50088157997376e-08
+     }
+    },
+    "beta_1_intermediate": {
+     "analytic": 2.5765067018372783,
+     "finite_difference": {
+      "0.0001": 2.576506634426323,
+      "1e-05": 2.5765066851590746,
+      "1e-06": 2.576506538787271
+     },
+     "relative_error": {
+      "0.0001": 2.6163703263767678e-08,
+      "1e-05": 6.473184720635878e-09,
+      "1e-06": 6.328336637962275e-08
+     }
+    },
+    "beta_8_eroded": {
+     "analytic": -9.937648593108687,
+     "finite_difference": {
+      "0.0001": -9.93764217970039,
+      "1e-05": -9.93764852932344,
+      "1e-06": -9.93764860091062
+     },
+     "relative_error": {
+      "0.0001": 6.453651863195335e-07,
+      "1e-05": 6.418545304555711e-09,
+      "1e-06": 7.850884686042576e-10
+     }
+    },
+    "beta_8_intermediate": {
+     "analytic": 24.821954622821863,
+     "finite_difference": {
+      "0.0001": 24.821951283939825,
+      "1e-05": 24.821954606579762,
+      "1e-06": 24.821954568210458
+     },
+     "relative_error": {
+      "0.0001": 1.3451327819527475e-07,
+      "1e-05": 6.543441584242672e-10,
+      "1e-06": 2.200125095940692e-09
+     }
+    },
+    "beta_32_eroded": {
+     "analytic": 47.86739893870353,
+     "finite_difference": {
+      "0.0001": 47.86740895315944,
+      "1e-05": 47.86739904005798,
+      "1e-06": 47.86739895124015
+     },
+     "relative_error": {
+      "0.0001": 2.092124083772254e-07,
+      "1e-05": 2.1174004432025137e-09,
+      "1e-06": 2.619030353112679e-10
+     }
+    },
+    "beta_32_intermediate": {
+     "analytic": 146.58894915052144,
+     "finite_difference": {
+      "0.0001": 146.58870095573207,
+      "1e-05": 146.58894667576305,
+      "1e-06": 146.58894880881235
+     },
+     "relative_error": {
+      "0.0001": 1.6931372456420265e-06,
+      "1e-05": 1.688229873702371e-08,
+      "1e-06": 2.3310699704908977e-09
+     }
+    }
+   },
+   "max_relative_error": 6.473184720635878e-09
+  },
+  "rail_v3b_102x96x24": {
+   "grid": {
+    "origin_mm": [
+     0.0,
+     -64.0,
+     -4.0
+    ],
+    "spacing_mm": [
+     1.3333333333333333,
+     1.3333333333333333,
+     1.3333333333333333
+    ],
+    "shape": [
+     51,
+     96,
+     27
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+   },
+   "symmetry": {
+    "axis": 0,
+    "plane_mm": 0.0
+   },
+   "paths": [
+    "rear_left",
+    "rear_right",
+    "front_right",
+    "front_left",
+    "camera"
+   ],
+   "filter": "sparse",
+   "radius_mm": 2.840909090909091,
+   "corridor_radius_mm": 5.113636363636363,
+   "core_cells": 1856,
+   "taper_cells": 2447,
+   "allowed_cells": 88402,
+   "filter_nnz": 2617926,
+   "corridor_filter_nnz": 956039,
+   "finite_differences": {
+    "beta_1_eroded": {
+     "analytic": -35.81962685675142,
+     "finite_difference": {
+      "0.0001": -35.81962681678874,
+      "1e-05": -35.81962687775331,
+      "1e-06": -35.8196270937583
+     },
+     "relative_error": {
+      "0.0001": 1.1156642894161802e-09,
+      "1e-05": 5.863234784713794e-10,
+      "1e-06": 6.616676362353337e-09
+     }
+    },
+    "beta_1_intermediate": {
+     "analytic": -34.42774857567584,
+     "finite_difference": {
+      "0.0001": -34.42774853532171,
+      "1e-05": -34.42774860147324,
+      "1e-06": -34.427748758503185
+     },
+     "relative_error": {
+      "0.0001": 1.1721396960445536e-09,
+      "1e-05": 7.493199248722027e-10,
+      "1e-06": 5.310464645278361e-09
+     }
+    },
+    "beta_8_eroded": {
+     "analytic": -38.797093950258535,
+     "finite_difference": {
+      "0.0001": -38.797101524217226,
+      "1e-05": -38.79709403697973,
+      "1e-06": -38.797093949938244
+     },
+     "relative_error": {
+      "0.0001": 1.9521970438218498e-07,
+      "1e-05": 2.235249725119999e-09,
+      "1e-06": 8.255550001035327e-12
+     }
+    },
+    "beta_8_intermediate": {
+     "analytic": -73.70592465300288,
+     "finite_difference": {
+      "0.0001": -73.70592947538057,
+      "1e-05": -73.70592471716009,
+      "1e-06": -73.70592444999602
+     },
+     "relative_error": {
+      "0.0001": 6.54272692086749e-08,
+      "1e-05": 8.704484207537028e-10,
+      "1e-06": 2.7542814826680505e-09
+     }
+    },
+    "beta_32_eroded": {
+     "analytic": 18.382107774875095,
+     "finite_difference": {
+      "0.0001": 18.38217233686379,
+      "1e-05": 18.382108419601195,
+      "1e-06": 18.382107796810487
+     },
+     "relative_error": {
+      "0.0001": 3.5122066919367463e-06,
+      "1e-05": 3.5073566391087626e-08,
+      "1e-06": 1.193301247701939e-09
+     }
+    },
+    "beta_32_intermediate": {
+     "analytic": 148.53285315760024,
+     "finite_difference": {
+      "0.0001": 148.53273438291126,
+      "1e-05": 148.53285191946952,
+      "1e-06": 148.53285363614077
+     },
+     "relative_error": {
+      "0.0001": 7.996532850413411e-07,
+      "1e-05": 8.335736542478662e-09,
+      "1e-06": 3.2217823624730407e-09
+     }
+    }
+   },
+   "max_relative_error": 3.2217823624730407e-09,
+   "previous_solid_share_in_core": 0.703125
+  },
+  "battery_free_102x96x24": {
+   "grid": {
+    "origin_mm": [
+     0.0,
+     -64.0,
+     -4.0
+    ],
+    "spacing_mm": [
+     1.3333333333333333,
+     1.3333333333333333,
+     1.3333333333333333
+    ],
+    "shape": [
+     51,
+     96,
+     27
+    ],
+    "axis_order": "xyz",
+    "order": "C"
+   },
+   "symmetry": {
+    "axis": 0,
+    "plane_mm": 0.0
+   },
+   "paths": [
+    "rear_left",
+    "front_right",
+    "front_left",
+    "rear_right",
+    "camera"
+   ],
+   "filter": "sparse",
+   "radius_mm": 2.840909090909091,
+   "corridor_radius_mm": 5.113636363636363,
+   "core_cells": 1740,
+   "taper_cells": 2270,
+   "allowed_cells": 88402,
+   "filter_nnz": 2617926,
+   "corridor_filter_nnz": 849312,
+   "finite_differences": {
+    "beta_1_eroded": {
+     "analytic": -24.50113613170486,
+     "finite_difference": {
+      "0.0001": -24.501136095906872,
+      "1e-05": -24.501136142873744,
+      "1e-06": -24.50113627361361
+     },
+     "relative_error": {
+      "0.0001": 1.461074638878879e-09,
+      "1e-05": 4.5585162428592345e-10,
+      "1e-06": 5.791925241972539e-09
+     }
+    },
+    "beta_1_intermediate": {
+     "analytic": -23.167971782358237,
+     "finite_difference": {
+      "0.0001": -23.167971748065952,
+      "1e-05": -23.16797181194374,
+      "1e-06": -23.167972010185167
+     },
+     "relative_error": {
+      "0.0001": 1.4801591153697012e-09,
+      "1e-05": 1.2770001649147225e-09,
+      "1e-06": 9.833701912028189e-09
+     }
+    },
+    "beta_8_eroded": {
+     "analytic": -35.16195293038806,
+     "finite_difference": {
+      "0.0001": -35.16195985699966,
+      "1e-05": -35.161953006124236,
+      "1e-06": -35.16195291553004
+     },
+     "relative_error": {
+      "0.0001": 1.9699162462359517e-07,
+      "1e-05": 2.153924005639333e-09,
+      "1e-06": 4.225596962732207e-10
+     }
+    },
+    "beta_8_intermediate": {
+     "analytic": -36.91587282144678,
+     "finite_difference": {
+      "0.0001": -36.915878716214934,
+      "1e-05": -36.915872880172174,
+      "1e-06": -36.91587278353836
+     },
+     "relative_error": {
+      "0.0001": 1.5968110081445294e-07,
+      "1e-05": 1.5907897115983826e-09,
+      "1e-06": 1.0268867680090776e-09
+     }
+    },
+    "beta_32_eroded": {
+     "analytic": 16.84378425727426,
+     "finite_difference": {
+      "0.0001": 16.843841634859302,
+      "1e-05": 16.843784828779462,
+      "1e-06": 16.843784262476902
+     },
+     "relative_error": {
+      "0.0001": 3.4064429174989933e-06,
+      "1e-05": 3.392973766328536e-08,
+      "1e-06": 3.0887596370509573e-10
+     }
+    },
+    "beta_32_intermediate": {
+     "analytic": 196.27671106553007,
+     "finite_difference": {
+      "0.0001": 196.27660602289154,
+      "1e-05": 196.2767099634277,
+      "1e-06": 196.2767113994346
+     },
+     "relative_error": {
+      "0.0001": 5.351765584898561e-07,
+      "1e-05": 5.61504405699513e-09,
+      "1e-06": 1.701192776287428e-09
+     }
+    }
+   },
+   "max_relative_error": 1.701192776287428e-09,
+   "previous_solid_share_in_core": 0.7965517241379311
+  }
+ },
+ "sha": "a520775c73e669000b8d8c33e5f0c5c2f47442a1"
+}

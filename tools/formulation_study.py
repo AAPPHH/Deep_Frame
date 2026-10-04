@@ -21,7 +21,7 @@ from deep_frame.topology_geometry import _merge, embed_field
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import HexElasticity
 from deep_frame.topology_stability import STAND_CASES, FOUR_FEET, StandStability, stand_design, stand_domain, voxel_reserve
-from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
+from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, cable_corridor, density_map, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
 FORMULATION = {
@@ -50,7 +50,10 @@ FORMULATION = {
     "stand_fd": {"shape": [68, 64, 24], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.05, "output": "docs/validation/stand_stability_fd.json", "exact": "docs/validation/stand_stability.json",
                  "fields": {"rail_v3b": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/domain.json"],
                             "battery_free": ["C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/domain.json"]}},
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
+    "cable_width_fd": {"shapes": [[68, 64, 24], [102, 96, 24]], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "betas": [1.0, 8.0, 32.0], "output": "docs/validation/cable_width_fd.json",
+                       "sources": {"rail_v3b": ["C:/clones/Deep_Frame-cable/exports/cables/simp_mma_cov3_v3_2/cables.json", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz"],
+                                   "battery_free": ["C:/clones/Deep_Frame-cable/exports/cables/battery_free_v3c/cables.json", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz"]}},
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "cable_width": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
             "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -255,6 +258,8 @@ def frame_problem(half, references=None):
     problem["shadow"].update(half["metadata"]["formulation"]["shadow"])
     if config.STAND_STABILITY["enabled"]:
         problem["stability"] = deepcopy(config.STAND_STABILITY)
+    if config.CABLE_WIDTH["enabled"]:
+        problem["width"]["corridor"] = cable_corridor(config.CABLE_WIDTH)
     if references:
         problem["crash"].update(reference=references["crash_compliance_n_mm"], reference_source=references["source"])
         problem["shadow"].update(limit_mm=references["manafly_shadow_mm"], source=references["source"])
@@ -551,6 +556,38 @@ def stand_fd(cfg):
     Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
     for name, case in cases.items():
         print(f"{name}: smooth {case['smooth_mm']:.3f} centres {case['cell_centres_mm']} faces {case['cell_faces_mm']}", flush=True)
+
+def cable_width_fd(cfg):
+    spec, record = cfg["cable_width_fd"], {}
+    for shape in spec["shapes"]:
+        half = frame_domain(cfg, shape)
+        for name, (source, density) in spec["sources"].items():
+            problem = deepcopy(PROBLEM)
+            problem["width"]["corridor"] = cable_corridor({**config.CABLE_WIDTH, "source": source})
+            mapping, radius, corridor = density_map(half, problem)
+            blend, random = mapping.blend, np.random.default_rng(spec["seed"])
+            design, direction, weights = random.uniform(spec["low"], spec["high"], mapping.n), random.standard_normal(mapping.n) * mapping.free, random.standard_normal(mapping.n)
+            checks = {}
+            for beta in spec["betas"]:
+                mapping.beta = beta
+                for field in ("eroded", "intermediate"):
+                    value = lambda x: float(weights @ mapping.fields(x)[0][field][0])
+                    analytic = float(mapping.pullback(weights, mapping.fields(design)[0][field][1]) @ direction)
+                    differences = {f"{step:g}": (value(design + step * direction) - value(design - step * direction)) / (2 * step) for step in spec["steps"]}
+                    checks[f"beta_{beta:g}_{field}"] = {"analytic": analytic, "finite_difference": differences, "relative_error": {key: abs(analytic - fd) / max(abs(fd), 1e-30) for key, fd in differences.items()}}
+            previous = np.load(density)["density"]
+            core = (blend == 1).reshape(tuple(half["grid"]["shape"]))
+            entry = {"grid": half["grid"], "symmetry": half.get("symmetry"), "paths": problem["width"]["corridor"]["names"], "filter": "convolution" if mapping.convolution else "sparse", "radius_mm": radius, "corridor_radius_mm": corridor["radius_mm"],
+                     "core_cells": int(np.count_nonzero(blend == 1)), "taper_cells": int(np.count_nonzero((blend > 0) & (blend < 1))), "allowed_cells": int(np.count_nonzero(mapping.allowed)),
+                     "filter_nnz": None if mapping.filter is None else int(mapping.filter.nnz), "corridor_filter_nnz": None if mapping.corridor_filter is None else int(mapping.corridor_filter.nnz), "finite_differences": checks,
+                     "max_relative_error": float(max(min(row["relative_error"].values()) for row in checks.values()))}
+            if previous.shape[:2] == core.shape[:2]:
+                entry["previous_solid_share_in_core"] = float(np.mean(embed_field(previous, half["grid"])[core] > 0.5))
+            record[f"{name}_{'x'.join(map(str, shape))}"] = entry
+            print(name, shape, json.dumps({key: entry[key] for key in entry if key not in ("grid", "finite_differences")}, default=float), flush=True)
+    Path(spec["output"]).write_text(json.dumps({"statement": "cable corridor minimum width (CABLE_WIDTH, PROBLEM width.corridor): blend weights from the previous frames' cable centre lines on the coarse and fine frame half domains; "
+                                                             "central finite differences of a random linear functional of the eroded and intermediate projections through the blended filter pullback along one random direction at several beta",
+                                                "settings": config.CABLE_WIDTH, "cases": record, "sha": git_sha()}, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
 
 def manafly_camera_domain(cfg, tilt):
     import trimesh
@@ -1066,6 +1103,7 @@ def body_start(cfg, design, half):
 def frame_mma(cfg):
     started = perf_counter()
     config.STAND_STABILITY.update(cfg["mma"]["stand"])
+    config.CABLE_WIDTH.update(cfg["mma"]["cable_width"])
     root = Path(cfg["mma"]["root"])
     root.mkdir(parents=True, exist_ok=True)
     probe = MemoryProbe(cfg["mma"]["memory_s"], root / "memory.jsonl") if cfg["mma"]["memory_s"] else None
@@ -1289,7 +1327,8 @@ def main(argv=None):
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
                          "cov_compare": lambda overrides: cov_compare(configure(overrides)), "battery_fd": lambda overrides: battery_fd(configure(overrides)),
                          "battery_compare": lambda overrides: battery_compare(configure(overrides)), "camera_limits": lambda overrides: camera_limits(configure(overrides)), "camera_fd": lambda overrides: camera_fd(configure(overrides)),
-                         "solver_memory": lambda overrides: solver_memory(configure(overrides)), "setup_memory": lambda overrides: setup_memory(configure(overrides)), "stand_fd": lambda overrides: stand_fd(configure(overrides))}, argv)
+                         "solver_memory": lambda overrides: solver_memory(configure(overrides)), "setup_memory": lambda overrides: setup_memory(configure(overrides)), "stand_fd": lambda overrides: stand_fd(configure(overrides)),
+                         "cable_width_fd": lambda overrides: cable_width_fd(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())
