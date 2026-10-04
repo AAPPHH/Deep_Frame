@@ -8,6 +8,7 @@ import sys
 import tarfile
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 from copy import deepcopy
 from pathlib import Path
 from time import perf_counter
@@ -39,7 +40,7 @@ FORMULATION = {
               "crash_source": "ASSUMPTION: all-up mass 125 g (INTEGRATION_CONFIG), impact speed 5 m/s, 50 mm combined stopping distance (props, battery, frame); E = m v^2 / 2, F = E / d per direction",
               "rotation": {"front_left": 1.0, "rear_right": 1.0, "front_right": 0.0, "rear_left": 0.0}},
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "coarse": True, "fine_start_level": 3,
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
             "bodies": ["raw", "recon"], "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -134,7 +135,10 @@ def frame_problem(half, references=None):
 
 def frame_setup(cfg=FORMULATION, shape=None):
     half = frame_domain(cfg, shape or cfg["shape"])
-    return half, frame_problem(half, json.loads(Path(cfg["output"]).read_text(encoding="utf-8")))
+    problem = frame_problem(half, json.loads(Path(cfg["output"]).read_text(encoding="utf-8")))
+    if cfg["mma"]["calibration"]:
+        problem["covariance"]["limits"]["calibration"] = dict(cfg["mma"]["calibration"])
+    return half, problem
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:16]
@@ -349,10 +353,11 @@ def covariance_frame(cfg):
     print(record["table"], flush=True)
 
 class MemoryProbe:
-    def __init__(self, interval):
+    def __init__(self, interval, log=None):
         import cupy
         import psutil
         self.cp, self.process, self.interval, self.samples, self.phases, self.running = cupy, psutil.Process(), interval, [], [], True
+        self.log, self.started = (open(log, "a") if log else None), perf_counter()
         self.cp.cuda.runtime.memGetInfo()
         self.cp.zeros(1)
         paths = ",".join(f"'\\GPU Process Memory(pid_{os.getpid()}_*)\\{name} Usage'" for name in ("Dedicated", "Shared"))
@@ -371,14 +376,20 @@ class MemoryProbe:
             except ValueError:
                 continue
             if kind == "counter" and len(values) == 2:
-                self.samples.append((perf_counter(), {"dedicated_bytes": values[0], "shared_bytes": values[1]}))
+                self.record({"dedicated_bytes": values[0], "shared_bytes": values[1]})
             elif kind == "smi" and len(values) == 1:
-                self.samples.append((perf_counter(), {"smi_used_bytes": values[0] * 2 ** 20}))
+                self.record({"smi_used_bytes": values[0] * 2 ** 20})
+    def record(self, values):
+        clock = perf_counter()
+        self.samples.append((clock, values))
+        if self.log:
+            self.log.write(json.dumps({"t": round(clock - self.started, 2), **{key.replace("_bytes", "_gb"): round(value / 2 ** 30, 4) for key, value in values.items()}}) + "\n")
+            self.log.flush()
     def poll(self):
         pool = self.cp.get_default_memory_pool()
         while self.running:
             free, total = self.cp.cuda.runtime.memGetInfo()
-            self.samples.append((perf_counter(), {"rss_bytes": self.process.memory_info().rss, "pool_used_bytes": pool.used_bytes(), "pool_total_bytes": pool.total_bytes(), "device_used_bytes": total - free}))
+            self.record({"rss_bytes": self.process.memory_info().rss, "pool_used_bytes": pool.used_bytes(), "pool_total_bytes": pool.total_bytes(), "device_used_bytes": total - free})
             threading.Event().wait(self.interval)
     def phase(self, name):
         probe = self
@@ -390,18 +401,24 @@ class MemoryProbe:
                 threading.Event().wait(1.5)
                 probe.phases.append((name, self.started, perf_counter()))
         return Phase()
-    def peaks(self, name):
+    def peaks(self, name, reduce=max):
         _, started, ended = next(phase for phase in self.phases if phase[0] == name)
-        peaks = {}
+        found = {}
         for clock, values in list(self.samples):
             if started <= clock <= ended:
                 for key, value in values.items():
-                    peaks[key] = max(peaks.get(key, 0.0), value)
-        return {key.replace("_bytes", "_gb"): value / 2 ** 30 for key, value in peaks.items()}
+                    found.setdefault(key, []).append(value)
+        return {key.replace("_bytes", "_gb"): float(reduce(value)) / 2 ** 30 for key, value in found.items()}
+    def summary(self):
+        names = [phase[0] for phase in self.phases]
+        return {"interval_s": self.interval, "idle_mean": self.peaks(names[0], np.mean), "peaks": {name: self.peaks(name) for name in names},
+                "last": {name: self.peaks(name, lambda value: value[-1]) for name in names}, "device_total_gb": self.cp.cuda.runtime.memGetInfo()[1] / 2 ** 30}
     def close(self):
         self.running = False
         for reader in self.readers:
             reader.kill()
+        if self.log:
+            self.log.close()
 
 def factorizations(system):
     return sum(len(solver.timings) for solver in system.gpu_solvers.values()) + sum(len(entry["solves"]) for entry in system.gpu_solver_history)
@@ -570,22 +587,39 @@ def export_body(cfg, physical, out):
 def frame_mma(cfg):
     started = perf_counter()
     root = Path(cfg["mma"]["root"])
-    reference = np.load(cfg["reference_density"])["density"].ravel()
-    fine, problem = frame_setup(cfg, cfg["shape"])
-    design, stages, level = reference, {}, 0
-    if cfg["mma"]["coarse"]:
-        coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
-        start = prolongate(reference, fine["grid"], coarse)
-        result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
-        design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
-    design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
-    out = root / cfg["mma"]["variant"]
-    out.mkdir(parents=True, exist_ok=True)
-    physical = np.load(root / "fine" / "density_half.npz")["density"]
-    np.savez_compressed(out / "density_half.npz", density=physical)
-    body = export_body(cfg, physical, out)
+    root.mkdir(parents=True, exist_ok=True)
+    probe = MemoryProbe(cfg["mma"]["memory_s"], root / "memory.jsonl") if cfg["mma"]["memory_s"] else None
+    phase = lambda name: probe.phase(name) if probe else nullcontext()
+    try:
+        with phase("idle"):
+            threading.Event().wait(10.0 if probe else 0.0)
+        reference = np.load(cfg["reference_density"])["density"].ravel()
+        with phase("fine_setup"):
+            fine, problem = frame_setup(cfg, cfg["shape"])
+        design, stages, level = reference, {}, 0
+        if cfg["mma"]["start"]:
+            source = Path(cfg["mma"]["start"])
+            design, level = prolongate(np.load(source / "design.npz")["design"], read(source / "result.json")["grid"], fine), cfg["mma"]["fine_start_level"]
+        elif cfg["mma"]["coarse"]:
+            with phase("coarse"):
+                coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
+                start = prolongate(reference, fine["grid"], coarse)
+                result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
+            design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
+        with phase("fine"):
+            design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
+        out = root / cfg["mma"]["variant"]
+        out.mkdir(parents=True, exist_ok=True)
+        physical = np.load(root / "fine" / "density_half.npz")["density"]
+        np.savez_compressed(out / "density_half.npz", density=physical)
+        with phase("export"):
+            body = export_body(cfg, physical, out)
+    finally:
+        if probe:
+            probe.close()
+            (root / "memory.json").write_text(json.dumps(probe.summary(), indent=1, default=float), encoding="utf-8")
     info = {"variant": cfg["mma"]["variant"], "method": "SIMP-MMA (mmapy 0.3.1), shared formulation " + git_sha(), "stages": stages, "body": body, "total_runtime_s": perf_counter() - started,
-            "iterations": sum(stage["iterations"] for stage in stages.values()), "reference": cfg["reference_density"]}
+            "iterations": sum(stage["iterations"] for stage in stages.values()), "reference": cfg["reference_density"], "start": cfg["mma"]["start"], "memory": probe.summary() if probe else None}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=float), encoding="utf-8")
     print(json.dumps({"iterations": info["iterations"], "total_runtime_s": info["total_runtime_s"], "mass_g_body": body["mass_g"], "bodies": body["bodies"], "watertight": body["watertight"]}, default=float), flush=True)
 
@@ -673,7 +707,7 @@ def compose(cfg):
         shutil.copy2(source / f"{name}.png", manafly / f"{name}.png")
     if missing:
         render_views(trimesh.load_mesh(json.loads(Path(cfg["manafly"]["frame"]).read_text(encoding="utf-8"))["stl"], process=True), manafly, missing)
-    folders = {**{suffix: Path(path) / "renders" for suffix, path in runs.items()}, "manafly": manafly}
+    folders = {**{f"previous_{suffix}": Path(path) / "renders" for suffix, path in cfg["comparison"]["previous"].items()}, **{suffix: Path(path) / "renders" for suffix, path in runs.items()}, "manafly": manafly}
     for figure in cfg["mma"]["figures"]:
         output = Path(figure["output"].format(method=cfg["mma"]["method"]))
         output = output if output.is_absolute() else root / output

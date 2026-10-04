@@ -1,0 +1,7 @@
+compute: density_simp_1mm job raysubmit_EpLacDRLAS5TQ1PX submitted
+2026-10-04 14:38:26,956	INFO job_manager.py:583 -- Runtime env is setting up.
+Running entrypoint for job raysubmit_EpLacDRLAS5TQ1PX: C:\clones\ray-venv\Scripts\python.exe C:\clones\Deep_Frame-int\tools\compute.py exec eyJjb21tYW5kIjogWyJDOi9jbG9uZXMvRGVlcF9GcmFtZS1ncHUtdmVudi9TY3JpcHRzL3B5dGhvbi5leGUiLCAidG9vbHMvZm9ybXVsYXRpb25fc3R1ZHkucHkiLCAiZnJhbWVfbW1hIiwgImV4cG9ydHMvcnVuMDc1L3Byb2JlLmpzb24iXSwgImN3ZCI6ICJDOlxcY2xvbmVzXFxEZWVwX0ZyYW1lLWdtZyIsICJlbnYiOiB7IkNVREFfUEFUSCI6ICJDOlxcUHJvZ3JhbSBGaWxlc1xcTlZJRElBIEdQVSBDb21wdXRpbmcgVG9vbGtpdFxcQ1VEQVxcdjEyLjkiLCAiT01QX05VTV9USFJFQURTIjogIjgiLCAiTUtMX05VTV9USFJFQURTIjogIjgiLCAiT1BFTkJMQVNfTlVNX1RIUkVBRFMiOiAiOCIsICJOVU1FWFBSX05VTV9USFJFQURTIjogIjgifX0=
+C:\clones\Deep_Frame-gpu-venv\Lib\site-packages\cupy\_environment.py:286: UserWarning: CUDA path could not be detected. Set CUDA_PATH environment variable if CuPy fails to load.
+  warnings.warn(
+2026-10-04 14:45:40,194	INFO sdk.py:520 -- WebSocket closed for job raysubmit_EpLacDRLAS5TQ1PX with close code 1000
+compute: job raysubmit_EpLacDRLAS5TQ1PX STOPPED: Job was intentionally stopped.

@@ -1,0 +1,3 @@
+{"shape": [182, 170, 48], "reference_density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz",
+ "mma": {"root": "exports/run075/probe", "variant": "probe", "method": "probe", "start": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine",
+         "fine_start_level": 6, "settings": {"final_max_iterations": 3}, "memory_s": 1.0}}
