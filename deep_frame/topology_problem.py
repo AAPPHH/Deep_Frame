@@ -777,7 +777,8 @@ def battery_rows(problem):
     for name, state in problem.battery_cases.items():
         if name.startswith("crash_"):
             delta, gradient = battery.crash(state)
-            rows.append({"name": "battery_shift_" + name, "g": float(delta @ delta) / limit ** 2 - 1, "gradient": gradient / limit ** 2, "value": float(np.linalg.norm(delta)), "limit": limit, "unit": "mm", "sense": "<=",
+            value = max(float(np.linalg.norm(delta)), 1e-12)
+            rows.append({"name": "battery_shift_" + name, "g": value / limit - 1, "gradient": gradient / (2 * value * limit), "value": value, "limit": limit, "unit": "mm", "sense": "<=",
                          "info": {"active_bottom": int(np.sum(state["active"][battery.bottom] == 1)), "active_side": int(np.sum(state["active"][~battery.bottom] == 1)), "wrench": state["wrench"].tolist()}})
     area, slope = battery.contact_area()
     rows.append({"name": "battery_contact_area", "g": 1 - area / settings["min_area_mm2"], "gradient": -slope / settings["min_area_mm2"], "value": area, "limit": settings["min_area_mm2"], "unit": "mm2", "sense": ">="})

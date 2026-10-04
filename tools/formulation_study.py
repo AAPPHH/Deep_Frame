@@ -43,7 +43,7 @@ FORMULATION = {
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
-            "bodies": ["raw", "recon"], "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
+            "bodies": ["raw", "recon"], "battery_start": {"density": 0.5, "cells": 2}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
             "figures": [{"output": "{method}_4views.png", "panels": ["raw", "recon", "manafly"], "labels": ["SIMP-MMA raw", "SIMP-MMA recon", "ManaFly"]}]},
     "v3": {"worktree": "C:/clones/Deep_Frame-recon3", "ref": "HEAD", "copy": "C:/Users/jfham/AppData/Local/Temp/claude/c--clones-Deep-Frame/2bec171b-ba58-44fe-ab0f-61ff45688b18/scratchpad/recon3_copy",
            "argv": ["splines"], "compute": "geometry", "compare": "recon"},
@@ -489,6 +489,17 @@ def export_body(cfg, physical, out):
     np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
     return finish(out, density, fine_full, settings, None)
 
+def battery_start(cfg, design, half):
+    from deep_frame.topology_geometry import region_contains
+    from deep_frame.topology_neural import cell_centers
+    spec = cfg["mma"]["battery_start"]
+    if "battery" not in half or not spec:
+        return design
+    near = region_contains(cell_centers(half["grid"]), half["battery"]["keep_out"], spec["cells"] * np.asarray(half["grid"]["spacing_mm"])) & np.asarray(half["allowed"]).ravel()
+    design = design.copy()
+    design[near] = np.maximum(design[near], spec["density"])
+    return design
+
 def frame_mma(cfg):
     started = perf_counter()
     root = Path(cfg["mma"]["root"])
@@ -497,7 +508,7 @@ def frame_mma(cfg):
     design, stages, level = reference, {}, 0
     if cfg["mma"]["coarse"]:
         coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
-        start = prolongate(reference, fine["grid"], coarse)
+        start = battery_start(cfg, prolongate(reference, fine["grid"], coarse), coarse)
         result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
         design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
     design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
