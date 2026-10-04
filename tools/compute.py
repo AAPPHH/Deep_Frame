@@ -18,6 +18,7 @@ CONFIG = {
     "heads": {"local": {"num_cpus": 24, "num_gpus": 1, "memory_gb": 40, "object_store_gb": 1, "gpu_gb": 14},
               "dgx": {"num_cpus": 128, "num_gpus": 8, "memory_gb": 768, "object_store_gb": 8, "gpu_gb": 640}},
     "dashboard_port": 8265,
+    "agent_ports": (53365, 53366, 53367, 53368),
     "start_timeout_s": 7 * 24 * 3600,
 }
 JOB_TYPES = {
@@ -85,7 +86,9 @@ def head(name="local", config=CONFIG):
                "--num-cpus", str(spec["num_cpus"]), "--num-gpus", str(spec["num_gpus"]),
                "--memory", str(spec["memory_gb"] * 2**30), "--object-store-memory", str(spec["object_store_gb"] * 2**30),
                "--resources", json.dumps({"gpu_gb": spec["gpu_gb"]}), "--include-dashboard", "true",
-               "--dashboard-host", "127.0.0.1", "--dashboard-port", str(spec["dashboard_port"]), "--disable-usage-stats"]
+               "--dashboard-host", "127.0.0.1", "--dashboard-port", str(spec["dashboard_port"]), "--disable-usage-stats",
+               *[f"--{name}={port}" for name, port in zip(("dashboard-agent-listen-port", "dashboard-agent-grpc-port",
+                                                          "metrics-export-port", "runtime-env-agent-port"), config["agent_ports"])]]
     return subprocess.call(command, env={**os.environ, "RAY_JOB_START_TIMEOUT_SECONDS": str(spec["start_timeout_s"]),
                                                "RAY_num_workers_soft_limit": "2", "RAY_enable_worker_prestart": "0"})
 
