@@ -725,7 +725,8 @@ LOAD_COVARIANCE_LIMITS = {
     "source": "user decision 03.10.: ManaFly 3 x 0.8 (20 % reserve), evaluator full-coupled 42 x 42 measure, limit_group stack_fixed, unscaled (ManaFly arm 80.0 mm, ours 66.25 mm): 0.8 x 0.8590 / 0.2858 N mm; Aether4 comparison only",
     "references": {"manafly3": {"full": [0.8590, 0.2858], "diagonal": [1.248, 0.579]}, "aether4": {"full": [0.3907, 0.1428], "diagonal": [0.5278, 0.2416], "full_scaled": [0.2957, 0.1071]},
                    "simp_mma_raw_1": {"full": [1.163, 0.2872], "diagonal": [1.437, 0.5007]}, "simp_mma_recon_1": {"full": [1.191, 0.3002], "diagonal": [1.446, 0.5197]},
-                   "simp_mma_cov_raw_1": {"full": [0.1862, 0.04739], "diagonal": [0.2317, 0.08596]}, "simp_mma_cov2_raw_1": {"full": [0.6189, 0.1873], "diagonal": [0.7279, 0.2665]}},
+                   "simp_mma_cov_raw_1": {"full": [0.1862, 0.04739], "diagonal": [0.2317, 0.08596]}, "simp_mma_cov2_raw_1": {"full": [0.6189, 0.1873], "diagonal": [0.7279, 0.2665]},
+                   "simp_mma_cov3_raw_1": {"full": [0.6870, 0.2197], "diagonal": [0.8088, 0.3050]}},
     "evidence": "exports/cov/limits.md",
 }
 

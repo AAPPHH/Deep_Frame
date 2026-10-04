@@ -7,6 +7,7 @@
 | simp_mma_cov_raw_1 | evaluator only | 66.25 | – | – | – | – | – | – | – | – | 0.186 / 0.0474 | – | – |
 | simp_mma_cov_recon_1 | evaluator only | 66.25 | – | – | – | – | – | – | – | – | 0.255 / 0.0694 | – | – |
 | simp_mma_cov2_raw_1 | evaluator only | 66.25 | – | – | – | – | – | – | – | – | 0.619 / 0.187 | – | – |
+| simp_mma_cov3_raw_1 | evaluator only | 66.25 | – | – | – | – | – | – | – | – | 0.687 / 0.22 | – | – |
 
 Grenzen (massgeblich evaluator_full = Referenz x Reserve aus LOAD_COVARIANCE_LIMITS; scaled/raw = strengere Gap-Referenz, nur Vergleich):
 - scaled: tr(ΣF) ≤ 0.3901 N mm (aether4), λmax ≤ 0.1682 N mm (aether4)

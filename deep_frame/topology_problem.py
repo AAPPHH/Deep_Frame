@@ -14,7 +14,8 @@ COVARIANCE = {
     "sigma": None, "labels": None, "model": None, "prefix": "sigma_", "ks": 50.0, "ks_cutoff": 1e-9,
     "limits": {"mean_n_mm": LOAD_COVARIANCE_LIMITS["mean_compliance_n_mm"], "worst_n_mm": LOAD_COVARIANCE_LIMITS["worst_case_compliance_n_mm"], "source": LOAD_COVARIANCE_LIMITS["source"],
                "calibration": {"mean_n_mm": 1.384, "worst_n_mm": 1.374},
-               "calibration_source": "iteration 2 on the 18.5 g load-model field / 15.9 g raw body without accessory seats (run simp_mma_cov2 with factor 1.247 / 1.235): optimizer 0.85631 / 0.25736 N mm / evaluator full 0.61892 / 0.18733 N mm = 1.384 / 1.374 (+11.0 % / +11.2 % against iteration 1); "
+               "calibration_source": "stable after iteration 3 (run simp_mma_cov3 with this factor: 18.2 g field / 15.7 g raw body, optimizer 0.94671 / 0.30808 N mm / evaluator full 0.68695 / 0.21967 N mm = 1.378 / 1.402, -0.4 % / +2.1 %, below 10 %, factor kept); "
+                                     "iteration 2 on the 18.5 g load-model field / 15.9 g raw body without accessory seats (run simp_mma_cov2 with factor 1.247 / 1.235): optimizer 0.85631 / 0.25736 N mm / evaluator full 0.61892 / 0.18733 N mm = 1.384 / 1.374 (+11.0 % / +11.2 % against iteration 1); "
                                      "iteration 1 on the 26.6 g load-model frame (baff3e1): optimizer measure of its fine eroded field (exports/runs/simp_mma_cov_opt/fine/result.json: tr 0.23219, lambda_max 0.058508 N mm) / evaluator full-coupled measure of its raw body (simp_mma_cov_raw_1: 0.18621 / 0.047386 N mm); "
                                      "iteration 0 was optimizer / evaluator diagonal on the 17.2 g SIMP-MMA design (0.5952 / 0.3928, as full 0.735 / 0.685) and did not transfer; per key because the worst-case modes differ"},
     "definition": {
