@@ -31,6 +31,8 @@ BENCHMARK_CONFIG = {"source": None, "output": None, "updates": 3}
 BENCHMARK_KINDS = {"source": "text", "output": "text", "updates": "int"}
 GPU_PLOT_CONFIG = {"evidence": "docs/validation/workstation_gpu", "output": "docs/validation/workstation_gpu_convergence.png"}
 GPU_PLOT_KINDS = {"evidence": "text", "output": "text"}
+FLOOR_CONFIG = {"run": None, "density": None, "output": "docs/validation/bottom_domain/before", "before": None}
+FLOOR_KINDS = {"run": "text", "density": "text", "output": "text", "before": "text"}
 NEURAL_KINDS = {"max_iterations": "int", "minimum_iterations": "int", "change_tolerance": "float", "learning_rate": "float", "frequencies": "int",
                 "max_frequency_per_mm": "float", "hidden": ["int"], "seed": "int", "mirror_axis": "int", "sharpness_final": "float",
                 "sharpness_iterations": "int", "max_runtime_s": "float", "max_width_penalty": "float", "max_width_window_mm": "float", "max_local_fraction": "float", "gpu_solver_residency": ("resident", "transient")}
@@ -463,9 +465,86 @@ def plot_gpu_main(overrides):
     config = configure(GPU_PLOT_CONFIG, GPU_PLOT_KINDS, overrides)
     plot_gpu(config["evidence"], config["output"])
 
+FLOOR_COLORS = ["#ffffff", "#d9d9d9", "#5a5a5a", "#2b6cb0", "#dd6b20"]
+FLOOR_LABELS = ["frei, leer", "verboten (Keep-out)", "Optimiererdichte > 0.5", "Vorgabe (Preserve)", "Optimiererdichte in der Bodenschicht z 0..h (vorher abgeschnitten)"]
+
+def floor_check(run, density, output, before=None):
+    from tools.formulation_study import configure as formulation, patched_builder
+    from deep_frame.topology_geometry import grid_centers, mirror_field, region_contains
+    plt, _ = _plot_modules()
+    from matplotlib.colors import ListedColormap
+    from matplotlib.patches import Patch
+    cfg = formulation(json.loads(Path(run).read_text(encoding="utf-8")))
+    full, _ = patched_builder(cfg).build(cfg["shape"], cfg["reference_fraction"])
+    grid, allowed, preserve = full["grid"], full["allowed"], full["preserve"]
+    h, origin = np.asarray(grid["spacing_mm"]), np.asarray(grid["origin_mm"])
+    field = mirror_field(np.load(density)["density"])
+    floor = preserve.shape[2] - field.shape[2]
+    field = np.pad(field, ((0, 0), (0, 0), (floor, 0)))
+    free = (field > 0.5) & allowed & ~preserve
+    centers, cell = grid_centers(grid), float(np.prod(h))
+    regions = {region["name"]: region for region in full["regions"]}
+    contacts = {}
+    for name, region in regions.items():
+        if region["role"] == "preserve" and ("aio_contact" in name or "motor_contact" in name):
+            cells = region_contains(centers, region) & preserve
+            exact = np.pi * region["radius_mm"] ** 2 * region["height_mm"]
+            contacts[name] = {"z_mm": [region["center_mm"][2] - region["height_mm"] / 2, region["center_mm"][2] + region["height_mm"] / 2], "radius_mm": region["radius_mm"], "exact_mm3": exact, "raster_mm3": int(cells.sum()) * cell}
+    layer = free[:, :, floor]
+    labels, count = label(layer)
+    blobs = []
+    for index in range(1, count + 1):
+        cells = np.argwhere(labels == index)
+        xy = centers[cells[:, 0], cells[:, 1], floor, :2]
+        depth = [int(np.argmin(np.append(free[i, j, floor:], False))) for i, j in cells]
+        blobs.append({"cells": len(cells), "x_mm": [float(xy[:, 0].min()), float(xy[:, 0].max())], "y_mm": [float(xy[:, 1].min()), float(xy[:, 1].max())], "height_above_old_floor_mm": [float(min(depth) * h[2]), float(np.median(depth) * h[2]), float(max(depth) * h[2])]})
+    fixtures = sorted({(round(box["min_mm"][2], 3), round(box["max_mm"][2], 3)) for case in full["comparison_load_cases"] if case["name"] in ("arm_tip", "crash_front") for box in case.get("fixed_regions", [])})
+    report = {"grid": grid, "envelope_z_mm": [float(origin[2]), float(origin[2] + h[2] * grid["shape"][2])], "old_floor_layer": floor, "allowed_mm3": int(allowed.sum()) * cell, "preserve_mm3": int(preserve.sum()) * cell,
+              "contacts": contacts, "stack_fixtures_z_mm": fixtures,
+              "old_floor_layer_cells": {"preserve": int(preserve[:, :, floor].sum()), "optimizer": int(layer.sum()), "preserve_mm3": int(preserve[:, :, floor].sum()) * cell, "optimizer_mm3": int(layer.sum()) * cell},
+              "old_floor_blobs": blobs, "density": density, "run": run}
+    if before:
+        old = json.loads(Path(before).read_text(encoding="utf-8"))
+        report["diff"] = {"allowed_mm3": report["allowed_mm3"] - old["allowed_mm3"], "preserve_mm3": report["preserve_mm3"] - old["preserve_mm3"], "envelope_z_mm": [old["envelope_z_mm"], report["envelope_z_mm"]],
+                          "stack_fixtures_z_mm": [old["stack_fixtures_z_mm"], report["stack_fixtures_z_mm"]],
+                          "contacts": {name: {"before": old["contacts"].get(name), "after": value} for name, value in contacts.items() if "aio" in name}}
+    category = np.where(allowed, 0, 1)
+    category[free] = 2
+    category[preserve] = 3
+    category[:, :, floor][layer] = 4
+    aio = regions["aio_contact_3"]["center_mm"]
+    i, j = (np.abs(centers[:, 0, 0, 0] - aio[0]).argmin(), np.abs(centers[0, :, 0, 1] - aio[1]).argmin())
+    top = origin + h * np.asarray(grid["shape"])
+    cmap = ListedColormap(FLOOR_COLORS)
+    figure, axes = plt.subplots(3, 1, figsize=(12, 13), gridspec_kw={"height_ratios": [1, 1, 3]})
+    views = [(category[i].T, [origin[1], top[1], origin[2], top[2]], f"Schnitt x = {centers[i, 0, 0, 0]:.2f} mm (Seitenansicht durch die rechten Stack-Schrauben)", "y mm"),
+             (category[:, j].T, [origin[0], top[0], origin[2], top[2]], f"Schnitt y = {centers[0, j, 0, 1]:.2f} mm (Frontansicht durch die vorderen Stack-Schrauben)", "x mm"),
+             (category[:, :, floor].T, [origin[0], top[0], origin[1], top[1]], f"Bodenschicht z {origin[2] + floor * h[2]:.2f}..{origin[2] + (floor + 1) * h[2]:.2f} mm (Draufsicht)", "x mm")]
+    for axis, (image, extent, title, xlabel) in zip(axes, views):
+        axis.imshow(image, origin="lower", extent=extent, cmap=cmap, vmin=-0.5, vmax=4.5, interpolation="nearest")
+        axis.set_title(title)
+        axis.set_xlabel(xlabel)
+        axis.set_ylabel("y mm" if image is views[2][0] else "z mm")
+        if image is not views[2][0]:
+            axis.axhline(0.0, color="#c53030", linestyle="--", linewidth=1)
+            axis.set_aspect("equal")
+    axes[2].set_aspect("equal")
+    figure.legend([Patch(color=color) for color in FLOOR_COLORS], FLOOR_LABELS, loc="lower center", ncol=3, fontsize=9)
+    figure.tight_layout(rect=(0, 0.05, 1, 1))
+    out = Path(output)
+    out.mkdir(parents=True, exist_ok=True)
+    figure.savefig(out / "floor.png", dpi=110)
+    (out / "floor.json").write_text(json.dumps(report, indent=1, default=float), encoding="utf-8")
+    return report
+
+def floor_main(overrides):
+    config = configure(FLOOR_CONFIG, FLOOR_KINDS, overrides, ("run", "density"))
+    report = floor_check(config["run"], config["density"], config["output"], config["before"])
+    print(json.dumps({key: report[key] for key in ("envelope_z_mm", "old_floor_layer_cells", "stack_fixtures_z_mm")}, default=float))
+
 def main(argv=None):
     return command_line({"run": run_main, "summarize": summarize_main, "plot": plot_main, "benchmark": benchmark_main,
-                         "plot-gpu": plot_gpu_main, "neural": neural_main}, argv)
+                         "plot-gpu": plot_gpu_main, "neural": neural_main, "floor": floor_main}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

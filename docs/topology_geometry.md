@@ -72,6 +72,24 @@ Die vorlaeufige Fertigungsgrenze betraegt 2 mm, abgeleitet aus 0.4-mm-Duese und 
 
 Die feste Hardwareanordnung und ihre Quellen bleiben in `COMPONENT_DEFAULTS`, `FRAME_DEFAULTS` und `FRAME_DEFAULT_SOURCES` von `deep_frame/config.py` sowie in [armattan_research.md](armattan_research.md) nachvollziehbar. Die Motorhuelle stammt vorlaeufig vom [GEPRC GR1105](https://geprc.com/product/gep-gr1105-motor/); sein 9-mm-Lochkreis ist kein 9x9-mm-Quadrat. Dichte und isotrope Materialannahme bleiben der dokumentierte [Bambu-PA6-CF-Datensatz](https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf). Rasteraufloesung, Kontaktgroessen, Bauraum, Korridore und relative Anschlusslasten sind eigene offengelegte Modellierungsentscheidungen.
 
+## Boden des Bauraums
+
+### Klaerung: die zwei kantigen Bloecke am Boden
+
+Grundlage: Lauf `battery_free` (Phase-1-Layout, freie Akkulagerung, SIMP+MMA 4/3 mm, Dichte `C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz`). Die Domaene ist mit demselben Aufbau rekonstruiert wie im Lauf (`docs/validation/bottom_domain/run_cfg.json`, `tools/formulation_study.patched_builder`, also `R2Domain` mit getrimmten Motorpads). Befehl: `python -m tools.topology_study floor docs/validation/bottom_domain/floor_before.json` (Ray `cpu`). Bild: `docs/validation/bottom_domain/before/floor.png`, Zahlen: `docs/validation/bottom_domain/before/floor.json`.
+
+Jeder der beiden Bloecke (x = -12.75 und x = +12.75) besteht aus drei Teilen:
+
+| Teil | Quelle | Ausdehnung | Vorgabe oder Optimierer | am Boden z = 0 |
+|---|---|---|---|---|
+| zwei Saeulen | Preserve `aio_contact_0/1` (links) bzw. `aio_contact_2/3` (rechts) aus `topology_geometry._component_regions` | Zylinder r = 3.1 mm, z = 0..11.8 mm (`base_thickness_mm` 3.0 + `aio_standoff_mm` 8.8), Achsen bei y = -12.75 / +12.75 | **Vorgabe**: 356 mm3 exakt, 398 mm3 im Raster je Saeule, also 4 x 398 = 1593 mm3 = 29 % aller Preserve-Zellen (5547 mm3) | flache Unterseite ist die eigene Grundflaeche der Vorgabe, kein Zuschnitt |
+| Untergurt | Optimiererdichte zwischen den Saeulen | x = 10..14 mm, y = -8.7..10 mm, 38 Zellen je Seite in der Bodenschicht (90 mm3); Hoehe ueber z = 0 im Median 1.33 mm, hoechstens 2.67 mm | **Optimierer** | **abgeschnitten**: liegt mit voller Breite auf der Bauraumgrenze z = 0; ein voller Querschnitt (Mindeststegbreite 2.5 mm robust, Filterradius 4 mm) passt darunter nicht |
+| Stackfixierung | `aio_fixtures` in `build_design_domain` (Evaluator `center_fixtures`, Lastfaelle arm_tip/crash_*) | Quader r = 3.2 mm um jede Schraubachse, z = -0.01..0.01 | Vorgabe der Lagerung | fixiert die Saeulenunterseiten auf z = 0 |
+
+Von der Seite (Schnitt x = 12.67) sieht man je Seite die beiden Saeulen (blau) und dazwischen den eine bis zwei Zellen dicken Untergurt (orange) auf z = 0; von vorn decken sich die Saeulen eines Paars zu je einem Rechteck 6.2 x 11.8 mm. Das sind die beiden Bloecke. Die Saeulen sind seit dem Phase-1-Layout so hoch, weil `aio_contact_*` den ganzen Abstand Boden bis AIO-Unterseite vorgibt (bei Standoff 3 mm waren es 5.5 mm). Radial gibt es nichts zu verkleinern: 3.1 - 1.1 = 2.0 mm ist genau die Mindestwand.
+
+Weitere Zellen in der Bodenschicht (z = 0..1.33): 112 Preserve-Zellen, davon 84 in den AIO-Saeulen und 28 im Ende des Buegelrohrs (Pfad z = 1.5 mm, Radius 1.6 mm, y = 47..56); 76 Optimiererzellen, alle im Untergurt. Die Motorpads (z = 6.67..9.33) und ihre Schraubkorridore (graue Kreuze) beruehren den Boden nicht; dort wirkt bereits die Armwurzel-Korrektur.
+
 ## Dichtefeld zu pruefbarer freier Geometrie
 
 `deep_frame.topology_geometry.reconstruct_topology(domain, density, settings)` verwendet ausschliesslich das raeumliche Dichtefeld, die Masken und deklarierte generische Anschluss-/Freiraum-Primitiven. Es importiert keinen v0-Frameaufbau. `validate_topology` prueft den erzeugten Koerper vor der unabhaengigen gmsh/CalculiX-Auswertung.

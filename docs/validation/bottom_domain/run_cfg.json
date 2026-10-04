@@ -1,0 +1,57 @@
+{
+ "layout": {
+  "name": "battery_free",
+  "style": "freestyle",
+  "durability": "standard",
+  "prop_size_in": 2.5,
+  "layout": {
+   "x_type": "compressed_x",
+   "battery_mount": "top"
+  },
+  "components": {
+   "motor": "GTS V3 1203",
+   "aio": "HDZero AIO15",
+   "camera": "HDZero Lux",
+   "battery": "GNB5502S120A",
+   "antennas": "HDZero VTX + ELRS",
+   "prop": "HQProp T2.5X2X3V2S"
+  },
+  "material": "PA6-CF",
+  "print": {
+   "nozzle_mm": 0.4,
+   "layer_mm": 0.2
+  },
+  "overrides": {
+   "optimizer": {
+    "volume_fraction": 0.06,
+    "prop_discs": "soft",
+    "f1_min_hz": 300.0
+   },
+   "battery": {
+    "support": "free"
+   }
+  },
+  "grid": "fine",
+  "reconstruction": false
+ },
+ "reference_density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov_opt/fine/density_half.npz",
+ "mma": {
+  "root": "exports/runs/battery_free_opt",
+  "variant": "battery_free",
+  "method": "battery_free",
+  "bodies": [
+   "raw",
+   "v3"
+  ],
+  "viewer_names": {
+   "raw": "battery_free",
+   "recon": "battery_free_1to1",
+   "v3": "battery_free_v3b"
+  },
+  "figures": []
+ },
+ "v3": {
+  "ref": "b74dcf2",
+  "copy": "C:/Users/jfham/AppData/Local/Temp/claude/c--clones-Deep-Frame/2bec171b-ba58-44fe-ab0f-61ff45688b18/scratchpad/p2/v3b_overlay"
+ }
+}
