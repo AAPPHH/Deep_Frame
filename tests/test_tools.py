@@ -1104,6 +1104,17 @@ def test_round4_hard_prop_keep_out_keeps_corridor_pads_and_connectivity():
     assert blocked.any() and not np.any(full["allowed"] & blocked & ~full["preserve"]) and full["allowed"][corridor].all()
     assert np.array_equal(full["preserve"], soft["preserve"]) and full["metadata"]["round4"]["unblocked_cells"] == soft["metadata"]["round4"]["allowed_cells"]
 
+@pytest.mark.parametrize("module", ["neural_study", "multi_crash_study"])
+def test_threshold_surface_places_cell_faces_at_the_grid_and_keeps_mirror_symmetry(module):
+    import importlib
+    tool = importlib.import_module(f"tools.{module}")
+    grid = {"origin_mm": [-3.0, -2.0, 0.0], "spacing_mm": [0.5, 0.5, 0.5], "shape": [12, 8, 6]}
+    density = np.zeros(grid["shape"], dtype=np.float32)
+    density[2:10, 2:6, 1:5] = 1.0
+    cfg = {"sigma_cells": 0, "carve_bores": False, "threshold": 0.5, "min_body_mm3": 0, "taubin": 0, "flatten": []}
+    mesh = tool.surface(density, grid, cfg)[0]
+    assert np.allclose(mesh.bounds, [[-2.0, -1.0, 0.5], [2.0, 1.0, 2.5]])
+
 def test_frame_request_accepts_round4_optimizer_options_and_reconstruction_switch():
     from deep_frame.frame_run import validate_request
     request = validate_request({"reconstruction": False, "overrides": {"optimizer": {"volume_fraction": 0.05, "prop_discs": "soft", "f1_min_hz": 300}}})

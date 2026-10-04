@@ -245,7 +245,7 @@ def surface(density, grid, cfg, regions=(), anchor=None, preserve=None):
         field, connectivity = keep_connected(field, grid, cfg["threshold"], anchor)
     field = np.pad(field, 1)
     vertices, faces, _, _ = marching_cubes(field, cfg["threshold"], spacing=tuple(spacing), allow_degenerate=False)
-    mesh = trimesh.Trimesh(vertices + np.asarray(grid["origin_mm"]) - spacing, faces[:, ::-1], process=True)
+    mesh = trimesh.Trimesh(vertices + np.asarray(grid["origin_mm"]) - spacing / 2, faces[:, ::-1], process=True)
     parts = mesh.split(only_watertight=False)
     slivers = [part for part in parts if abs(part.volume) < cfg["min_body_mm3"]]
     if slivers:

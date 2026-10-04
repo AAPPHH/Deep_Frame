@@ -51,7 +51,7 @@ def surface(density, grid, cfg, regions=()):
     field = carve(field, grid, regions) if cfg.get("carve_bores") else field
     field = np.pad(field, 1)
     vertices, faces, _, _ = marching_cubes(field, cfg.get("threshold", 0.5), spacing=tuple(spacing), allow_degenerate=False)
-    vertices = vertices + np.asarray(grid["origin_mm"]) - spacing
+    vertices = vertices + np.asarray(grid["origin_mm"]) - spacing / 2
     mesh = trimesh.Trimesh(vertices, faces[:, ::-1], process=True)
     dropped = {"count": 0, "volume_mm3": 0.0}
     if cfg.get("min_component_mm3", 0) > 0:
