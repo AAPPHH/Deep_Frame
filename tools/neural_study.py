@@ -129,7 +129,8 @@ class R2Domain:
                 preserve &= ~(region_contains(centers, region) & (centers[..., 2] < bottom))
                 region["center_mm"][2], region["height_mm"] = bottom + self.pad["thickness_mm"] / 2, self.pad["thickness_mm"]
             if "_motor_screw_" in region["name"] or region["name"].endswith("_shaft_clearance"):
-                below = {**region, "center_mm": [*region["center_mm"][:2], (bottom - 1) / 2], "height_mm": bottom + 1, "radius_mm": region["radius_mm"] + self.pad["bore_margin_mm"]}
+                floor = grid["origin_mm"][2]
+                below = {**region, "center_mm": [*region["center_mm"][:2], (floor - 1 + bottom) / 2], "height_mm": bottom - floor + 1, "radius_mm": region["radius_mm"] + self.pad["bore_margin_mm"]}
                 allowed &= ~region_contains(centers, below, [spacing[0] / 2, spacing[1] / 2, 0])
         tube = np.zeros(allowed.shape, dtype=bool)
         for path in self.hoop_paths():

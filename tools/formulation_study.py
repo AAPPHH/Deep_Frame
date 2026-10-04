@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import deep_frame.config as config
 from deep_frame.config import RUN_SETTINGS, STAGES, command_line
 from deep_frame.frame_run import ROOT, FrameRun, _git
-from deep_frame.topology_geometry import _merge
+from deep_frame.topology_geometry import _merge, embed_field
 from deep_frame.topology_optimization import HexElasticity
 from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
@@ -201,7 +201,7 @@ def own_shadow(cfg, half):
 def plumbing(cfg):
     _, half = patched_builder(cfg, stiffness=False).build(cfg["shape"], cfg["reference_fraction"])
     system = HexElasticity(half, interface_node_policy=half["optimizer_settings"]["interface_node_policy"], linear_solver=cfg["linear_solver"])
-    density = np.load(cfg["reference_density"])["density"].ravel()
+    density = embed_field(np.load(cfg["reference_density"])["density"], half["grid"]).ravel()
     names = ["arm_tip", "thrust_all"] + PROBLEM["crash"]["cases"]
     solved = system.solve(density, 3.0, 1e-6)
     system.close()
@@ -216,7 +216,7 @@ def references(cfg):
     check = plumbing(cfg)
     half = frame_domain(cfg, cfg["shape"])
     problem = TopologyProblem(half, frame_problem(half), linear_solver=cfg["linear_solver"])
-    density = np.load(cfg["reference_density"])["density"].ravel()
+    density = embed_field(np.load(cfg["reference_density"])["density"], half["grid"]).ravel()
     solved = problem.compliances(density)
     crash = {name: solved[name]["compliance_n_mm"] for name in PROBLEM["crash"]["cases"]}
     problem.close()
@@ -237,8 +237,8 @@ def references(cfg):
     print(result["reference_report_table"], flush=True)
 
 def modal_split(cfg):
-    density = np.load(cfg["reference_density"])["density"].ravel()
     base = frame_domain(cfg, cfg["shape"])
+    density = embed_field(np.load(cfg["reference_density"])["density"], base["grid"]).ravel()
     rows = {}
     for name, masses, material in (("battery_isotropic", ["battery"], "isotropic"), ("battery_orthotropic", ["battery"], "orthotropic"), ("three_isotropic", PROBLEM["modal"]["point_masses"], "isotropic"), ("three_orthotropic", PROBLEM["modal"]["point_masses"], "orthotropic")):
         half = deepcopy(base)
@@ -506,8 +506,8 @@ def battery_start(cfg, design, half):
 def frame_mma(cfg):
     started = perf_counter()
     root = Path(cfg["mma"]["root"])
-    reference = np.load(cfg["reference_density"])["density"].ravel()
     fine, problem = frame_setup(cfg, cfg["shape"])
+    reference = embed_field(np.load(cfg["reference_density"])["density"], fine["grid"]).ravel()
     design, stages, level = reference, {}, 0
     if cfg["mma"]["coarse"]:
         coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])

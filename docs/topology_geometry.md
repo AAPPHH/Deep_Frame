@@ -25,7 +25,7 @@ Die Preserve-Zellen belegen **2.7730 Prozent** des zulaessigen Raums. **97.2270 
 ### Feste funktionale Anschluesse
 
 - Vier lokale Motorkontakte im ManaFly-Stil: 7.7 mm Radius (2.1 mm Rand um die M2-Bohrungen auf dem 9-mm-Lochkreis des GTS V3 1203), vollstaendig unter der 8.38-mm-Motorhuelle; Oberkante 0.5 mm in die Motorhuelle hinein, der exakte Schnitt legt die Auflage auf die Motorunterseite z = 4 mm. M2-Bohrungen und Wellenfreigang werden exakt ausgeschnitten. Es gibt keine vorgeschriebenen Verbindungen zu einem Zentrum.
-- Vier AIO15-Bosse: 3.2 mm Radius, Oberkante buendig bei 5.5 mm (nur 0.2 mm neben der AIO-Huellwand, deshalb nicht verlaengert), Bohrungen gemaess dem bestehenden 25.5-mm-M2-Lochbild. Der umgebende Boden bleibt frei.
+- Vier AIO15-Sitzaugen r = 3.1 mm um die Schrauben des 25.5-mm-M2-Lochbilds, Oberkante auf der Grommet-Sitzebene, mindestens 8/3 mm hoch, darunter ein 2-mm-Werkzeugkorridor bis zum Bauraumboden (siehe Boden des Bauraums). Keine Saeulen und keine Platte.
 - Zwei Laengsschienen fuer den Akku-Strap im ManaFly-Stil (Breite 3.5 mm, Laenge 50 mm, 3 mm hoch unter z = 28 mm). Ihre Aussenkante liegt unter der Akkukante (`battery_rail_edge_inset_mm` = 0, x = 11.5..15 mm); ihre Oberseite liegt 0.5 mm in der Akkuhuelle, die exakte Auflage bleibt bei z = 28 mm. Der Strap umschlingt Akku und Schiene.
 - Die Akkuauflage `deck_top_mm` = 28 liegt auf einer gemeinsamen Knotenebene der 4-, 2-, 4/3- und 1-mm-Gitter (Vielfache von 4 mm ab z = 0). So treffen Schienenzellen, Akku-Punktmasse und der Lastselektor `battery_impact` (z = 28 +- 0.01 mm) auf jedem dieser Gitter vorhandene Preserve-Knoten, ohne Selektor-Erweiterung oder lokale Verschiebung in den Studienwerkzeugen. Die Schienen-x-Lage enthaelt auf jedem dieser Gitter mindestens einen Zellmittelpunkt.
 - Ein ELRS-Antennenfreiraum von 3 mm ueber dem AIO-Board (Keep-out `elrs_antenna_clearance`).
@@ -42,7 +42,7 @@ Die implizite Route blaeht jede Preserve-Primitive um `preserve_inflation_mm` = 
 - Jede Keep-out-Wand, die eine Preserve-Primitive schneidet, und jedes koaxiale Keep-out-Zylinderpaar muss einen Rand von mindestens 2.0 mm plus `prescribed_wall_margin_mm` = 0.1 mm lassen (Polygon- und Float-Reserve).
 - Zwei Preserve-Primitiven ueberlappen oder liegen weiter als dieser Rand plus beide Aufblaehungen auseinander.
 
-`prescribed_clearance` prueft diese Regeln nach der Verlaengerung und speichert das Ergebnis in `metadata.prescribed_clearance`; die Standarddomaene muss sie bestehen. Vorgeschriebene Bohrungen sind ausgenommen, ihre Stege regelt die C6-Bohrungstoleranz. Die Ebene z = 0 ist Bauraumgrenze, kein Keep-out, und bleibt unveraendert. Messung auf den gespeicherten Dichten: `docs/validation/implicit_domain_ledges.md`.
+`prescribed_clearance` prueft diese Regeln nach der Verlaengerung und speichert das Ergebnis in `metadata.prescribed_clearance`; die Standarddomaene muss sie bestehen. Vorgeschriebene Bohrungen sind ausgenommen, ihre Stege regelt die C6-Bohrungstoleranz. Die Ebene z = 0 ist Bezugsebene, kein Keep-out; der Bauraumboden liegt `floor_drop_mm` darunter (siehe Boden des Bauraums). Messung auf den gespeicherten Dichten: `docs/validation/implicit_domain_ledges.md`.
 
 ### Verbotene Volumina und Montage
 
@@ -71,6 +71,52 @@ Im internen Hex8-Adapter verwendet dieser Frame-Designraum ausdruecklich `interf
 Die vorlaeufige Fertigungsgrenze betraegt 2 mm, abgeleitet aus 0.4-mm-Duese und mindestens fuenf Bahnen. Exakte Bohrungsumrandungen und Anschlussquerschnitte werden zusaetzlich geprueft. Stuetzmaterial ist erlaubt; Supportfreiheit, bestimmte Druckfestigkeit oder nacharbeitsfreie Montage werden nicht behauptet. Die Fertigungspruefung ist ein geometrisches Screening und ersetzt keinen Druckversuch.
 
 Die feste Hardwareanordnung und ihre Quellen bleiben in `COMPONENT_DEFAULTS`, `FRAME_DEFAULTS` und `FRAME_DEFAULT_SOURCES` von `deep_frame/config.py` sowie in [armattan_research.md](armattan_research.md) nachvollziehbar. Die Motorhuelle stammt vorlaeufig vom [GEPRC GR1105](https://geprc.com/product/gep-gr1105-motor/); sein 9-mm-Lochkreis ist kein 9x9-mm-Quadrat. Dichte und isotrope Materialannahme bleiben der dokumentierte [Bambu-PA6-CF-Datensatz](https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf). Rasteraufloesung, Kontaktgroessen, Bauraum, Korridore und relative Anschlusslasten sind eigene offengelegte Modellierungsentscheidungen.
+
+## Boden des Bauraums
+
+### Klaerung: die zwei kantigen Bloecke am Boden
+
+Grundlage: Lauf `battery_free` (Phase-1-Layout, freie Akkulagerung, SIMP+MMA 4/3 mm, Dichte `C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz`). Die Domaene ist mit demselben Aufbau rekonstruiert wie im Lauf (`docs/validation/bottom_domain/run_cfg.json`, `tools/formulation_study.patched_builder`, also `R2Domain` mit getrimmten Motorpads). Befehl: `python -m tools.topology_study floor docs/validation/bottom_domain/floor_before.json` (Ray `cpu`). Bild: `docs/validation/bottom_domain/before/floor.png`, Zahlen: `docs/validation/bottom_domain/before/floor.json`.
+
+Jeder der beiden Bloecke (x = -12.75 und x = +12.75) besteht aus drei Teilen:
+
+| Teil | Quelle | Ausdehnung | Vorgabe oder Optimierer | am Boden z = 0 |
+|---|---|---|---|---|
+| zwei Saeulen | Preserve `aio_contact_0/1` (links) bzw. `aio_contact_2/3` (rechts) aus `topology_geometry._component_regions` | Zylinder r = 3.1 mm, z = 0..11.8 mm (`base_thickness_mm` 3.0 + `aio_standoff_mm` 8.8), Achsen bei y = -12.75 / +12.75 | **Vorgabe**: 356 mm3 exakt, 398 mm3 im Raster je Saeule, also 4 x 398 = 1593 mm3 = 29 % aller Preserve-Zellen (5547 mm3) | flache Unterseite ist die eigene Grundflaeche der Vorgabe, kein Zuschnitt |
+| Untergurt | Optimiererdichte zwischen den Saeulen | x = 10..14 mm, y = -8.7..10 mm, 38 Zellen je Seite in der Bodenschicht (90 mm3); Hoehe ueber z = 0 im Median 1.33 mm, hoechstens 2.67 mm | **Optimierer** | **abgeschnitten**: liegt mit voller Breite auf der Bauraumgrenze z = 0; ein voller Querschnitt (Mindeststegbreite 2.5 mm robust, Filterradius 4 mm) passt darunter nicht |
+| Stackfixierung | `aio_fixtures` in `build_design_domain` (Evaluator `center_fixtures`, Lastfaelle arm_tip/crash_*) | Quader r = 3.2 mm um jede Schraubachse, z = -0.01..0.01 | Vorgabe der Lagerung | fixiert die Saeulenunterseiten auf z = 0 |
+
+Von der Seite (Schnitt x = 12.67) sieht man je Seite die beiden Saeulen (blau) und dazwischen den eine bis zwei Zellen dicken Untergurt (orange) auf z = 0; von vorn decken sich die Saeulen eines Paars zu je einem Rechteck 6.2 x 11.8 mm. Das sind die beiden Bloecke. Die Saeulen sind seit dem Phase-1-Layout so hoch, weil `aio_contact_*` den ganzen Abstand Boden bis AIO-Unterseite vorgibt (bei Standoff 3 mm waren es 5.5 mm). Radial gibt es nichts zu verkleinern: 3.1 - 1.1 = 2.0 mm ist genau die Mindestwand.
+
+Weitere Zellen in der Bodenschicht (z = 0..1.33): 112 Preserve-Zellen, davon 84 in den AIO-Saeulen und 28 im Ende des Buegelrohrs (Pfad z = 1.5 mm, Radius 1.6 mm, y = 47..56); 76 Optimiererzellen, alle im Untergurt. Die Motorpads (z = 6.67..9.33) und ihre Schraubkorridore (graue Kreuze) beruehren den Boden nicht; dort wirkt bereits die Armwurzel-Korrektur.
+
+### Vorgaben auf das Lochbild verkleinert: AIO-Sitzaugen
+
+- `aio_contact_*` ist jetzt ein **Sitzauge** um jede Stack-Schraube statt einer Saeule ab Boden: r = 3.1 mm (2.0 mm Wand um die 2.2-mm-Bohrung), Oberkante unveraendert auf der Grommet-Sitzebene `base_thickness_mm + aio_standoff_mm` (plus 0.5 mm Buendigverlaengerung in die AIO-Huelle), Hoehe mindestens `aio_eye_height_mm` = 8/3 mm; die Unterkante liegt auf der naechsten Gitterknotenebene darunter. Auf dem 4/3-mm-Gitter des Laufs: z = 8.0..11.8 mm statt 0..11.8 mm. Auf dem groben 4-mm-Testgitter mit Standoff 3 mm reicht das Auge bis z = 0 (keine Ebene dazwischen).
+- Darunter liegt `aio_tool_access_*`: ein rasterisierter Keep-out-Zylinder r = `aio_tool_radius_mm` = 2.0 mm (Schraubenkopf r 1.9 mm aus der Evaluator-Pruefung `tool_reachable` plus 0.1 mm) vom Boden bis zur Augenunterseite. Die Augenunterseite ist die Kopfauflage; Buendig- und Randregeln gelten fuer diesen Korridor nicht, er wird deshalb erst nach `prescribed_clearance` angehaengt. Die durchgehende Bohrung `aio_screw_*` reicht bis zum Boden.
+- Wie das Auge getragen wird (von der Seite, als Rohr um den Korridor, ueber Streben), entscheidet der Optimierer. Die Rekonstruktion v3b vereinigt jede Preserve-Primitive generisch mit festem Uebergang (`smooth_union` mit `preserve_blend_mm`, `aio_contact` steht in `load_path_mounts`); es ist keine Aenderung an v3b noetig.
+- **Lagerung verschoben:** Die Stackfixierung (`arm_tip`, `thrust_all`, `crash_*` im Domaenenaufbau, Evaluator `center_fixtures`) fasst jetzt die vier Augen ueber ihre Hoehe (Quader r 3.2 mm, z = Augenunterseite - 0.01 bis Oberkante + 0.01; im Lauf 7.99..11.81 statt -0.01..0.01). Die Lagerung wandert damit um rund 9 mm nach oben. Die Evaluator-Lochbildpruefung `stack_25.5` schneidet 1.5 mm ueber der Augenunterseite (bisher fest z = 1.5, fuer Saeulen ab Boden identisch).
+- Der Optimierer selbst ist davon nur ueber die Anbindungslasten und die Punktmassen betroffen (`R2Domain` rechnet `arm_tip`, `thrust_all` und `crash_*` mit Inertia Relief ohne Fixierung). Die Sigma-Kalibrierung 1.384 / 1.374 ist mit der alten Lagerung gemessen und muss auf dem neuen Rahmen neu bestimmt werden.
+
+Domaenendiff auf dem Laufgitter (`docs/validation/bottom_domain/eyes/floor.json`, Feld wie oben): Preserve -1195 mm3 (5547 -> 4352 mm3; je Auge 398 -> 100 mm3 Raster, 356 -> 115 mm3 exakt), erlaubter Raum -626 mm3 (die vier Werkzeugkorridore). In der Bodenschicht bleiben 28 Preserve-Zellen (Buegelrohrende) und die alten Saeulenfusszellen werden frei.
+
+### Bauraumboden abgesenkt
+
+- `TOPOLOGY_CONFIG["floor_drop_mm"]` = 4.0: `build_design_domain` setzt den Gitterboden um ganze Zellen unter z = 0 (`lowered_grid`: 1 Zelle bei 4 mm, 2 bei 2 mm, 3 bei 4/3 mm, 6 bei 2/3 mm), Zellweite und Oberkante z = 32 bleiben. Studienformen wie `[102, 96, 24]` behalten damit ihre 4/3 mm, das Gitter hat 27 statt 24 Lagen; der 0.75-mm-Lauf (`[182, 170, 48]`) bekommt 54 statt 48 Lagen.
+- Alle Komponentenkoordinaten bleiben, z = 0 bleibt die Bezugsebene des Layouts (Motorpads, Stack, Akku, Kamera, Rotorebene, Schwerpunktband). Durchgangsbohrungen der Motoren und des Stacks (`*_motor_screw_*`, `*_shaft_clearance`, `aio_screw_*`) und die gerasterten Schraubkorridore unter den Motorpads (`R2Domain`) reichen jetzt bis zum neuen Boden.
+- Alte Dichtefelder (Startfelder, Referenzen) mit 24 Lagen passen ueber `embed_field` auf das neue Gitter: die neuen Lagen unten wiederholen die unterste Lage (`tools/formulation_study.py` frame_mma, plumbing, fd, modal_split).
+
+Begruendung (Absenken statt Layout anheben):
+
+- **Untergurt:** Der abgeschnittene Gurt war 1.3 bis 2.7 mm hoch. Ein voller Querschnitt bei 2.5 mm robuster Mindestbreite plus einer Zelle Filterreserve braucht rund 4 mm; 3 Zellen auf 4/3 mm passen genau.
+- **Layout anheben** wuerde Motorpads, Rotorebene, Akku und Kamera um denselben Betrag verschieben. Das veraendert das Layout von Agent A (Schwerpunkt relativ zur Rotorebene bleibt zwar gleich, aber Akku-Oberkante und Buegel stossen an z = 32) und verschiebt die Armwurzel-Korrektur. Absenken ist eine reine Domaenenaenderung.
+- **Hoehe:** Bauraum 36 statt 32 mm. Die Gesamthoehe des Rahmens waechst nur, wo der Optimierer Material unter z = 0 legt, hoechstens um 4 mm (Hoehe/Radstand dann 0.27, Ziel <= 0.4).
+- **Keep-outs:** unveraendert; unter z = 0 liegen nur die Bohrungs- und Werkzeugkorridore.
+- **Druck:** Druckrichtung bleibt +z (`build_direction`), Stuetzen sind erlaubt (`supports_allowed`). Eine erzwungene flache Bodenebene gibt es nicht mehr: Die Bettauflage sind die tiefsten Gurte und Augenstuetzen. Der Evaluator meldet `bed_contact_mm2` und den Ueberhanganteil; beides ist im naechsten Lauf zu pruefen.
+- **Kosten:** +12.5 % Zellen in z. Fuer den 0.75-mm-Lauf, der schon am Host-RAM scheiterte (34.6 GB RSS beim Aufbau), ist das relevant: grob +12 % Speicher.
+- **Nicht mitgezogen:** `LAYOUT_RULES["envelope"]` (Boden z = 0, Hoehe 32) bleibt die Layout-Huelle fuer Akkulage unten und Referenzvergleiche; nur der Topologie-Bauraum ist abgesenkt.
+
+Nachweis am Feld `battery_free` auf dem neuen Gitter (`docs/validation/bottom_domain/after/floor.png`, `after/floor.json`): Unter den vorher abgeschnittenen Gurtzellen (orange, z = 0..1.33) liegen jetzt 3 freie Lagen bis z = -4; unter den Augen liegen die 2-mm-Werkzeugkorridore, die auf dem 4/3-mm-Raster konservativ eine 5.3-mm-Spalte sperren, die Augen werden also seitlich oder ueber Streben angebunden. Domaenendiff gegen vorher: erlaubter Raum +67129 mm3 (374917 -> 442046 mm3), Preserve -1195 mm3 (5547 -> 4352 mm3), Bauraum z 0..32 -> -4..32 mm, Stackfixierung z -0.01..0.01 -> 7.99..11.81 mm.
 
 ## Dichtefeld zu pruefbarer freier Geometrie
 
