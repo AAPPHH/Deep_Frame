@@ -1,0 +1,573 @@
+{
+ "bodies": {
+  "Frei roh": {
+   "stl": "C:/clones/Deep_Frame-layout/exports/runs/battery_free_raw_2/frame.stl",
+   "sha256_16": "6430f59574d5029c",
+   "frame": {
+    "mass_g": 17.013107675829534,
+    "center_mm": [
+     -0.040336986799592606,
+     9.256716140492088,
+     14.710808824840145
+    ],
+    "inertia_g_mm2": [
+     [
+      14728.014677963829,
+      38.57196809582604,
+      0.020863195445292533
+     ],
+     [
+      38.57196809582604,
+      12385.480395919725,
+      -533.3332699722216
+     ],
+     [
+      0.020863195445292533,
+      -533.3332699722216,
+      25581.393420886176
+     ]
+    ]
+   },
+   "craft": {
+    "mass_g": 86.31310767582954,
+    "center_of_mass_mm": [
+     -0.007950791232281635,
+     1.726336965903354,
+     22.189470424711345
+    ],
+    "cg_above_rotor_plane_mm": 0.45613709137801095,
+    "inertia_g_mm2": [
+     [
+      77529.53902382663,
+      43.73974728027463,
+      -5.111424415483133
+     ],
+     [
+      43.73974728027463,
+      88746.30879584105,
+      2179.2234153953696
+     ],
+     [
+      -5.111424415483133,
+      2179.2234153953696,
+      152307.85770988642
+     ]
+    ],
+    "alpha_rad_s2": {
+     "roll": 2433.4176456947143,
+     "pitch": 2039.3679018208575,
+     "yaw": 111.20304125544908
+    },
+    "alpha_min_rad_s2": 111.20304125544908,
+    "limiting_axis": "yaw",
+    "layout": {
+     "battery_y_mm": -3.3,
+     "deck_top_mm": 25.8,
+     "camera_y_mm": 49.4,
+     "camera_bottom_clearance_mm": 7.0,
+     "aio_standoff_mm": 8.8
+    },
+    "violated": [
+     "cg_y"
+    ]
+   },
+   "note": null,
+   "evaluation": {
+    "run": "C:\\clones\\Deep_Frame-layout\\exports\\runs\\battery_free_raw_2",
+    "mass_g": 17.013107675829534,
+    "arm_tip_n_per_mm": 13.405514297223522,
+    "f1_hz": 393.559,
+    "sigma_full": [
+     0.7215063234407656,
+     0.23040977902038126
+    ],
+    "sigma_diagonal": [
+     0.8496487890485153,
+     0.3609867339797818
+    ],
+    "worst_load": {
+     "motor_front_left Mz": 4.860112038144962,
+     "motor_front_right Mz": -4.911729391430473,
+     "motor_rear_left Mz": -4.960678814439198,
+     "motor_rear_right Mz": 4.918921748241367,
+     "battery Fz": -1.3849233997168535
+    },
+    "stiffness": {
+     "motor_front_left Fx": 63.29896820147093,
+     "motor_front_left Fy": 11.183511785528003,
+     "motor_front_left Fz": 9.720961269873918,
+     "motor_front_left Mx": 3313.902984151291,
+     "motor_front_left My": 4274.686576960248,
+     "motor_front_left Mz": 7064.914806709242,
+     "motor_front_right Fx": 62.46033136007636,
+     "motor_front_right Fy": 10.659009253011119,
+     "motor_front_right Fz": 9.285444381122309,
+     "motor_front_right Mx": 3119.9086980164784,
+     "motor_front_right My": 4175.268556970516,
+     "motor_front_right Mz": 6765.3249278486,
+     "motor_rear_left Fx": 28.715202177229997,
+     "motor_rear_left Fy": 9.56941092411757,
+     "motor_rear_left Fz": 11.70178513957758,
+     "motor_rear_left Mx": 2982.68915364964,
+     "motor_rear_left My": 3678.797457768481,
+     "motor_rear_left Mz": 5890.493627202001,
+     "motor_rear_right Fx": 28.83610467868445,
+     "motor_rear_right Fy": 9.72260238281534,
+     "motor_rear_right Fz": 12.249616403462221,
+     "motor_rear_right Mx": 3125.044173178144,
+     "motor_rear_right My": 3866.217321001687,
+     "motor_rear_right Mz": 5882.749637614595,
+     "stack Fx": 313.6131125971121,
+     "stack Fy": 155.4073598086138,
+     "stack Fz": 416.6700362166074,
+     "stack Mx": 36784.232984917246,
+     "stack My": 124974.95643675225,
+     "stack Mz": 65284.60685433557,
+     "battery Fx": 470.86482036633646,
+     "battery Fy": 186.27776551009333,
+     "battery Fz": 1890.242639011602,
+     "battery Mx": 472236.37496330385,
+     "battery My": 377552.52134537447,
+     "battery Mz": 307239.49552573333,
+     "camera Fx": 31.733460849363684,
+     "camera Fy": 204.78931410619234,
+     "camera Fz": 29.573035959262697,
+     "camera Mx": 10218.576715216806,
+     "camera My": 5809.268767276301,
+     "camera Mz": 78315.24681419395
+    },
+    "twist": {
+     "compliance_n_mm": 0.4449913627670332,
+     "stiffness_n_per_mm": 8.988938515856372
+    },
+    "missed": [
+     "bolt_patterns",
+     "keep_outs_free",
+     "wall_deep_fraction",
+     "wall_deep_component",
+     "target:sigma_mean",
+     "target:sigma_worst"
+    ],
+    "warnings": [
+     "cog_offset"
+    ],
+    "line": "| battery_free_raw_2 | 17,0 g | SP z 22,2 mm; Ixx/Iyy/Izz 78/89/152 kg\u00b7mm\u00b2 (K) | 5,0 % (64 mm) | Bohrb. 2/20, Passung nein, Werkzeug ok, Stecker n/a | \u00dcberh. 18,8 %, \u00d6ffn. r=1 0,55 %/44,5 mm\u00b3/Motorzonen 0,St\u00fctze 15,17 cm\u00b3, 216 min | Strebe 1,9/2,8/5,0 mm, H/B 1,11, offen 79 %, H\u00f6he 28,9 mm, K\u00f6rper 1, Schlaufen 20, Sym. 0,05 mm, Rauh. 0,118/mm | 13,4 N/mm; \u03a3 tr 0,722/\u03bbmax 0,230 N\u00b7mm (A) | f1 394 Hz; 395/497/504 (A) | front 5,3/4,7 MPa; arm 12,8/3,4 MPa; back 1,7/0,4 MPa (SF 2,0, A) | bolt_patterns, keep_outs_free, wall_deep_fraction, wall_deep_component, target:sigma_mean, target:sigma_worst; Warnung: cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-layout\\exports\\runs\\battery_free_raw_2\\datasheet.md",
+    "sigma_peak_memory_gb": 2.4091835021972656
+   }
+  },
+  "Frei recon v3b": {
+   "stl": "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/frame.stl",
+   "sha256_16": "fb75869cbb471741",
+   "frame": {
+    "mass_g": 18.613561174452453,
+    "center_mm": [
+     -0.13144121052148652,
+     9.827379871045272,
+     14.59940578412044
+    ],
+    "inertia_g_mm2": [
+     [
+      16134.96698293347,
+      89.3228167557311,
+      1.860546929377266
+     ],
+     [
+      89.3228167557311,
+      13168.471912490648,
+      -607.9711478229781
+     ],
+     [
+      1.860546929377266,
+      -607.9711478229781,
+      27602.349107435337
+     ]
+    ]
+   },
+   "craft": {
+    "mass_g": 87.91356117445245,
+    "center_of_mass_mm": [
+     -0.027829483645086684,
+     1.9842505989278088,
+     22.029735598270623
+    ],
+    "cg_above_rotor_plane_mm": 0.2964022649372886,
+    "inertia_g_mm2": [
+     [
+      79305.95540217077,
+      108.51173065953716,
+      -16.31841635604008
+     ],
+     [
+      108.51173065953716,
+      89648.049041267,
+      2287.3340404942105
+     ],
+     [
+      -16.31841635604008,
+      2287.3340404942105,
+      154579.991281041
+     ]
+    ],
+    "alpha_rad_s2": {
+     "roll": 2408.940697802156,
+     "pitch": 1993.6870128650103,
+     "yaw": 109.568494887856
+    },
+    "alpha_min_rad_s2": 109.568494887856,
+    "limiting_axis": "yaw",
+    "layout": {
+     "battery_y_mm": -3.3,
+     "deck_top_mm": 25.8,
+     "camera_y_mm": 49.4,
+     "camera_bottom_clearance_mm": 7.0,
+     "aio_standoff_mm": 8.8
+    },
+    "violated": [
+     "cg_y"
+    ]
+   },
+   "note": null,
+   "evaluation": {
+    "run": "C:\\clones\\Deep_Frame-layout\\exports\\runs\\battery_free_v3_2",
+    "mass_g": 18.613561174452453,
+    "arm_tip_n_per_mm": null,
+    "f1_hz": null,
+    "sigma_full": [
+     null,
+     null
+    ],
+    "sigma_diagonal": [
+     null,
+     null
+    ],
+    "worst_load": null,
+    "stiffness": {},
+    "twist": null,
+    "missed": [
+     "fea_solved",
+     "crash_front_strength",
+     "crash_arm_strength",
+     "crash_back_strength",
+     "target:arm_tip_slope",
+     "target:f1",
+     "target:sigma_mean",
+     "target:sigma_worst"
+    ],
+    "warnings": [
+     "loops",
+     "cog_offset"
+    ],
+    "line": "| battery_free_v3_2 | 18,6 g | SP z 22,0 mm; Ixx/Iyy/Izz 79/90/155 kg\u00b7mm\u00b2 (K) | 5,0 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 18,2 %, \u00d6ffn. r=1 0,00 %/0,0 mm\u00b3/Motorzonen 0,St\u00fctze 15,70 cm\u00b3, 228 min | Strebe 2,0/2,8/5,6 mm, H/B 1,11, offen 79 %, H\u00f6he 29,3 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,18 mm, Rauh. 0,116/mm | \u2013 (A) | \u2013 | \u2013 | fea_solved, crash_front_strength, crash_arm_strength, crash_back_strength, target:arm_tip_slope, target:f1, target:sigma_mean, target:sigma_worst; Warnung: loops, cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-layout\\exports\\runs\\battery_free_v3_2\\datasheet.md",
+    "sigma_peak_memory_gb": null
+   }
+  },
+  "Schienen recon v3b": {
+   "stl": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/frame.stl",
+   "sha256_16": "81504ebdb07388a2",
+   "frame": {
+    "mass_g": 17.620800936283516,
+    "center_mm": [
+     0.1395457912161349,
+     5.2607887758217835,
+     12.90030907888368
+    ],
+    "inertia_g_mm2": [
+     [
+      13744.464884539004,
+      94.2107695358606,
+      10.236237331642377
+     ],
+     [
+      94.2107695358606,
+      14022.895159431304,
+      -364.6681166665325
+     ],
+     [
+      10.236237331642377,
+      -364.6681166665325,
+      25970.91041557202
+     ]
+    ]
+   },
+   "craft": {
+    "mass_g": 86.92080093628351,
+    "center_of_mass_mm": [
+     0.02828906984322603,
+     1.9926106285370342,
+     22.093898504288774
+    ],
+    "cg_above_rotor_plane_mm": 0.3605651709554394,
+    "inertia_g_mm2": [
+     [
+      75564.26116695168,
+      86.17461815533983,
+      32.84243351292941
+     ],
+     [
+      86.17461815533983,
+      93658.5170616881,
+      1181.6349829353665
+     ],
+     [
+      32.84243351292941,
+      1181.6349829353665,
+      148441.35582846735
+     ]
+    ],
+    "alpha_rad_s2": {
+     "roll": 2305.789591691185,
+     "pitch": 2092.407851098135,
+     "yaw": 114.09958424263769
+    },
+    "alpha_min_rad_s2": 114.09958424263769,
+    "limiting_axis": "yaw",
+    "layout": {
+     "battery_y_mm": 0.0,
+     "deck_top_mm": 28.0,
+     "camera_y_mm": 35.0,
+     "camera_bottom_clearance_mm": 2.0,
+     "aio_standoff_mm": 3.0
+    },
+    "violated": [
+     "cg_y",
+     "camera_sees_no_prop"
+    ]
+   },
+   "note": "simp_mma_cov3_v3_2, Layout v3b-Regel (Akku y 0 / z 28, Kamera y 35 / 2 mm, Stack 3 mm)",
+   "evaluation": {
+    "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2",
+    "mass_g": 17.620800936283516,
+    "arm_tip_n_per_mm": 10.46144252257219,
+    "f1_hz": 472.8289,
+    "sigma_full": [
+     0.601582087548817,
+     0.20718303901272683
+    ],
+    "sigma_diagonal": [
+     0.7053324156118309,
+     0.26379095560404203
+    ],
+    "worst_load": {
+     "motor_front_left My": 5.266676427390525,
+     "motor_front_left Mz": 4.481888174098044,
+     "motor_front_right My": -5.267518177525437,
+     "motor_front_right Mz": -4.4407838130504595,
+     "motor_rear_left My": -5.250604274691845,
+     "motor_rear_left Mz": -4.082758803099815,
+     "motor_rear_right My": 5.250608138721305,
+     "motor_rear_right Mz": 4.086323769147424,
+     "battery Fz": -1.1879831913184802
+    },
+    "stiffness": {
+     "motor_front_left Fx": 66.98976303860965,
+     "motor_front_left Fy": 12.923964201022047,
+     "motor_front_left Fz": 10.259002046560369,
+     "motor_front_left Mx": 3478.2477712374184,
+     "motor_front_left My": 4273.100713124135,
+     "motor_front_left Mz": 7604.566132753425,
+     "motor_front_right Fx": 69.80927003766384,
+     "motor_front_right Fy": 12.926451753529353,
+     "motor_front_right Fz": 10.82893995704682,
+     "motor_front_right Mx": 3415.186884444293,
+     "motor_front_right My": 4184.80360596546,
+     "motor_front_right Mz": 7500.528249889059,
+     "motor_rear_left Fx": 36.0021644757014,
+     "motor_rear_left Fy": 10.783312881003182,
+     "motor_rear_left Fz": 25.273423221966613,
+     "motor_rear_left Mx": 4945.621384842717,
+     "motor_rear_left My": 6434.624920957593,
+     "motor_rear_left Mz": 7244.32060434785,
+     "motor_rear_right Fx": 36.498291254487974,
+     "motor_rear_right Fy": 11.085895207283686,
+     "motor_rear_right Fz": 26.86401713211917,
+     "motor_rear_right Mx": 5209.379836694776,
+     "motor_rear_right My": 6620.493101108112,
+     "motor_rear_right Mz": 7277.291589157632,
+     "stack Fx": 620.3013165346515,
+     "stack Fy": 265.2164783780348,
+     "stack Fz": 315.6300753524642,
+     "stack Mx": 80922.60379034223,
+     "stack My": 103948.557189988,
+     "stack Mz": 152788.52484377666,
+     "battery Fx": 142.090071934383,
+     "battery Fy": 224.54079984340288,
+     "battery Fz": 433.2040452439716,
+     "battery Mx": 16133.8076664685,
+     "battery My": 84415.43737698435,
+     "battery Mz": 85994.25029371938,
+     "camera Fx": 95.21598932088301,
+     "camera Fy": 247.6094157557721,
+     "camera Fz": 179.79612921099093,
+     "camera Mx": 23366.627680916048,
+     "camera My": 39778.53928926902,
+     "camera Mz": 75610.3637200181
+    },
+    "twist": {
+     "compliance_n_mm": 0.2872731443788313,
+     "stiffness_n_per_mm": 13.924030415892764
+    },
+    "missed": [],
+    "warnings": [
+     "cog_offset"
+    ],
+    "line": "| simp_mma_cov3_v3_2 | 17,6 g | SP z 22,1 mm; Ixx/Iyy/Izz 76/94/148 kg\u00b7mm\u00b2 (K) | 5,6 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 20,1 %, \u00d6ffn. r=1 0,03 %/2,8 mm\u00b3/Motorzonen 0,St\u00fctze 16,29 cm\u00b3, 242 min | Strebe 1,9/2,8/5,2 mm, H/B 1,00, offen 76 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 20, Sym. 0,22 mm, Rauh. 0,138/mm | 10,5 N/mm; \u03a3 tr 0,602/\u03bbmax 0,207 N\u00b7mm (A) | f1 473 Hz; 481/525/538 (A) | front 6,3/3,4 MPa; arm 13,5/3,0 MPa; back 2,2/0,8 MPa (SF 2,0, A) | keine; Warnung: cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\datasheet.md",
+    "sigma_peak_memory_gb": 2.648548126220703
+   }
+  },
+  "Schienen recon v3b, Phase-1-Layout": {
+   "stl": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/frame.stl",
+   "sha256_16": "81504ebdb07388a2",
+   "frame": {
+    "mass_g": 17.620800936283516,
+    "center_mm": [
+     0.1395457912161349,
+     5.2607887758217835,
+     12.90030907888368
+    ],
+    "inertia_g_mm2": [
+     [
+      13744.464884539004,
+      94.2107695358606,
+      10.236237331642377
+     ],
+     [
+      94.2107695358606,
+      14022.895159431304,
+      -364.6681166665325
+     ],
+     [
+      10.236237331642377,
+      -364.6681166665325,
+      25970.91041557202
+     ]
+    ]
+   },
+   "craft": {
+    "mass_g": 86.92080093628351,
+    "center_of_mass_mm": [
+     0.02828906984322603,
+     0.9689201074933319,
+     21.770155514154254
+    ],
+    "cg_above_rotor_plane_mm": 0.036822180820919925,
+    "inertia_g_mm2": [
+     [
+      76305.13440694459,
+      83.65745672069379,
+      32.04637908754138
+     ],
+     [
+      83.65745672069379,
+      90937.61529678905,
+      1995.8921949672608
+     ],
+     [
+      32.04637908754138,
+      1995.8921949672608,
+      151903.13083335932
+     ]
+    ],
+    "alpha_rad_s2": {
+     "roll": 2374.7800413422206,
+     "pitch": 2072.0919313886925,
+     "yaw": 111.49932783822534
+    },
+    "alpha_min_rad_s2": 111.49932783822534,
+    "limiting_axis": "yaw",
+    "layout": {
+     "battery_y_mm": -3.3,
+     "deck_top_mm": 25.8,
+     "camera_y_mm": 49.4,
+     "camera_bottom_clearance_mm": 7.0,
+     "aio_standoff_mm": 8.8
+    },
+    "violated": []
+   },
+   "note": "gleicher Rahmen mit den Komponenten am Phase-1-Layout (Rahmen nicht dafuer optimiert, nur Traegheitsvergleich)",
+   "evaluation": {
+    "run": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2",
+    "mass_g": 17.620800936283516,
+    "arm_tip_n_per_mm": 10.46144252257219,
+    "f1_hz": 472.8289,
+    "sigma_full": [
+     0.601582087548817,
+     0.20718303901272683
+    ],
+    "sigma_diagonal": [
+     0.7053324156118309,
+     0.26379095560404203
+    ],
+    "worst_load": {
+     "motor_front_left My": 5.266676427390525,
+     "motor_front_left Mz": 4.481888174098044,
+     "motor_front_right My": -5.267518177525437,
+     "motor_front_right Mz": -4.4407838130504595,
+     "motor_rear_left My": -5.250604274691845,
+     "motor_rear_left Mz": -4.082758803099815,
+     "motor_rear_right My": 5.250608138721305,
+     "motor_rear_right Mz": 4.086323769147424,
+     "battery Fz": -1.1879831913184802
+    },
+    "stiffness": {
+     "motor_front_left Fx": 66.98976303860965,
+     "motor_front_left Fy": 12.923964201022047,
+     "motor_front_left Fz": 10.259002046560369,
+     "motor_front_left Mx": 3478.2477712374184,
+     "motor_front_left My": 4273.100713124135,
+     "motor_front_left Mz": 7604.566132753425,
+     "motor_front_right Fx": 69.80927003766384,
+     "motor_front_right Fy": 12.926451753529353,
+     "motor_front_right Fz": 10.82893995704682,
+     "motor_front_right Mx": 3415.186884444293,
+     "motor_front_right My": 4184.80360596546,
+     "motor_front_right Mz": 7500.528249889059,
+     "motor_rear_left Fx": 36.0021644757014,
+     "motor_rear_left Fy": 10.783312881003182,
+     "motor_rear_left Fz": 25.273423221966613,
+     "motor_rear_left Mx": 4945.621384842717,
+     "motor_rear_left My": 6434.624920957593,
+     "motor_rear_left Mz": 7244.32060434785,
+     "motor_rear_right Fx": 36.498291254487974,
+     "motor_rear_right Fy": 11.085895207283686,
+     "motor_rear_right Fz": 26.86401713211917,
+     "motor_rear_right Mx": 5209.379836694776,
+     "motor_rear_right My": 6620.493101108112,
+     "motor_rear_right Mz": 7277.291589157632,
+     "stack Fx": 620.3013165346515,
+     "stack Fy": 265.2164783780348,
+     "stack Fz": 315.6300753524642,
+     "stack Mx": 80922.60379034223,
+     "stack My": 103948.557189988,
+     "stack Mz": 152788.52484377666,
+     "battery Fx": 142.090071934383,
+     "battery Fy": 224.54079984340288,
+     "battery Fz": 433.2040452439716,
+     "battery Mx": 16133.8076664685,
+     "battery My": 84415.43737698435,
+     "battery Mz": 85994.25029371938,
+     "camera Fx": 95.21598932088301,
+     "camera Fy": 247.6094157557721,
+     "camera Fz": 179.79612921099093,
+     "camera Mx": 23366.627680916048,
+     "camera My": 39778.53928926902,
+     "camera Mz": 75610.3637200181
+    },
+    "twist": {
+     "compliance_n_mm": 0.2872731443788313,
+     "stiffness_n_per_mm": 13.924030415892764
+    },
+    "missed": [],
+    "warnings": [
+     "cog_offset"
+    ],
+    "line": "| simp_mma_cov3_v3_2 | 17,6 g | SP z 22,1 mm; Ixx/Iyy/Izz 76/94/148 kg\u00b7mm\u00b2 (K) | 5,6 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok, Stecker n/a | \u00dcberh. 20,1 %, \u00d6ffn. r=1 0,03 %/2,8 mm\u00b3/Motorzonen 0,St\u00fctze 16,29 cm\u00b3, 242 min | Strebe 1,9/2,8/5,2 mm, H/B 1,00, offen 76 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 20, Sym. 0,22 mm, Rauh. 0,138/mm | 10,5 N/mm; \u03a3 tr 0,602/\u03bbmax 0,207 N\u00b7mm (A) | f1 473 Hz; 481/525/538 (A) | front 6,3/3,4 MPa; arm 13,5/3,0 MPa; back 2,2/0,8 MPa (SF 2,0, A) | keine; Warnung: cog_offset |",
+    "datasheet": "C:\\clones\\Deep_Frame-cov\\exports\\runs\\simp_mma_cov3_v3_2\\datasheet.md",
+    "sigma_peak_memory_gb": 2.648548126220703
+   }
+  }
+ },
+ "renderer": "tools.neural_study.render, both bodies in one scene per view (same camera, same px/mm), side by side along the screen axis"
+}

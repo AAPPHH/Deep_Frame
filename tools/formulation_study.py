@@ -423,7 +423,7 @@ def battery_compare(cfg):
         meshes[label], summary[label] = body_properties(body["stl"], FrameLayout(body["request"]))
         run = Path(body["stl"]).parent
         summary[label].update(note=body.get("note"), evaluation=body_summary(str(run), None, cfg["comparison"]) if (run / "evaluation.json").is_file() else None)
-    labels = list(meshes)
+    labels = [label for label, body in spec["bodies"].items() if body.get("figure", True)]
     try:
         font = ImageFont.truetype("arial.ttf", 34)
     except OSError:
