@@ -1,0 +1,73 @@
+{
+ "statement": "landing compliance (LANDING definition) of ManaFly 3 standing on its own lowest plates: half model, binary 4/3 mm voxels at >= 50 % volume fraction (manafly_camera_domain), floor springs under its lowest solid cell layer, frame mass box mirrored to both halves (manafly_camera_domain puts the whole frame mass on the half-domain nodes, an x-offset that the landing case would read as a roll load), 3 g on the thrust_all relief masses (frame, AIO, motors + props, battery) and the camera body on its screw springs; its value is the limit. Our fields on the coarse frame half domain for comparison",
+ "settings": {
+  "enabled": true,
+  "factor_g": 3.0,
+  "factor_source": "ASSUMPTION hard landing: 3 g vertical on the whole craft (frame share + components), no tilt; tilted gravity only if the vertical case leaves the connected reserve short",
+  "directions": {
+   "landing_vertical": [
+    0.0,
+    0.0,
+    -1.0
+   ]
+  },
+  "mass_case": "thrust_all",
+  "normal_n_mm3": 1000.0,
+  "shear_n_mm3": 300.0,
+  "exponent": 3.0,
+  "floor": 0.001,
+  "ground_source": "hard floor: a PA6-CF layer of about 2 mm clamped below (E_z 2170 MPa / 2 mm ~ 1000 N/mm per mm2 normal, 0.3 of it in shear like BATTERY_SUPPORT); SIMP gain like the battery springs, floor 1e-3 keeps a void floor solvable",
+  "limit_n_mm": 0.001825963050918695,
+  "limit_source": null,
+  "reaction_area_mm2": 100.0,
+  "weighted_reserve": true,
+  "definition": {
+   "case": "landing_vertical: loads = factor_g x g on the nodal masses of the mass_case inertia relief (point masses and the frame share on the preserves, design-independent) plus the rigid battery/camera bodies on their density-dependent springs; supported ONLY by springs to ground under the floor-layer cells (the StandStability contact set at the fixed envelope floor z_f): cell e gives k_e = a_e (floor + (1 - floor) rho_e^p) (shear, shear, normal) / 4 to each of its four bottom nodes; no other support (half domains: symmetry plane only), so a floating island has no load path and its springs carry nothing",
+   "row": "landing compliance C = f.u (full model); g = ln(C / limit_n_mm) <= 0; dC/drho = -u^T dK u (elements + springs) + 2 u^T df (body springs)",
+   "reaction": "floor cell reaction share r_e = -k_e,normal sum(u_z of its bottom nodes) / W (W = total landing load, sum r_e = 1); carrying weight s_e = x^2 / (1 + x^2), x = max(r_e, 0) / r_0, r_0 = a_e / reaction_area_mm2 (a cell carrying its fair share of 100 mm2 counts half)",
+   "reserve": "stand_reserve with the floor cell weight c(rho_e) s_e instead of c(rho_e): islands (r_e ~ 0) give no credit; evaluated on the stiffness (eroded) field together with the landing solve; gradient through one adjoint solve on the landing factorization",
+   "value": "reported reserve = support-function distance over cells with rho > 0.5 AND s_e > 0.5"
+  }
+ },
+ "manafly": {
+  "landing_vertical": {
+   "value": 0.001825963050918695,
+   "limit": null,
+   "g": null,
+   "info": {
+    "weight_n": 2.9014272954791807,
+    "mass_g": 98.62108179922741,
+    "factor_g": 3.0,
+    "floor_reaction_share": 1.0000000000008922
+   }
+  },
+  "floor_z_mm": 0.0,
+  "floor_cells_half": 535,
+  "loaded_mass_g": 98.62108179922741,
+  "frame_mass_g": 29.321081799227418,
+  "solid_cells_half": 5787,
+  "island_cells_dropped": 11,
+  "grid": {
+   "origin_mm": [
+    0.0,
+    -78.66666666666666,
+    0.0
+   ],
+   "spacing_mm": [
+    1.3333333333333333,
+    1.3333333333333333,
+    1.3333333333333333
+   ],
+   "shape": [
+    52,
+    111,
+    26
+   ],
+   "axis_order": "xyz",
+   "order": "C"
+  }
+ },
+ "ours": {},
+ "limit_n_mm": 0.001825963050918695,
+ "sha": "b06b4f55d71a360ded93c71da3bbc871ce237206"
+}

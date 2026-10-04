@@ -4,7 +4,7 @@ import pytest
 
 from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, COMPONENT_DEFAULTS, PRINT_MATERIAL
 from deep_frame.topology_optimization import HexElasticity, elasticity_matrix, hexahedron_matrices, orthotropic_matrix
-from deep_frame.topology_stability import FOUR_FEET, StandStability, stand_design, stand_domain
+from deep_frame.topology_stability import FOUR_FEET, GroundSupport, StandStability, stand_design, stand_domain
 from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
@@ -499,3 +499,37 @@ def test_stand_rows_in_the_shared_formulation():
     live = {row["name"]: row for row in on.geometry(np.full(on.map.n, 0.5)) if row["name"].startswith("stand_")}
     assert np.any(live["stand_reserve"]["gradient"]) and live["stand_reserve"]["value"] == gated["stand_reserve"]["value"]
     on.close()
+
+def landing_case(design, feet, pads=()):
+    from deep_frame.topology_neural import cell_centers
+    domain = stand_domain(True, (40, 40, 12))
+    rho, c = stand_design(domain, feet), cell_centers(domain["grid"])
+    for x, y in pads:
+        rho[(np.abs(c[:, 0] - x) < 2) & (np.abs(c[:, 1] - y) < 2) & (c[:, 2] < 1)] = 1
+    system = HexElasticity(domain)
+    ground, stability = GroundSupport(system, {}, {}), StandStability(domain, {"enabled": True})
+    def rows(physical):
+        ground.solve(physical, 3.0, 1e-6)
+        return ground.rows(1.0)[0], stability.rows(physical, ground)[0], stability.rows(physical)[0]
+    return rho if design is None else design(rho), rows
+
+def test_landing_islands_get_no_reserve_credit_connected_feet_do():
+    front = [(sx * 18, 18, 0) for sx in (-1, 1)]
+    rho, rows = landing_case(None, FOUR_FEET)
+    landing, weighted, plain = rows(rho)
+    assert weighted["value"] == pytest.approx(20.0, abs=0.01) and weighted["g"] < 0 and plain["value"] == pytest.approx(20.0, abs=0.01)
+    assert landing["info"]["floor_reaction_share"] == pytest.approx(1.0, abs=1e-6)
+    rho, rows = landing_case(None, front, [(sx * 18, -18) for sx in (-1, 1)])
+    island, weighted, plain = rows(rho)
+    assert plain["value"] > 15 and plain["g"] < 0
+    assert weighted["value"] < 0 and weighted["g"] > 1 and weighted["info"]["carrying_area_mm2"] < 0.5 * landing["info"]["floor_reaction_share"] * 64
+    assert island["value"] > 10 * landing["value"]
+
+def test_landing_and_weighted_reserve_gradients():
+    rng = np.random.default_rng(3)
+    rho, rows = landing_case(lambda rho: np.clip(0.7 * rho + rng.uniform(0.05, 0.3, len(rho)), 0.01, 0.99), FOUR_FEET)
+    landing, weighted, _ = rows(rho)
+    direction, step = rng.standard_normal(len(rho)), 1e-5
+    plus, minus = rows(rho + step * direction), rows(rho - step * direction)
+    for index, row in enumerate((landing, weighted)):
+        assert row["gradient"] @ direction == pytest.approx((plus[index]["g"] - minus[index]["g"]) / (2 * step), rel=1e-5)

@@ -1366,6 +1366,23 @@ STAND_STABILITY = {
         "rows": "stand_reserve: g as above; stand_prop_clearance: g = 1 - (z_prop_bottom - z_f) / prop_clearance_min_mm, design-independent (zero gradient); stand_ground_z monitors z_f; all on the intermediate field like volume and shadow"},
 }
 
+LANDING = {
+    "enabled": True, "factor_g": 3.0, "factor_source": "ASSUMPTION hard landing: 3 g vertical on the whole craft (frame share + components), no tilt; tilted gravity only if the vertical case leaves the connected reserve short",
+    "directions": {"landing_vertical": [0.0, 0.0, -1.0]}, "mass_case": "thrust_all",
+    "normal_n_mm3": 1000.0, "shear_n_mm3": 300.0, "exponent": 3.0, "floor": 1e-3,
+    "ground_source": "hard floor: a PA6-CF layer of about 2 mm clamped below (E_z 2170 MPa / 2 mm ~ 1000 N/mm per mm2 normal, 0.3 of it in shear like BATTERY_SUPPORT); SIMP gain like the battery springs, floor 1e-3 keeps a void floor solvable",
+    "limit_n_mm": 0.001826, "limit_source": "ManaFly 3 standing on its own lowest plates, same definition (docs/validation/landing_limit_manafly.json: half model, binary 4/3 mm voxels, 98.6 g loaded incl. 29.3 g frame, 3 g, 535 floor cells per half): C = 0.001826 N mm",
+    "reaction_area_mm2": 100.0, "weighted_reserve": True,
+    "definition": {
+        "case": "landing_vertical: loads = factor_g x g on the nodal masses of the mass_case inertia relief (point masses and the frame share on the preserves, design-independent) plus the rigid battery/camera bodies on their density-dependent springs; "
+                "supported ONLY by springs to ground under the floor-layer cells (the StandStability contact set at the fixed envelope floor z_f): cell e gives k_e = a_e (floor + (1 - floor) rho_e^p) (shear, shear, normal) / 4 to each of its four bottom nodes; "
+                "no other support (half domains: symmetry plane only), so a floating island has no load path and its springs carry nothing",
+        "row": "landing compliance C = f.u (full model); g = ln(C / limit_n_mm) <= 0; dC/drho = -u^T dK u (elements + springs) + 2 u^T df (body springs)",
+        "reaction": "floor cell reaction share r_e = -k_e,normal sum(u_z of its bottom nodes) / W (W = total landing load, sum r_e = 1); carrying weight s_e = x^2 / (1 + x^2), x = max(r_e, 0) / r_0, r_0 = a_e / reaction_area_mm2 (a cell carrying its fair share of 100 mm2 counts half)",
+        "reserve": "stand_reserve with the floor cell weight c(rho_e) s_e instead of c(rho_e): islands (r_e ~ 0) give no credit; evaluated on the stiffness (eroded) field together with the landing solve; gradient through one adjoint solve on the landing factorization",
+        "value": "reported reserve = support-function distance over cells with rho > 0.5 AND s_e > 0.5"},
+}
+
 def command_line(commands, argv=None):
     argv = sys.argv[1:] if argv is None else argv
     if not 1 <= len(argv) <= 2 or argv[0] not in commands:

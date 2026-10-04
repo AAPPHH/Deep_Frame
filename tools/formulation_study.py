@@ -50,6 +50,8 @@ FORMULATION = {
     "stand_fd": {"shape": [68, 64, 24], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.05, "output": "docs/validation/stand_stability_fd.json", "exact": "docs/validation/stand_stability.json",
                  "fields": {"rail_v3b": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/domain.json"],
                             "battery_free": ["C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/domain.json"]}},
+    "landing": {"tilt_deg": 20.0, "output": "docs/validation/landing_limit_manafly.json", "fd_output": "docs/validation/landing_fd.json", "shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "linear_solver": "auto",
+                "fields": {}, "designs": {"stand_fix_coarse": "exports/runs/stand_fix_opt/coarse/design.npz"}},
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
@@ -255,6 +257,8 @@ def frame_problem(half, references=None):
     problem["shadow"].update(half["metadata"]["formulation"]["shadow"])
     if config.STAND_STABILITY["enabled"]:
         problem["stability"] = deepcopy(config.STAND_STABILITY)
+    if config.LANDING["enabled"]:
+        problem["landing"] = deepcopy(config.LANDING)
     if references:
         problem["crash"].update(reference=references["crash_compliance_n_mm"], reference_source=references["source"])
         problem["shadow"].update(limit_mm=references["manafly_shadow_mm"], source=references["source"])
@@ -641,6 +645,58 @@ def camera_limits(cfg):
     Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
     print(json.dumps({key: {name: value[name] for name in ("camera_shift_crash_front", "camera_shift_crash_camera_oblique", "camera_coverage", "camera_mount_area", "mount_fraction", "plate_face_x_mm", "camera_cells_cut")} for key, value in results.items()}, default=float), flush=True)
     print(json.dumps({"crash_reference_n_mm": reference, "reference_shielding": shielding}), flush=True)
+
+def landing_rows(tp, physical):
+    rows, monitor, _ = tp.physics(physical)
+    return {row["name"]: {key: row.get(key) for key in ("value", "limit", "g", "info")} for row in rows + monitor if row["name"].startswith(("landing_", "stand_"))}
+
+def landing_limit(cfg):
+    spec = cfg["landing"]
+    domain, info = manafly_camera_domain(cfg, spec["tilt_deg"])
+    for case in domain["load_cases"]:
+        for item in case["inertia_relief"]["point_masses"]:
+            item["region"]["min_mm"][0] = -item["region"]["max_mm"][0] if item["name"] == "frame" else item["region"]["min_mm"][0]
+    landing = {**deepcopy(config.LANDING), "limit_n_mm": None}
+    problem = {**deepcopy(PROBLEM), "stiffness": None, "covariance": None, "modal": None, "shadow": None, "monitor": [], "crash": {"cases": [], "ratio": 1.5, "reference": {}}, "camera": deepcopy(config.CAMERA_SUPPORT), "landing": landing}
+    tp = TopologyProblem(domain, problem, linear_solver="cpu_superlu")
+    manafly = {**landing_rows(tp, np.asarray(domain["allowed"], dtype=float).ravel()), "floor_z_mm": tp.ground.floor, "floor_cells_half": len(tp.ground.cells), "loaded_mass_g": tp.ground.total_g, **{key: info[key] for key in ("frame_mass_g", "solid_cells_half", "island_cells_dropped", "grid")}}
+    tp.close()
+    print("manafly", json.dumps(manafly, default=float), flush=True)
+    landing["limit_n_mm"] = manafly["landing_vertical"]["value"]
+    config.LANDING.update(limit_n_mm=landing["limit_n_mm"])
+    config.STAND_STABILITY.update(enabled=True, start_beta=0.0)
+    half, problem = frame_setup(cfg, spec["shape"])
+    tp = TopologyProblem(half, problem, linear_solver=spec["linear_solver"])
+    ours = {}
+    for name, path in spec["fields"].items():
+        physical = embed_field(np.load(path)["density"], half["grid"]).ravel()
+        ours[name] = {"source": path, "mass_g": tp.mass_g(physical), **landing_rows(tp, np.clip(physical, 0, 1))}
+        print(name, json.dumps(ours[name], default=float), flush=True)
+    tp.close()
+    record = {"statement": "landing compliance (LANDING definition) of ManaFly 3 standing on its own lowest plates: half model, binary 4/3 mm voxels at >= 50 % volume fraction (manafly_camera_domain), floor springs under its lowest solid cell layer, "
+                           "frame mass box mirrored to both halves (manafly_camera_domain puts the whole frame mass on the half-domain nodes, an x-offset that the landing case would read as a roll load), "
+                           "3 g on the thrust_all relief masses (frame, AIO, motors + props, battery) and the camera body on its screw springs; its value is the limit. Our fields on the coarse frame half domain for comparison",
+              "settings": config.LANDING, "manafly": manafly, "ours": ours, "limit_n_mm": landing["limit_n_mm"], "sha": git_sha()}
+    Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
+
+def landing_fd(cfg):
+    spec = cfg["landing"]
+    config.LANDING.update(limit_n_mm=config.LANDING["limit_n_mm"] or 1.0)
+    config.STAND_STABILITY.update(enabled=True, start_beta=0.0)
+    half, problem = frame_setup(cfg, spec["shape"])
+    tp = TopologyProblem(half, problem, linear_solver=spec["linear_solver"])
+    random = np.random.default_rng(spec["seed"])
+    designs = {"uniform": random.uniform(spec["low"], spec["high"], tp.map.n), **{name: np.load(path)["design"] for name, path in spec["designs"].items()}}
+    record = {"statement": "central finite differences of all rows (incl. landing_vertical compliance with design-dependent floor springs and body springs, and the reaction-weighted stand_reserve through its adjoint) through the density map pullback along one random direction on the coarse frame half domain",
+              "grid": half["grid"], "floor_cells_half": len(tp.ground.cells), "loaded_mass_g": tp.ground.total_g, "settings": config.LANDING, "designs": {}, "sha": git_sha()}
+    for label, design in designs.items():
+        result = tp.evaluate(design)
+        checks = finite_differences(tp, design, spec["step"], spec["seed"])
+        record["designs"][label] = {"rows": result["rows"], "table": format_report(result["rows"]), "finite_differences": checks}
+        print(record["designs"][label]["table"], flush=True)
+        print(json.dumps({name: [row["analytic"], row["finite_difference"], row["relative_error"]] for name, row in checks.items()}, default=float), flush=True)
+    tp.close()
+    Path(spec["fd_output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
 
 def camera_fd(cfg):
     spec = cfg["camera_fd"]
@@ -1288,6 +1344,7 @@ def main(argv=None):
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
                          "cov_compare": lambda overrides: cov_compare(configure(overrides)), "battery_fd": lambda overrides: battery_fd(configure(overrides)),
                          "battery_compare": lambda overrides: battery_compare(configure(overrides)), "camera_limits": lambda overrides: camera_limits(configure(overrides)), "camera_fd": lambda overrides: camera_fd(configure(overrides)),
+                         "landing_limit": lambda overrides: landing_limit(configure(overrides)), "landing_fd": lambda overrides: landing_fd(configure(overrides)),
                          "solver_memory": lambda overrides: solver_memory(configure(overrides)), "setup_memory": lambda overrides: setup_memory(configure(overrides)), "stand_fd": lambda overrides: stand_fd(configure(overrides))}, argv)
 
 if __name__ == "__main__":

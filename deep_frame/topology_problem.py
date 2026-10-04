@@ -6,7 +6,7 @@ from scipy.interpolate import RegularGridInterpolator
 from deep_frame.config import BATTERY_SUPPORT, COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import SOLVER_CHOICE, DensityMap, HexElasticity, StiffnessConstraint, _settings
-from deep_frame.topology_stability import StandStability
+from deep_frame.topology_stability import GroundSupport, StandStability
 
 ARM_TIP = {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0, "calibration": 1.0, "penalty": 1.0, "multiplier_interval": 1,
            "definition": "evaluator arm_tip: centre mount undersides fixed, uniform pad load on the front-left motor seat, k = |F| / mean pad displacement along F = |F|^2 / compliance"}
@@ -52,6 +52,7 @@ PROBLEM = {
     "battery": None,
     "solver_choice": SOLVER_CHOICE,
     "stability": None,
+    "landing": None,
 }
 
 def length_scale_ratio(eta_eroded, samples=2001):
@@ -177,6 +178,8 @@ class TopologyProblem:
         if shadow and shadow["motors_mm"]:
             self.shadow = radial_weight(cell_centers(domain["grid"]), shadow) * np.asarray(domain["allowed"]).ravel() * self.cell * self.factor / weighted_disc_area(shadow)
         self.stability = StandStability(domain, problem["stability"]) if (problem.get("stability") or {}).get("enabled") else None
+        self.ground = GroundSupport(self.system, problem["landing"], self.bodies) if (problem.get("landing") or {}).get("enabled") else None
+        self.weighted = self.ground is not None and self.stability is not None and problem["landing"].get("weighted_reserve", True)
         names = [case["name"] for case in self.system.cases]
         self.crash = [name for name in (problem.get("crash") or {}).get("cases", []) if name in names]
         self.monitor = [name for name in problem.get("monitor", []) if name in names]
@@ -301,6 +304,12 @@ class TopologyProblem:
         if self.camera is not None:
             for row in self.camera_rows(solutions):
                 (rows if row["g"] is not None else monitor).append(row)
+        if self.ground is not None:
+            self.ground.solve(physical, self.penalization, self.min_stiffness_ratio)
+            for row in self.ground.rows(self.problem["landing"]["limit_n_mm"]):
+                (rows if row["g"] is not None else monitor).append(row)
+        if self.weighted:
+            rows.append(self.stand_gate(self.stability.rows(physical, self.ground)[:1])[0])
         monitor += [{"name": name, "g": None, "gradient": None, "value": solutions[name]["compliance_n_mm"], "limit": None, "unit": "N mm", "sense": "", "field": self.problem["fields"]["stiffness"]} for name in self.monitor]
         for row in rows + monitor:
             row["field"] = self.problem["fields"]["stiffness"]
@@ -314,10 +323,7 @@ class TopologyProblem:
             value = float(np.dot(self.shadow, physical))
             rows.append({"name": "shadow", "g": value / limit - 1, "gradient": self.shadow / limit, "value": value, "limit": limit, "unit": "mm", "sense": "<="})
         if self.stability is not None:
-            stand = self.stability.rows(physical)
-            if self.map.beta < self.stability.settings["start_beta"]:
-                stand = [row if row["g"] is None else {**row, "g": -1.0, "gradient": np.zeros_like(row["gradient"]), "gated_below_beta": self.stability.settings["start_beta"]} for row in stand]
-            rows += stand
+            rows += self.stand_gate([row for row in self.stability.rows(physical) if not (self.weighted and row["name"] == "stand_reserve")])
         if self.camera is not None:
             value, gradient = self.coverage.measure(physical)
             minimum = self.problem["camera"]["min_coverage"]
@@ -325,6 +331,10 @@ class TopologyProblem:
         for row in rows:
             row["field"] = self.problem["fields"]["volume"]
         return rows
+    def stand_gate(self, stand):
+        if self.map.beta >= self.stability.settings["start_beta"]:
+            return stand
+        return [row if row["g"] is None else {**row, "g": -1.0, "gradient": np.zeros_like(row["gradient"]), "gated_below_beta": self.stability.settings["start_beta"]} for row in stand]
     def evaluate(self, design, iterations=None):
         fields, _ = self.map.fields(design)
         eroded, intermediate = fields[self.problem["fields"]["stiffness"]], fields[self.problem["fields"]["mass"]]
