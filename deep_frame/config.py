@@ -910,7 +910,8 @@ TOPOLOGY_CONFIG = {
     "battery_rail_edge_inset_mm": 0.0,
     "battery_support": "free",
     "battery_support_modes": {"free": "rigid battery on density-dependent contact springs, no prescribed geometry (BATTERY_SUPPORT); user decision 2026-10-04: standard", "rails": "two prescribed 3.5 x 50 mm longitudinal strap rails (battery_contact_*), selectable"},
-    "camera_support": "prescribed",
+    "camera_support": "free",
+    "camera_support_modes": {"free": "rigid camera on screw springs in a free cage, FOV keep-out, zone crash loads (CAMERA_SUPPORT); default from 2026-10-04", "prescribed": "prescribed camera side plates and style hoops, selectable"},
     "connection_proof_force_n": 0.05,
     "manufacturing": {
         "nozzle_width_mm": 0.4,

@@ -840,6 +840,7 @@ def test_density_study_logs_its_run(tmp_path, monkeypatch):
     def optimize(domain, settings, progress_callback):
         return {"status": "ok", "density": np.full(domain["allowed"].shape, 0.5), "summary": {"iterations": 3}, "diagnostics": []}
     monkeypatch.setattr(topology_study, "optimize_topology", optimize)
+    monkeypatch.setitem(topology_study.TOPOLOGY_CONFIG, "camera_support", "prescribed")
     assert topology_study.run_main({"directory": str(tmp_path / "density"), "max_iterations": 3, "run_log": str(tmp_path / "run_log.jsonl")}) == 0
     line, = ledger(tmp_path / "run_log.jsonl")
     assert line["kind"] == "density" and line["success"] and line["iterations"] == 3 and line["run_dir"] == str((tmp_path / "density").resolve())
@@ -997,6 +998,7 @@ def test_diagnostic_fea_runs_only_when_features_is_the_only_failing_check(tmp_pa
 @pytest.fixture
 def rails(monkeypatch):
     monkeypatch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
+    monkeypatch.setitem(TOPOLOGY_CONFIG, "camera_support", "prescribed")
 
 def test_implicit_study_flags_sources_built_on_older_prescribed_geometry(rails):
     from deep_frame.topology_geometry import build_design_domain

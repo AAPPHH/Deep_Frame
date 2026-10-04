@@ -17,14 +17,17 @@ from deep_frame.topology_geometry import build_design_domain, embed_field, grid_
 def domain():
     with pytest.MonkeyPatch.context() as patch:
         patch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
+        patch.setitem(TOPOLOGY_CONFIG, "camera_support", "prescribed")
         return build_design_domain(reference_parameters())
 
 @pytest.fixture
 def rails(monkeypatch):
     monkeypatch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
+    monkeypatch.setitem(TOPOLOGY_CONFIG, "camera_support", "prescribed")
 
 def test_free_battery_support_is_the_default_without_prescribed_rails():
     assert TOPOLOGY_CONFIG["battery_support"] == "free"
+    assert TOPOLOGY_CONFIG["camera_support"] == "free"
     built = build_design_domain(reference_parameters())
     names = {region["name"]: region for region in built["regions"]}
     assert names["battery_contact"]["role"] == "allowed" and not any(name.startswith("battery_rail_") for name in names)
@@ -51,6 +54,7 @@ def test_no_v0_shape_call_or_shape_parameter_dependency(monkeypatch, domain):
     monkeypatch.setattr("deep_frame.frame.build_geometry", fail)
     monkeypatch.setattr("deep_frame.fea.build_geometry", fail)
     monkeypatch.setitem(TOPOLOGY_CONFIG, "battery_support", "rails")
+    monkeypatch.setitem(TOPOLOGY_CONFIG, "camera_support", "prescribed")
     parameters = reference_parameters()
     parameters["frame"].update(arm_width_mm=0.001, arm_root_mm=80.0, body_width_mm=1.0, body_length_mm=1.0, base_window_mm=999.0, wall_window_height_mm=999.0, deck_window_width_mm=999.0)
     changed = build_design_domain(parameters)
