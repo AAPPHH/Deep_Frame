@@ -1,0 +1,169 @@
+{
+ "statement": "landing compliance (LANDING) and reaction-weighted stand_reserve of our coarse half-domain fields against the ManaFly limit: earlier converged fields (feet are islands / nothing on the floor) and two hand-made connected probes from the stand_fix field (main component only, posts extended to the floor; plus arm-tip feet down to the floor). Grids: ManaFly 4/3 mm cubes, ours 2 x 2 x 4/3 mm",
+ "limit_n_mm": 0.001825963050918695,
+ "manafly": {
+  "landing_vertical": {
+   "value": 0.001825963050918695,
+   "limit": null,
+   "g": null,
+   "info": {
+    "weight_n": 2.9014272954791807,
+    "mass_g": 98.62108179922741,
+    "factor_g": 3.0,
+    "floor_reaction_share": 1.0000000000008922
+   }
+  },
+  "floor_z_mm": 0.0,
+  "floor_cells_half": 535,
+  "loaded_mass_g": 98.62108179922741,
+  "frame_mass_g": 29.321081799227418,
+  "solid_cells_half": 5787,
+  "island_cells_dropped": 11,
+  "grid": {
+   "origin_mm": [
+    0.0,
+    -78.66666666666666,
+    0.0
+   ],
+   "spacing_mm": [
+    1.3333333333333333,
+    1.3333333333333333,
+    1.3333333333333333
+   ],
+   "shape": [
+    52,
+    111,
+    26
+   ],
+   "axis_order": "xyz",
+   "order": "C"
+  }
+ },
+ "fields": {
+  "stand_fix_coarse": {
+   "source": "exports/runs/stand_fix_opt/coarse/density_half.npz",
+   "mass_g": 16.944164276123047,
+   "landing_vertical": {
+    "value": 5.816309567175066,
+    "limit": 0.001825963050918695,
+    "g": 8.066313697631369,
+    "info": {
+     "weight_n": 2.88350286734496,
+     "mass_g": 98.0118208,
+     "factor_g": 3.0,
+     "floor_reaction_share": 1.0000000001589924
+    }
+   },
+   "stand_reserve": {
+    "value": -Infinity,
+    "limit": 15.0,
+    "g": 1.1771334805332443,
+    "info": {
+     "center_of_gravity_xy_mm": [
+      6.13843057935702e-15,
+      1.1476860565489255
+     ],
+     "mass_g": 86.24416481003674,
+     "min_beyond_mm2": 0.0018954770363234438,
+     "contact_area_mm2": 32.00138257743352,
+     "carrying_area_mm2": 0.5495682165449025,
+     "reaction_weighted": true
+    }
+   }
+  },
+  "free_layout_coarse": {
+   "source": "C:/clones/Deep_Frame-layout/exports/runs/free_layout_opt/coarse/density_half.npz",
+   "mass_g": 15.766312599182129,
+   "landing_vertical": {
+    "value": 5.924469607791027,
+    "limit": 0.001825963050918695,
+    "g": 8.084738897340223,
+    "info": {
+     "weight_n": 2.88350286734496,
+     "mass_g": 98.0118208,
+     "factor_g": 3.0,
+     "floor_reaction_share": 1.000000000294352
+    }
+   },
+   "stand_reserve": {
+    "value": -Infinity,
+    "limit": 15.0,
+    "g": 1.2079441541679836,
+    "info": {
+     "center_of_gravity_xy_mm": [
+      -3.6825289790482406e-15,
+      0.8510198487072286
+     ],
+     "mass_g": 85.06631167199552,
+     "min_beyond_mm2": 0.0,
+     "contact_area_mm2": 0.0,
+     "carrying_area_mm2": 0.0,
+     "reaction_weighted": true
+    }
+   }
+  },
+  "main_component_posts_to_floor": {
+   "source": "exports/landing/probe_posts.npz",
+   "mass_g": 17.149242401123047,
+   "landing_vertical": {
+    "value": 0.03973327983310513,
+    "limit": 0.001825963050918695,
+    "g": 3.0800815724962183,
+    "info": {
+     "weight_n": 2.88350286734496,
+     "mass_g": 98.0118208,
+     "factor_g": 3.0,
+     "floor_reaction_share": 0.9999999999994498
+    }
+   },
+   "stand_reserve": {
+    "value": 4.918010382870205,
+    "limit": 15.0,
+    "g": 1.1726588072969777,
+    "info": {
+     "center_of_gravity_xy_mm": [
+      -1.6438379681652872e-16,
+      1.081989617129796
+     ],
+     "mass_g": 86.44924250693003,
+     "min_beyond_mm2": 3.1758493360622757e-09,
+     "contact_area_mm2": 120.0,
+     "carrying_area_mm2": 44.82122841955213,
+     "reaction_weighted": true
+    }
+   }
+  },
+  "posts_and_arm_tip_feet": {
+   "source": "exports/landing/probe_feet.npz",
+   "mass_g": 25.125137329101562,
+   "landing_vertical": {
+    "value": 0.0045309170904121385,
+    "limit": 0.001825963050918695,
+    "g": 0.9088168202359072,
+    "info": {
+     "weight_n": 2.88350286734496,
+     "mass_g": 98.0118208,
+     "factor_g": 3.0,
+     "floor_reaction_share": 1.0000000000001954
+    }
+   },
+   "stand_reserve": {
+    "value": 41.04480114345358,
+    "limit": 15.0,
+    "g": -1.5228018950578541,
+    "info": {
+     "center_of_gravity_xy_mm": [
+      -1.6028790586764464e-16,
+      1.0448011434535716
+     ],
+     "mass_g": 88.6583091735967,
+     "min_beyond_mm2": 10.371058784964676,
+     "contact_area_mm2": 312.0,
+     "carrying_area_mm2": 52.7539812188533,
+     "reaction_weighted": true
+    }
+   }
+  }
+ },
+ "sha": "86549b8d1d629e41a68745a45618c4f01e2f8d31"
+}
