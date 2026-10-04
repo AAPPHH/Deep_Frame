@@ -112,6 +112,15 @@ class CudaDirectSolver:
             self._create(name, "cudssMatrixCreateDn", array.shape[0], array.shape[1], array.shape[0],
                          array.data.ptr, 1, 0)
         self.analysis_s = self._execute(3)
+        self.memory_estimates = self._memory_estimates()
+    def _memory_estimates(self):
+        estimates = (ctypes.c_int64 * 16)()
+        written = ctypes.c_size_t()
+        try:
+            status = self.library.cudssDataGet(self.handles["handle"], self.handles["data"], 13, ctypes.cast(estimates, ctypes.c_void_p), ctypes.sizeof(estimates), ctypes.byref(written))
+        except Exception:
+            return None
+        return dict(zip(("permanent_device_bytes", "peak_device_bytes", "permanent_host_bytes", "peak_host_bytes"), map(int, estimates))) if status == 0 else None
     def _call(self, name, *arguments):
         status = getattr(self.library, name)(*arguments)
         if status:
@@ -171,7 +180,7 @@ class CudaDirectSolver:
                 "device_name": name.decode() if isinstance(name, bytes) else name,
                 "precision": "float64", "numeric_factorization": "GPU Cholesky, hybrid execution disabled",
                 "analysis_s": self.analysis_s, "shape": list(self.shape), "nnz": len(self.indices),
-                "solves": self.timings}
+                "cudss_memory_estimates": self.memory_estimates, "solves": self.timings}
     def close(self):
         if getattr(self, "closed", True):
             return getattr(self, "cleanup_errors", []).copy()

@@ -30,3 +30,5 @@ env/
 /exports/r4recon/*/*/
 /exports/r4recon/*/*.json
 /exports/r4recon/*/*.log
+/exports/solver_memory/*/*.npz
+/exports/solver_memory/*.log
