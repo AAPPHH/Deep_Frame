@@ -1,0 +1,2362 @@
+{
+ "case": "neural_v06_f1",
+ "label": "Neural 6 % f1",
+ "bodies": {
+  "raw": {
+   "mass_g": 19.60234722135334,
+   "fea_mass_g": null,
+   "arm_tip_n_per_mm": null,
+   "f1_hz": null,
+   "fea_status": "failed",
+   "fea_diagnostics": [
+    "RuntimeError: All tetrahedral meshing attempts failed: remesh_hxt failed, remesh_delaunay failed, refine_hxt failed, classify_hxt failed, classify_delaunay failed, direct_hxt failed"
+   ],
+   "fea_mesh": {
+    "fea_remesh_targets_mm": [
+     2.0
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "bodies": 1,
+   "wall_deep_fraction": 0.006997586900884922,
+   "wall_deep_components": 18,
+   "wall_largest_deep_mm3": 18.505000000000006,
+   "fallback_status": "ok",
+   "fallback_mass_g": 19.608148715724788,
+   "fallback_arm_tip_n_per_mm": 4.562953445900779,
+   "fallback_f1_hz": 329.7555,
+   "members": 34,
+   "shells": 12,
+   "nodes": 22,
+   "missed": [
+    "bolt_patterns",
+    "keep_outs_free",
+    "fea_solved",
+    "wall_deep_fraction",
+    "wall_deep_component",
+    "crash_front_strength",
+    "crash_arm_strength",
+    "crash_back_strength",
+    "target:arm_tip_slope",
+    "target:f1"
+   ],
+   "line": "| recon3_neural_v06_f1_raw | 19,6 g | SP z 21,0 mm; Ixx/Iyy/Izz 80/93/148 kg\u00b7mm\u00b2 (K) | 4,6 % (64 mm) | Bohrb. 4/20, Passung nein, Werkzeug ok | \u00dcberh. 18,1 %, \u00d6ffn. r=1 0,70 %/18,5 mm\u00b3/Motorzonen 0,St\u00fctze 14,76 cm\u00b3, 239 min | Strebe 2,0/2,9/4,7 mm, H/B 0,98, offen 71 %, H\u00f6he 28,8 mm, K\u00f6rper 1, Schlaufen 16, Sym. 0,33 mm, Rauh. 0,113/mm | \u2013 | \u2013 | \u2013 | bolt_patterns, keep_outs_free, fea_solved, wall_deep_fraction, wall_deep_component, crash_front_strength, crash_arm_strength, crash_back_strength, target:arm_tip_slope, target:f1; Warnung: section_ratio, loops |",
+   "relative_to_raw": {
+    "mass_g": 0.0,
+    "arm_tip_n_per_mm": null,
+    "f1_hz": null,
+    "fallback_arm_tip_n_per_mm": 0.0,
+    "fallback_f1_hz": 0.0
+   }
+  },
+  "recon_1to1": {
+   "mass_g": 23.22001583516499,
+   "fea_mass_g": 23.229706808930693,
+   "arm_tip_n_per_mm": 6.383453157229646,
+   "f1_hz": 374.3689,
+   "fea_status": "ok",
+   "fea_diagnostics": [],
+   "fea_mesh": {
+    "fea_remesh_targets_mm": [
+     2.0
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "bodies": 1,
+   "wall_deep_fraction": 0.0014356988528285435,
+   "wall_deep_components": 6,
+   "wall_largest_deep_mm3": 6.673000000000002,
+   "fallback_status": "ok",
+   "fallback_mass_g": 23.229390275414445,
+   "fallback_arm_tip_n_per_mm": 6.456777170168702,
+   "fallback_f1_hz": 371.9215,
+   "members": 45,
+   "shells": 1,
+   "nodes": 22,
+   "missed": [
+    "wall_deep_component",
+    "target:arm_tip_slope"
+   ],
+   "line": "| recon3_neural_v06_f1_recon_1to1 | 23,2 g | SP z 20,5 mm; Ixx/Iyy/Izz 85/97/155 kg\u00b7mm\u00b2 (K) | 5,6 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok | \u00dcberh. 16,9 %, \u00d6ffn. r=1 0,14 %/6,7 mm\u00b3/Motorzonen 0,St\u00fctze 14,12 cm\u00b3, 252 min | Strebe 2,0/2,8/4,9 mm, H/B 0,88, offen 69 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 14, Sym. 0,27 mm, Rauh. 0,139/mm | 6,4 N/mm (A) | f1 374 Hz; 429/455/487 (A) | front 7,4/3,6 MPa; arm 25,8/3,3 MPa; back 2,8/1,0 MPa (SF 2,0, A) | wall_deep_component, target:arm_tip_slope; Warnung: section_ratio, loops |",
+   "relative_to_raw": {
+    "mass_g": 0.18455282793230143,
+    "arm_tip_n_per_mm": null,
+    "f1_hz": null,
+    "fallback_arm_tip_n_per_mm": 0.4150434026385428,
+    "fallback_f1_hz": 0.12787049799017747
+   }
+  },
+  "recon_v3": {
+   "mass_g": 21.462818814631,
+   "fea_mass_g": 21.46910493420379,
+   "arm_tip_n_per_mm": 4.209716039639687,
+   "f1_hz": 335.5077,
+   "fea_status": "ok",
+   "fea_diagnostics": [],
+   "fea_mesh": {
+    "fea_remesh_targets_mm": [
+     2.0
+    ],
+    "fea_remesh_feature_deg": 40.0
+   },
+   "bodies": 1,
+   "wall_deep_fraction": 0.0,
+   "wall_deep_components": 0,
+   "wall_largest_deep_mm3": 0.0,
+   "fallback_status": "ok",
+   "fallback_mass_g": 21.46910493420379,
+   "fallback_arm_tip_n_per_mm": 4.202181866229215,
+   "fallback_f1_hz": 336.2406,
+   "members": 34,
+   "shells": 12,
+   "nodes": 22,
+   "missed": [
+    "target:symmetry",
+    "target:arm_tip_slope"
+   ],
+   "line": "| recon3_neural_v06_f1_2 | 21,5 g | SP z 20,8 mm; Ixx/Iyy/Izz 83/95/152 kg\u00b7mm\u00b2 (K) | 5,0 % (64 mm) | Bohrb. 20/20, Passung ok, Werkzeug ok | \u00dcberh. 18,0 %, \u00d6ffn. r=1 0,00 %/0,0 mm\u00b3/Motorzonen 0,St\u00fctze 14,28 cm\u00b3, 246 min | Strebe 2,0/2,8/5,2 mm, H/B 0,95, offen 71 %, H\u00f6he 28,0 mm, K\u00f6rper 1, Schlaufen 14, Sym. 0,37 mm, Rauh. 0,141/mm | 4,2 N/mm (A) | f1 336 Hz; 385/391/448 (A) | front 12,5/6,4 MPa; arm 30,9/4,2 MPa; back 2,9/0,9 MPa (SF 2,0, A) | target:symmetry, target:arm_tip_slope; Warnung: section_ratio, loops |",
+   "relative_to_raw": {
+    "mass_g": 0.09491065392673992,
+    "arm_tip_n_per_mm": null,
+    "f1_hz": null,
+    "fallback_arm_tip_n_per_mm": -0.07906536499855599,
+    "fallback_f1_hz": 0.01966638918835306
+   }
+  }
+ },
+ "within_10_percent": {
+  "standard": false,
+  "fallback": true
+ },
+ "fallback": {
+  "fea_settings": {
+   "fea_memory_budget_mb": 16384.0
+  },
+  "compute": "reconstruction"
+ },
+ "wall_rule_not_worse_than_1to1": true,
+ "bumps": {
+  "raw": {
+   "count": 29,
+   "classes": {
+    "grid_artefact": 6,
+    "junction": 14,
+    "prescribed": 9
+   },
+   "maximum_excess_mm": 1.664
+  },
+  "recon_v3": {
+   "count": 30,
+   "classes": {
+    "junction": 16,
+    "prescribed": 14
+   },
+   "maximum_excess_mm": 1.703
+  },
+  "recon_1to1": {
+   "count": 66,
+   "classes": {
+    "grid_artefact": 5,
+    "junction": 23,
+    "optimizer_feature": 19,
+    "prescribed": 19
+   },
+   "maximum_excess_mm": 1.806
+  }
+ },
+ "bump_rows": {
+  "raw": [
+   {
+    "member": 0,
+    "point_mm": [
+     -34.33,
+     -32.33,
+     5.67
+    ],
+    "excess_mm": 0.482,
+    "fitted_radius_mm": 2.483,
+    "extent_mm": 3.13,
+    "member_length_mm": 22.53,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 12.72,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 0,
+    "point_mm": [
+     -31.0,
+     -26.33,
+     7.67
+    ],
+    "excess_mm": 0.427,
+    "fitted_radius_mm": 3.784,
+    "extent_mm": 1.04,
+    "member_length_mm": 22.53,
+    "class": "junction",
+    "preserve_gap_mm": 18.2,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 1,
+    "point_mm": [
+     -45.67,
+     41.0,
+     7.67
+    ],
+    "excess_mm": 0.655,
+    "fitted_radius_mm": 1.828,
+    "extent_mm": 0.92,
+    "member_length_mm": 25.54,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "front_left_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 1,
+    "point_mm": [
+     -25.0,
+     33.0,
+     2.33
+    ],
+    "excess_mm": 0.556,
+    "fitted_radius_mm": 2.531,
+    "extent_mm": 1.85,
+    "member_length_mm": 25.54,
+    "class": "junction",
+    "preserve_gap_mm": 11.89,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 2,
+    "point_mm": [
+     -29.67,
+     -24.33,
+     9.0
+    ],
+    "excess_mm": 0.906,
+    "fitted_radius_mm": 2.494,
+    "extent_mm": 2.1,
+    "member_length_mm": 27.4,
+    "class": "junction",
+    "preserve_gap_mm": 18.05,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 6,
+    "point_mm": [
+     -18.33,
+     28.33,
+     10.33
+    ],
+    "excess_mm": 1.664,
+    "fitted_radius_mm": 2.625,
+    "extent_mm": 2.04,
+    "member_length_mm": 12.33,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.47,
+    "preserves": [
+     "camera_mount_-1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 11,
+    "point_mm": [
+     -13.67,
+     27.67,
+     1.67
+    ],
+    "excess_mm": 0.512,
+    "fitted_radius_mm": 2.569,
+    "extent_mm": 1.83,
+    "member_length_mm": 19.07,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 4.22,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 14,
+    "point_mm": [
+     -5.67,
+     21.0,
+     11.0
+    ],
+    "excess_mm": 0.507,
+    "fitted_radius_mm": 3.014,
+    "extent_mm": 0.9,
+    "member_length_mm": 9.11,
+    "class": "junction",
+    "preserve_gap_mm": 10.02,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 15,
+    "point_mm": [
+     -11.67,
+     -9.67,
+     3.0
+    ],
+    "excess_mm": 1.205,
+    "fitted_radius_mm": 4.021,
+    "extent_mm": 1.72,
+    "member_length_mm": 9.65,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "aio_contact_0"
+    ],
+    "load_cases": [
+     "connection_aio_contact_0"
+    ]
+   },
+   {
+    "member": 18,
+    "point_mm": [
+     -5.67,
+     4.33,
+     1.67
+    ],
+    "excess_mm": 0.452,
+    "fitted_radius_mm": 3.454,
+    "extent_mm": 1.87,
+    "member_length_mm": 12.88,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 8.03,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 19,
+    "point_mm": [
+     -5.67,
+     19.67,
+     9.67
+    ],
+    "excess_mm": 1.276,
+    "fitted_radius_mm": 2.822,
+    "extent_mm": 1.02,
+    "member_length_mm": 12.53,
+    "class": "junction",
+    "preserve_gap_mm": 8.49,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 22,
+    "point_mm": [
+     -4.33,
+     20.33,
+     11.0
+    ],
+    "excess_mm": 0.708,
+    "fitted_radius_mm": 3.19,
+    "extent_mm": 0.95,
+    "member_length_mm": 12.6,
+    "class": "junction",
+    "preserve_gap_mm": 10.39,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 24,
+    "point_mm": [
+     -0.33,
+     15.67,
+     1.67
+    ],
+    "excess_mm": 0.309,
+    "fitted_radius_mm": 3.322,
+    "extent_mm": 1.69,
+    "member_length_mm": 13.16,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 9.71,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 24,
+    "point_mm": [
+     -0.33,
+     24.33,
+     1.67
+    ],
+    "excess_mm": 0.543,
+    "fitted_radius_mm": 2.563,
+    "extent_mm": 0.85,
+    "member_length_mm": 13.16,
+    "class": "junction",
+    "preserve_gap_mm": 13.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 26,
+    "point_mm": [
+     4.33,
+     25.67,
+     1.67
+    ],
+    "excess_mm": 0.305,
+    "fitted_radius_mm": 2.658,
+    "extent_mm": 2.75,
+    "member_length_mm": 20.64,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 9.43,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 27,
+    "point_mm": [
+     8.33,
+     -0.33,
+     2.33
+    ],
+    "excess_mm": 0.386,
+    "fitted_radius_mm": 2.851,
+    "extent_mm": 1.86,
+    "member_length_mm": 13.04,
+    "class": "junction",
+    "preserve_gap_mm": 10.35,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 29,
+    "point_mm": [
+     6.33,
+     19.67,
+     9.67
+    ],
+    "excess_mm": 0.646,
+    "fitted_radius_mm": 3.136,
+    "extent_mm": 0.96,
+    "member_length_mm": 12.09,
+    "class": "prescribed",
+    "preserve_gap_mm": 8.08,
+    "preserves": [
+     "aio_contact_3"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 29,
+    "point_mm": [
+     7.67,
+     15.67,
+     3.0
+    ],
+    "excess_mm": 0.621,
+    "fitted_radius_mm": 3.051,
+    "extent_mm": 1.92,
+    "member_length_mm": 12.09,
+    "class": "prescribed",
+    "preserve_gap_mm": 2.98,
+    "preserves": [
+     "aio_contact_3"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 30,
+    "point_mm": [
+     6.33,
+     21.0,
+     11.0
+    ],
+    "excess_mm": 0.487,
+    "fitted_radius_mm": 2.814,
+    "extent_mm": 0.95,
+    "member_length_mm": 7.96,
+    "class": "junction",
+    "preserve_gap_mm": 9.68,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 35,
+    "point_mm": [
+     13.0,
+     21.67,
+     13.67
+    ],
+    "excess_mm": 0.72,
+    "fitted_radius_mm": 2.44,
+    "extent_mm": 1.1,
+    "member_length_mm": 10.13,
+    "class": "junction",
+    "preserve_gap_mm": 9.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 35,
+    "point_mm": [
+     17.0,
+     27.0,
+     11.0
+    ],
+    "excess_mm": 0.702,
+    "fitted_radius_mm": 3.096,
+    "extent_mm": 3.3,
+    "member_length_mm": 10.13,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.67,
+    "preserves": [
+     "camera_mount_1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 36,
+    "point_mm": [
+     30.33,
+     -25.0,
+     9.0
+    ],
+    "excess_mm": 0.782,
+    "fitted_radius_mm": 2.531,
+    "extent_mm": 2.0,
+    "member_length_mm": 28.2,
+    "class": "junction",
+    "preserve_gap_mm": 18.96,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 40,
+    "point_mm": [
+     24.33,
+     -22.33,
+     3.67
+    ],
+    "excess_mm": 0.9,
+    "fitted_radius_mm": 3.071,
+    "extent_mm": 0.97,
+    "member_length_mm": 14.58,
+    "class": "junction",
+    "preserve_gap_mm": 12.26,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 41,
+    "point_mm": [
+     17.0,
+     31.67,
+     1.0
+    ],
+    "excess_mm": 0.375,
+    "fitted_radius_mm": 2.195,
+    "extent_mm": 2.02,
+    "member_length_mm": 8.36,
+    "class": "junction",
+    "preserve_gap_mm": 4.06,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 42,
+    "point_mm": [
+     19.0,
+     28.33,
+     10.33
+    ],
+    "excess_mm": 0.764,
+    "fitted_radius_mm": 2.204,
+    "extent_mm": 3.76,
+    "member_length_mm": 12.37,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.9,
+    "preserves": [
+     "camera_mount_1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 42,
+    "point_mm": [
+     23.67,
+     31.67,
+     3.0
+    ],
+    "excess_mm": 0.371,
+    "fitted_radius_mm": 2.463,
+    "extent_mm": 0.94,
+    "member_length_mm": 12.37,
+    "class": "junction",
+    "preserve_gap_mm": 10.6,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 43,
+    "point_mm": [
+     45.67,
+     41.0,
+     7.67
+    ],
+    "excess_mm": 1.015,
+    "fitted_radius_mm": 1.869,
+    "extent_mm": 0.92,
+    "member_length_mm": 25.69,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "front_right_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 45,
+    "point_mm": [
+     33.67,
+     -31.67,
+     5.0
+    ],
+    "excess_mm": 0.429,
+    "fitted_radius_mm": 2.745,
+    "extent_mm": 3.87,
+    "member_length_mm": 21.93,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 13.65,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 45,
+    "point_mm": [
+     45.67,
+     -38.33,
+     6.33
+    ],
+    "excess_mm": 0.754,
+    "fitted_radius_mm": 3.271,
+    "extent_mm": 0.97,
+    "member_length_mm": 21.93,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.94,
+    "preserves": [
+     "rear_right_motor_contact"
+    ],
+    "load_cases": []
+   }
+  ],
+  "recon_v3": [
+   {
+    "member": 1,
+    "point_mm": [
+     -45.67,
+     41.0,
+     7.67
+    ],
+    "excess_mm": 0.927,
+    "fitted_radius_mm": 1.828,
+    "extent_mm": 0.92,
+    "member_length_mm": 25.54,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "front_left_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 1,
+    "point_mm": [
+     -25.0,
+     33.0,
+     2.33
+    ],
+    "excess_mm": 0.684,
+    "fitted_radius_mm": 2.531,
+    "extent_mm": 0.92,
+    "member_length_mm": 25.54,
+    "class": "junction",
+    "preserve_gap_mm": 11.89,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 2,
+    "point_mm": [
+     -29.67,
+     -24.33,
+     9.0
+    ],
+    "excess_mm": 0.827,
+    "fitted_radius_mm": 2.494,
+    "extent_mm": 2.1,
+    "member_length_mm": 27.4,
+    "class": "junction",
+    "preserve_gap_mm": 18.05,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 2,
+    "point_mm": [
+     -18.33,
+     -15.67,
+     21.67
+    ],
+    "excess_mm": 0.304,
+    "fitted_radius_mm": 2.417,
+    "extent_mm": 4.2,
+    "member_length_mm": 27.4,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.71,
+    "preserves": [
+     "battery_rail_-1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 6,
+    "point_mm": [
+     -18.33,
+     28.33,
+     10.33
+    ],
+    "excess_mm": 1.703,
+    "fitted_radius_mm": 2.625,
+    "extent_mm": 2.04,
+    "member_length_mm": 12.33,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.47,
+    "preserves": [
+     "camera_mount_-1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 7,
+    "point_mm": [
+     -16.33,
+     31.67,
+     1.67
+    ],
+    "excess_mm": 0.781,
+    "fitted_radius_mm": 2.201,
+    "extent_mm": 1.02,
+    "member_length_mm": 9.71,
+    "class": "prescribed",
+    "preserve_gap_mm": 3.4,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 9,
+    "point_mm": [
+     -13.67,
+     21.67,
+     14.33
+    ],
+    "excess_mm": 0.568,
+    "fitted_radius_mm": 2.519,
+    "extent_mm": 3.16,
+    "member_length_mm": 9.63,
+    "class": "junction",
+    "preserve_gap_mm": 9.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 14,
+    "point_mm": [
+     -5.67,
+     21.0,
+     11.0
+    ],
+    "excess_mm": 0.515,
+    "fitted_radius_mm": 3.014,
+    "extent_mm": 0.9,
+    "member_length_mm": 9.11,
+    "class": "junction",
+    "preserve_gap_mm": 10.02,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 15,
+    "point_mm": [
+     -11.67,
+     -9.67,
+     3.0
+    ],
+    "excess_mm": 1.297,
+    "fitted_radius_mm": 4.021,
+    "extent_mm": 1.72,
+    "member_length_mm": 9.65,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "aio_contact_0"
+    ],
+    "load_cases": [
+     "connection_aio_contact_0"
+    ]
+   },
+   {
+    "member": 19,
+    "point_mm": [
+     -7.67,
+     17.67,
+     6.33
+    ],
+    "excess_mm": 0.561,
+    "fitted_radius_mm": 2.014,
+    "extent_mm": 2.04,
+    "member_length_mm": 12.53,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.47,
+    "preserves": [
+     "aio_contact_1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 19,
+    "point_mm": [
+     -5.67,
+     19.67,
+     9.67
+    ],
+    "excess_mm": 0.823,
+    "fitted_radius_mm": 2.822,
+    "extent_mm": 1.02,
+    "member_length_mm": 12.53,
+    "class": "junction",
+    "preserve_gap_mm": 8.49,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 22,
+    "point_mm": [
+     -4.33,
+     20.33,
+     11.0
+    ],
+    "excess_mm": 0.386,
+    "fitted_radius_mm": 3.19,
+    "extent_mm": 0.95,
+    "member_length_mm": 12.6,
+    "class": "junction",
+    "preserve_gap_mm": 10.39,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 22,
+    "point_mm": [
+     5.0,
+     21.0,
+     11.0
+    ],
+    "excess_mm": 0.531,
+    "fitted_radius_mm": 3.481,
+    "extent_mm": 0.95,
+    "member_length_mm": 12.6,
+    "class": "junction",
+    "preserve_gap_mm": 10.39,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 24,
+    "point_mm": [
+     0.33,
+     21.67,
+     1.0
+    ],
+    "excess_mm": 0.642,
+    "fitted_radius_mm": 2.706,
+    "extent_mm": 5.92,
+    "member_length_mm": 13.16,
+    "class": "junction",
+    "preserve_gap_mm": 12.4,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 24,
+    "point_mm": [
+     -0.33,
+     24.33,
+     1.67
+    ],
+    "excess_mm": 1.485,
+    "fitted_radius_mm": 2.563,
+    "extent_mm": 0.85,
+    "member_length_mm": 13.16,
+    "class": "junction",
+    "preserve_gap_mm": 13.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 26,
+    "point_mm": [
+     15.67,
+     31.0,
+     1.67
+    ],
+    "excess_mm": 0.554,
+    "fitted_radius_mm": 2.925,
+    "extent_mm": 0.92,
+    "member_length_mm": 20.64,
+    "class": "prescribed",
+    "preserve_gap_mm": 2.98,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 29,
+    "point_mm": [
+     6.33,
+     19.67,
+     9.67
+    ],
+    "excess_mm": 0.724,
+    "fitted_radius_mm": 3.136,
+    "extent_mm": 0.96,
+    "member_length_mm": 12.09,
+    "class": "prescribed",
+    "preserve_gap_mm": 8.08,
+    "preserves": [
+     "aio_contact_3"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 29,
+    "point_mm": [
+     7.67,
+     17.67,
+     6.33
+    ],
+    "excess_mm": 0.641,
+    "fitted_radius_mm": 1.936,
+    "extent_mm": 3.84,
+    "member_length_mm": 12.09,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.47,
+    "preserves": [
+     "aio_contact_3"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 30,
+    "point_mm": [
+     6.33,
+     21.0,
+     11.0
+    ],
+    "excess_mm": 0.589,
+    "fitted_radius_mm": 2.814,
+    "extent_mm": 0.95,
+    "member_length_mm": 7.96,
+    "class": "junction",
+    "preserve_gap_mm": 9.68,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 35,
+    "point_mm": [
+     13.0,
+     21.67,
+     13.67
+    ],
+    "excess_mm": 1.26,
+    "fitted_radius_mm": 2.44,
+    "extent_mm": 1.1,
+    "member_length_mm": 10.13,
+    "class": "junction",
+    "preserve_gap_mm": 9.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 35,
+    "point_mm": [
+     17.0,
+     27.0,
+     11.0
+    ],
+    "excess_mm": 0.518,
+    "fitted_radius_mm": 3.096,
+    "extent_mm": 2.2,
+    "member_length_mm": 10.13,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.67,
+    "preserves": [
+     "camera_mount_1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 36,
+    "point_mm": [
+     13.67,
+     -13.67,
+     24.33
+    ],
+    "excess_mm": 0.691,
+    "fitted_radius_mm": 3.108,
+    "extent_mm": 1.0,
+    "member_length_mm": 28.2,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "battery_rail_1"
+    ],
+    "load_cases": [
+     "connection_battery_rail_1"
+    ]
+   },
+   {
+    "member": 36,
+    "point_mm": [
+     30.33,
+     -25.0,
+     9.0
+    ],
+    "excess_mm": 1.049,
+    "fitted_radius_mm": 2.531,
+    "extent_mm": 2.0,
+    "member_length_mm": 28.2,
+    "class": "junction",
+    "preserve_gap_mm": 18.96,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 40,
+    "point_mm": [
+     24.33,
+     -22.33,
+     3.67
+    ],
+    "excess_mm": 0.706,
+    "fitted_radius_mm": 3.071,
+    "extent_mm": 0.97,
+    "member_length_mm": 14.58,
+    "class": "junction",
+    "preserve_gap_mm": 12.26,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 41,
+    "point_mm": [
+     17.0,
+     31.67,
+     1.0
+    ],
+    "excess_mm": 0.385,
+    "fitted_radius_mm": 2.195,
+    "extent_mm": 2.02,
+    "member_length_mm": 8.36,
+    "class": "junction",
+    "preserve_gap_mm": 4.06,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 42,
+    "point_mm": [
+     19.0,
+     28.33,
+     10.33
+    ],
+    "excess_mm": 0.764,
+    "fitted_radius_mm": 2.204,
+    "extent_mm": 3.76,
+    "member_length_mm": 12.37,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.9,
+    "preserves": [
+     "camera_mount_1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 42,
+    "point_mm": [
+     23.67,
+     31.67,
+     3.0
+    ],
+    "excess_mm": 0.595,
+    "fitted_radius_mm": 2.463,
+    "extent_mm": 0.94,
+    "member_length_mm": 12.37,
+    "class": "junction",
+    "preserve_gap_mm": 10.6,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 43,
+    "point_mm": [
+     24.33,
+     33.0,
+     2.33
+    ],
+    "excess_mm": 0.579,
+    "fitted_radius_mm": 2.505,
+    "extent_mm": 0.92,
+    "member_length_mm": 25.69,
+    "class": "junction",
+    "preserve_gap_mm": 11.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 43,
+    "point_mm": [
+     45.67,
+     41.0,
+     7.67
+    ],
+    "excess_mm": 0.87,
+    "fitted_radius_mm": 1.869,
+    "extent_mm": 1.84,
+    "member_length_mm": 25.69,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "front_right_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 45,
+    "point_mm": [
+     45.67,
+     -38.33,
+     6.33
+    ],
+    "excess_mm": 0.531,
+    "fitted_radius_mm": 3.271,
+    "extent_mm": 0.97,
+    "member_length_mm": 21.93,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.94,
+    "preserves": [
+     "rear_right_motor_contact"
+    ],
+    "load_cases": []
+   }
+  ],
+  "recon_1to1": [
+   {
+    "member": 0,
+    "point_mm": [
+     -45.67,
+     -38.33,
+     6.33
+    ],
+    "excess_mm": 0.391,
+    "fitted_radius_mm": 3.206,
+    "extent_mm": 20.88,
+    "member_length_mm": 22.53,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.94,
+    "preserves": [
+     "rear_left_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 0,
+    "point_mm": [
+     -42.33,
+     -36.33,
+     7.67
+    ],
+    "excess_mm": 0.649,
+    "fitted_radius_mm": 2.552,
+    "extent_mm": 15.66,
+    "member_length_mm": 22.53,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.0,
+    "preserves": [
+     "rear_left_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 0,
+    "point_mm": [
+     -39.67,
+     -35.67,
+     8.33
+    ],
+    "excess_mm": 0.72,
+    "fitted_radius_mm": 2.217,
+    "extent_mm": 14.61,
+    "member_length_mm": 22.53,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 6.7,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 0,
+    "point_mm": [
+     -36.33,
+     -33.0,
+     6.33
+    ],
+    "excess_mm": 0.909,
+    "fitted_radius_mm": 2.223,
+    "extent_mm": 6.26,
+    "member_length_mm": 22.53,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 10.56,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 0,
+    "point_mm": [
+     -31.0,
+     -26.33,
+     7.67
+    ],
+    "excess_mm": 0.436,
+    "fitted_radius_mm": 3.784,
+    "extent_mm": 1.04,
+    "member_length_mm": 22.53,
+    "class": "junction",
+    "preserve_gap_mm": 18.2,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 1,
+    "point_mm": [
+     -45.67,
+     41.0,
+     7.67
+    ],
+    "excess_mm": 1.797,
+    "fitted_radius_mm": 1.828,
+    "extent_mm": 1.85,
+    "member_length_mm": 25.54,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "front_left_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 1,
+    "point_mm": [
+     -41.67,
+     40.33,
+     7.0
+    ],
+    "excess_mm": 0.344,
+    "fitted_radius_mm": 1.855,
+    "extent_mm": 16.63,
+    "member_length_mm": 25.54,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.67,
+    "preserves": [
+     "front_left_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 1,
+    "point_mm": [
+     -25.0,
+     33.0,
+     2.33
+    ],
+    "excess_mm": 0.661,
+    "fitted_radius_mm": 2.531,
+    "extent_mm": 0.92,
+    "member_length_mm": 25.54,
+    "class": "junction",
+    "preserve_gap_mm": 11.89,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 2,
+    "point_mm": [
+     -29.67,
+     -24.33,
+     9.0
+    ],
+    "excess_mm": 1.202,
+    "fitted_radius_mm": 2.494,
+    "extent_mm": 12.61,
+    "member_length_mm": 27.4,
+    "class": "junction",
+    "preserve_gap_mm": 18.05,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 2,
+    "point_mm": [
+     -27.0,
+     -21.67,
+     12.33
+    ],
+    "excess_mm": 1.346,
+    "fitted_radius_mm": 2.175,
+    "extent_mm": 11.56,
+    "member_length_mm": 27.4,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 15.69,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 2,
+    "point_mm": [
+     -22.33,
+     -17.0,
+     19.0
+    ],
+    "excess_mm": 0.54,
+    "fitted_radius_mm": 1.939,
+    "extent_mm": 17.87,
+    "member_length_mm": 27.4,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 9.48,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 2,
+    "point_mm": [
+     -18.33,
+     -15.67,
+     21.67
+    ],
+    "excess_mm": 0.348,
+    "fitted_radius_mm": 2.417,
+    "extent_mm": 3.15,
+    "member_length_mm": 27.4,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.71,
+    "preserves": [
+     "battery_rail_-1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 5,
+    "point_mm": [
+     -17.0,
+     -13.67,
+     4.33
+    ],
+    "excess_mm": 1.398,
+    "fitted_radius_mm": 1.661,
+    "extent_mm": 4.96,
+    "member_length_mm": 14.21,
+    "class": "prescribed",
+    "preserve_gap_mm": 1.33,
+    "preserves": [
+     "aio_contact_0"
+    ],
+    "load_cases": [
+     "connection_aio_contact_0"
+    ]
+   },
+   {
+    "member": 6,
+    "point_mm": [
+     -22.33,
+     29.0,
+     7.67
+    ],
+    "excess_mm": 0.944,
+    "fitted_radius_mm": 2.031,
+    "extent_mm": 9.19,
+    "member_length_mm": 12.33,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 8.16,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 6,
+    "point_mm": [
+     -18.33,
+     28.33,
+     10.33
+    ],
+    "excess_mm": 1.806,
+    "fitted_radius_mm": 2.625,
+    "extent_mm": 2.04,
+    "member_length_mm": 12.33,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.47,
+    "preserves": [
+     "camera_mount_-1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 7,
+    "point_mm": [
+     -23.0,
+     32.33,
+     1.67
+    ],
+    "excess_mm": 0.571,
+    "fitted_radius_mm": 2.856,
+    "extent_mm": 1.02,
+    "member_length_mm": 9.71,
+    "class": "junction",
+    "preserve_gap_mm": 10.0,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 7,
+    "point_mm": [
+     -16.33,
+     31.67,
+     1.67
+    ],
+    "excess_mm": 0.467,
+    "fitted_radius_mm": 2.201,
+    "extent_mm": 2.04,
+    "member_length_mm": 9.71,
+    "class": "prescribed",
+    "preserve_gap_mm": 3.4,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 9,
+    "point_mm": [
+     -13.67,
+     21.67,
+     14.33
+    ],
+    "excess_mm": 0.661,
+    "fitted_radius_mm": 2.519,
+    "extent_mm": 4.21,
+    "member_length_mm": 9.63,
+    "class": "junction",
+    "preserve_gap_mm": 9.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 11,
+    "point_mm": [
+     -10.33,
+     26.33,
+     1.0
+    ],
+    "excess_mm": 0.672,
+    "fitted_radius_mm": 2.162,
+    "extent_mm": 7.31,
+    "member_length_mm": 19.07,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 5.5,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 11,
+    "point_mm": [
+     -7.0,
+     25.67,
+     1.0
+    ],
+    "excess_mm": 0.535,
+    "fitted_radius_mm": 2.319,
+    "extent_mm": 9.13,
+    "member_length_mm": 19.07,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 7.6,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 14,
+    "point_mm": [
+     -5.67,
+     21.0,
+     11.0
+    ],
+    "excess_mm": 0.651,
+    "fitted_radius_mm": 3.014,
+    "extent_mm": 0.9,
+    "member_length_mm": 9.11,
+    "class": "junction",
+    "preserve_gap_mm": 10.02,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 15,
+    "point_mm": [
+     -11.67,
+     -9.67,
+     3.0
+    ],
+    "excess_mm": 1.283,
+    "fitted_radius_mm": 4.021,
+    "extent_mm": 1.72,
+    "member_length_mm": 9.65,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "aio_contact_0"
+    ],
+    "load_cases": [
+     "connection_aio_contact_0"
+    ]
+   },
+   {
+    "member": 15,
+    "point_mm": [
+     -9.0,
+     -3.0,
+     3.0
+    ],
+    "excess_mm": 0.62,
+    "fitted_radius_mm": 3.097,
+    "extent_mm": 2.58,
+    "member_length_mm": 9.65,
+    "class": "junction",
+    "preserve_gap_mm": 7.6,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 18,
+    "point_mm": [
+     -5.67,
+     4.33,
+     1.67
+    ],
+    "excess_mm": 0.468,
+    "fitted_radius_mm": 3.454,
+    "extent_mm": 1.87,
+    "member_length_mm": 12.88,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 8.03,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 19,
+    "point_mm": [
+     -7.67,
+     17.67,
+     6.33
+    ],
+    "excess_mm": 1.059,
+    "fitted_radius_mm": 2.014,
+    "extent_mm": 4.09,
+    "member_length_mm": 12.53,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.47,
+    "preserves": [
+     "aio_contact_1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 19,
+    "point_mm": [
+     -5.67,
+     19.67,
+     9.67
+    ],
+    "excess_mm": 1.325,
+    "fitted_radius_mm": 2.822,
+    "extent_mm": 2.04,
+    "member_length_mm": 12.53,
+    "class": "junction",
+    "preserve_gap_mm": 8.49,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 20,
+    "point_mm": [
+     -1.67,
+     -3.67,
+     3.0
+    ],
+    "excess_mm": 1.149,
+    "fitted_radius_mm": 1.702,
+    "extent_mm": 4.63,
+    "member_length_mm": 17.48,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 11.35,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 20,
+    "point_mm": [
+     1.67,
+     -3.67,
+     3.0
+    ],
+    "excess_mm": 0.943,
+    "fitted_radius_mm": 1.825,
+    "extent_mm": 9.27,
+    "member_length_mm": 17.48,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 11.35,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 22,
+    "point_mm": [
+     -4.33,
+     20.33,
+     11.0
+    ],
+    "excess_mm": 0.802,
+    "fitted_radius_mm": 3.19,
+    "extent_mm": 1.89,
+    "member_length_mm": 12.6,
+    "class": "junction",
+    "preserve_gap_mm": 10.39,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 22,
+    "point_mm": [
+     -0.33,
+     21.67,
+     13.0
+    ],
+    "excess_mm": 0.521,
+    "fitted_radius_mm": 2.656,
+    "extent_mm": 9.47,
+    "member_length_mm": 12.6,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 13.68,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 22,
+    "point_mm": [
+     5.0,
+     21.0,
+     11.0
+    ],
+    "excess_mm": 0.307,
+    "fitted_radius_mm": 3.481,
+    "extent_mm": 0.95,
+    "member_length_mm": 12.6,
+    "class": "junction",
+    "preserve_gap_mm": 10.39,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 24,
+    "point_mm": [
+     0.33,
+     21.0,
+     1.0
+    ],
+    "excess_mm": 0.419,
+    "fitted_radius_mm": 2.829,
+    "extent_mm": 4.23,
+    "member_length_mm": 13.16,
+    "class": "junction",
+    "preserve_gap_mm": 12.02,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 24,
+    "point_mm": [
+     -0.33,
+     24.33,
+     1.67
+    ],
+    "excess_mm": 0.715,
+    "fitted_radius_mm": 2.563,
+    "extent_mm": 0.85,
+    "member_length_mm": 13.16,
+    "class": "junction",
+    "preserve_gap_mm": 13.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 26,
+    "point_mm": [
+     7.0,
+     25.67,
+     1.0
+    ],
+    "excess_mm": 0.592,
+    "fitted_radius_mm": 2.245,
+    "extent_mm": 11.9,
+    "member_length_mm": 20.64,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 7.6,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 26,
+    "point_mm": [
+     9.0,
+     26.33,
+     1.0
+    ],
+    "excess_mm": 0.498,
+    "fitted_radius_mm": 2.123,
+    "extent_mm": 11.9,
+    "member_length_mm": 20.64,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 5.96,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 26,
+    "point_mm": [
+     11.0,
+     27.0,
+     1.0
+    ],
+    "excess_mm": 0.515,
+    "fitted_radius_mm": 2.15,
+    "extent_mm": 11.9,
+    "member_length_mm": 20.64,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 4.71,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 27,
+    "point_mm": [
+     5.67,
+     3.67,
+     1.67
+    ],
+    "excess_mm": 0.309,
+    "fitted_radius_mm": 3.464,
+    "extent_mm": 4.64,
+    "member_length_mm": 13.04,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 8.54,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 27,
+    "point_mm": [
+     8.33,
+     -0.33,
+     2.33
+    ],
+    "excess_mm": 0.576,
+    "fitted_radius_mm": 2.851,
+    "extent_mm": 1.86,
+    "member_length_mm": 13.04,
+    "class": "junction",
+    "preserve_gap_mm": 10.35,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 29,
+    "point_mm": [
+     6.33,
+     19.67,
+     9.67
+    ],
+    "excess_mm": 0.794,
+    "fitted_radius_mm": 3.136,
+    "extent_mm": 0.96,
+    "member_length_mm": 12.09,
+    "class": "prescribed",
+    "preserve_gap_mm": 8.08,
+    "preserves": [
+     "aio_contact_3"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 29,
+    "point_mm": [
+     8.33,
+     17.67,
+     5.67
+    ],
+    "excess_mm": 0.886,
+    "fitted_radius_mm": 1.821,
+    "extent_mm": 4.8,
+    "member_length_mm": 12.09,
+    "class": "prescribed",
+    "preserve_gap_mm": 3.83,
+    "preserves": [
+     "aio_contact_3"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 30,
+    "point_mm": [
+     6.33,
+     21.0,
+     11.0
+    ],
+    "excess_mm": 0.613,
+    "fitted_radius_mm": 2.814,
+    "extent_mm": 1.9,
+    "member_length_mm": 7.96,
+    "class": "junction",
+    "preserve_gap_mm": 9.68,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 30,
+    "point_mm": [
+     9.67,
+     21.0,
+     12.33
+    ],
+    "excess_mm": 0.348,
+    "fitted_radius_mm": 2.737,
+    "extent_mm": 8.54,
+    "member_length_mm": 7.96,
+    "class": "junction",
+    "preserve_gap_mm": 9.45,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 35,
+    "point_mm": [
+     13.0,
+     21.67,
+     13.67
+    ],
+    "excess_mm": 1.353,
+    "fitted_radius_mm": 2.44,
+    "extent_mm": 1.1,
+    "member_length_mm": 10.13,
+    "class": "junction",
+    "preserve_gap_mm": 9.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 35,
+    "point_mm": [
+     15.67,
+     23.67,
+     13.67
+    ],
+    "excess_mm": 0.585,
+    "fitted_radius_mm": 2.28,
+    "extent_mm": 4.4,
+    "member_length_mm": 10.13,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 7.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 35,
+    "point_mm": [
+     17.0,
+     27.0,
+     11.0
+    ],
+    "excess_mm": 0.548,
+    "fitted_radius_mm": 3.096,
+    "extent_mm": 3.3,
+    "member_length_mm": 10.13,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.67,
+    "preserves": [
+     "camera_mount_1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 36,
+    "point_mm": [
+     19.0,
+     -15.67,
+     21.67
+    ],
+    "excess_mm": 0.304,
+    "fitted_radius_mm": 2.268,
+    "extent_mm": 3.0,
+    "member_length_mm": 28.2,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 5.21,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 36,
+    "point_mm": [
+     22.33,
+     -16.33,
+     19.67
+    ],
+    "excess_mm": 0.51,
+    "fitted_radius_mm": 1.953,
+    "extent_mm": 19.02,
+    "member_length_mm": 28.2,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 9.07,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 36,
+    "point_mm": [
+     23.67,
+     -17.0,
+     17.67
+    ],
+    "excess_mm": 0.544,
+    "fitted_radius_mm": 1.869,
+    "extent_mm": 19.02,
+    "member_length_mm": 28.2,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 11.35,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 36,
+    "point_mm": [
+     25.67,
+     -20.33,
+     13.67
+    ],
+    "excess_mm": 0.662,
+    "fitted_radius_mm": 2.05,
+    "extent_mm": 19.02,
+    "member_length_mm": 28.2,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 14.82,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 36,
+    "point_mm": [
+     30.33,
+     -25.0,
+     9.0
+    ],
+    "excess_mm": 0.897,
+    "fitted_radius_mm": 2.531,
+    "extent_mm": 18.02,
+    "member_length_mm": 28.2,
+    "class": "junction",
+    "preserve_gap_mm": 18.96,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 40,
+    "point_mm": [
+     17.0,
+     -13.67,
+     4.33
+    ],
+    "excess_mm": 1.217,
+    "fitted_radius_mm": 1.705,
+    "extent_mm": 4.87,
+    "member_length_mm": 14.58,
+    "class": "prescribed",
+    "preserve_gap_mm": 1.33,
+    "preserves": [
+     "aio_contact_2"
+    ],
+    "load_cases": [
+     "connection_aio_contact_2"
+    ]
+   },
+   {
+    "member": 40,
+    "point_mm": [
+     22.33,
+     -18.33,
+     3.67
+    ],
+    "excess_mm": 0.411,
+    "fitted_radius_mm": 2.921,
+    "extent_mm": 10.71,
+    "member_length_mm": 14.58,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 8.14,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 40,
+    "point_mm": [
+     24.33,
+     -22.33,
+     3.67
+    ],
+    "excess_mm": 0.786,
+    "fitted_radius_mm": 3.071,
+    "extent_mm": 0.97,
+    "member_length_mm": 14.58,
+    "class": "junction",
+    "preserve_gap_mm": 12.26,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 41,
+    "point_mm": [
+     17.0,
+     31.67,
+     1.0
+    ],
+    "excess_mm": 0.437,
+    "fitted_radius_mm": 2.195,
+    "extent_mm": 2.02,
+    "member_length_mm": 8.36,
+    "class": "junction",
+    "preserve_gap_mm": 4.06,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 41,
+    "point_mm": [
+     23.0,
+     32.33,
+     1.67
+    ],
+    "excess_mm": 0.32,
+    "fitted_radius_mm": 3.037,
+    "extent_mm": 1.01,
+    "member_length_mm": 8.36,
+    "class": "junction",
+    "preserve_gap_mm": 10.0,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 42,
+    "point_mm": [
+     19.67,
+     28.33,
+     9.67
+    ],
+    "excess_mm": 0.79,
+    "fitted_radius_mm": 2.204,
+    "extent_mm": 4.7,
+    "member_length_mm": 12.37,
+    "class": "prescribed",
+    "preserve_gap_mm": 5.58,
+    "preserves": [
+     "camera_mount_1"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 42,
+    "point_mm": [
+     23.0,
+     29.67,
+     7.0
+    ],
+    "excess_mm": 0.576,
+    "fitted_radius_mm": 2.033,
+    "extent_mm": 10.35,
+    "member_length_mm": 12.37,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 8.72,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 42,
+    "point_mm": [
+     23.67,
+     31.67,
+     3.0
+    ],
+    "excess_mm": 0.468,
+    "fitted_radius_mm": 2.463,
+    "extent_mm": 0.94,
+    "member_length_mm": 12.37,
+    "class": "junction",
+    "preserve_gap_mm": 10.6,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 43,
+    "point_mm": [
+     24.33,
+     33.0,
+     2.33
+    ],
+    "excess_mm": 0.572,
+    "fitted_radius_mm": 2.505,
+    "extent_mm": 0.92,
+    "member_length_mm": 25.69,
+    "class": "junction",
+    "preserve_gap_mm": 11.33,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 43,
+    "point_mm": [
+     41.0,
+     39.67,
+     6.33
+    ],
+    "excess_mm": 0.353,
+    "fitted_radius_mm": 1.924,
+    "extent_mm": 14.75,
+    "member_length_mm": 25.69,
+    "class": "prescribed",
+    "preserve_gap_mm": 5.37,
+    "preserves": [
+     "front_right_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 43,
+    "point_mm": [
+     45.67,
+     41.0,
+     7.67
+    ],
+    "excess_mm": 1.66,
+    "fitted_radius_mm": 1.869,
+    "extent_mm": 1.84,
+    "member_length_mm": 25.69,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.67,
+    "preserves": [
+     "front_right_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 45,
+    "point_mm": [
+     31.67,
+     -26.33,
+     8.33
+    ],
+    "excess_mm": 0.414,
+    "fitted_radius_mm": 3.678,
+    "extent_mm": 0.97,
+    "member_length_mm": 21.93,
+    "class": "junction",
+    "preserve_gap_mm": 17.61,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 45,
+    "point_mm": [
+     37.0,
+     -33.67,
+     7.0
+    ],
+    "excess_mm": 0.795,
+    "fitted_radius_mm": 2.168,
+    "extent_mm": 3.87,
+    "member_length_mm": 21.93,
+    "class": "grid_artefact",
+    "preserve_gap_mm": 9.71,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 45,
+    "point_mm": [
+     39.67,
+     -35.67,
+     8.33
+    ],
+    "excess_mm": 0.652,
+    "fitted_radius_mm": 2.232,
+    "extent_mm": 12.58,
+    "member_length_mm": 21.93,
+    "class": "optimizer_feature",
+    "preserve_gap_mm": 6.7,
+    "preserves": [],
+    "load_cases": []
+   },
+   {
+    "member": 45,
+    "point_mm": [
+     42.33,
+     -36.33,
+     7.67
+    ],
+    "excess_mm": 0.596,
+    "fitted_radius_mm": 2.623,
+    "extent_mm": 12.58,
+    "member_length_mm": 21.93,
+    "class": "prescribed",
+    "preserve_gap_mm": 4.0,
+    "preserves": [
+     "rear_right_motor_contact"
+    ],
+    "load_cases": []
+   },
+   {
+    "member": 45,
+    "point_mm": [
+     45.67,
+     -38.33,
+     6.33
+    ],
+    "excess_mm": 0.78,
+    "fitted_radius_mm": 3.271,
+    "extent_mm": 1.94,
+    "member_length_mm": 21.93,
+    "class": "prescribed",
+    "preserve_gap_mm": 0.94,
+    "preserves": [
+     "rear_right_motor_contact"
+    ],
+    "load_cases": []
+   }
+  ]
+ },
+ "splines": {
+  "control_points": {
+   "3": 10,
+   "4": 15,
+   "5": 9
+  },
+  "transition_radius_mm": 1.5,
+  "joint_sections": {
+   "count": 57,
+   "worst": [
+    {
+     "node": 14,
+     "center_mm": [
+      5.67,
+      20.33,
+      10.33
+     ],
+     "ratio": 0.9777299101677653
+    },
+    {
+     "node": 4,
+     "center_mm": [
+      -17.67,
+      28.33,
+      11.0
+     ],
+     "ratio": 1.0100851922982665
+    },
+    {
+     "node": 14,
+     "center_mm": [
+      5.67,
+      20.33,
+      10.33
+     ],
+     "ratio": 1.0229454203735793
+    },
+    {
+     "node": 2,
+     "center_mm": [
+      -25.0,
+      -23.0,
+      4.33
+     ],
+     "ratio": 1.025047989389
+    },
+    {
+     "node": 21,
+     "center_mm": [
+      25.22,
+      -23.22,
+      4.11
+     ],
+     "ratio": 1.0318960177478902
+    }
+   ],
+   "minimum_ratio": 0.9777299101677653,
+   "p05_ratio": 1.024627475585916,
+   "below_one": 0,
+   "method": "section area of the final field on the plane through each member at the node body radius (disk 1.5 a) over the incident member section pi a b; below_one counts ratios < 0.95 (sampling at h/2)"
+  },
+  "mass_budget": {
+   "measured_members_mm3": 11867.169126901359,
+   "built_rods_mm3": 10445.183196308739,
+   "node_bodies_mm3": 2545.7592478822444,
+   "preserves_mm3": 7272.296296296296,
+   "section_source_mm3": 17780.078703703704,
+   "result_mm3": 19690.659462964217
+  },
+  "section_source": "raw body occupancy",
+  "continuity": {
+   "anchors": 13,
+   "anchor_components": 1,
+   "anchors_in_main": 13,
+   "members_off_main": 0,
+   "dangling_ends": 0,
+   "passed": true
+  },
+  "load_paths": {
+   "voxel_mm": 0.3,
+   "mounts": 14,
+   "method": "material eroded by r (EDT > r) labelled with 26-connectivity; a mount is carried when the largest core component reaches into the mount region padded by r + h; r = 0.9 mm stands for the 2 mm minimum section",
+   "r0.5": {
+    "components": 1,
+    "carried": 14,
+    "missing": []
+   },
+   "r0.9": {
+    "components": 1,
+    "carried": 14,
+    "missing": []
+   },
+   "passed": true
+  }
+ },
+ "image": "C:\\clones\\Deep_Frame-recon3\\exports\\recon3\\neural_v06_f1_4views.png",
+ "stl": "C:\\clones\\Deep_Frame-neural\\exports\\recon3_neural_v06_f1\\geometry.stl"
+}
