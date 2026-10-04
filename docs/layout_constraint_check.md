@@ -16,7 +16,7 @@ Komponenten (K) sind unsere Hardware auf den Aufnahmen der Referenz: GNB 2S 550 
 | Frame | Bedingung | Wert | Grenze | Marge | Robustheit gegenüber den Annahmen |
 |---|---|---|---|---|---|
 | ManaFly | `cg_above_rotor_plane` | −3,75 mm | ≥ 0 mm | −3,75 | **Nicht robust.** Die Unterschreitung entsteht durch unseren leichten 2S-Akku (37 g) auf einem 29-g-Rahmen mit Rotorebene z 25,0. Folgende Annahmen ändern den Wert: Motorsitz z 8 statt 10 (Datenblatt Feld 3: 8–9,2) ergibt −2,3 mm, ein 60-g-Akku mit 22 mm Höhe +1,1 mm, ein 4S-650-Akku mit 75 g +3,5 mm. Das reale Abfluggewicht von 142,7 g, angenommen mit 4 × 8,5 g Motoren, 4 × 2,5 g Props und 59-g-Akku, ergibt **+0,3 mm**. Bei unseren Motoren kippt das Vorzeichen ab 83 g Akkumasse, bei 8,5-g-Motoren mit 22 mm hohem Akku ab 56 g. |
-| ManaFly | `camera_sees_no_prop` | −26,7° (4:3: −17,2°, 3,9 % des Bildes) | ≥ 0° | −26,7 | **Robust.** Keine Kameraposition innerhalb der Grenzen erfüllt die Bedingung. Bestwerte im 4:3-Modus: −15,1° bei 20° Neigung und −9,4° bei 40°. Grund ist ein 3-Zoll-True-X: Die Props reichen bis y ≈ 95 mm, der Rumpf endet bei 65 mm. Der reale Frame fliegt trotzdem mit Props im Bild. |
+| ManaFly | `camera_sees_no_prop` | −26,7° (4:3: −17,2°, 3,9 % des Bildes) | ≥ 0° | −26,7 | **Robust.** Keine Kameraposition innerhalb der Grenzen erfüllt die Bedingung. Bestwerte im 4:3-Modus: −15,1° bei 20° Neigung und −9,4° bei 40°. Grund ist ein 3-Zoll-True-X: Die Props reichen bis y ≈ 95 mm, der Rumpf endet bei 65 mm. Für jede Kamera mit etwa 150° an dieser Position sind Props im Bild geometrisch unvermeidbar. Gerechnet ist mit dem Sichtfeld der Lux; die reale Kamera ist eine Walksnail (Datenblatt, geschätzt). |
 | Tadpole | `cg_above_rotor_plane` | −0,14 mm | ≥ 0 mm | −0,14 | **Unbestimmt.** Der Wert liegt im Rauschen des Handmodells (kein STL vorhanden). Mit der Seitenteil-Box auf z 13 statt 10 ergibt sich 0,0 mm, mit dem Akku 1 mm höher +0,3 mm. |
 | Tadpole | `battery_over_stack` | 2,5 mm Spalt | ≥ 3 mm | −0,5 | **Nicht robust.** Ohne den 3-mm-Zuschlag für den ELRS-Draht ist die Bedingung erfüllt, mit dem Akku 1 mm höher ebenfalls. Die Boxhöhe von 15–18 mm stammt aus Fotos (±10 %). |
 | Tadpole | `battery_over_camera` | −3,4 mm Spalt | ≥ 3 mm | −6,4 | **Annahme.** Kamera-y 28 mm und Bodenabstand 0 mm sind geschätzt. Real sitzt die Kamera zwischen den Alu-Seitenteilen unter der Top-Platte. |
@@ -29,7 +29,7 @@ Robustheitsläufe im JSON (`robustness`):
 - ManaFly: Akku 50/60/75 g, Motoren 8,5 g, Props 2,5 g, Motorsitz z 8, Akku 3 mm tiefer, Kameraneigung 30°/40°.
 - Tadpole: Seitenteile 2/6 g und z 7/13, Akku ±1 mm, Bügel +10 %, Kamera +2 mm hoch bzw. y 33, Neigung 30°, ohne ELRS-Zuschlag, Props 2,5 g.
 
-**Fazit zu 1:** Robust gegen die Annahmen ist bei beiden Referenzen nur die Sichtfeldverletzung. Dabei verdecken die Props im realen 4:3-Modus 3–4 % des Bildes, und die echten Frames fliegen so. Die Schwerpunktverletzung von ManaFly folgt aus unserer leichten Hardware und kippt mit realistischer Hardware. Die übrigen Tadpole-Verletzungen sind Schätzfehler des Handmodells.
+**Fazit zu 1:** Robust gegen die Annahmen ist bei beiden Referenzen nur die Sichtfeldverletzung. Dabei verdecken die Props im realen 4:3-Modus 3–4 % des Bildes, und die echten Frames haben an diesen Positionen geometrisch zwangsläufig Props im Bild (Folgerung aus der Geometrie, nicht beobachtet). Die Schwerpunktverletzung von ManaFly folgt aus unserer leichten Hardware und kippt mit realistischer Hardware. Die übrigen Tadpole-Verletzungen sind Schätzfehler des Handmodells.
 
 ## 2 Schwerpunktband
 
@@ -107,6 +107,7 @@ Ergebnisse:
 |---|---|---|---|
 | `cg_horizontal_mm` | 1,0 | **behalten** | echte Trimmbedingung; das Regel-Layout verletzt sie robust |
 | `cg_band_mm` | [0, 5] | **[−5, 5]** (Entscheidung des Nutzers, da Nutzervorgabe) | Physikalisch keine harte Bedingung. Die Referenzen liegen bei −3,75 … +1,0 mm. Die Untergrenze 0 erzwingt im Optimum ein Artefakt: Der Stack steht auf 8,8 mm hohen Abstandshaltern, um den Schwerpunkt anzuheben, damit der 37-g-Akku tiefer darf. Keine Referenz macht das. |
+| | | | Im empfohlenen Optimum ist die Untergrenze nicht aktiv: Der Schwerpunkt landet bei −2,9 mm, weil vorher `battery_over_stack` greift (Stack 3 mm + 6 mm + ELRS 3 mm + 3 mm Spalt). Jede Untergrenze ≤ −3 mm ergibt dasselbe Layout; nur eine Grenze zwischen −3 und 0 mm ändert etwas. |
 | `fov_deg` | [145, 94] (Union) | **[126, 94]** (realer 4:3-Modus) und 16:9 [145, 82] als Option für Piloten im 16:9-Modus | Die Union ist kein Kameramodus. Mit 16:9 bleibt das heutige Ergebnis. |
 | Randzugabe Sichtfeld | 0 | **0 behalten**, höchstens als Option | Konvention statt Anforderung; bringt nur 2–4 mm Kameraweg |
 | Kameraneigung im Check | 20° | behalten, Hinweis | 30–40° ändern die Verletzung der Referenzen nur um 0,5–3°; unser Optimum bleibt zulässig und gewinnt Reserve |
