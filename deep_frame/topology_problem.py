@@ -699,7 +699,7 @@ class InterfaceCovariance:
         return -self.factor * derivative * total
     def calibration(self):
         calibration = self.settings["limits"].get("calibration", 1.0)
-        calibration = calibration.get("rails" if self.battery is None else "free", calibration) if isinstance(calibration, dict) else calibration
+        calibration = calibration.get("free" if "battery" in self.bodies else "rails", calibration) if isinstance(calibration, dict) else calibration
         return {key: calibration[key] if isinstance(calibration, dict) else calibration for key in ("mean_n_mm", "worst_n_mm")}
     def measure(self, solutions):
         calibration, s = self.calibration(), self.settings["ks"]

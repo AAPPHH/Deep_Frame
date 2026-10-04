@@ -279,7 +279,7 @@ def test_covariance_calibration_is_keyed_by_battery_support():
     rails = TopologyProblem(domain, problem)
     rows = {row["name"]: row for row in rails.evaluate(np.full(rails.map.n, 0.5))["rows"]}
     assert rows["load_mean"]["limit"] == pytest.approx(0.1) and rows["load_worst"]["limit"] == pytest.approx(0.12)
-    rails.covariance.battery = object()
+    rails.covariance.bodies = {"battery": object()}
     assert rails.covariance.calibration() == {"mean_n_mm": 5.0, "worst_n_mm": 7.0}
     rails.close()
 
