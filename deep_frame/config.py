@@ -888,9 +888,15 @@ TOPOLOGY_CONFIG = {
     "prop_clearance_mm": 2.0,
     "motor_contact_radius_mm": 7.7,
     "aio_contact_radius_mm": 3.2,
-    "aio_boss_radius_mm": 3.1,
-    "aio_eye_height_mm": 8 / 3,
-    "aio_tool_radius_mm": 2.0,
+    "stack_post": {
+        "diameter_mm": 4.5,
+        "fastening": "heat_set",
+        "bores": {"heat_set": {"diameter_mm": 3.2, "depth_mm": 4.0, "source": "M2 heat-set insert, e.g. ruthex RX-M2x3 (length 3.0 mm, outer 3.6 mm, recommended hole 3.2 mm); depth = insert length + 1.0 mm for displaced melt and screw tip; wall after insertion (4.5 - 3.6) / 2 = 0.45 mm (user post diameter)"},
+                  "self_tapping": {"diameter_mm": 1.6, "depth_mm": 4.0, "source": "ASSUMPTION: M2 self-tapping into printed thermoplastic, pilot 0.8 d = 1.6 mm, engagement 2 d = 4.0 mm; rim (4.5 - 1.6) / 2 = 1.45 mm"}},
+        "bore_floor_mm": 1.0,
+        "tool_radius_mm": 2.0,
+        "source": "user 2026-10-04, whoop principle: four posts from the frame, height = stack standoff (top on the grommet seat z = base + standoff), AIO15 on its grommets on top, M2 from above into the post, tool clearance above (M2 button/socket head 3.5-3.8 mm, PH0 shaft 3 mm -> 2.0 mm corridor radius through the AIO and battery zone), no nuts, no access from below; the post reaches below the base plane when the blind bore plus bore_floor_mm is deeper than the standoff",
+    },
     "camera_mount_radius_mm": 4.1,
     "flush_overlap_mm": 0.5,
     "prescribed_wall_margin_mm": 0.1,
@@ -1220,7 +1226,7 @@ CAMERA_SUPPORT = {
 }
 
 LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float", "support": ("prescribed", "free")},
-                    "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free")}, "stack": {"standoff_mm": "float"},
+                    "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free")}, "stack": {"standoff_mm": "float", "fastening": ("heat_set", "self_tapping")},
                     "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
                                   "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float"}}
 

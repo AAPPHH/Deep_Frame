@@ -1,5 +1,6 @@
 import json
 from copy import deepcopy
+from itertools import product
 
 import numpy as np
 import pytest
@@ -9,8 +10,8 @@ from scipy.ndimage import label
 
 from deep_frame.config import FEA_CONFIG, IMPLICIT_CONFIG, TOPOLOGY_CONFIG
 from deep_frame.fea import evaluate
-from deep_frame.frame import reference_parameters
-from deep_frame.topology_geometry import build_design_domain, embed_field, grid_centers, lowered_grid, region_bounds, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, validate_topology, voxel_boxes
+from deep_frame.frame import mount_positions, reference_parameters
+from deep_frame.topology_geometry import build_design_domain, embed_field, grid_centers, lowered_grid, region_bounds, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, stack_pattern, validate_topology, voxel_boxes
 
 @pytest.fixture(scope="module")
 def domain():
@@ -111,10 +112,10 @@ def test_loads_mass_and_fair_local_fixture_contract(domain):
     assert domain["point_masses"][0]["mass_g"] == 37
     assert domain["point_masses"][0]["position_mm"] == pytest.approx([0, 0, 33.5])
     assert {name for name in cases if name.startswith("connection_")} == {f"connection_aio_contact_{index}" for index in range(4)} | {"connection_battery_rail_-1", "connection_battery_rail_1", "connection_camera_mount_-1", "connection_camera_mount_1"}
-    eyes = [[float(region_bounds(eye)[0][2]) - 0.01, float(region_bounds(eye)[1][2]) + 0.01] for eye in _aio_eyes(domain)[1]]
+    posts = [float(region_bounds(_posts(domain)[1][0])[0][2]) - 0.01, float(region_bounds(_posts(domain)[1][0])[1][2]) + 0.01]
     for case in cases.values():
         for fixture in case["fixed_regions"]:
-            assert fixture["max_mm"][2] < 0.1 or [fixture["min_mm"][2], fixture["max_mm"][2]] in eyes
+            assert fixture["max_mm"][2] < 0.1 or [fixture["min_mm"][2], fixture["max_mm"][2]] == pytest.approx(posts)
     weights = domain["optimizer_settings"]["case_weights"]
     primary = sum(value for name, value in weights.items() if not name.startswith("connection_"))
     auxiliary = sum(value for name, value in weights.items() if name.startswith("connection_"))
@@ -174,37 +175,61 @@ def test_battery_rails_and_deck_loads_resolve_on_every_study_grid(spacing, rails
     assert deck["min_mm"][2] < parameters["frame"]["deck_top_mm"] < deck["max_mm"][2] and len(model._select(deck, "battery_impact", "load")) > 0
     assert model.selector_expansions == []
 
-def _aio_eyes(domain):
+def _posts(domain):
     regions = {region["name"]: region for region in domain["regions"]}
     return regions, [regions[f"aio_contact_{index}"] for index in range(4)]
 
-def _check_eyes(domain, seat, low_z):
-    regions, eyes = _aio_eyes(domain)
-    floor, tolerance = domain["grid"]["origin_mm"][2], reference_parameters()["integration"]["selection_tolerance_mm"]
+def _check_posts(domain, parameters, fastening="heat_set"):
+    regions, posts = _posts(domain)
+    f, post = parameters["frame"], TOPOLOGY_CONFIG["stack_post"]
+    bore, seat, standoff = post["bores"][fastening], f["base_thickness_mm"] + f["aio_standoff_mm"], f["aio_standoff_mm"]
+    top, tolerance, overlap = domain["grid"]["origin_mm"][2] + domain["grid"]["spacing_mm"][2] * domain["grid"]["shape"][2], parameters["integration"]["selection_tolerance_mm"], TOPOLOGY_CONFIG["flush_overlap_mm"]
     centers = grid_centers(domain["grid"])
-    for index, eye in enumerate(eyes):
-        low, high = region_bounds(eye)
-        assert eye["radius_mm"] == pytest.approx(3.1) and low[2] == pytest.approx(low_z) and high[2] == pytest.approx(seat + TOPOLOGY_CONFIG["flush_overlap_mm"])
-        assert np.any(region_contains(centers, eye) & domain["preserve"]) and not (domain["preserve"] & (centers[..., 2] < low[2]) & region_contains(centers, {**eye, "height_mm": 100.0})).any()
-        if low_z > floor:
-            tool = regions[f"aio_tool_access_{index}"]
-            tool_low, tool_high = region_bounds(tool)
-            assert tool["role"] == "forbidden" and tool.get("rasterize", True) and tool["radius_mm"] == pytest.approx(TOPOLOGY_CONFIG["aio_tool_radius_mm"])
-            assert tool["center_mm"][:2] == eye["center_mm"][:2] and tool_high[2] == pytest.approx(low[2]) and tool_low[2] == pytest.approx(floor - 1)
-            assert not (domain["allowed"] & region_contains(centers, tool)).any()
+    assert [post_region["center_mm"][:2] for post_region in posts] == [list(xy) for xy in mount_positions(parameters)["aio15"]]
+    for index, post_region in enumerate(posts):
+        low, high = region_bounds(post_region)
+        assert post_region["radius_mm"] == pytest.approx(post["diameter_mm"] / 2) and post_region["seat_mm"] == pytest.approx(seat) and high[2] == pytest.approx(seat + overlap)
+        assert low[2] == pytest.approx(seat - max(standoff, bore["depth_mm"] + post["bore_floor_mm"]))
+        assert np.any(region_contains(centers, post_region) & domain["preserve"])
+        column = region_contains(centers, {**post_region, "radius_mm": post_region["radius_mm"] + 4.0, "height_mm": 200.0})
+        assert not (domain["preserve"] & column & (centers[..., 2] < low[2])).any()
+        screw = regions[f"aio_screw_{index}"]
+        screw_low, screw_high = region_bounds(screw)
+        assert screw["role"] == "forbidden" and screw.get("rasterize") is False and screw["center_mm"][:2] == post_region["center_mm"][:2] and screw["radius_mm"] == pytest.approx(bore["diameter_mm"] / 2)
+        assert screw_low[2] == pytest.approx(seat - bore["depth_mm"]) and screw_low[2] - low[2] >= post["bore_floor_mm"] - 1e-9 and screw_high[2] == pytest.approx(seat + 1)
+        tool = regions[f"aio_tool_access_{index}"]
+        tool_low, tool_high = region_bounds(tool)
+        assert tool["role"] == "forbidden" and tool.get("rasterize", True) and tool["radius_mm"] == pytest.approx(post["tool_radius_mm"]) and tool["center_mm"][:2] == post_region["center_mm"][:2]
+        assert tool_low[2] == pytest.approx(seat) and tool_high[2] == pytest.approx(top + 1) and not (domain["allowed"] & region_contains(centers, tool)).any()
+        below = [region["name"] for region in domain["regions"] if region["role"] == "forbidden" and region["name"] != f"aio_screw_{index}" and region_contains(np.asarray([*post_region["center_mm"][:2], low[2] - 0.5]), region)]
+        assert below == []
     for case in ("arm_tip", "crash_front"):
         boxes = next(item for item in domain["comparison_load_cases"] if item["name"] == case)["fixed_regions"]
-        assert len(boxes) == 4 and all(box["min_mm"][2] == pytest.approx(low_z - tolerance) and box["max_mm"][2] == pytest.approx(seat + TOPOLOGY_CONFIG["flush_overlap_mm"] + tolerance) for box in boxes)
+        assert len(boxes) == 4 and all(box["min_mm"][2] == pytest.approx(region_bounds(posts[0])[0][2] - tolerance) and box["max_mm"][2] == pytest.approx(seat + overlap + tolerance) for box in boxes)
     assert domain["metadata"]["prescribed_clearance"]["passed"]
+    pattern = stack_pattern(regions)
+    assert pattern["tool_direction"] == [0, 0, 1] and pattern["z_mm"] == pytest.approx(seat - 1.0) and seat - pattern["z_mm"] < bore["depth_mm"]
+    assert pattern["radius_mm"] == pytest.approx(np.hypot(*mount_positions(parameters)["aio15"][0])) and pattern["hole_diameter_mm"][0] < bore["diameter_mm"] < pattern["hole_diameter_mm"][1]
 
-def test_aio_contacts_are_grid_snapped_seat_eyes_with_tool_access_and_eye_fixtures(domain):
-    _check_eyes(domain, 5.5, 0.0)
+def test_stack_posts_at_the_bolt_pattern_with_blind_bores_tool_corridor_above_and_post_fixtures(domain):
+    _check_posts(domain, reference_parameters())
 
-def test_aio_seat_eyes_on_fine_grids_leave_the_floor_free():
+def test_stack_post_height_follows_the_standoff_on_the_run_grid(monkeypatch):
     parameters = reference_parameters()
     parameters["frame"]["aio_standoff_mm"] = 8.8
     parameters["topology"] = {"grid": {"shape": [102, 96, 24], "spacing_mm": [4 / 3] * 3}}
-    _check_eyes(build_design_domain(parameters), 11.3, 8.0)
+    built = build_design_domain(parameters)
+    _check_posts(built, parameters)
+    assert _posts(built)[1][0]["height_mm"] - TOPOLOGY_CONFIG["flush_overlap_mm"] == pytest.approx(8.8)
+    monkeypatch.setitem(TOPOLOGY_CONFIG, "stack_post", {**TOPOLOGY_CONFIG["stack_post"], "fastening": "self_tapping"})
+    _check_posts(build_design_domain(parameters), parameters, "self_tapping")
+
+def test_old_seat_eye_domains_keep_their_bottom_up_stack_pattern():
+    corners = list(product((-12.75, 12.75), repeat=2))
+    regions = {f"aio_contact_{index}": {"kind": "cylinder", "center_mm": [x, y, 4.0], "radius_mm": 3.1, "height_mm": 4.0, "axis": "z"} for index, (x, y) in enumerate(corners)}
+    regions.update({f"aio_screw_{index}": {"kind": "cylinder", "center_mm": [x, y, 0.0], "radius_mm": 1.1, "height_mm": 12.0, "axis": "z"} for index, (x, y) in enumerate(corners)})
+    pattern = stack_pattern(regions)
+    assert pattern["name"] == "stack_25.5" and pattern["z_mm"] == pytest.approx(3.5) and pattern["tool_direction"] == [0, 0, -1]
 
 @pytest.mark.parametrize("spacing, cells", [(4.0, 1), (2.0, 2), (4 / 3, 3), (2 / 3, 6), (0.75, 6)])
 def test_floor_drop_keeps_spacing_and_lowers_the_floor_by_whole_cells(spacing, cells):
@@ -230,8 +255,10 @@ def test_lowered_floor_leaves_room_below_the_old_floor_and_bores_reach_it(domain
     envelope = next(region for region in domain["regions"] if region["name"] == "design_envelope")
     assert envelope["min_mm"][2] == pytest.approx(floor)
     for region in domain["regions"]:
-        if "motor_screw_" in region["name"] or region["name"].endswith("_shaft_clearance") or region["name"].startswith("aio_screw_"):
+        if "motor_screw_" in region["name"] or region["name"].endswith("_shaft_clearance"):
             assert region_bounds(region)[0][2] == pytest.approx(floor - 1)
+        if region["name"].startswith("aio_screw_"):
+            assert region_bounds(region)[0][2] > floor + 1
 
 def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain):
     clearance = domain["metadata"]["prescribed_clearance"]
@@ -241,7 +268,7 @@ def test_prescribed_preserves_keep_two_millimetre_walls_against_keepouts(domain)
     assert regions["front_left_motor_contact"]["radius_mm"] - regions["front_left_motor_screw_0"]["radius_mm"] - 4.5 == pytest.approx(2.1)
     extended = {pair["preserve"] for pair in domain["metadata"]["flush_contact_extensions"]}
     assert {"battery_rail_1", "front_left_motor_contact"} | {f"aio_contact_{index}" for index in range(4)} <= extended and not extended & {"xt30_contact", "balancer_contact", "antenna_contact"}
-    assert regions["aio_contact_0"]["height_mm"] == pytest.approx(6.0) and regions["aio_contact_0"]["radius_mm"] == pytest.approx(3.1) and "flush_kept_near_wall" not in clearance
+    assert regions["aio_contact_0"]["height_mm"] == pytest.approx(5.5) and regions["aio_contact_0"]["radius_mm"] == pytest.approx(2.25) and "flush_kept_near_wall" not in clearance
     keepout = {"name": "k", "role": "forbidden", "kind": "box", "min_mm": [0, 0, 4], "max_mm": [10, 10, 8], "purpose": ""}
     pad = {"name": "p", "role": "preserve", "kind": "box", "min_mm": [2, 2, 0], "max_mm": [8, 8, 4], "purpose": ""}
     rim = {"name": "r", "role": "preserve", "kind": "box", "min_mm": [8, 0, 4], "max_mm": [11.9, 10, 6], "purpose": ""}

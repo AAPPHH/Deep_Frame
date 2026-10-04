@@ -173,3 +173,19 @@ def test_reference_assemblies_reproduce_the_evaluator_inertia():
     agility = ours.summary()["agility"]
     assert agility["layout"] == {name: ours.frame[name] for name in LAYOUT_OPTIMIZATION["variables"]} and set(agility["alpha_rad_s2"]) == {"roll", "pitch", "yaw"}
     assert agility["feasible"] and "layout_optimization.json" in agility["source"] and LayoutModel(ours.setup()).rounded(LAYOUT_DEFAULT["layout"])["layout"] == LAYOUT_DEFAULT["layout"]
+
+def test_stack_posts_follow_the_standoff_and_the_fastening_switch_reaches_domain_and_datasheet(tmp_path):
+    layout = FrameLayout(request())
+    posts = layout.summary()["stack"]["posts"]
+    assert posts["standoff_mm"] == layout.frame["aio_standoff_mm"] and posts["fastening"] == "heat_set" and posts["bore_diameter_mm"] == 3.2
+    assert posts["height_mm"] == max(posts["standoff_mm"], posts["bore_depth_mm"] + posts["bore_floor_mm"]) and layout.patch()["TOPOLOGY_CONFIG"]["stack_post"] == {"fastening": "heat_set"}
+    tapped = FrameLayout(request(overrides={"stack": {"fastening": "self_tapping", "standoff_mm": 8.0}, "battery": {"deck_top_mm": 26.0}}))
+    assert tapped.patch()["TOPOLOGY_CONFIG"]["stack_post"] == {"fastening": "self_tapping"} and tapped.summary()["stack"]["posts"]["height_mm"] == 8.0
+    with pytest.raises(ValueError):
+        validate_request(request(overrides={"stack": {"fastening": "nut"}}))
+    trimesh.creation.box(extents=(60, 40, 6)).export(tmp_path / "frame.stl")
+    (tmp_path / "layout.json").write_text(json.dumps(tapped.summary(), default=str), encoding="utf-8")
+    (tmp_path / "manifest.json").write_text(json.dumps({"name": "t", "stages": {}, "notes": []}), encoding="utf-8")
+    datasheet(tmp_path / "manifest.json")
+    text = (tmp_path / "datasheet.md").read_text(encoding="utf-8")
+    assert "4 Pfosten Ø 4,5 mm" in text and "Höhe = Stack-Abstand 8,0 mm)" in text and "selbstschneidend (Sackbohrung Ø 1,6 × 4,0 mm)" in text and "kein Zugang von unten" in text

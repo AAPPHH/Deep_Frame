@@ -238,11 +238,15 @@ def _component_regions(parameters, settings, grid):
         corridor_max = [max(x - sign * 5, sign * 20), y + 2, f["arm_height_mm"] + 5]
         regions.append(_box(name + "_motor_leads", "forbidden", corridor_min, corridor_max, "Provisional accessible straight motor lead corridor"))
     seat = f["base_thickness_mm"] + f["aio_standoff_mm"]
-    eye = max(origin[2] + np.floor((seat - settings["aio_eye_height_mm"] - origin[2]) / grid["spacing_mm"][2] + 1e-9) * grid["spacing_mm"][2], origin[2])
-    bore = (c["aio15"]["screw_diameter_mm"] + f["hole_clearance_mm"]) / 2
+    post = settings["stack_post"]
+    bore = post["bores"][post["fastening"]]
+    foot = seat - max(f["aio_standoff_mm"], bore["depth_mm"] + post["bore_floor_mm"])
+    layers = origin[2] + (np.arange(grid["shape"][2]) + 0.5) * grid["spacing_mm"][2]
+    if not ((layers >= foot - 1e-9) & (layers + grid["spacing_mm"][2] / 2 <= seat + 1e-9)).any():
+        foot = float(layers[layers < foot].max())
     for index, (x, y) in enumerate(mount_positions(parameters)["aio15"]):
-        regions.append(_cylinder(f"aio_contact_{index}", "preserve", [x, y, (eye + seat) / 2], settings["aio_boss_radius_mm"], seat - eye, "AIO grommet seat eye around the screw; no prescribed column or central plate", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0))
-        regions.append(_cylinder(f"aio_screw_{index}", "forbidden", [x, y, (origin[2] + seat) / 2], bore, seat - origin[2] + 2, "AIO through screw and underside assembly access", rasterize=False))
+        regions.append(_cylinder(f"aio_contact_{index}", "preserve", [x, y, (foot + seat) / 2], post["diameter_mm"] / 2, seat - foot, f"Stack post (whoop principle): AIO on its grommets on top, M2 from above, {post['fastening']} bore; connection to the frame left to the optimizer", attachment_area_min_mm2=8.0, minimum_wall_mm=2.0, seat_mm=seat))
+        regions.append(_cylinder(f"aio_screw_{index}", "forbidden", [x, y, seat + (1 - bore["depth_mm"]) / 2], bore["diameter_mm"] / 2, bore["depth_mm"] + 1, f"Blind M2 {post['fastening']} bore from the post top; closed below", rasterize=False, fastening=post["fastening"]))
     battery_y, battery_z = placements["battery"]["position"][1:]
     rail_width, rail_length = settings["battery_contact_width_mm"], settings["battery_contact_length_mm"]
     for sign in (-1, 1) if settings.get("battery_support", "rails") == "rails" else ():
@@ -272,13 +276,23 @@ def _component_regions(parameters, settings, grid):
     regions.append(_box("aio_side_assembly_access", "forbidden", [0, -c["aio15"]["length_mm"] / 2 - clearance, placements["aio15"]["position"][2]], [upper[0] + 1, c["aio15"]["length_mm"] / 2 + clearance, placements["aio15"]["position"][2] + c["aio15"]["stack_height_mm"] + clearance], "AIO insertion/removal through right side with connectors unplugged"))
     return regions, placements, components
 
-def _tool_access(regions, settings, floor):
+def _tool_access(regions, settings, top):
     result = []
     for region in (region for region in regions if region["name"].startswith("aio_contact_")):
-        low = region_bounds(region)[0]
-        if low[2] > floor:
-            result.append(_cylinder(region["name"].replace("contact", "tool_access"), "forbidden", [*region["center_mm"][:2], (floor - 1 + low[2]) / 2], settings["aio_tool_radius_mm"], low[2] - floor + 1, "Screw head and screwdriver corridor straight below the seat eye; the eye underside is the head seat, so flush and rim rules do not apply"))
+        seat = region["seat_mm"]
+        result.append(_cylinder(region["name"].replace("contact", "tool_access"), "forbidden", [*region["center_mm"][:2], (seat + top) / 2], settings["stack_post"]["tool_radius_mm"], top - seat, "Screwdriver corridor straight above the stack post through the AIO, grommet and battery zone; flush and rim rules do not apply", allow_preserve_subtraction=True))
     return result
+
+def stack_pattern(regions):
+    posts = [regions[f"aio_contact_{index}"] for index in range(4)]
+    bores = [regions[f"aio_screw_{index}"] for index in range(4)]
+    center = np.mean([bore["center_mm"] for bore in bores], axis=0)
+    radius = float(np.hypot(*np.subtract(bores[0]["center_mm"], center)[:2]))
+    if "seat_mm" not in posts[0]:
+        return {"name": "stack_25.5", "center_mm": center[:2].tolist(), "z_mm": float(region_bounds(posts[0])[0][2]) + 1.5, "radius_mm": radius, "count": 4, "hole_diameter_mm": [1.6, 4.0], "screw_diameter_mm": 2.0, "tool_direction": [0, 0, -1]}
+    diameter, top = 2 * bores[0]["radius_mm"], min(post["seat_mm"] for post in posts)
+    return {"name": "stack_posts", "center_mm": center[:2].tolist(), "z_mm": top - 1.0, "radius_mm": radius, "count": 4,
+            "hole_diameter_mm": [0.8 * diameter, 1.25 * diameter], "screw_diameter_mm": 0.9 * diameter, "tool_direction": [0, 0, 1], "post_top_mm": top, "post_diameter_mm": 2 * posts[0]["radius_mm"]}
 
 def _connection_cases(regions, model, force):
     if force <= 0:
@@ -329,7 +343,7 @@ def build_design_domain(parameters):
     regions.extend(deepcopy(settings["additional_regions"]))
     flush = _extend_flush_contacts(regions, settings["flush_overlap_mm"], IMPLICIT_CONFIG["preserve_inflation_mm"] + settings["prescribed_wall_margin_mm"])
     clearance = prescribed_clearance(regions, manufacturing["minimum_feature_mm"], settings["prescribed_wall_margin_mm"], IMPLICIT_CONFIG["preserve_inflation_mm"])
-    regions.extend(_tool_access(regions, settings, grid["origin_mm"][2]))
+    regions.extend(_tool_access(regions, settings, grid["origin_mm"][2] + grid["spacing_mm"][2] * grid["shape"][2] + 1))
     subtractions = _preserve_subtractions(regions)
     masks = rasterize_regions(grid, regions)
     _, allowed_components = label(masks["allowed"])
@@ -338,12 +352,12 @@ def build_design_domain(parameters):
     model = prepare_frame_case(parameters)
     tolerance = parameters["integration"]["selection_tolerance_mm"]
     fixture_radius = settings["aio_contact_radius_mm"]
-    eyes = [region_bounds(region) for region in regions if region["name"].startswith("aio_contact_")]
-    aio_fixtures = [{"kind": "box", "min_mm": [*((low[:2] + high[:2]) / 2 - fixture_radius).tolist(), float(low[2]) - tolerance], "max_mm": [*((low[:2] + high[:2]) / 2 + fixture_radius).tolist(), float(high[2]) + tolerance]} for low, high in eyes]
+    posts = [region_bounds(region) for region in regions if region["name"].startswith("aio_contact_")]
+    aio_fixtures = [{"kind": "box", "min_mm": [*((low[:2] + high[:2]) / 2 - fixture_radius).tolist(), float(low[2]) - tolerance], "max_mm": [*((low[:2] + high[:2]) / 2 + fixture_radius).tolist(), float(high[2]) + tolerance]} for low, high in posts]
     for case in model["load_cases"]:
         if case["name"] in ("arm_tip", "thrust_all") or case["name"].startswith("crash_"):
             case["fixed_regions"] = deepcopy(aio_fixtures)
-    model["fixture_model"] = "Arm-tip, thrust and crash cases: the four AIO seat eyes fixed over their height; other cases: four motor contact undersides fixed. Identical selectors must be used for v0 comparison."
+    model["fixture_model"] = "Arm-tip, thrust and crash cases: the four stack posts fixed over their height; other cases: four motor contact undersides fixed. Identical selectors must be used for v0 comparison."
     auxiliary_cases = _connection_cases(regions, model, settings["connection_proof_force_n"])
     weights = {case["name"]: 1.0 for case in model["load_cases"] if case["analysis"] == "static"}
     weights.update({case["name"]: len(weights) / (9 * len(auxiliary_cases)) for case in auxiliary_cases})

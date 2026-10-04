@@ -14,7 +14,7 @@ from deep_frame.config import (COMPONENT_DEFAULTS, COMPONENT_LIBRARY, DURABILITY
                                FRAME_REQUEST_KINDS, IMPLICIT_CONFIG, LAYOUT_DEFAULT, LAYOUT_OPTIMIZATION, LAYOUT_OVERRIDES, LAYOUT_REFERENCES, LAYOUT_RULES, LIBRARY_FIELDS, MATERIALS, MOUNTING_TYPES, RUN_GRIDS, RUN_SETTINGS, STAGES, STYLES, TOPOLOGY_CONFIG, component_spec,
                                configure, prop_spec)
 from deep_frame.frame import camera_mount_z, motor_positions, prop_plane_z
-from deep_frame.frame_evaluation import component_inertia, rigid_assembly
+from deep_frame.frame_evaluation import component_inertia, rigid_assembly, stack_pattern
 
 ROOT = Path(__file__).resolve().parents[1]
 MOTORS = ("front_left", "front_right", "rear_left", "rear_right")
@@ -340,18 +340,24 @@ class FrameLayout:
         f = {**FRAME_DEFAULTS, **self.frame}
         return {"request": self.request, "frame": self.frame, "motors_mm": self.motors(), "hoop": self.hoop() if self.style["hoops"] else None, "checks": self.checks,
                 "battery": {"mount": self.request["layout"]["battery_mount"], "support": self.support(), "deck_top_mm": f["deck_top_mm"], "position_mm": [0.0, f["battery_y_mm"], f["deck_top_mm"]]},
-                "stack": {"position_mm": [0.0, 0.0, f["base_thickness_mm"] + f["aio_standoff_mm"]]}, "camera": {"y_mm": f["camera_y_mm"], "bottom_clearance_mm": f["camera_bottom_clearance_mm"], "tilt_deg": self.components["camera"]["tilt_deg"]}, "agility": self.agility(),
+                "stack": {"position_mm": [0.0, 0.0, f["base_thickness_mm"] + f["aio_standoff_mm"]], "posts": {**self.post(), "standoff_mm": f["aio_standoff_mm"], "height_mm": max(f["aio_standoff_mm"], self.post()["bore_depth_mm"] + self.post()["bore_floor_mm"])}}, "camera": {"y_mm": f["camera_y_mm"], "bottom_clearance_mm": f["camera_bottom_clearance_mm"], "tilt_deg": self.components["camera"]["tilt_deg"]}, "agility": self.agility(),
                 "style": self.style, "durability": self.durability, "material": self.material, "parts": {role: part["source"] for role, part in self.parts.items()}, "notes": self.notes}
 
     def support(self):
         return self._override("battery", "support", TOPOLOGY_CONFIG["battery_support"])
+
+    def post(self):
+        post = TOPOLOGY_CONFIG["stack_post"]
+        fastening = self._override("stack", "fastening", post["fastening"])
+        bore = post["bores"][fastening]
+        return {"diameter_mm": post["diameter_mm"], "fastening": fastening, "bore_diameter_mm": bore["diameter_mm"], "bore_depth_mm": bore["depth_mm"], "bore_floor_mm": post["bore_floor_mm"]}
 
     def patch(self, crash_cases=()):
         material = {key: self.material[key] for key in ("density_g_cm3", "young_modulus_mpa", "poisson_ratio")}
         weights = {name: self.durability["crash_weight"] for name in crash_cases}
         patch = {"FRAME_DEFAULTS": self.frame, "COMPONENT_DEFAULTS": self.components, "FEA_CONFIG": {"material": material},
                  "TOPOLOGY_CONFIG": {"manufacturing": {"nozzle_width_mm": self.request["print"]["nozzle_mm"], "minimum_feature_mm": self.durability["minimum_width_mm"]},
-                                     "battery_support": self.support(), "camera_support": "free" if self.free_camera else "prescribed"},
+                                     "battery_support": self.support(), "camera_support": "free" if self.free_camera else "prescribed", "stack_post": {"fastening": self.post()["fastening"]}},
                  "INTEGRATION_CONFIG": {"crash_directions": list(self.style["crash_directions"])}}
         if weights:
             patch["TOPOLOGY_CONFIG"]["optimizer"] = {"case_weights": weights}
@@ -485,10 +491,7 @@ class FrameRun:
         motors = {name: list(placements["motor_" + name]["position_mm"]) for name in MOTORS}
         patterns = [{"name": f"motor_{name}", "center_mm": xyz[:2], "z_mm": xyz[2] - 1.0, "radius_mm": motor["mount_pitch_mm"] / 2, "count": 4, "hole_diameter_mm": [1.6, 4.0],
                      "screw_diameter_mm": motor["screw_diameter_mm"], "tool_direction": [0, 0, -1]} for name, xyz in motors.items()]
-        aio = np.asarray([regions[f"aio_screw_{index}"]["center_mm"] for index in range(4)])
-        center = aio.mean(axis=0)
-        patterns.append({"name": "stack", "center_mm": center[:2].tolist(), "z_mm": 1.5, "radius_mm": float(np.hypot(*(aio[0] - center)[:2])), "count": 4, "hole_diameter_mm": [1.6, 4.0],
-                         "screw_diameter_mm": self.layout.components["aio15"]["screw_diameter_mm"], "tool_direction": [0, 0, -1]})
+        patterns.append(stack_pattern(regions))
         components = [{"type": entry.get("prototype", name.split("_")[0]), "name": name, "center_mm": entry["center_of_mass_mm"]} for name, entry in placements.items() if entry["mass_g"] > 0]
         rails = [region["max_mm"][2] for name, region in regions.items() if name.startswith("battery_rail_")]
         deck = {**battery["attachment_region"], "min_mm": [*battery["attachment_region"]["min_mm"][:2], min(rails) - self.settings["deck_band_mm"]], "max_mm": [*battery["attachment_region"]["max_mm"][:2], max(rails) + 0.01]} if rails else battery["attachment_region"]
@@ -629,6 +632,14 @@ def _agility_row(agility, mesh, density):
     source = ("Layoutmodell (frame_run.LayoutModel): Rahmenanteil gemessen aus frame.stl, " if frame else "Layoutmodell: Rahmenanteil " + agility["setup"]["frame"].get("source", "aus der Konfiguration") + ", ") + "Komponenten als Quader/Scheiben, τ aus ΔT_max und festem Hebel, " + agility.get("source", "")
     return ("12 Dynamik", text, source)
 
+def _posts(post):
+    if not post:
+        return ""
+    kind = {"heat_set": "Heat-Set-Einsatz", "self_tapping": "selbstschneidend"}[post["fastening"]]
+    longer = f", für die Bohrung {_number(post['height_mm'] - post['standoff_mm'])} mm unter die Grundebene verlängert" if post["height_mm"] > post["standoff_mm"] + 1e-9 else ""
+    return (f" auf 4 Pfosten Ø {_number(post['diameter_mm'])} mm (Whoop-Prinzip, Oberkante = Tüllensitz, Höhe = Stack-Abstand {_number(post['standoff_mm'])} mm{longer}), M2 von oben, {kind} (Sackbohrung Ø {_number(post['bore_diameter_mm'])} × {_number(post['bore_depth_mm'])} mm), "
+            "Werkzeugfreiraum oben, keine Muttern, kein Zugang von unten, Anbindung durch den Optimierer")
+
 def datasheet(manifest_path):
     import trimesh
     run_dir = Path(manifest_path).parent
@@ -654,7 +665,7 @@ def datasheet(manifest_path):
         ("5 Offenheit", measured(f"Material in Draufsicht {100 * m['top_fraction']:.0f} % der Bounding-Box, {m['openings_100']} Öffnungen ≥ 100 mm² (größte {m['largest_opening_mm2']:.0f} mm²), {m['openings_20_100']} mit 20–100 mm²") if m else missing, "gemessen (Draufsicht-Projektion)"),
         ("6 Arme", f"{request['layout']['x_type']} mit Armwinkel {np.degrees(np.arctan(frame['lateral_longitudinal_ratio'])):.1f}° zur Längsachse, Motorpads Oberkante z = {frame['arm_height_mm']:.2f} mm (Vorgabe), Armform aus der Optimierung", "Layoutregeln; Form siehe Renders"),
         ("7 Kamera und Schutz", f"Kamera {request['components']['camera']} bei y = {layout['camera']['y_mm']:.1f} mm, Neigung {layout['camera']['tilt_deg']:g}°; Bügel " + (measured(f"vorgegeben, Material im Bügelkanal {m['hoop_volume_mm3']:.0f} mm³") if layout["hoop"] else "nicht vorgegeben"), "Layoutregeln + gemessen"),
-        ("8 Akku und Stack", f"Akku {request['components']['battery']} {request['layout']['battery_mount']}, Deckoberkante z = {layout['battery']['deck_top_mm']:.1f} mm, Akkuauflage {'frei (ohne Vorgabegeometrie)' if layout['battery'].get('support') == 'free' else 'Schienen'}, Stack {request['components']['aio']} zentriert bei z = {layout['stack']['position_mm'][2]:.1f} mm, Antennen {request['components']['antennas']}, XT30 und Balancer ohne vorgeschriebenen Sitz (Gummiband, frei platziert)", "Layoutregeln"),
+        ("8 Akku und Stack", f"Akku {request['components']['battery']} {request['layout']['battery_mount']}, Deckoberkante z = {layout['battery']['deck_top_mm']:.1f} mm, Akkuauflage {'frei (ohne Vorgabegeometrie)' if layout['battery'].get('support') == 'free' else 'Schienen'}, Stack {request['components']['aio']} zentriert bei z = {layout['stack']['position_mm'][2]:.1f} mm{_posts(layout['stack'].get('posts'))}, Antennen {request['components']['antennas']}, XT30 und Balancer ohne vorgeschriebenen Sitz (Gummiband, frei platziert)", "Layoutregeln"),
         ("9 Masse", measured(f"{_number(mass)} g = {m['volume_mm3'] / 1000:.2f} cm³ × {material['density_g_cm3']} g/cm³ ({request['material']}); Komponenten {layout['checks']['component_mass_g']:.1f} g") if m else missing, "gemessen (STL)"),
         ("10 Druckbarkeit", measured(f"{'wasserdicht' if m['watertight'] else 'NICHT wasserdicht'}, {m['bodies']} Körper, Überhang > 45°: {m['overhang_mm2']:.0f} mm² = {100 * m['overhang_fraction']:.0f} % der Oberfläche; Wandregel: {({True: 'bestanden', False: 'nicht bestanden', None: 'nicht geprüft'})[manifest.get('wall_rule_passed')]}; Düse {request['print']['nozzle_mm']} mm, Schicht {request['print']['layer_mm']} mm") if m else missing, "gemessen (STL, Normalen) + Wandregel (int)"),
     ]
