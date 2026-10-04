@@ -312,7 +312,7 @@ NEURAL_AL_SETTINGS = {
     "max_runtime_s": None,
 }
 AL_RULE = ("L = m/m10 + w mean(max(0, |z| - z_max)^2) + sum_i [mu_i/2 max(0, g_i + lambda_i/mu_i)^2 - lambda_i^2/(2 mu_i)], g_i <= 0 dimensionless relative to its limit; every multiplier_interval iterations, between Adam steps: "
-           "lambda_i <- max(0, lambda_i + mu_i g_i); V_i = |max(g_i, -lambda_i/mu_i)|; mu_i <- min(penalty_growth mu_i, penalty_max) if V_i > penalty_progress x V_i at the previous update, only on the final beta level (continuation jumps would ratchet mu); Adam rate = learning_rate x rate_decay^level")
+           "lambda_i <- max(0, lambda_i + mu_i g_i); V_i = |max(g_i, -lambda_i/mu_i)|; mu_i <- min(penalty_growth mu_i, penalty_max) if V_i > penalty_progress x V_i at the previous update on the same beta level and grid (the first update after a continuation jump or grid change only records V_i, so jumps cannot ratchet mu); Adam rate = learning_rate x rate_decay^level")
 
 def neural_al_settings(settings):
     result = deepcopy(NEURAL_AL_SETTINGS)
@@ -409,13 +409,13 @@ class NeuralAugmentedLagrangian:
                     if progress_callback is not None:
                         progress_callback(entry)
                     if steps % settings["al"]["multiplier_interval"] == 0:
-                        self.multipliers.update(result["constraints"], problem.final_level)
+                        self.multipliers.update(result["constraints"])
                     if final_grid and termination(result["mass_g"], result["max_violation"], problem.final_level):
                         stop_reason = "termination"
                     elif not problem.final_level and steps >= settings["level"]["minimum_iterations"] and (self.settled(steps, result["max_violation"]) or steps >= settings["level"]["maximum_iterations"]):
                         self.reports.append({"iteration": entry["iteration"], "grid": grid, "reason": "settled" if self.settled(steps, result["max_violation"]) else "level_iterations", **_compact(problem.report(x))})
                         problem.advance()
-                        level, steps = problem.level, 0
+                        level, steps, self.multipliers.progress = problem.level, 0, None
                         termination = Termination(problem.problem["termination"]) if problem.final_level else termination
                         self.optimizer.rate = settings["learning_rate"] * settings["rate_decay"] ** level
                         if not final_grid and level >= settings["coarse_levels"]:
