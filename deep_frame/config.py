@@ -1032,7 +1032,7 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "maximum_aspect": 2.0,
     "joint_blend_factor": 0.5,
     "anchor_reach_mm": 3.0,
-    "volume_match": True,
+    "volume_match": False,
     "shell_aspect": 2.2,
     "shell_sigma_mm": 1.0,
     "transition_radius_mm": 1.5,
@@ -1058,6 +1058,7 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "minimum_scale": 0.7,
     "maximum_scale": 1.15,
     "calibration_tolerance": 0.03,
+    "calibrate_volume": False,
     "load_path_voxel_mm": 0.3,
     "load_path_core_mm": [0.5, 0.9],
     "load_path_mounts": ["motor_contact", "aio_contact", "battery_rail", "camera_mount"],
@@ -1069,6 +1070,7 @@ DESIGN_RECONSTRUCTION_KINDS = {
     "output": "path",
     "fine_shape": ["int", "int", "int"],
     "volume_match": "flag",
+    "calibrate_volume": "flag",
     "root_preserves": "text",
     "load_path_core_mm": ["float"],
     "load_path_mounts": ["text"],
@@ -1102,7 +1104,7 @@ LAYOUT_RULES = {
 
 LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float"},
                     "battery": {"deck_top_mm": "float"}, "stack": {"standoff_mm": "float"},
-                    "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
+                    "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp", "neural_al"),
                                   "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float"}}
 
 STYLES = {
@@ -1132,13 +1134,14 @@ RUN_GRIDS = {
     "fine": {"shape": [102, 96, 24], "fine_shape": [204, 192, 48], "neural": {}, "reconstruction": {}, "evaluation": {"fea_settings": {"fea_remesh_targets_mm": [2.0, 1.5, 1.2, 1.0]}}, "compute": {}},
 }
 
+WORKTREE = Path(__file__).resolve().parents[1].as_posix()
 STAGES = {
-    "optimization": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu-venv/Scripts/python.exe"},
-    "reconstruction": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "geometry": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "evaluation": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "datasheet": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "renders": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/neural_study.py", "argv": ["render_views"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "optimization": {"worktree": WORKTREE, "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu-venv/Scripts/python.exe"},
+    "reconstruction": {"worktree": WORKTREE, "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "geometry": {"worktree": WORKTREE, "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "evaluation": {"worktree": WORKTREE, "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "datasheet": {"worktree": WORKTREE, "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "renders": {"worktree": WORKTREE, "tool": "tools/neural_study.py", "argv": ["render_views"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
 }
 RUN_SETTINGS = {"root": "exports/runs", "compute": "C:/clones/Deep_Frame-int/tools/compute.py", "domain_stage": "optimization", "domain_compute": "cpu",
                 "views": {"iso": [[0.55, -0.85, -0.62], [0, 0, 1]], "top": [[0, 0, -1], [0, 1, 0]], "side": [[-1, 0, 0], [0, 0, 1]], "front": [[0, -1, 0], [0, 0, 1]]},

@@ -3,7 +3,7 @@ from time import perf_counter
 
 import numpy as np
 
-from deep_frame.topology_optimization import HexElasticity, ModalConstraint, StiffnessConstraint, _case_scaling, _history_entry, validate_masks, volume_weights
+from deep_frame.topology_optimization import AugmentedLagrangian, HexElasticity, ModalConstraint, StiffnessConstraint, _case_scaling, _history_entry, validate_masks, volume_weights
 
 NEURAL_SETTINGS = {
     "volume_fraction": 0.12,
@@ -289,3 +289,156 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
             if cleanup and outcome is not None:
                 outcome["diagnostics"].extend(cleanup)
                 outcome["status"] = "failed"
+
+NEURAL_AL_SETTINGS = {
+    "learning_rate": 0.01,
+    "frequencies": 96,
+    "max_frequency_per_mm": 0.125,
+    "hidden": [48, 48],
+    "seed": 0,
+    "mirror_axis": None,
+    "volume_fraction": 0.06,
+    "logit_bound": 4.0,
+    "logit_weight": 1.0,
+    "rate_decay": 0.7,
+    "al": {"penalty": 1.0, "multiplier_interval": 5, "penalty_growth": 2.0, "penalty_progress": 0.5, "penalty_max": 10.0},
+    "fit": {"iterations": 800, "learning_rate": 0.01},
+    "level": {"window": 5, "mass_change": 1e-2, "violation": 0.02, "active": 0.05, "minimum_iterations": 15, "maximum_iterations": 80},
+    "coarse_levels": 0,
+    "infeasible_window": 40,
+    "infeasible_progress": 1e-3,
+    "infeasible_violation": 0.01,
+    "max_iterations": 1500,
+    "max_runtime_s": None,
+}
+AL_RULE = ("L = m/m10 + w mean(max(0, |z| - z_max)^2) + sum_i [mu_i/2 max(0, g_i + lambda_i/mu_i)^2 - lambda_i^2/(2 mu_i)], g_i <= 0 dimensionless relative to its limit; every multiplier_interval iterations, between Adam steps: "
+           "lambda_i <- max(0, lambda_i + mu_i g_i); V_i = |max(g_i, -lambda_i/mu_i)|; mu_i <- min(penalty_growth mu_i, penalty_max) if V_i > penalty_progress x V_i at the previous update, only on the final beta level (continuation jumps would ratchet mu); Adam rate = learning_rate x rate_decay^level")
+
+def neural_al_settings(settings):
+    result = deepcopy(NEURAL_AL_SETTINGS)
+    unknown = set(settings) - set(result)
+    if unknown:
+        raise ValueError("Unknown neural AL settings: " + ", ".join(sorted(unknown)))
+    for key, value in deepcopy(settings).items():
+        result[key] = {**result[key], **value} if isinstance(result[key], dict) else value
+    return result
+
+class NeuralDesign:
+    def __init__(self, settings):
+        self.field = FourierField(settings)
+        self.bound, self.weight = settings["logit_bound"], settings["logit_weight"]
+    def attach(self, domain):
+        self.allowed, self.preserve, _ = validate_masks(domain)
+        self.free = self.allowed & ~self.preserve
+        self.features = self.field.features(cell_centers(domain["grid"])[self.free])
+        return self
+    def design(self):
+        logits, activations = self.field.forward(self.features)
+        density = _sigmoid(logits)
+        design = self.preserve.astype(float)
+        design[self.free] = density
+        excess = np.sign(logits) * np.maximum(np.abs(logits) - self.bound, 0.0)
+        return design, (activations, density * (1 - density), excess, self.weight * float(np.mean(excess ** 2)))
+    def gradient(self, cache, design_gradient):
+        activations, slope, excess, _ = cache
+        return self.field.backward(activations, slope * np.asarray(design_gradient)[self.free] + 2 * self.weight * excess / excess.size)
+    def fit(self, target, settings):
+        edge = _sigmoid(-self.bound)
+        target = np.clip(np.asarray(target, dtype=float).ravel()[self.free], edge, 1 - edge)
+        optimizer = Adam(self.field.parameters, settings["learning_rate"])
+        for _ in range(settings["iterations"]):
+            logits, activations = self.field.forward(self.features)
+            optimizer.step(self.field.parameters, self.field.backward(activations, (_sigmoid(logits) - target) / target.size))
+        density = self.design()[0][self.free]
+        return {"iterations": settings["iterations"], "mean_abs_error": float(np.mean(np.abs(density - target))), "volume_target": float(target.mean()), "volume_fit": float(density.mean())}
+
+def _compact(report):
+    return {key: report[key] for key in ("mass_g", "beta", "max_violation", "rows", "mass_by_field_g") if key in report}
+
+class NeuralAugmentedLagrangian:
+    def __init__(self, settings):
+        self.settings = neural_al_settings(settings)
+        self.design = NeuralDesign(self.settings)
+        self.optimizer = Adam(self.design.field.parameters, self.settings["learning_rate"])
+        self.history, self.reports, self.multipliers, self.fit = [], [], None, None
+    def step(self, problem, grid):
+        x, cache = self.design.design()
+        tick = perf_counter()
+        result = problem.evaluate(x)
+        if self.multipliers is None:
+            self.multipliers = AugmentedLagrangian(self.settings["al"], len(result["constraints"]))
+        value, gradient, _ = self.multipliers.terms(result["constraints"], result["constraint_gradients"])
+        self.optimizer.step(self.design.field.parameters, self.design.gradient(cache, result["objective_gradient"] + gradient))
+        entry = {"iteration": len(self.history) + 1, "grid": grid, "level": problem.level, "beta": problem.beta, "mass_g": result["mass_g"], "objective": result["objective"], "lagrangian": result["objective"] + value + cache[3], "logit_bound_term": cache[3],
+                 "max_violation": result["max_violation"], "constraints": dict(zip(result["names"], result["constraints"].tolist())), "multipliers": self.multipliers.multiplier.tolist(),
+                 "penalties": self.multipliers.penalty.tolist(), "evaluate_s": perf_counter() - tick, "elapsed_s": perf_counter() - self.started}
+        self.history.append(entry)
+        self.last = x
+        return result, entry, x
+    def settled(self, steps, violation):
+        level = self.settings["level"]
+        recent = [row["mass_g"] for row in self.history[-steps:][-level["window"]:]]
+        return len(recent) == level["window"] and (max(recent) - min(recent)) / min(recent) < level["mass_change"] and -level["active"] <= violation <= level["violation"]
+    def infeasible(self, problem, result, steps):
+        window = self.settings["infeasible_window"]
+        if not problem.final_level or steps < window:
+            return False
+        recent = [row["max_violation"] for row in self.history[-window:]]
+        violated = result["constraints"] > problem.problem["termination"]["violation"]
+        return bool(min(recent) > self.settings["infeasible_violation"] and np.all(self.multipliers.penalty[violated] >= self.settings["al"]["penalty_max"]) and recent[0] - recent[-1] < self.settings["infeasible_progress"] * window)
+    def run(self, stages, start=None, progress_callback=None):
+        from deep_frame.topology_problem import Termination
+        self.started = perf_counter()
+        settings, problem, level, stop_reason = self.settings, None, 0, "guard"
+        try:
+            for index, (domain, factory) in enumerate(stages):
+                final_grid, grid = index == len(stages) - 1, list(domain["grid"]["shape"])
+                if problem is not None:
+                    problem.close()
+                problem = factory()
+                while problem.level < level:
+                    problem.advance()
+                self.optimizer.rate = settings["learning_rate"] * settings["rate_decay"] ** problem.level
+                self.design.attach(domain)
+                if start is not None and self.fit is None:
+                    self.fit = self.design.fit(start, settings["fit"])
+                termination, steps, stop_reason = Termination(problem.problem["termination"]), 0, None
+                while stop_reason is None:
+                    result, entry, x = self.step(problem, grid)
+                    steps += 1
+                    if progress_callback is not None:
+                        progress_callback(entry)
+                    if steps % settings["al"]["multiplier_interval"] == 0:
+                        self.multipliers.update(result["constraints"], problem.final_level)
+                    if final_grid and termination(result["mass_g"], result["max_violation"], problem.final_level):
+                        stop_reason = "termination"
+                    elif not problem.final_level and steps >= settings["level"]["minimum_iterations"] and (self.settled(steps, result["max_violation"]) or steps >= settings["level"]["maximum_iterations"]):
+                        self.reports.append({"iteration": entry["iteration"], "grid": grid, "reason": "settled" if self.settled(steps, result["max_violation"]) else "level_iterations", **_compact(problem.report(x))})
+                        problem.advance()
+                        level, steps = problem.level, 0
+                        termination = Termination(problem.problem["termination"]) if problem.final_level else termination
+                        self.optimizer.rate = settings["learning_rate"] * settings["rate_decay"] ** level
+                        if not final_grid and level >= settings["coarse_levels"]:
+                            stop_reason = "next_grid"
+                    elif final_grid and self.infeasible(problem, result, steps):
+                        stop_reason = "infeasible_plateau"
+                    elif len(self.history) >= settings["max_iterations"] or (settings["max_runtime_s"] and perf_counter() - self.started >= settings["max_runtime_s"]):
+                        stop_reason = "guard"
+                if stop_reason != "next_grid":
+                    break
+            x = self.last
+            final = problem.report(x)
+            fields, _ = problem.map.fields(x)
+            shape = tuple(domain["grid"]["shape"])
+            grids = {str(row["grid"]) for row in self.history}
+            summary = {"method": "Neural reparameterization (Fourier-feature MLP, sigmoid design x) on the shared min-mass formulation TopologyProblem: robust eroded/intermediate/dilated projection of the network output, every constraint an augmented-Lagrangian term, Adam",
+                       "al_rule": AL_RULE, "settings": settings, "stop_reason": stop_reason, "converged": stop_reason == "termination", "iterations": len(self.history), "elapsed_s": perf_counter() - self.started,
+                       "seconds_per_iteration": {grid: float(np.mean([row["evaluate_s"] for row in self.history if str(row["grid"]) == grid])) for grid in grids},
+                       "iterations_per_grid": {grid: sum(str(row["grid"]) == grid for row in self.history) for grid in grids},
+                       "fit": self.fit, "final": _compact(final), "level_reports": self.reports, "multipliers": self.multipliers.multiplier.tolist(), "penalties": self.multipliers.penalty.tolist(),
+                       "parameter_count": int(sum(value.size for value in self.design.field.parameters))}
+            return {"status": "ok", "design": x.reshape(shape), "density": fields["intermediate"][0].reshape(shape), "eroded": fields["eroded"][0].reshape(shape), "dilated": fields["dilated"][0].reshape(shape),
+                    "summary": summary, "history": self.history}
+        finally:
+            if problem is not None:
+                problem.close()

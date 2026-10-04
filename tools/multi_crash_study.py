@@ -285,11 +285,11 @@ def compare(config):
     print(json.dumps({label: {key: row[key] for key in ("mass_g", "bodies", "per_iteration_s", "width_height_ratio", "top_openness_envelope")} for label, row in rows.items()}), flush=True)
     return 0
 
-def stitch(inputs, labels, output):
+def stitch(inputs, labels, output, views=("iso", "top", "side")):
     output.mkdir(parents=True, exist_ok=True)
     font = ImageFont.load_default(size=44)
     tiles = []
-    for view in ("iso", "top", "side"):
+    for view in views:
         images = [Image.open(directory / f"{view}.png").convert("RGB") for directory in inputs]
         row = Image.new("RGB", (sum(image.width for image in images), images[0].height), "white")
         for index, (image, label) in enumerate(zip(images, labels)):

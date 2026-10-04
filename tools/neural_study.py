@@ -28,7 +28,7 @@ STUDY = {
     "inertia_relief": {"cases": ["arm_tip", "thrust_all", "crash_"], "attachments": {"battery": "battery_rail_", "aio15": "aio_contact_", "camera": "camera_mount_", "motor_": "_motor_contact", "prop_": "_motor_contact"}, "frame_mass": "target"},
     "verify_shape": [68, 64, 24],
     "chord": {"half_width_mm": 20.0, "z_max_mm": 10.0, "y_span_mm": [-25.0, 25.0]},
-    "compare": {"labels": ["neural_v05", "mcrash_v05", "r2_v05", "r3_v05", "ManaFly"], "inputs": ["C:/clones/Deep_Frame-neural/exports/fast/neural_v05", "C:/clones/Deep_Frame-mcrash/exports/mcrash/neural_v05", "C:/clones/Deep_Frame-nr2/exports/r2/neural_r2_v05", "exports/r3/neural_r3_v05", "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer"], "output": "exports/r3/compare"},
+    "compare": {"labels": ["neural_v05", "mcrash_v05", "r2_v05", "r3_v05", "ManaFly"], "inputs": ["C:/clones/Deep_Frame-neural/exports/fast/neural_v05", "C:/clones/Deep_Frame-mcrash/exports/mcrash/neural_v05", "C:/clones/Deep_Frame-nr2/exports/r2/neural_r2_v05", "exports/r3/neural_r3_v05", "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer"], "output": "exports/r3/compare", "views": ["iso", "top", "side"]},
     "shape": [102, 96, 24],
     "fine_shape": [204, 192, 48],
     "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3, "support_half_mm": 5.0, "bore_margin_mm": 0.5},
@@ -36,13 +36,15 @@ STUDY = {
              "load_y_min_mm": 44.0, "load_z_mm": [4.0, 22.0], "case_weight": 1.0},
     "neural": {"max_frequency_per_mm": 0.2, "max_iterations": 110, "minimum_iterations": 40, "sharpness_iterations": 80, "sharpness_final": 8.0, "max_width_penalty": 0.0, "max_runtime_s": 1500.0},
     "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads", "min_body_mm3": 1.0, "sample_sharpness": 32.0, "flatten": ["battery_rail_"]},
-    "prop_discs": {"mode": None, "weight": 3.0, "length_mm": 10.0, "corridor_half_width_mm": 4.0, "hub_margin_mm": 2.0},
+    "prop_discs": {"mode": None, "weight": 3.0, "length_mm": 10.0, "radial_power": 2.0, "corridor_half_width_mm": 4.0, "hub_margin_mm": 2.0},
     "modal": {"f1_min_hz": None, "case": "modes", "modes": 4, "tracked": 2, "initial_iterations": 30, "warm_iterations": 2, "penalty": 10.0, "ks": 40.0, "mass_cutoff": 0.1, "multiplier_interval": 5, "start_iteration": 1},
     "stiffness": {"min_n_per_mm": None, "case": "stiffness_arm_tip", "source_case": "arm_tip", "calibration": 1.0, "penalty": 10.0, "multiplier_interval": 5, "feasibility_tolerance": 0.02},
     "method": "neural",
     "calibration": {"inputs": [], "output": "exports/r4/modal_calibration.json", "linear_solver": "cpu_superlu"},
     "simp": {"filter_radius_mm": 4.0, "projection": "single", "beta_schedule": [1.0, 2.0, 4.0, 8.0], "beta_interval": 35, "max_iterations": 140, "minimum_iterations": 20, "move_limit": 0.1, "max_runtime_s": 1500.0},
     "variants": [{"name": "neural_r3_v05", "neural": {"volume_fraction": 0.05}}],
+    "al": {"settings": {}, "cantilever": {"reference": "docs/validation/formulation_cantilever.json", "output": "docs/validation/neural_al_cantilever.json", "settings": {"volume_fraction": 0.5, "max_frequency_per_mm": 0.15}},
+           "frame": {"start": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1/density_half.npz", "linear_solver": "cuda_cudss", "settings": {"coarse_levels": 3, "learning_rate": 0.003, "rate_decay": 0.85, "max_iterations": 1500, "max_runtime_s": 16200.0}}},
 }
 VARIANT_KEYS = ("prop_discs", "modal", "stiffness", "method", "simp")
 
@@ -100,7 +102,7 @@ class R2Domain:
     def prop_discs(self, parameters):
         motors = np.array(list(motor_positions(parameters).values()))
         return {**self.discs, "motors_mm": motors.tolist(), "radius_mm": parameters["components"]["prop"]["diameter_mm"] / 2, "plane_mm": prop_plane_z(parameters),
-                "pad_radius_mm": parameters["components"]["motor"]["diameter_mm"] / 2 + self.discs["hub_margin_mm"]}
+                "hub_radius_mm": parameters["components"]["prop"].get("hub_diameter_mm", parameters["components"]["motor"]["diameter_mm"]) / 2, "pad_radius_mm": parameters["components"]["motor"]["diameter_mm"] / 2 + self.discs["hub_margin_mm"]}
     def keep_out(self, centers, discs):
         blocked = np.zeros(centers.shape[:-1], dtype=bool)
         for x, y in discs["motors_mm"]:
@@ -407,6 +409,47 @@ def finish(out, density, fine_full, cfg, viewer):
             "member_width": member_widths(solid, fine_full["grid"]["spacing_mm"], fine_full["preserve"] | fine_full["forbidden"]),
             "width_height_ratio": sections["width_height_ratio"], "chord": lower_chord(density, fine_full["grid"], cfg["chord"], cfg["render"]["sigma_cells"], cfg["render"]["threshold"])}
 
+def run_al(cfg, variant, out, builder, render_cfg):
+    from deep_frame.topology_neural import NeuralAugmentedLagrangian
+    from deep_frame.topology_problem import TopologyProblem, format_report, prolongate
+    from tools.formulation_study import FORMULATION, frame_setup
+    started = perf_counter()
+    spec = cfg["al"]["frame"]
+    form = {**FORMULATION, "output": str(Path(__file__).resolve().parents[1] / FORMULATION["output"])}
+    fine, fine_problem = frame_setup(form, cfg["shape"])
+    stages = [(fine, lambda: TopologyProblem(fine, fine_problem, linear_solver=spec["linear_solver"]))]
+    settings = {**cfg["al"]["settings"], **spec["settings"]}
+    if settings.get("coarse_levels"):
+        coarse, coarse_problem = frame_setup(form, form["coarse_shape"])
+        stages.insert(0, (coarse, lambda: TopologyProblem(coarse, coarse_problem, linear_solver=spec["linear_solver"])))
+    start = np.load(spec["start"])["density"].ravel() if spec["start"] else None
+    if start is not None and start.size != np.prod(stages[0][0]["grid"]["shape"]):
+        source = fine["grid"] if start.size == np.prod(fine["grid"]["shape"]) else frame_setup(form, form["shape"])[0]["grid"]
+        start = prolongate(start, source, stages[0][0])
+    optimizer = NeuralAugmentedLagrangian(settings)
+    with (out / "iterations.jsonl").open("w") as log:
+        result = optimizer.run(stages, start=start, progress_callback=lambda entry: (log.write(json.dumps(entry) + "\n"), log.flush()))
+    optimized = perf_counter() - started
+    summary = result["summary"]
+    np.savez_compressed(out / "density_half.npz", density=result["density"])
+    np.savez_compressed(out / "fields_half.npz", design=result["design"], eroded=result["eroded"], dilated=result["dilated"])
+    np.savez_compressed(out / "network.npz", *optimizer.design.field.parameters, wavenumbers=optimizer.design.field.wavenumbers)
+    fine_full, _ = builder.build(cfg["fine_shape"], settings.get("volume_fraction", 0.06))
+    density = upsample(result["density"], fine_full)
+    np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
+    viewer = Path(cfg["viewer_root"]) / (cfg["viewer_prefix"] + variant["name"]) if cfg["viewer_root"] else None
+    rows = summary["final"]["rows"]
+    info = {"variant": variant["name"], "method": "neural field + augmented Lagrangian on the shared formulation (feature/neural-al)", "formulation": form["output"], "start": spec["start"],
+            "iterations": summary["iterations"], "stop_reason": summary["stop_reason"], "converged": summary["converged"], "optimize_runtime_s": optimized, "seconds_per_iteration": summary["seconds_per_iteration"],
+            "iterations_per_grid": summary["iterations_per_grid"], "mass_g_optimizer": summary["final"]["mass_g"], "mass_by_field_g": summary["final"].get("mass_by_field_g"), "max_violation": summary["final"]["max_violation"],
+            "constraints": rows, "constraints_table": format_report(rows), "al_rule": summary["al_rule"], "multipliers": summary["multipliers"], "penalties": summary["penalties"], "fit": summary["fit"],
+            "level_reports": summary["level_reports"], "settings": summary["settings"], "output_field": "intermediate projected field at the final beta, mirrored and trilinearly upsampled to the fine grid",
+            **finish(out, density, fine_full, cfg, viewer), "total_runtime_s": perf_counter() - started, "grid_opt_half": fine["grid"], "grid_render_full": fine_full["grid"], "render": render_cfg,
+            "load_cases": [case["name"] for case in fine["load_cases"]], "loads": fine["metadata"]["formulation"]["loads"]}
+    (out / "info.json").write_text(json.dumps(info, indent=1, default=str))
+    print(info["constraints_table"], flush=True)
+    print(json.dumps({k: info[k] for k in ("variant", "iterations", "stop_reason", "optimize_runtime_s", "mass_g_optimizer", "mass_g", "bodies", "connectivity")}, default=str), flush=True)
+
 def run_variant(cfg, variant):
     neural, render_cfg = {**cfg["neural"], **variant.get("neural", {})}, {**cfg["render"], **variant.get("render", {})}
     cfg = {**_merge(cfg, {key: variant[key] for key in VARIANT_KEYS if key in variant}), "render": render_cfg}
@@ -414,6 +457,8 @@ def run_variant(cfg, variant):
     out.mkdir(parents=True, exist_ok=True)
     started = perf_counter()
     builder = R2Domain(cfg)
+    if cfg["method"] == "neural_al":
+        return run_al(cfg, variant, out, builder, render_cfg)
     _, half = builder.build(cfg["shape"], neural["volume_fraction"])
     discs = half["metadata"]["round4"]["prop_discs"]
     neural["volume_fraction"] *= half["metadata"]["round4"]["unblocked_cells"] / half["metadata"]["round4"]["allowed_cells"]
@@ -486,6 +531,48 @@ def calibrate(cfg):
     Path(cfg["calibration"]["output"]).write_text(json.dumps(rows, indent=1))
     print(json.dumps({path: {key: row.get(key) for key in ("f1_hz", "stiffness_n_per_mm", "compliance_stiffness_n_per_mm")} for path, row in rows.items()}), flush=True)
 
+def directional_check(problem, design, multipliers, seed=7, step=1e-6):
+    def lagrangian():
+        x, cache = design.design()
+        result = problem.evaluate(x)
+        value, gradient, _ = multipliers.terms(result["constraints"], result["constraint_gradients"])
+        return result["objective"] + value + cache[3], design.gradient(cache, result["objective_gradient"] + gradient)
+    _, gradients = lagrangian()
+    random = np.random.default_rng(seed)
+    direction = [random.standard_normal(value.shape) for value in design.field.parameters]
+    def shifted(scale):
+        for value, delta in zip(design.field.parameters, direction):
+            value += scale * step * delta
+        result = lagrangian()[0]
+        for value, delta in zip(design.field.parameters, direction):
+            value -= scale * step * delta
+        return result
+    analytic, numeric = float(sum(np.sum(g * d) for g, d in zip(gradients, direction))), (shifted(1.0) - shifted(-1.0)) / (2 * step)
+    return {"analytic": analytic, "finite_difference": numeric, "relative_error": abs(analytic - numeric) / max(abs(numeric), 1e-30), "step": step, "variable": "all network parameters, random direction"}
+
+def al_cantilever(cfg):
+    from deep_frame.topology_neural import NeuralAugmentedLagrangian
+    from deep_frame.topology_problem import TopologyProblem, cantilever_domain, cantilever_problem
+    spec = cfg["al"]["cantilever"]
+    reference = json.loads(Path(spec["reference"]).read_text(encoding="utf-8"))
+    domain, problem = cantilever_domain(), cantilever_problem(reference["stiffness_n_per_mm"])
+    optimizer = NeuralAugmentedLagrangian({**cfg["al"]["settings"], **spec["settings"]})
+    result = optimizer.run([(domain, lambda: TopologyProblem(domain, problem))])
+    check = TopologyProblem(domain, problem)
+    while check.advance():
+        pass
+    optimizer.design.attach(domain)
+    fd = directional_check(check, optimizer.design, optimizer.multipliers)
+    check.close()
+    rows = {row["name"]: row for row in result["summary"]["final"]["rows"]}
+    summary = {key: result["summary"][key] for key in ("stop_reason", "converged", "iterations", "elapsed_s", "seconds_per_iteration", "al_rule", "multipliers", "penalties", "level_reports")}
+    out = {"reference": reference, "stiffness_limit_n_per_mm": reference["stiffness_n_per_mm"], "stiffness_n_per_mm": rows["tip_stiffness"]["value"], "stiffness_status": rows["tip_stiffness"]["status"], "stiffness_margin": rows["tip_stiffness"]["margin"],
+           "volume_fraction_intermediate": rows["volume"]["value"], "volume_ratio_to_reference": rows["volume"]["value"] / reference["volume_fraction_intermediate"], "mass_g": result["summary"]["final"]["mass_g"],
+           "mass_by_field_g": result["summary"]["final"].get("mass_by_field_g"), "rows": result["summary"]["final"]["rows"], "finite_difference": fd, **summary,
+           "history": [{key: entry[key] for key in ("iteration", "beta", "mass_g", "max_violation")} for entry in result["history"]]}
+    Path(spec["output"]).write_text(json.dumps(out, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({key: out[key] for key in ("stiffness_n_per_mm", "stiffness_status", "volume_fraction_intermediate", "volume_ratio_to_reference", "stop_reason", "iterations", "finite_difference")}, default=float), flush=True)
+
 def run_main(overrides):
     cfg = configure(overrides)
     for variant in cfg["variants"]:
@@ -497,7 +584,7 @@ def render_main(overrides):
         rerender(cfg, variant)
 
 def main(argv=None):
-    return command_line({"run": run_main, "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "calibrate": lambda overrides: calibrate(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
+    return command_line({"run": run_main, "al_cantilever": lambda overrides: al_cantilever(configure(overrides)), "render": render_main, "time": lambda overrides: time_solve(configure(overrides)), "calibrate": lambda overrides: calibrate(configure(overrides)), "verify": lambda overrides: verify(configure(overrides)),
                          "compare": lambda overrides: stitch(**{key: [Path(path) for path in value] if key == "inputs" else Path(value) if key == "output" else value for key, value in configure(overrides)["compare"].items()})}, argv)
 
 if __name__ == "__main__":
