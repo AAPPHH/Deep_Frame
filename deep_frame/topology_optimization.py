@@ -356,7 +356,7 @@ class HexElasticity:
             if abs(float(domain["grid"]["origin_mm"][self.axis]) - plane) > 1e-9:
                 raise ValueError("Symmetric half domains must start at the symmetry plane")
             self.plane_nodes = np.intersect1d(np.flatnonzero(np.abs(self.points[:, self.axis] - plane) < 1e-7), self.active_nodes)
-        names, self.support = set(), None
+        names, self.support, self.relief_operators = set(), None, {}
         for case in domain["load_cases"]:
             if case["name"] in names:
                 raise ValueError("Topology load-case names must be unique")
@@ -491,6 +491,7 @@ class HexElasticity:
         force += inertial[:count].ravel()
         mirrored += (inertial[count:2 * count] * flip).ravel()
         loads = [{"name": body["name"], "position_mm": list(body["position_mm"]), "force_n": (inertial[2 * count + index] + body["force_n"]).tolist(), "moment_n_mm": (-np.asarray(body["inertia_g_mm2"]) @ angular).tolist()} for index, body in enumerate(bodies)]
+        self.relief_operators[case_name] = {"direct": direct, "mirror": mirror, "flip": flip, "total": float(total), "center": center, "inertia": inertia, "bodies": bodies}
         return {"mass_g": float(total), "center_of_mass_mm": center.tolist(), "acceleration_n_per_g": linear.tolist(), "angular_acceleration": angular.tolist(), "support_nodes_mm": self.points[support_nodes].tolist(), "bodies": loads}
     def support_reactions(self, physical_density, case_name, penalization=3.0, min_stiffness_ratio=1e-6):
         case = next(case for case in self.cases if case["name"] == case_name)

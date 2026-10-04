@@ -17,7 +17,7 @@ import numpy as np
 if __name__ != "__main__":
     from build123d import export_step
     from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS, _json_copy, _json_digest
-    from deep_frame.frame import assembly_placements, build_components, build_geometry, motor_positions
+    from deep_frame.frame import assembly_placements, build_components, build_geometry, camera_mount_z, motor_positions
     MESH_ATTEMPTS = IMPLICIT_KINDS["tet_attempts"][0]
     MESH_KEYS = ("tet_attempts", "mesh_minimum_sicn", "mesh_boundary_deviation_mm", "surface_deviation_mm", "relative_volume_change", *(key for key in IMPLICIT_CONFIG if key.startswith("fea_")))
     MESH_NUMBERS = tuple(key for key in MESH_KEYS[2:] if key != "fea_remesh_targets_mm")
@@ -724,6 +724,10 @@ def prepare_frame_case(parameters, fea_config=None, integration_config=None):
         (-camera_half_width - tolerance, frame["camera_y_mm"] - camera_half_length, frame["cage_height_mm"] * (1 - integration["camera_upper_height_fraction"])),
         (camera_half_width + tolerance, frame["camera_y_mm"] + camera_half_length, frame["cage_height_mm"] + tolerance),
     )
+    if TOPOLOGY_CONFIG.get("camera_support", "prescribed") == "free":
+        from deep_frame.config import CAMERA_SUPPORT
+        radius, mount = CAMERA_SUPPORT["patch_radius_mm"], camera_mount_z(parameters)
+        camera_region = _box((-camera_half_width - tolerance, frame["camera_y_mm"] - radius, mount - radius), (camera_half_width + tolerance, frame["camera_y_mm"] + radius, mount + radius))
     battery = build_components(parameters, assembly_placements(parameters))["battery"]
     mass = {
         "name": "battery",

@@ -145,3 +145,42 @@ Standard bleibt `"rails"` (zwei Schienen als feste Bereiche). Mit `"free"` (Auft
 - Prüfung:
   - `tests/test_topology_problem.py::test_free_battery_support_equilibrium_and_gradients` (Gleichgewicht Σ T_jᵀ f_j = w, FD aller Zeilen auf dem Minigitter);
   - `tools/formulation_study.py battery_fd` (FD auf dem Rahmengitter 68 × 64 × 24 → `docs/validation/battery_support_fd.json`).
+
+## Freier Kamerakäfig (`CAMERA_SUPPORT`, Schalter `TOPOLOGY_CONFIG["camera_support"]`)
+
+Standard bleibt `"prescribed"` (Bügelpfad, Laschen, Aufprallkontakte als feste Bereiche). Mit `"free"` (Auftrag: `overrides.camera.support = "free"`) entfallen Bügel, Laschen und Aufprallkontakte; die Kamera ist ein Starrkörper wie der freie Akku.
+
+- Körper: Lux 2,3 g, Quader 16 × 14 × 14 mm, um `tilt_deg` gekippt, Eigenträgheit gedreht. Volumen = Keep-out `camera_envelope`, Referenzpunkt Mitte der Schraubachse (wie der Sigma-Kamerablock).
+- Kopplung: bilaterale Federn (normal x, Schub y/z) an den Knoten zwischen erlaubten Zellen und Kamera-Keep-out auf beiden Seitenflächen innerhalb 4 mm um die Schraubachse. k = Fläche × Pad (ANNAHME 1000 / 400 N/mm³) × (floor + (1 − floor) ρ³).
+- Sichtfeld 4:3 (126° × 94°) als Keep-out: Pyramidenstumpf ab der Kamerafront (Öffnung ±3 mm) entlang der gekippten Achse, jede Zelle mit einer Ecke im Stumpf + 0,5 mm. `camera_front_access` (Einschub) bleibt.
+- Crash als designabhängige Last: `crash_front` (−y), `crash_below` (+z) und neu `crash_camera_oblique` (45° von vorn links) wirken mit voller Crashkraft auf die Zone vor und über der Kamera (x ± (Keep-out + 6 mm), y ab Kameramitte bis zur Hüllenfront, z ab Kameramitte bis Keep-out-Oberkante + 6 mm). Verteilung f_e = F w_e / Σw mit w_e = floor + (1 − floor) ρ_e. Das Inertia Relief wird je Auswertung aus Kraft und Moment der aktuellen Verteilung neu gebildet (linear im Lastvektor, Massen fest), einschließlich der Körperwrenches von Akku und Kamera.
+- Nebenbedingungen:
+  - Kameraverschiebung relativ zum Rahmen |δ| ≤ Grenze je Fall `crash_front`, `crash_camera_oblique`. δ ist die Starrkörperbewegung der Kamera auf ihren Federn am verformten Rahmen, s = D⁻¹(w + Σ Tᵀ K u), minus dem Starrkörper-Ausgleich der Stack-Montage (`aio_contact_`), ausgewertet am Kameraschwerpunkt. Die Sensitivität kommt aus drei adjungierten Lastfällen je Crashfall.
+  - Frontabdeckung ≥ Grenze: projizierte Materialfläche vor der Kamerafront entlang achsparalleler Strahlen der gekippten Achse im Fenster Front ± (B/2 + 6 mm) × [−H/2, H/2 + 6 mm]. Je Strahl gilt 1 − Π(1 − ρ_s) (Abtastung h/2, trilinear, Zwischenfeld), bezogen auf die Frontfläche B × H. Werte über 1 sind möglich, weil das Fenster größer ist als die Front.
+  - Montagefläche Σ A ρ ≥ Grenze.
+  - Die Kameramasse liegt in der Modalanalyse nach k verteilt auf den Federknoten.
+  - Die Kamera-Sigma-Spalten wirken wie beim Akku über die Federn.
+- Grenzen: aus ManaFly mit denselben Definitionen gemessen (Abschnitt unten). Ohne gesetzte Grenze werden die Zeilen nur überwacht.
+- Prüfung:
+  - `tests/test_topology_problem.py::test_free_camera_support_equilibrium_and_gradients` (Gleichgewicht der Zonenlast mit Relief, FD aller Zeilen);
+  - `tools/formulation_study.py camera_fd` (Rahmengitter).
+
+### Grenzen des freien Kamerakäfigs aus ManaFly (`formulation_study.py camera_limits` → `docs/validation/camera_limits_manafly.json`)
+
+Messaufbau für ManaFly 3:
+- dieselben Definitionen und derselbe Code wie im Optimierer;
+- Halbmodell, binäre 4/3-mm-Voxel (Volumenanteil ≥ 50 %, größte flächenverbundene Komponente; 11 Inselzellen verworfen);
+- Inertia Relief über Rahmenmasse (29,3 g), AIO, Motoren + Props, Akku (Punktmasse am Deck) und Kamera;
+- Lux in der Evaluator-Platzierung (0, 50, 16), 20° gekippt;
+- Federn an den Innenflächen der Seitenplatten (x = 10,67 mm); der Spalt zwischen Kameraseite und Platte gilt als starr überbrückt (Schraube/Distanz).
+
+| Größe | ManaFly 20° | ManaFly 0° | Grenze | Akku-Analogon |
+|---|---|---|---|---|
+| Kameraverschiebung frontal (mm) | 0,0866 | 0,0873 | ≤ 0,0866 | 0,5 |
+| Kameraverschiebung schräg 45° (mm) | 0,3816 | 0,3926 | ≤ 0,3816 | 0,5 |
+| Frontabdeckung (× Frontfläche 16 × 14 mm) | 0,4227 | 0,4071 | ≥ 0,4227 | – |
+| Montagefläche (Anteil des 4-mm-Patches) | 1,00 | 1,00 | ≥ 1,0 | – |
+
+Im reinen Silhouettenfenster der Kamera hat ManaFly 0 % Abdeckung, weil das Sichtfeld und der Einschubkorridor das verbieten. Das Maß zählt deshalb das Fenster mit 6 mm Rand seitlich und oben. Werte über 1 sind möglich.
+
+Crash-Referenzen der Zonenfälle: Nachgiebigkeit der Formulierungs-Referenzdichte (r4_neural_v06_f1) im Freikamera-Gebiet unter den Zonenlasten. Ergebnis: `crash_front` 10,09 N mm (alte Patch-Definition 6,18), `crash_below` 103,0 N mm (alt 27,52). Die Grenze ist wie bisher 1,5 × Referenz. `crash_camera_oblique` hat keine Nachgiebigkeitszeile, nur die Kameraverschiebung.

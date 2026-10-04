@@ -2,7 +2,7 @@ from copy import deepcopy
 import numpy as np
 import pytest
 
-from deep_frame.config import BATTERY_SUPPORT, PRINT_MATERIAL
+from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, PRINT_MATERIAL
 from deep_frame.topology_optimization import elasticity_matrix, hexahedron_matrices, orthotropic_matrix
 from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
@@ -328,4 +328,49 @@ def test_free_battery_support_equilibrium_and_gradients():
         assert result["constraint_gradients"][index] @ direction == pytest.approx((plus["constraints"][index] - minus["constraints"][index]) / (2 * step), rel=1e-4, abs=1e-9), name
     lumped = tested.modal.lumped - tested.modal.base_lumped
     assert lumped.sum() / 3 == pytest.approx(10.0e-6 / 2)
+    tested.close()
+
+def camera_domain():
+    domain = tiny_domain()
+    keep = box([-1.0, 1.0, 1.0], [1.0, 3.0, 3.0])
+    centers = np.stack(np.meshgrid(np.arange(4) + 0.5, np.arange(8) - 3.5, np.arange(4) + 0.5, indexing="ij"), -1)
+    inside = (centers[..., 0] < 1) & (np.abs(centers[..., 1] - 2) < 1) & (np.abs(centers[..., 2] - 2) < 1)
+    domain.update(allowed=~inside, preserve=np.zeros(inside.shape, dtype=bool), forbidden=inside)
+    zone = box([-3.0, 2.0, 2.0], [3.0, 4.0, 4.0])
+    zones = {"crash_front": [0.0, -2.0, 0.0], "crash_camera_oblique": [1.4, -1.4, 0.0]}
+    cases = {case["name"]: case for case in domain["load_cases"]}
+    domain["load_cases"].insert(2, {**deepcopy(cases["crash_front"]), "name": "crash_camera_oblique"})
+    body = {"name": "camera", "mass_g": 2.0, "position_mm": [0.0, 2.0, 2.0], "inertia_g_mm2": (np.eye(3) * 5.0).tolist(), "force_n": [0.0, 0.0, 0.0]}
+    for case in domain["load_cases"]:
+        if "inertia_relief" in case:
+            case["inertia_relief"] = {**deepcopy(case["inertia_relief"]), "bodies": [{**deepcopy(body), "force_n": zones.get(case["name"], body["force_n"])}]}
+        if case["name"] in zones:
+            case["loads"] = []
+    tilt = np.radians(20.0)
+    axis, up = [0.0, np.cos(tilt), np.sin(tilt)], [0.0, -np.sin(tilt), np.cos(tilt)]
+    domain["camera"] = {"keep_out": keep, "reference_mm": [0.0, 2.0, 2.0], "center_mm": [0.0, 2.0, 2.0], "mass_g": 2.0, "screw_axis_yz_mm": [2.0, 2.0], "zone": zone, "zones": zones,
+                        "displacement_cases": ["crash_front", "crash_camera_oblique"], "reference_regions": [box([0.0, -4.0, 0.0], [2.0, -2.0, 2.0])],
+                        "coverage": {"axes": [axis, [1.0, 0.0, 0.0], up], "front_mm": [0.0, 3.0, 2.0], "window_mm": [[-2.0, 2.0], [-1.0, 2.0]], "step_mm": 0.5, "length_mm": 4.0, "frontal_area_mm2": 4.0}}
+    problem = tiny_problem()
+    problem["camera"] = {**deepcopy(CAMERA_SUPPORT), "patch_radius_mm": 1.0, "limit_mm": 0.01, "min_area_mm2": 1.0, "min_coverage": 0.2, "crash_reference": {"crash_front": 0.01}}
+    problem["shadow"] = None
+    return domain, problem
+
+def test_free_camera_support_equilibrium_and_gradients():
+    tested = TopologyProblem(*camera_domain())
+    camera, zone = tested.camera, tested.zones["crash_camera_oblique"]
+    assert camera.summary["nodes"] == 10 and set(tested.zones) == {"crash_front", "crash_camera_oblique"}
+    random = np.random.default_rng(5)
+    design, direction = random.uniform(0.3, 0.7, tested.map.n), random.standard_normal(tested.map.n) * tested.map.free
+    result, step = tested.evaluate(design), 1e-5
+    force, mirrored, loads = zone.loads(tested.physical)
+    flip = tested.system._flip()
+    total = force.reshape(-1, 3).sum(axis=0) + (mirrored.reshape(-1, 3) * flip).sum(axis=0) + sum(np.asarray(load["force_n"]) for load in loads)
+    assert np.allclose(total, 0.0, atol=1e-9)
+    assert {"crash_front", "camera_shift_crash_front", "camera_shift_crash_camera_oblique", "camera_mount_area", "camera_coverage"} <= set(result["names"])
+    plus, minus = tested.evaluate(design + step * direction), tested.evaluate(design - step * direction)
+    for index, name in enumerate(result["names"]):
+        assert result["constraint_gradients"][index] @ direction == pytest.approx((plus["constraints"][index] - minus["constraints"][index]) / (2 * step), rel=1e-4, abs=1e-9), name
+    lumped = tested.modal.lumped - tested.modal.base_lumped
+    assert lumped.sum() / 3 == pytest.approx(2.0e-6 / 2)
     tested.close()

@@ -139,24 +139,35 @@ class TopologyProblem:
         self.cell = float(np.prod(self.system.spacing))
         self.allowed = int(np.count_nonzero(self.map.allowed))
         self.stiffness = StiffnessConstraint(self.system, problem["stiffness"]) if problem.get("stiffness") else None
-        self.covariance, self.battery = None, None
+        self.covariance, self.bodies, self.zones, self.adjoints, self.body_cases, self.battery_cases = None, {}, {}, {}, {}, {}
         if problem.get("battery"):
-            self.battery = BatterySupport(self.system, problem["battery"], domain["battery"])
-            self.battery.update(np.ones(self.system.nelem))
-            self.battery_linear = self.battery.state(np.zeros(6), False)
-            self.battery_sigma = None
-            self.battery_relief = [case for case in self.system.cases if case.get("inertia_relief", {}).get("bodies")]
-            for case in self.battery_relief:
-                case["keep_fields"] = True
+            self.bodies["battery"] = BatterySupport(self.system, problem["battery"], domain["battery"])
+        if problem.get("camera"):
+            self.bodies["camera"] = CameraSupport(self.system, problem["camera"], domain["camera"])
+        self.battery, self.camera, self.battery_sigma = self.bodies.get("battery"), self.bodies.get("camera"), None
+        for body in self.bodies.values():
+            body.update(np.ones(self.system.nelem))
+        self.linear = {name: body.state(np.zeros(6), False) for name, body in self.bodies.items()}
+        self.body_relief = [case for case in self.system.cases if case.get("inertia_relief", {}).get("bodies")]
+        for case in self.body_relief:
+            case["keep_fields"] = True
         if problem.get("covariance"):
             if "interfaces" not in domain:
                 raise ValueError("The load covariance constraint needs domain interfaces")
-            self.covariance = InterfaceCovariance(self.system, problem["covariance"], domain["interfaces"], self.battery and self.battery_linear, self.battery)
-            if self.battery is not None:
-                self.battery_sigma = self.covariance.battery_sigma
+            self.covariance = InterfaceCovariance(self.system, problem["covariance"], domain["interfaces"], self.bodies, self.linear)
+            self.battery_sigma = self.covariance.sigmas.get("battery")
         self.modal = ModalConstraint(self.system, problem["modal"]) if problem.get("modal") else None
-        if self.battery is not None and self.modal is not None:
-            self.modal.lumped_slope = self.battery.lumped_slope
+        if self.bodies and self.modal is not None:
+            self.modal.lumped_slope = lambda mode: sum(body.lumped_slope(mode) for body in self.bodies.values())
+        if self.camera is not None:
+            camera, cases = domain["camera"], {case["name"]: case for case in self.system.cases}
+            self.zones = {name: ZoneImpact(self.system, cases[name], camera["zone"], force, problem["camera"]["zone_floor"]) for name, force in camera["zones"].items() if name in cases}
+            self.fit = RigidFit(self.system, camera["reference_regions"], self.camera.reference)
+            self.coverage = FrontCoverage(domain, camera["coverage"])
+            self.body_update(np.ones(self.system.nelem))
+            for name in camera["displacement_cases"]:
+                for axis, (force, mirrored) in zip("xyz", self.camera_loads(name)):
+                    self.adjoints[name, axis] = self.system.add_case(f"{name}_camera_{axis}", name, force, mirrored)
         shadow = problem.get("shadow")
         self.shadow = None
         if shadow and shadow["motors_mm"]:
@@ -183,26 +194,81 @@ class TopologyProblem:
         return float(np.sum(physical) * self.cell * self.factor * self.domain["material"]["density_g_cm3"] / 1000)
     def compliances(self, physical):
         return self.system.solve(np.asarray(physical, dtype=float).ravel(), self.penalization, self.min_stiffness_ratio)
-    def battery_update(self, physical):
-        battery = self.battery
-        battery.update(physical)
-        self.battery_linear = battery.state(np.zeros(6), False)
+    def body_update(self, physical):
+        self.physical = physical
+        for body in self.bodies.values():
+            body.update(physical)
+        self.linear = {name: body.state(np.zeros(6), False) for name, body in self.bodies.items()}
+        self.battery_linear = self.linear.get("battery")
         if self.covariance is not None:
-            self.covariance.battery_forces(self.battery_linear)
-        self.battery_cases = {}
-        for case in self.battery_relief:
-            body = case["inertia_relief"]["bodies"][0]
-            force = np.asarray(body["force_n"], dtype=float)
-            wrench = np.concatenate([force, np.asarray(body["moment_n_mm"]) + np.cross(np.asarray(body["position_mm"]) - battery.reference, force)])
-            self.battery_cases[case["name"]] = state = battery.state(wrench, True)
-            direct, mirrored = battery.forces(state)
-            self.system.set_force(case, case["force"] + direct, case["mirrored"] + mirrored)
+            self.covariance.body_forces(self.linear)
+        self.body_cases = {}
+        for case in self.body_relief:
+            zone = self.zones.get(case["name"])
+            force, mirrored, loads = zone.loads(physical) if zone is not None else (case["force"], case["mirrored"], case["inertia_relief"]["bodies"])
+            states = self.body_cases[case["name"]] = {}
+            for load in loads:
+                body, vector = self.bodies[load["name"]], np.asarray(load["force_n"], dtype=float)
+                states[load["name"]] = state = body.state(np.concatenate([vector, np.asarray(load["moment_n_mm"]) + np.cross(np.asarray(load["position_mm"]) - body.reference, vector)]), body.contact)
+                direct, mirror = body.forces(state)
+                force, mirrored = force + direct, mirrored + mirror
+            self.system.set_force(case, force, mirrored)
+        self.battery_cases = {name: states["battery"] for name, states in self.body_cases.items() if "battery" in states}
+        for (name, axis), case in self.adjoints.items():
+            self.system.set_force(case, *self.camera_loads(name)["xyz".index(axis)])
         if self.modal is not None:
-            self.modal.lumped = self.modal.base_lumped + battery.lumped(self.battery_linear)
+            self.modal.lumped = self.modal.base_lumped + sum(body.lumped(self.linear[name]) for name, body in self.bodies.items())
+    def camera_loads(self, name):
+        camera, state = self.camera, self.body_cases[name]["camera"]
+        loads = []
+        for row in camera.shift:
+            direct, mirror = camera.forces(state, state["inverse"] @ row)
+            fit_direct, fit_mirror = self.fit.forces(row)
+            loads.append((direct - fit_direct, mirror - fit_mirror))
+        return loads
+    def load_gradient(self, name, fields, extra=None):
+        total, adjoints, zone = np.zeros(self.system.nelem), dict(extra or {}), self.zones.get(name)
+        for body_name, state in self.body_cases.get(name, {}).items():
+            body = self.bodies[body_name]
+            displacement = body.displacements(fields)
+            total += body.load_term(state, displacement)
+            if zone is not None:
+                adjoints[body_name] = adjoints.get(body_name, 0.0) + body.relative(state, displacement)
+        if zone is not None:
+            total += zone.gradient(self.physical, fields, adjoints, self.bodies)
+        return total
+    def mixed_energy(self, left, right, derivative):
+        total = np.zeros(self.system.nelem)
+        for sign in set(left) & set(right):
+            total += np.einsum("ei,ij,ej->e", left[sign][self.system.dofs], self.system.ke, right[sign][self.system.dofs], optimize=True)
+        return self.factor * derivative * total
+    def camera_shift(self, name, solutions):
+        camera, state, fields = self.camera, self.body_cases[name]["camera"], solutions[name]["fields"]
+        displacement = camera.displacements(fields)
+        motion = state["motion"] + camera.relative(state, displacement)
+        delta = camera.shift @ (motion - self.fit.motion(fields))
+        value = max(float(np.linalg.norm(delta)), 1e-12)
+        gradient = np.zeros(self.system.nelem)
+        for axis, component, row in zip("xyz", delta, camera.shift):
+            adjoint, vector = solutions[f"{name}_camera_{axis}"]["fields"], state["inverse"] @ row
+            part = camera.stiffness_term(state, np.einsum("ndi,i->nd", camera.rows, vector) * (displacement - np.einsum("ndi,i->nd", camera.rows, motion)))
+            part += self.load_gradient(name, adjoint, {"camera": vector}) - self.mixed_energy(adjoint, fields, solutions[name]["modulus_derivative"])
+            gradient += component / value * part
+        return value, gradient, delta
+    def camera_rows(self, solutions):
+        settings, rows = self.problem["camera"], []
+        limits, minimum = settings["limit_mm"], settings["min_area_mm2"] or (settings["min_area_fraction"] and settings["min_area_fraction"] * float(np.sum(self.camera.area)))
+        for name in self.domain["camera"]["displacement_cases"]:
+            limit = limits.get(name) if isinstance(limits, dict) else limits
+            value, gradient, delta = self.camera_shift(name, solutions)
+            rows.append({"name": "camera_shift_" + name, "g": None if limit is None else value / limit - 1, "gradient": gradient / (limit or 1.0), "value": value, "limit": limit, "unit": "mm", "sense": "<=", "info": {"delta_mm": delta.tolist()}})
+        area, slope = self.camera.contact_area()
+        rows.append({"name": "camera_mount_area", "g": None if minimum is None else 1 - area / minimum, "gradient": -slope / (minimum or 1.0), "value": area, "limit": minimum, "unit": "mm2", "sense": ">="})
+        return rows
     def physics(self, physical, iterations=None):
         physical = np.asarray(physical, dtype=float).ravel()
-        if self.battery is not None:
-            self.battery_update(physical)
+        if self.bodies:
+            self.body_update(physical)
         solutions = self.compliances(physical)
         rows, monitor = [], []
         if self.stiffness is not None:
@@ -212,16 +278,23 @@ class TopologyProblem:
             for row in self.covariance.measure(solutions):
                 (rows if row["g"] is not None else monitor).append(row)
         for name in self.crash:
-            limit = self.problem["crash"]["ratio"] * self.problem["crash"]["reference"][name]
+            reference = (self.problem["camera"].get("crash_reference") or {}).get(name) if name in self.zones else self.problem["crash"]["reference"][name]
+            limit = reference and self.problem["crash"]["ratio"] * reference
             gradient = solutions[name]["derivative"]
-            if self.battery is not None and name in self.battery_cases:
-                gradient = gradient + 2 * self.battery.load_term(self.battery_cases[name], self.battery.displacements(solutions[name]["fields"]))
-            rows.append({"name": name, "g": solutions[name]["compliance_n_mm"] / limit - 1, "gradient": gradient / limit, "value": solutions[name]["compliance_n_mm"], "limit": limit, "unit": "N mm", "sense": "<="})
+            if name in self.body_cases:
+                gradient = gradient + 2 * self.load_gradient(name, solutions[name]["fields"])
+            row = {"name": name, "g": None, "gradient": gradient / (limit or 1.0), "value": solutions[name]["compliance_n_mm"], "limit": limit, "unit": "N mm", "sense": "<="}
+            if limit:
+                row["g"] = solutions[name]["compliance_n_mm"] / limit - 1
+            (rows if limit else monitor).append(row)
         if self.modal is not None:
             g, slope, info = self.modal.measure(physical, self.penalization, self.min_stiffness_ratio, iterations)
             rows.append({"name": "f1", "g": float(g), "gradient": slope, "value": info["f1_hz"], "limit": self.problem["modal"]["f1_min_hz"], "unit": "Hz", "sense": ">=", "info": info})
         if self.battery is not None:
             rows += battery_rows(self)
+        if self.camera is not None:
+            for row in self.camera_rows(solutions):
+                (rows if row["g"] is not None else monitor).append(row)
         monitor += [{"name": name, "g": None, "gradient": None, "value": solutions[name]["compliance_n_mm"], "limit": None, "unit": "N mm", "sense": "", "field": self.problem["fields"]["stiffness"]} for name in self.monitor]
         for row in rows + monitor:
             row["field"] = self.problem["fields"]["stiffness"]
@@ -234,6 +307,10 @@ class TopologyProblem:
             limit = self.problem["shadow"]["limit_mm"]
             value = float(np.dot(self.shadow, physical))
             rows.append({"name": "shadow", "g": value / limit - 1, "gradient": self.shadow / limit, "value": value, "limit": limit, "unit": "mm", "sense": "<="})
+        if self.camera is not None:
+            value, gradient = self.coverage.measure(physical)
+            minimum = self.problem["camera"]["min_coverage"]
+            rows.append({"name": "camera_coverage", "g": None if minimum is None else 1 - value / minimum, "gradient": -gradient / (minimum or 1.0), "value": value, "limit": minimum, "unit": "-", "sense": ">="})
         for row in rows:
             row["field"] = self.problem["fields"]["volume"]
         return rows
@@ -242,6 +319,8 @@ class TopologyProblem:
         eroded, intermediate = fields[self.problem["fields"]["stiffness"]], fields[self.problem["fields"]["mass"]]
         rows, monitor, _ = self.physics(eroded[0], iterations)
         geometric = self.geometry(intermediate[0])
+        monitor += [row for row in geometric if row["g"] is None]
+        geometric = [row for row in geometric if row["g"] is not None]
         mass = self.mass_g(intermediate[0])
         scale = self.mass_g(np.full(self.map.n, self.problem["volume_max"]) * self.map.allowed)
         gradients = [self.map.pullback(row["gradient"], eroded[1]) for row in rows] + [self.map.pullback(row["gradient"], intermediate[1]) for row in geometric]
@@ -538,8 +617,8 @@ def load_covariance(config=LOAD_COVARIANCE):
     return {"sigma": model.sigma, "mean": model.mean, "covariance": model.covariance, "directions": model.directions, "eigenvalues": model.eigenvalues, "rank": model.rank, "labels": model.labels, "model": model}
 
 class InterfaceCovariance:
-    def __init__(self, system, settings, interfaces, battery_state=None, battery=None):
-        self.system, self.settings, self.battery = system, settings, battery
+    def __init__(self, system, settings, interfaces, bodies=None, states=None):
+        self.system, self.settings, self.bodies, self.states = system, settings, bodies or {}, states or {}
         if settings.get("sigma") is None:
             model = LoadCovariance(settings.get("model") or LOAD_COVARIANCE)
             keep = [index for index, (name, _) in enumerate(model.labels) if name in settings["interfaces"]]
@@ -557,11 +636,12 @@ class InterfaceCovariance:
         self.rank = int(np.sum(values > 1e-10 * values[0]))
         self.directions = vectors[:, :self.rank] * np.sqrt(values[:self.rank])
         self.factor = 1.0 if system.symmetry is None else 2.0
-        free = [] if battery is None else [labels.index(("battery", dof)) for dof in LOAD_COVARIANCE["dofs"]]
+        blocks = {name: [labels.index((name, dof)) for dof in LOAD_COVARIANCE["dofs"]] for name in self.bodies}
+        free = sum(blocks.values(), [])
         units = {name: self.wrenches(interfaces[name]) for name in dict.fromkeys(name for index, (name, _) in enumerate(labels) if index not in free)}
         empty = (np.zeros(0, dtype=int), np.zeros(0), np.zeros(0, dtype=int), np.zeros(0))
         columns = [empty if index in free else units[name][LOAD_COVARIANCE["dofs"].index(dof)] for index, (name, dof) in enumerate(labels)]
-        self.battery_weights, self.battery_sigma = (None, None) if battery is None else (self.directions[free], sigma[np.ix_(free, free)])
+        self.weights, self.sigmas = {name: self.directions[block] for name, block in blocks.items()}, {name: sigma[np.ix_(block, block)] for name, block in blocks.items()}
         self.cases, self.forces, self.base = [], [], []
         for k in range(self.rank):
             force, mirrored = np.zeros(system.ndof), np.zeros(system.ndof)
@@ -569,22 +649,25 @@ class InterfaceCovariance:
                 np.add.at(force, direct, weight * direct_values)
                 np.add.at(mirrored, mirror, weight * mirror_values)
             self.base.append((force.copy(), mirrored.copy()))
-            if battery is not None:
-                extra = battery.forces(battery_state, battery_state["inverse"] @ self.battery_weights[:, k])
+            for name, body in self.bodies.items():
+                extra = body.forces(self.states[name], self.states[name]["inverse"] @ self.weights[name][:, k])
                 force, mirrored = force + extra[0], mirrored + extra[1]
             case = system.add_case(settings["prefix"] + str(k), settings["support"], force, mirrored)
             case.pop("force")
             self.cases.append(case["name"])
             self.forces.append({part["sign"]: part["force"] for part in case["parts"]})
-    def battery_forces(self, state):
-        self.battery_state = state
+    def body_forces(self, states):
+        self.states = states
         for k, name in enumerate(self.cases):
             case = next(case for case in self.system.cases if case["name"] == name)
-            extra = self.battery.forces(state, state["inverse"] @ self.battery_weights[:, k])
-            self.forces[k] = self.system.set_force(case, self.base[k][0] + extra[0], self.base[k][1] + extra[1])
-    def battery_term(self, stacked, vector):
+            force, mirrored = self.base[k]
+            for body_name, body in self.bodies.items():
+                extra = body.forces(states[body_name], states[body_name]["inverse"] @ self.weights[body_name][:, k])
+                force, mirrored = force + extra[0], mirrored + extra[1]
+            self.forces[k] = self.system.set_force(case, force, mirrored)
+    def body_term(self, stacked, vector):
         fields = {sign: field @ vector for sign, field in stacked.items()}
-        return 2 * self.battery.load_term(self.battery_state, self.battery.displacements(fields), self.battery_weights @ vector)
+        return sum((2 * body.load_term(self.states[name], body.displacements(fields), self.weights[name] @ vector) for name, body in self.bodies.items()), np.zeros(self.system.nelem))
     def wrenches(self, interface):
         system = self.system
         selected = [system._select_both(region, "covariance", "load") for region in interface["regions"]]
@@ -638,35 +721,81 @@ class InterfaceCovariance:
                 {"name": "load_worst", "value": worst, "limit": limits["worst_n_mm"], "unit": "N mm", "sense": "<=", "g": None, "gradient": None, "info": info}]
         if limits["mean_n_mm"]:
             gradient = sum(solutions[name]["derivative"] for name in self.cases)
-            if self.battery is not None:
-                gradient = gradient + sum(self.battery_term(stacked, np.eye(self.rank)[k]) for k in range(self.rank))
+            if self.bodies:
+                gradient = gradient + sum(self.body_term(stacked, np.eye(self.rank)[k]) for k in range(self.rank))
             rows[0].update(g=mean / limits["mean_n_mm"] - 1, gradient=gradient / limits["mean_n_mm"])
         if limits["worst_n_mm"]:
             derivative = solutions[self.cases[0]]["modulus_derivative"]
-            gradient = sum(weight * (self.energy(stacked, vectors[:, i], derivative) + (self.battery_term(stacked, vectors[:, i]) if self.battery is not None else 0.0)) for i, weight in enumerate(weights) if weight > self.settings["ks_cutoff"])
+            gradient = sum(weight * (self.energy(stacked, vectors[:, i], derivative) + self.body_term(stacked, vectors[:, i])) for i, weight in enumerate(weights) if weight > self.settings["ks_cutoff"])
             rows[1].update(g=float(ks / limits["worst_n_mm"] - 1), gradient=gradient / limits["worst_n_mm"])
         return rows
 
-class BatterySupport:
-    def __init__(self, system, settings, battery):
-        from scipy.sparse import csr_matrix
-        from deep_frame.topology_geometry import region_contains
-        self.system, self.settings, self.battery = system, settings, battery
-        domain, h = system.domain, system.spacing
-        cells = region_contains(cell_centers(domain["grid"]), battery["keep_out"]) & ~system.active_elements
-        allowed = system.active_elements
-        count = lambda mask: np.bincount(system.connectivity[mask].ravel(), minlength=len(system.points))
-        inside, outside = count(cells), count(allowed)
-        nodes = np.flatnonzero((inside > 0) & (outside > 0))
-        centers = cell_centers(domain["grid"])[cells]
-        low, high = centers.min(axis=0) - h / 2, centers.max(axis=0) + h / 2
-        points = system.points[nodes]
+class RigidNodes:
+    def select(self, system, nodes):
+        self.system = system
         plane = np.zeros(len(nodes), dtype=bool) if system.symmetry is None else np.isin(nodes, system.plane_nodes)
+        mirror = ~plane if system.symmetry is not None else np.zeros(len(nodes), dtype=bool)
+        self.flip = np.ones(3) if system.symmetry is None else system._flip()
+        self.half, self.copies = nodes, np.concatenate([np.zeros(len(nodes), dtype=bool), np.ones(int(mirror.sum()), dtype=bool)])
+        self.index = np.concatenate([np.arange(len(nodes)), np.flatnonzero(mirror)])
+        self.points = np.concatenate([system.points[nodes], system.points[nodes][mirror] * self.flip])
+        self.plane = plane
+        return plane
+    def displacements(self, fields):
+        nodal = {sign: field.reshape(-1, 3)[self.half[self.index]] for sign, field in fields.items()}
+        direct = sum(nodal.values())
+        mirror = sum(sign * value for sign, value in nodal.items()) * self.flip
+        return np.where(self.copies[:, None], mirror, direct)
+    def scatter(self, nodal):
+        force, mirrored = np.zeros(self.system.ndof), np.zeros(self.system.ndof)
+        dofs = 3 * self.half[self.index][:, None] + np.arange(3)
+        np.add.at(force, dofs[~self.copies].ravel(), nodal[~self.copies].ravel())
+        np.add.at(mirrored, dofs[self.copies].ravel(), (nodal[self.copies] * self.flip).ravel())
+        return force, mirrored
+
+class RigidFit(RigidNodes):
+    def __init__(self, system, regions, reference):
+        from deep_frame.topology_geometry import region_contains
+        centers = cell_centers(system.domain["grid"])
+        cells = np.any([region_contains(centers, region) for region in regions], axis=0) & system.active_elements
+        self.select(system, np.unique(system.connectivity[cells]))
+        self.rows = rigid_rows(self.points - np.asarray(reference, dtype=float))
+        self.inverse = np.linalg.inv(np.einsum("ndi,ndj->ij", self.rows, self.rows))
+    def motion(self, fields):
+        return self.inverse @ np.einsum("ndi,nd->i", self.rows, self.displacements(fields))
+    def forces(self, vector):
+        return self.scatter(np.einsum("ndi,i->nd", self.rows, self.inverse @ vector))
+
+class BatterySupport(RigidNodes):
+    contact = True
+    def __init__(self, system, settings, battery):
+        nodes, inside, low, high = self.contact_nodes(system, battery["keep_out"])
+        points = system.points[nodes]
         bottom = np.abs(points[:, 2] - low[2]) < 1e-6
         axis = np.where(bottom, 2, np.where(np.abs(np.abs(points[:, 0]) - high[0]) < 1e-6, 0, 1))
         sign = np.where(bottom, -1.0, np.where(axis == 0, np.sign(points[:, 0]), np.where(points[:, 1] > (low[1] + high[1]) / 2, 1.0, -1.0)))
+        shear = np.zeros((len(nodes), 3), dtype=bool)
+        shear[bottom, :2] = True
+        self.assemble(system, settings, battery, nodes, inside, axis, sign, bottom, shear)
+        self.summary = {"nodes": len(self.index), "bottom_nodes": int(self.bottom.sum()), "side_nodes": int((~self.bottom).sum()), "bottom_area_mm2": float(self.area[self.bottom].sum()),
+                        "side_area_mm2": float(self.area[~self.bottom].sum()), "keep_out_cells_mm": [low.tolist(), high.tolist()]}
+    @staticmethod
+    def contact_nodes(system, keep_out, overlap=False):
+        from deep_frame.topology_geometry import region_contains
+        h, centers = system.spacing, cell_centers(system.domain["grid"])
+        cells = (np.all((centers + h / 2 > np.asarray(keep_out["min_mm"]) + 1e-9) & (centers - h / 2 < np.asarray(keep_out["max_mm"]) - 1e-9), axis=1) if overlap else region_contains(centers, keep_out)) & ~system.active_elements
+        count = lambda mask: np.bincount(system.connectivity[mask].ravel(), minlength=len(system.points))
+        inside, outside = count(cells), count(system.active_elements)
+        nodes = np.flatnonzero((inside > 0) & (outside > 0))
+        centers = centers[cells]
+        return nodes, inside[nodes], centers.min(axis=0) - h / 2, centers.max(axis=0) + h / 2
+    def assemble(self, system, settings, body, nodes, inside, axis, sign, bottom, shear):
+        from scipy.sparse import csr_matrix
+        self.settings, self.battery = settings, body
+        h, allowed = system.spacing, system.active_elements
+        plane = self.select(system, nodes)
         faces = np.array([h[1] * h[2], h[0] * h[2], h[0] * h[1]])
-        area = inside[nodes] / 4 * faces[axis] * np.where(plane, 2.0, 1.0)
+        area = inside / 4 * faces[axis] * np.where(plane, 2.0, 1.0)
         member = np.isin(system.connectivity, nodes) & allowed[:, None]
         position = np.full(len(system.points), -1)
         position[nodes] = np.arange(len(nodes))
@@ -675,28 +804,17 @@ class BatterySupport:
         pairs = np.unique(np.stack([rows, elements], 1), axis=0)
         values = 1.0 / np.bincount(pairs[:, 0], minlength=len(nodes))[pairs[:, 0]]
         incidence = csr_matrix((values, (pairs[:, 0], pairs[:, 1])), shape=(len(nodes), system.nelem))
-        mirror = ~plane
-        self.flip = np.ones(3) if system.symmetry is None else system._flip()
-        if system.symmetry is None:
-            mirror[:] = False
-        self.half, self.copies = nodes, np.concatenate([np.zeros(len(nodes), dtype=bool), np.ones(int(mirror.sum()), dtype=bool)])
-        self.index = np.concatenate([np.arange(len(nodes)), np.flatnonzero(mirror)])
-        self.points = np.concatenate([points, points[mirror] * self.flip])
-        self.plane = plane
         self.axis, self.area = axis[self.index], area[self.index]
         self.sign = sign[self.index] * np.where(self.copies & (self.axis == 0), -1.0, 1.0)
-        self.bottom = self.axis == 2
+        self.bottom = bottom[self.index]
         self.incidence = incidence[self.index]
-        base = np.zeros((len(self.index), 3))
+        base = np.where(shear[self.index], settings["pad_shear_n_mm3"], 0.0)
         base[np.arange(len(self.index)), self.axis] = settings["pad_normal_n_mm3"]
-        base[self.bottom, :2] = settings["pad_shear_n_mm3"]
         self.base = base * self.area[:, None]
-        self.reference = np.asarray(battery["reference_mm"], dtype=float)
+        self.reference = np.asarray(body["reference_mm"], dtype=float)
         self.preload = np.array([0.0, 0.0, -settings["band_preload_n"], 0.0, 0.0, 0.0])
         self.rows = rigid_rows(self.points - self.reference)
-        self.shift = rigid_rows(np.asarray(battery["center_mm"], dtype=float)[None] - self.reference)[0, :2]
-        self.summary = {"nodes": len(self.index), "bottom_nodes": int(self.bottom.sum()), "side_nodes": int((~self.bottom).sum()), "bottom_area_mm2": float(self.area[self.bottom].sum()),
-                        "side_area_mm2": float(self.area[~self.bottom].sum()), "keep_out_cells_mm": [low.tolist(), high.tolist()]}
+        self.shift = rigid_rows(np.asarray(body["center_mm"], dtype=float)[None] - self.reference)[0, :settings.get("shift_axes", 2)]
     def update(self, physical):
         p, floor = self.settings["exponent"], self.settings["floor"]
         self.rho = np.clip(self.incidence @ np.asarray(physical, dtype=float).ravel(), 0, 1)
@@ -720,26 +838,17 @@ class BatterySupport:
             active = updated
         return {"active": active, "stiffness": stiffness, "inverse": inverse, "motion": motion, "wrench": np.asarray(wrench, dtype=float)}
     def forces(self, state, motion=None):
-        nodal = state["stiffness"] * np.einsum("ndi,i->nd", self.rows, state["motion"] if motion is None else motion)
-        force, mirrored = np.zeros(self.system.ndof), np.zeros(self.system.ndof)
-        dofs = 3 * self.half[self.index][:, None] + np.arange(3)
-        np.add.at(force, dofs[~self.copies].ravel(), nodal[~self.copies].ravel())
-        np.add.at(mirrored, dofs[self.copies].ravel(), (nodal[self.copies] * self.flip).ravel())
-        return force, mirrored
-    def displacements(self, fields):
-        nodal = {sign: field.reshape(-1, 3)[self.half[self.index]] for sign, field in fields.items()}
-        direct = sum(nodal.values())
-        mirror = sum(sign * value for sign, value in nodal.items()) * self.flip
-        return np.where(self.copies[:, None], mirror, direct)
+        return self.scatter(state["stiffness"] * np.einsum("ndi,i->nd", self.rows, state["motion"] if motion is None else motion))
     def element(self, nodal):
         return np.asarray(self.incidence.T @ nodal).ravel()
     def stiffness_term(self, state, weight):
         scale = np.where(np.arange(3) == self.axis[:, None], state["active"][:, None], 1.0)
         return self.element(np.sum(weight * self.base * scale, axis=1) * self.slope)
+    def relative(self, state, displacement):
+        return state["inverse"] @ np.einsum("nd,ndi->i", state["stiffness"] * displacement, self.rows)
     def load_term(self, state, displacement, wrench=None):
         motion = state["motion"] if wrench is None else state["inverse"] @ wrench
-        relative = state["inverse"] @ np.einsum("nd,ndi->i", state["stiffness"] * displacement, self.rows)
-        return self.stiffness_term(state, np.einsum("ndi,i->nd", self.rows, motion) * (displacement - np.einsum("ndi,i->nd", self.rows, relative)))
+        return self.stiffness_term(state, np.einsum("ndi,i->nd", self.rows, motion) * (displacement - np.einsum("ndi,i->nd", self.rows, self.relative(state, displacement))))
     def pair_term(self, state, left, right):
         return self.stiffness_term(state, -np.einsum("ndi,i->nd", self.rows, left) * np.einsum("ndi,i->nd", self.rows, right))
     def flight(self, state, sigma):
@@ -768,6 +877,112 @@ class BatterySupport:
         mass = self.battery["mass_g"] * 1e-6
         return self.element(energy * mass * derivative / total) - float(np.sum(energy * mass * self.share)) / total * self.element(derivative)
 
+class CameraSupport(BatterySupport):
+    contact = False
+    def __init__(self, system, settings, camera):
+        nodes, inside, low, high = self.contact_nodes(system, camera["keep_out"], True)
+        points = system.points[nodes]
+        y, z = camera["screw_axis_yz_mm"]
+        keep = (np.abs(np.abs(points[:, 0]) - high[0]) < 1e-6) & (np.hypot(points[:, 1] - y, points[:, 2] - z) <= settings["patch_radius_mm"] + 1e-9)
+        if not keep.any():
+            raise ValueError("The camera mount patch has no contact nodes")
+        count = int(keep.sum())
+        shear = np.ones((count, 3), dtype=bool)
+        shear[:, 0] = False
+        self.assemble(system, settings, camera, nodes[keep], inside[keep], np.zeros(count, dtype=int), np.sign(points[keep, 0]), np.ones(count, dtype=bool), shear)
+        self.summary = {"nodes": len(self.index), "patch_area_mm2": float(self.area.sum()), "face_x_mm": float(high[0]), "keep_out_cells_mm": [low.tolist(), high.tolist()]}
+
+class ZoneImpact:
+    def __init__(self, system, case, zone, force, floor):
+        from deep_frame.topology_geometry import region_contains
+        operator = system.relief_operators[case["name"]]
+        self.system, self.case, self.floor = system, case, floor
+        self.elements = np.flatnonzero(region_contains(cell_centers(system.domain["grid"]), zone) & system.active_elements)
+        if not len(self.elements):
+            raise ValueError("The camera impact zone holds no allowed cells")
+        self.nodes = system.connectivity[self.elements]
+        self.factor = 1.0 if system.symmetry is None else 2.0
+        plane = np.zeros(len(system.points), dtype=bool)
+        if system.symmetry is not None:
+            plane[system.plane_nodes] = True
+        self.double = np.where(plane, 2.0, 1.0) if system.symmetry is not None else np.ones(len(system.points))
+        self.single = (~plane).astype(float) if system.symmetry is not None else np.zeros(len(system.points))
+        self.force, self.flip = np.asarray(force, dtype=float), operator["flip"]
+        self.mass_direct, self.mass_mirror, self.total, self.center = operator["direct"], operator["mirror"], operator["total"], operator["center"]
+        self.arm_direct, self.arm_mirror = system.points - self.center, system.points * self.flip - self.center
+        self.inverse = np.linalg.inv(operator["inertia"])
+        self.bodies = {body["name"]: body for body in operator["bodies"]}
+    def shares(self, physical):
+        weight = self.floor + (1 - self.floor) * np.asarray(physical, dtype=float).ravel()[self.elements]
+        total = self.factor * weight.sum()
+        share = np.zeros(len(self.system.points))
+        np.add.at(share, self.nodes.ravel(), np.repeat(weight / (8 * total), 8))
+        return weight, total, share
+    def loads(self, physical):
+        _, _, share = self.shares(physical)
+        direct, mirror = share[:, None] * self.double[:, None] * self.force, share[:, None] * self.single[:, None] * self.force
+        linear, angular = (direct.sum(axis=0) + mirror.sum(axis=0)) / self.total, self.inverse @ (np.cross(self.arm_direct, direct).sum(axis=0) + np.cross(self.arm_mirror, mirror).sum(axis=0))
+        direct = direct - self.mass_direct[:, None] * (linear + np.cross(angular, self.arm_direct))
+        mirror = mirror - self.mass_mirror[:, None] * (linear + np.cross(angular, self.arm_mirror))
+        loads = [{"name": name, "position_mm": body["position_mm"], "force_n": -body["mass_g"] * (linear + np.cross(angular, np.asarray(body["position_mm"]) - self.center)),
+                  "moment_n_mm": -np.asarray(body["inertia_g_mm2"]) @ angular} for name, body in self.bodies.items()]
+        return direct.ravel(), (mirror * self.flip).ravel(), loads
+    def gradient(self, physical, fields, adjoints, supports):
+        zero = np.zeros(self.system.ndof)
+        direct = sum(fields.values(), zero).reshape(-1, 3)
+        mirror = sum((sign * field for sign, field in fields.items()), zero).reshape(-1, 3) * self.flip
+        linear = -(self.mass_direct @ direct + self.mass_mirror @ mirror)
+        angular = -(np.cross(self.arm_direct, direct) * self.mass_direct[:, None]).sum(axis=0) - (np.cross(self.arm_mirror, mirror) * self.mass_mirror[:, None]).sum(axis=0)
+        for name, adjoint in adjoints.items():
+            body, adjoint = self.bodies[name], np.asarray(adjoint, dtype=float)
+            position = np.asarray(body["position_mm"], dtype=float)
+            moved = adjoint[:3] + np.cross(adjoint[3:], position - supports[name].reference)
+            linear -= body["mass_g"] * moved
+            angular -= body["mass_g"] * np.cross(position - self.center, moved) + np.asarray(body["inertia_g_mm2"]) @ adjoint[3:]
+        turn = self.inverse @ angular
+        nodal = (direct + linear / self.total + np.cross(turn, self.arm_direct)) @ self.force * self.double + (mirror + linear / self.total + np.cross(turn, self.arm_mirror)) @ self.force * self.single
+        weight, total, _ = self.shares(physical)
+        element = nodal[self.nodes].sum(axis=1) / 8
+        value = float(weight @ element) / total
+        gradient = np.zeros(self.system.nelem)
+        gradient[self.elements] = (1 - self.floor) * (element - self.factor * value) / total
+        return gradient
+
+class FrontCoverage:
+    def __init__(self, domain, spec):
+        from scipy.sparse import csr_matrix
+        grid, symmetric = domain["grid"], domain.get("symmetry") is not None
+        h, origin, shape = np.asarray(grid["spacing_mm"], dtype=float), np.asarray(grid["origin_mm"], dtype=float), np.asarray(grid["shape"], dtype=int)
+        axis, right, up = (np.asarray(vector, dtype=float) for vector in spec["axes"])
+        step = spec["step_mm"]
+        (u0, u1), (v0, v1) = spec["window_mm"]
+        u, v, t = np.arange(u0 + step / 2, u1, step), np.arange(v0 + step / 2, v1, step), np.arange(step / 2, spec["length_mm"], step)
+        points = (np.asarray(spec["front_mm"]) + u[:, None, None, None] * right + v[None, :, None, None] * up + t[None, None, :, None] * axis).reshape(-1, 3)
+        self.rays, self.samples = len(u) * len(v), len(t)
+        if symmetric:
+            points[:, 0] = np.abs(points[:, 0])
+        scaled = (points - origin) / h - 0.5
+        base = np.floor(scaled).astype(int)
+        fraction = scaled - base
+        rows, columns, values = [], [], []
+        for corner in np.indices((2, 2, 2)).reshape(3, -1).T:
+            index = base + corner
+            if symmetric:
+                index[:, 0] = np.where(index[:, 0] < 0, -index[:, 0] - 1, index[:, 0])
+            weight = np.prod(np.where(corner, fraction, 1 - fraction), axis=1)
+            valid = np.all((index >= 0) & (index < shape), axis=1) & (weight > 0)
+            rows.append(np.flatnonzero(valid))
+            columns.append(np.ravel_multi_index(tuple(index[valid].T), tuple(shape)))
+            values.append(weight[valid])
+        allowed = np.asarray(domain["allowed"], dtype=float).ravel()
+        self.matrix = csr_matrix((np.concatenate(values), (np.concatenate(rows), np.concatenate(columns))), shape=(len(points), int(np.prod(shape)))).multiply(allowed[None, :]).tocsr()
+        self.weight = step * step / spec["frontal_area_mm2"]
+    def measure(self, physical):
+        density = np.clip(self.matrix @ np.asarray(physical, dtype=float).ravel(), 0, 1).reshape(self.rays, self.samples)
+        opening = np.concatenate([np.ones((self.rays, 1)), np.cumprod(1 - density, axis=1)], axis=1)
+        closing = np.concatenate([np.cumprod((1 - density)[:, ::-1], axis=1)[:, ::-1], np.ones((self.rays, 1))], axis=1)
+        return float(self.weight * np.sum(1 - opening[:, -1])), self.matrix.T @ (self.weight * opening[:, :-1] * closing[:, 1:]).ravel()
+
 def rigid_rows(arm):
     rows = np.zeros((len(arm), 3, 6))
     rows[:, :, :3] = np.eye(3)
@@ -786,6 +1001,8 @@ def battery_rows(problem):
     for name, state in problem.battery_cases.items():
         if name.startswith("crash_"):
             delta, gradient = battery.crash(state)
+            if name in problem.zones:
+                gradient = gradient + 2 * problem.zones[name].gradient(problem.physical, {}, {"battery": state["inverse"] @ battery.shift.T @ delta}, problem.bodies)
             value = max(float(np.linalg.norm(delta)), 1e-12)
             rows.append({"name": "battery_shift_" + name, "g": value / limit - 1, "gradient": gradient / (2 * value * limit), "value": value, "limit": limit, "unit": "mm", "sense": "<=",
                          "info": {"active_bottom": int(np.sum(state["active"][battery.bottom] == 1)), "active_side": int(np.sum(state["active"][~battery.bottom] == 1)), "wrench": state["wrench"].tolist()}})

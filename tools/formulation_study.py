@@ -15,6 +15,7 @@ import deep_frame.config as config
 from deep_frame.config import RUN_SETTINGS, STAGES, command_line
 from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge, embed_field
+from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import HexElasticity
 from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
@@ -39,11 +40,13 @@ FORMULATION = {
     "cases": ["stiffness_arm_tip", "modes", "thrust_all"],
     "layout": None,
     "compare": {"bodies": {}, "output": "exports/layout/battery_vs_rails.png", "summary": "exports/layout/battery_vs_rails.json", "gap_mm": 25.0, "size": [1400, 900]},
+    "camera_limits": {"spacing_mm": 4 / 3, "subdivision": 4, "stack_height_mm": 5.0, "tilts_deg": [20.0, 0.0], "linear_solver": "cpu_superlu", "output": "docs/validation/camera_limits_manafly.json"},
+    "camera_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.02, "battery_support": "free", "output": "docs/validation/camera_support_fd.json", "limits": {}},
     "battery_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "output": "docs/validation/battery_support_fd.json"},
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "cuda_cudss", "coarse": True, "fine_start_level": 3,
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
-            "bodies": ["raw", "recon"], "battery_start": {"density": 0.5, "cells": 2}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
+            "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
             "figures": [{"output": "{method}_4views.png", "panels": ["raw", "recon", "manafly"], "labels": ["SIMP-MMA raw", "SIMP-MMA recon", "ManaFly"]}]},
     "v3": {"worktree": "C:/clones/Deep_Frame-recon3", "ref": "HEAD", "copy": "C:/Users/jfham/AppData/Local/Temp/claude/c--clones-Deep-Frame/2bec171b-ba58-44fe-ab0f-61ff45688b18/scratchpad/recon3_copy",
            "argv": ["splines"], "compute": "geometry", "compare": "recon"},
@@ -83,9 +86,13 @@ def patched_settings(cfg):
     for patch in patches:
         for name, values in patch.items():
             _update(getattr(config, name), values)
+    if free_camera_mode():
+        overrides["hoop"] = None
     settings = study(overrides)
     if free_battery():
         settings["inertia_relief"]["attachments"].pop("battery")
+    if free_camera_mode():
+        settings["inertia_relief"]["attachments"].pop("camera")
     return settings
 
 def free_battery():
@@ -120,6 +127,71 @@ def free_support(half):
                                                           "statement": "battery rigid body on density-dependent contact springs (BATTERY_SUPPORT); its inertia and the crash_back deck load act on the body, not on frame nodes"}
     return half
 
+def free_camera_mode():
+    return config.TOPOLOGY_CONFIG.get("camera_support", "prescribed") == "free"
+
+def camera_frame(part):
+    tilt = np.radians(part["tilt_deg"])
+    axis, up = np.array([0.0, np.cos(tilt), np.sin(tilt)]), np.array([0.0, -np.sin(tilt), np.cos(tilt)])
+    rotation = np.column_stack([[1.0, 0.0, 0.0], axis, up])
+    size = np.array([part["width_mm"], part["length_mm"], part["height_mm"]])
+    inertia = rotation @ np.diag(part["mass_g"] / 12 * np.array([size[1] ** 2 + size[2] ** 2, size[0] ** 2 + size[2] ** 2, size[0] ** 2 + size[1] ** 2])) @ rotation.T
+    return axis, up, size, inertia
+
+def fov_cells(grid, front, axis, up, spec):
+    h = np.asarray(grid["spacing_mm"], dtype=float)
+    centers = cell_centers(grid)
+    half_angles = np.tan(np.radians(np.asarray(spec["fov_deg"]) / 2))
+    blocked = np.zeros(len(centers), dtype=bool)
+    for corner in np.indices((2, 2, 2)).reshape(3, -1).T:
+        offset = centers + (corner - 0.5) * h - front
+        depth, across, height = offset @ axis, offset[:, 0], offset @ up
+        reach = np.maximum(depth, 0.0)
+        blocked |= (depth >= -spec["fov_clearance_mm"]) & (np.abs(across) <= spec["aperture_mm"] + spec["fov_clearance_mm"] + reach * half_angles[0]) & (np.abs(height) <= spec["aperture_mm"] + spec["fov_clearance_mm"] + reach * half_angles[1])
+    return blocked.reshape(tuple(grid["shape"]))
+
+def free_camera(half):
+    spec, part = config.CAMERA_SUPPORT, {**config.COMPONENT_DEFAULTS["camera"]}
+    regions = {region["name"]: region for region in half["regions"]}
+    keep_out, screw = regions["camera_envelope"], regions["camera_screw_axis"]
+    grid = half["grid"]
+    upper = np.asarray(grid["origin_mm"]) + np.asarray(grid["spacing_mm"]) * np.asarray(grid["shape"])
+    low, high = np.asarray(keep_out["min_mm"]), np.asarray(keep_out["max_mm"])
+    center = (low + high) / 2
+    center[0] = 0.0
+    axis, up, size, inertia = camera_frame(part)
+    front = center + axis * size[1] / 2
+    blocked = fov_cells(grid, front, axis, up, spec)
+    lost = int(np.count_nonzero(blocked & half["preserve"]))
+    half["allowed"] = half["allowed"] & ~blocked
+    half["preserve"] &= half["allowed"]
+    half["forbidden"] = ~half["allowed"]
+    zone = {"kind": "box", "min_mm": [-high[0] - spec["zone_mm"]["side"], float(center[1]), float(center[2])], "max_mm": [high[0] + spec["zone_mm"]["side"], float(upper[1]), float(min(high[2] + spec["zone_mm"]["top"], upper[2]))]}
+    cases = {case["name"]: case for case in half["load_cases"]}
+    force = float(np.linalg.norm(cases["crash_front"]["loads"][0]["force_n"]))
+    angle = np.radians(spec["oblique_deg"])
+    zones = {name: (force * np.asarray(direction)).tolist() for name, direction in spec["zone_cases"].items() if name in cases}
+    zones["crash_camera_oblique"] = (force * np.array([np.sin(angle), -np.cos(angle), 0.0])).tolist()
+    oblique = {**deepcopy(cases["crash_front"]), "name": "crash_camera_oblique", "purpose": "oblique camera crash on the impact zone"}
+    half["load_cases"].append(oblique)
+    body = {"name": "camera", "mass_g": part["mass_g"], "position_mm": center.tolist(), "inertia_g_mm2": inertia.tolist(), "force_n": [0.0, 0.0, 0.0]}
+    for case in half["load_cases"]:
+        if "inertia_relief" in case:
+            case["inertia_relief"] = {**deepcopy(case["inertia_relief"]), "bodies": case["inertia_relief"].get("bodies", []) + [{**deepcopy(body), "force_n": zones.get(case["name"], body["force_n"])}]}
+        if case["name"] in zones:
+            case["loads"] = []
+    half["point_masses"] = [item for item in half["point_masses"] if item["name"] != "camera"]
+    step = float(np.min(grid["spacing_mm"])) * spec["step_fraction"]
+    window = [[-size[0] / 2 - spec["window_mm"]["side"], size[0] / 2 + spec["window_mm"]["side"]], [-size[2] / 2, size[2] / 2 + spec["window_mm"]["top"]]]
+    half["camera"] = {"keep_out": deepcopy(keep_out), "reference_mm": [0.0, *screw["center_mm"][1:]], "center_mm": center.tolist(), "size_mm": size.tolist(), "mass_g": part["mass_g"], "inertia_g_mm2": inertia.tolist(),
+                      "screw_axis_yz_mm": list(screw["center_mm"][1:]), "zone": zone, "zones": zones, "displacement_cases": [name for name in spec["displacement_cases"] if name in zones],
+                      "reference_regions": [deepcopy(region) for name, region in regions.items() if name.startswith("aio_contact_")],
+                      "coverage": {"axes": [axis.tolist(), [1.0, 0.0, 0.0], up.tolist()], "front_mm": front.tolist(), "window_mm": window, "step_mm": step, "length_mm": float(np.linalg.norm(upper - np.asarray(grid["origin_mm"]))), "frontal_area_mm2": float(size[0] * size[2])},
+                      "fov_cells": int(np.count_nonzero(blocked)), "fov_preserve_cells_removed": lost, "tilt_deg": part["tilt_deg"]}
+    half["metadata"]["formulation"]["camera_support"] = {"mode": "free", **{key: half["camera"][key] for key in ("reference_mm", "center_mm", "zone", "zones", "fov_cells", "fov_preserve_cells_removed")},
+                                                         "statement": "camera rigid body on density-dependent screw springs (CAMERA_SUPPORT), no hoops or lugs; 4:3 field of view as keep-out; frontal, below and oblique crash as design-dependent loads on the impact zone"}
+    return half
+
 def motor_name(center):
     return ("front_" if center[1] > 0 else "rear_") + ("left" if center[0] < 0 else "right")
 
@@ -132,7 +204,7 @@ def frame_domain(cfg, shape):
     for load in thrust["loads"]:
         load["force_n"] = [0.0, 0.0, numbers["thrust_per_motor_n"]]
     regions = {region["name"]: region for region in half["regions"]}
-    camera = np.mean([regions[name]["center_mm"] for name in regions if name.startswith("camera_mount_")], axis=0)
+    camera = np.asarray(regions["camera_screw_axis"]["center_mm"], dtype=float)
     centre = lambda box: ((np.asarray(box["min_mm"]) + box["max_mm"]) / 2).tolist()
     deck, view = cases["crash_back"]["loads"][0]["region"], cases["crash_front"]["loads"][0]["region"]
     half["interfaces"] = {**{"motor_" + name: {"regions": [deepcopy(region)], "reference_mm": centre(region)} for name, region in pads.items()},
@@ -161,12 +233,15 @@ def frame_domain(cfg, shape):
     discs = half["metadata"]["round4"]["prop_discs"]
     half["metadata"]["formulation"] = {"loads": numbers, "load_parameters": cfg["loads"], "shadow": {"motors_mm": discs["motors_mm"], "radius_mm": discs["radius_mm"]},
                                        "inertia_relief_frame_mass_g": relief["preserve_mass_g"], "inertia_relief": "point masses + frame mass at the reference fraction on the preserves, design-independent (keeps compliance self-adjoint)"}
-    return free_support(half) if free_battery() else half
+    half = free_support(half) if free_battery() else half
+    return free_camera(half) if free_camera_mode() else half
 
 def frame_problem(half, references=None):
     problem = deepcopy(PROBLEM)
     if "battery" in half:
         problem["battery"] = deepcopy(BATTERY_SUPPORT)
+    if "camera" in half:
+        problem["camera"] = deepcopy(config.CAMERA_SUPPORT)
     problem["shadow"].update(half["metadata"]["formulation"]["shadow"])
     if references:
         problem["crash"].update(reference=references["crash_compliance_n_mm"], reference_source=references["source"])
@@ -403,6 +478,116 @@ def battery_fd(cfg):
     print(record["table"], flush=True)
     print(json.dumps({name: [row["analytic"], row["finite_difference"], row["relative_error"]] for name, row in checks.items()}, indent=0, default=float), flush=True)
 
+def manafly_camera_domain(cfg, tilt):
+    import trimesh
+    from scipy.ndimage import label
+    from deep_frame.frame_evaluation import voxel_grid
+    spec, frame = cfg["camera_limits"], json.loads(Path(cfg["manafly"]["frame"]).read_text(encoding="utf-8"))
+    mesh = trimesh.load_mesh(frame["stl"], process=True)
+    h, fine = spec["spacing_mm"], spec["spacing_mm"] / spec["subdivision"]
+    solid, lower, _ = voxel_grid(mesh, fine)
+    points = lower + (np.argwhere(solid) + 0.5) * fine
+    origin = np.array([0.0, np.floor(mesh.bounds[0][1] / h) * h, 0.0])
+    shape = np.ceil((mesh.bounds[1] - origin) / h).astype(int) + 1
+    index = np.floor((points[points[:, 0] >= 0] - origin) / h).astype(int)
+    counts = np.zeros(shape)
+    np.add.at(counts, tuple(index[np.all((index >= 0) & (index < shape), axis=1)].T), 1.0)
+    allowed = counts / spec["subdivision"] ** 3 >= 0.5
+    grid = {"origin_mm": origin.tolist(), "spacing_mm": [h, h, h], "shape": shape.tolist(), "axis_order": "xyz", "order": "C"}
+    part = {**config.COMPONENT_DEFAULTS["camera"], "tilt_deg": tilt}
+    axis, up, size, inertia = camera_frame(part)
+    clearance = config.TOPOLOGY_CONFIG["component_clearance_mm"]
+    center = np.asarray(next(item["center_mm"] for item in frame["components"] if item["type"] == "camera"), dtype=float)
+    extent = np.abs(np.column_stack([[1.0, 0.0, 0.0], axis, up])) @ size / 2 + clearance
+    centers = cell_centers(grid)
+    patch = (np.hypot(centers[:, 1] - center[1], centers[:, 2] - center[2]) <= config.CAMERA_SUPPORT["patch_radius_mm"]) & (centers[:, 0] > extent[0]) & allowed.ravel()
+    face = float(np.min(centers[patch, 0]) - h / 2)
+    keep_out = {"kind": "box", "min_mm": (center - [face, extent[1], extent[2]]).tolist(), "max_mm": (center + [face, extent[1], extent[2]]).tolist()}
+    cut = np.all((centers + h / 2 > np.asarray(keep_out["min_mm"]) + 1e-9) & (centers - h / 2 < np.asarray(keep_out["max_mm"]) - 1e-9), axis=1) & allowed.ravel()
+    allowed &= ~cut.reshape(allowed.shape)
+    labels, _ = label(allowed)
+    sizes = np.bincount(labels.ravel())
+    sizes[0] = 0
+    dropped = int(allowed.sum() - sizes.max())
+    allowed = labels == np.argmax(sizes)
+    selectors, top = frame["selectors"], np.asarray(mesh.bounds[1])
+    raise_box = lambda box, low, high: {"kind": "box", "min_mm": [*box["min_mm"][:2], low], "max_mm": [*box["max_mm"][:2], high]}
+    battery = next(item for item in frame["keep_outs"] if item["name"] == "battery_envelope")
+    c = config.COMPONENT_DEFAULTS
+    relief = {"point_masses": [{"name": "frame", "region": {"kind": "box", "min_mm": origin.tolist(), "max_mm": (origin + shape * h).tolist()}, "mass_g": float(mesh.volume * config.PRINT_MATERIAL["density_g_cm3"] / 1000)},
+                               {"name": "aio15", "region": raise_box(selectors["center_fixtures"][0], -h, spec["stack_height_mm"]), "mass_g": c["aio15"]["mass_g"] / 4}]
+                              + [{"name": "aio15", "region": raise_box(box, -h, spec["stack_height_mm"]), "mass_g": c["aio15"]["mass_g"] / 4} for box in selectors["center_fixtures"][1:]]
+                              + [{"name": "motor", "region": box, "mass_g": c["motor"]["mass_g"] + c["prop"]["mass_g"]} for box in selectors["motor_fixtures"]]
+                              + [{"name": "battery", "region": raise_box(battery, battery["min_mm"][2] - 2 * h, battery["min_mm"][2] + h), "mass_g": c["battery"]["mass_g"]}], "preserve_mass_g": 0.0}
+    force = load_numbers(cfg["loads"])["crash_force_n"]
+    angle = np.radians(config.CAMERA_SUPPORT["oblique_deg"])
+    zones = {"crash_front": [0.0, -force, 0.0], "crash_camera_oblique": (force * np.array([np.sin(angle), -np.cos(angle), 0.0])).tolist()}
+    body = {"name": "camera", "mass_g": part["mass_g"], "position_mm": center.tolist(), "inertia_g_mm2": inertia.tolist()}
+    thrust = load_numbers(cfg["loads"])["thrust_per_motor_n"]
+    cases = [{"name": "thrust_all", "analysis": "static", "fixed_regions": [], "loads": [{"region": box, "force_n": [0.0, 0.0, thrust]} for box in selectors["motor_fixtures"]], "inertia_relief": {**relief, "bodies": [{**body, "force_n": [0.0, 0.0, 0.0]}]}}]
+    cases += [{"name": name, "analysis": "static", "fixed_regions": [], "loads": [], "inertia_relief": {**relief, "bodies": [{**body, "force_n": vector}]}} for name, vector in zones.items()]
+    s = config.CAMERA_SUPPORT
+    zone = {"kind": "box", "min_mm": [-extent[0] - s["zone_mm"]["side"], float(center[1]), float(center[2])], "max_mm": [extent[0] + s["zone_mm"]["side"], float(top[1] + h), float(center[2] + extent[2] + s["zone_mm"]["top"])]}
+    front = center + axis * size[1] / 2
+    window = [[-size[0] / 2 - s["window_mm"]["side"], size[0] / 2 + s["window_mm"]["side"]], [-size[2] / 2, size[2] / 2 + s["window_mm"]["top"]]]
+    domain = {"grid": grid, "allowed": allowed, "preserve": np.zeros_like(allowed), "forbidden": ~allowed, "symmetry": {"axis": 0, "plane_mm": 0.0}, "material": orthotropic_material(config.PRINT_MATERIAL), "load_cases": cases,
+              "point_masses": [], "optimizer_settings": {"interface_node_policy": "allowed_adjacent"},
+              "camera": {"keep_out": keep_out, "reference_mm": center.tolist(), "center_mm": center.tolist(), "mass_g": part["mass_g"], "screw_axis_yz_mm": center[1:].tolist(), "zone": zone, "zones": zones,
+                         "displacement_cases": list(zones), "reference_regions": [raise_box(box, 0.0, spec["stack_height_mm"]) for box in selectors["center_fixtures"]],
+                         "coverage": {"axes": [axis.tolist(), [1.0, 0.0, 0.0], up.tolist()], "front_mm": front.tolist(), "window_mm": window, "step_mm": h * s["step_fraction"], "length_mm": float(np.linalg.norm(shape * h)), "frontal_area_mm2": float(size[0] * size[2])}}}
+    return domain, {"plate_face_x_mm": face, "camera_cells_cut": int(cut.sum()), "island_cells_dropped": dropped, "solid_cells_half": int(allowed.sum()), "frame_mass_g": relief["point_masses"][0]["mass_g"], "grid": grid, "tilt_deg": tilt, "zone": zone}
+
+def camera_measure(domain, linear_solver):
+    problem = {**deepcopy(PROBLEM), "stiffness": None, "covariance": None, "modal": None, "shadow": None, "monitor": [], "crash": {"cases": ["crash_front"], "ratio": 1.5, "reference": {}}, "camera": deepcopy(config.CAMERA_SUPPORT)}
+    tp = TopologyProblem(domain, problem, linear_solver=linear_solver)
+    physical = np.asarray(domain["allowed"], dtype=float).ravel()
+    report = tp.physical_report(physical)
+    patch = float(np.sum(tp.camera.area))
+    tp.close()
+    rows = {row["name"]: row["value"] for row in report["rows"]}
+    return {**rows, "mount_patch_area_mm2": patch, "mount_fraction": rows["camera_mount_area"] / patch, "table": format_report(report["rows"]), "spring_nodes": tp.camera.summary}
+
+def camera_limits(cfg):
+    spec = cfg["camera_limits"]
+    results = {}
+    for tilt in spec["tilts_deg"]:
+        domain, info = manafly_camera_domain(cfg, tilt)
+        results[f"tilt_{tilt:g}"] = {**info, **camera_measure(domain, spec["linear_solver"])}
+        print(results[f"tilt_{tilt:g}"]["table"], flush=True)
+    config.TOPOLOGY_CONFIG["camera_support"] = "free"
+    half = frame_domain(cfg, cfg["shape"])
+    tp = TopologyProblem(half, {**frame_problem(half), "crash": {**PROBLEM["crash"], "cases": []}}, linear_solver=spec["linear_solver"])
+    density = np.load(cfg["reference_density"])["density"].ravel()
+    tp.body_update(density)
+    solved = tp.compliances(density)
+    tp.close()
+    reference = {name: solved[name]["compliance_n_mm"] for name in tp.zones}
+    record = {"statement": "ManaFly camera cage measured with the CAMERA_SUPPORT definitions (half model, binary 4/3 mm voxels at >= 50 % volume fraction, inertia relief over frame, AIO, motors, battery and camera), springs on the inner plate faces (gap camera side to plate bridged rigidly by the screw/spacer); "
+              "crash references for the zone cases = compliance of the formulation reference density in the free-camera domain under the zone loads", "manafly": results, "crash_reference_n_mm": reference, "reference_density": cfg["reference_density"], "sha": git_sha()}
+    Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
+    print(json.dumps({key: {name: value[name] for name in ("camera_shift_crash_front", "camera_shift_crash_camera_oblique", "camera_coverage", "camera_mount_area", "mount_fraction", "plate_face_x_mm", "camera_cells_cut")} for key, value in results.items()}, default=float), flush=True)
+    print(json.dumps(reference), flush=True)
+
+def camera_fd(cfg):
+    spec = cfg["camera_fd"]
+    config.TOPOLOGY_CONFIG.update(camera_support="free", battery_support=spec["battery_support"])
+    half, problem = frame_setup(cfg, spec["shape"])
+    problem["camera"].update(spec["limits"])
+    tp = TopologyProblem(half, problem, linear_solver=cfg["linear_solver"])
+    random = np.random.default_rng(spec["seed"])
+    record = {"statement": "central finite differences along one random direction; all rows incl. the design-dependent zone loads with rebuilt inertia relief, camera springs, camera shift adjoints, coverage and the free battery; second design with the impact zone near the weight floor",
+              "grid": half["grid"], "camera": tp.camera.summary, "camera_body": {key: half["camera"][key] for key in ("center_mm", "reference_mm", "zone", "zones", "fov_cells")}, "limits": spec["limits"], "designs": {}, "sha": git_sha()}
+    for label, low, high in (("uniform", spec["low"], spec["high"]), ("sparse_zone", spec["low"], spec["high"])):
+        design = random.uniform(low, high, tp.map.n)
+        if label == "sparse_zone":
+            design[tp.zones["crash_front"].elements] = spec["sparse"]
+        result = tp.evaluate(design)
+        record["designs"][label] = {"rows": result["rows"], "table": format_report(result["rows"]), "finite_differences": finite_differences(tp, design, spec["step"], spec["seed"])}
+        print(record["designs"][label]["table"], flush=True)
+        print(json.dumps({name: [row["analytic"], row["finite_difference"], row["relative_error"]] for name, row in record["designs"][label]["finite_differences"].items()}, indent=0, default=float), flush=True)
+    tp.close()
+    Path(spec["output"]).write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+
 def body_properties(stl, layout, density=config.PRINT_MATERIAL["density_g_cm3"]):
     import trimesh
     from deep_frame.frame_run import LayoutModel
@@ -492,15 +677,16 @@ def export_body(cfg, physical, out):
     np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
     return finish(out, density, fine_full, settings, None)
 
-def battery_start(cfg, design, half):
+def body_start(cfg, design, half):
     from deep_frame.topology_geometry import region_contains
-    from deep_frame.topology_neural import cell_centers
-    spec = cfg["mma"]["battery_start"]
-    if "battery" not in half or not spec:
-        return design
-    near = region_contains(cell_centers(half["grid"]), half["battery"]["keep_out"], spec["cells"] * np.asarray(half["grid"]["spacing_mm"])) & np.asarray(half["allowed"]).ravel()
-    design = design.copy()
-    design[near] = np.maximum(design[near], spec["density"])
+    design, centers, allowed = design.copy(), cell_centers(half["grid"]), np.asarray(half["allowed"]).ravel()
+    for name, spec in cfg["mma"]["body_start"].items():
+        if name not in half or not spec:
+            continue
+        near = region_contains(centers, half[name]["keep_out"], spec["cells"] * np.asarray(half["grid"]["spacing_mm"]))
+        if spec.get("zone"):
+            near |= region_contains(centers, half[name]["zone"])
+        design[near & allowed] = np.maximum(design[near & allowed], spec["density"])
     return design
 
 def frame_mma(cfg):
@@ -511,7 +697,7 @@ def frame_mma(cfg):
     design, stages, level = reference, {}, 0
     if cfg["mma"]["coarse"]:
         coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
-        start = battery_start(cfg, prolongate(reference, fine["grid"], coarse), coarse)
+        start = body_start(cfg, prolongate(reference, fine["grid"], coarse), coarse)
         result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
         design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
     design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
@@ -706,7 +892,7 @@ def main(argv=None):
                          "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
                          "cov_compare": lambda overrides: cov_compare(configure(overrides)), "battery_fd": lambda overrides: battery_fd(configure(overrides)),
-                         "battery_compare": lambda overrides: battery_compare(configure(overrides))}, argv)
+                         "battery_compare": lambda overrides: battery_compare(configure(overrides)), "camera_limits": lambda overrides: camera_limits(configure(overrides)), "camera_fd": lambda overrides: camera_fd(configure(overrides))}, argv)
 
 if __name__ == "__main__":
     raise SystemExit(main())

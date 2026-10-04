@@ -904,6 +904,7 @@ TOPOLOGY_CONFIG = {
     "battery_rail_edge_inset_mm": 0.0,
     "battery_support": "free",
     "battery_support_modes": {"free": "rigid battery on density-dependent contact springs, no prescribed geometry (BATTERY_SUPPORT); user decision 2026-10-04: standard", "rails": "two prescribed 3.5 x 50 mm longitudinal strap rails (battery_contact_*), selectable"},
+    "camera_support": "prescribed",
     "connection_proof_force_n": 0.05,
     "manufacturing": {
         "nozzle_width_mm": 0.4,
@@ -1188,7 +1189,37 @@ BATTERY_SUPPORT = {
         "area": "Auflageflaeche = sum Knotenflaeche x rho der Unterseitenknoten >= min_area_mm2"},
 }
 
-LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float"},
+CAMERA_SUPPORT = {
+    "pad_normal_n_mm3": 1000.0, "pad_shear_n_mm3": 400.0,
+    "pad_source": "ANNAHME seitliche M2-Verschraubung der Lux: Klemmung PA6-CF (E ~ 3-4 GPa) ueber ~3 mm -> ~1000 N/mm je mm2 normal, Schub ~0,4 x; bestimmt nur die Gewichtung der Montageknoten (Kamera folgt dem gewichteten Mittel), nicht die Lastverteilung",
+    "patch_radius_mm": 4.0, "patch_source": "Augenradius der bisherigen Kameralasche (TOPOLOGY_CONFIG camera_mount_radius_mm 4,1 mm), gerundet; Federn nur auf den beiden Seitenflaechen des Kamera-Keep-outs innerhalb dieses Radius um die Schraubachse",
+    "exponent": 3.0, "floor": 1e-4, "tension_ratio": 1.0, "side_secant": 1.0, "active_iterations": 1, "band_preload_n": 0.0, "shift_axes": 3,
+    "limit_mm": {"crash_front": 0.0866, "crash_camera_oblique": 0.3816},
+    "limit_source": "ManaFly 3 mit denselben Definitionen (formulation_study camera_limits, docs/validation/camera_limits_manafly.json): Halbmodell, binaere 4/3-mm-Voxel, Lux 20 Grad gekippt in der Evaluator-Platzierung (0, 50, 16), Federn an den Innenflaechen der Seitenplatten (x = 10,67 mm, Spalt starr ueberbrueckt): 0,0866 mm frontal / 0,3816 mm schraeg (bei 0 Grad Neigung 0,0873 / 0,3926); Vergleich Akku-Analogon 0,5 mm",
+    "min_area_mm2": None, "min_area_fraction": 1.0, "min_area_source": "ManaFly: Seitenplatten decken die Montageflaeche (Radius 4 mm um die Schraubachse) zu 100 % (74,7 mm2 beidseitig); Grenze = Anteil 1,0 der eigenen Montageflaeche",
+    "min_coverage": 0.4227, "coverage_source": "ManaFly (wie limit_source): projizierte Materialflaeche vor der Kamerafront im Fenster +-(8 + 6) x [-7, 7 + 6] mm entlang der um 20 Grad gekippten Achse = 0,4227 x Frontflaeche 16 x 14 mm (0 Grad: 0,4071); im Kamerasilhouettenfenster selbst hat ManaFly 0 %",
+    "crash_reference": {"crash_front": 10.0875, "crash_below": 103.0026},
+    "crash_reference_source": "Nachgiebigkeit der Formulierungs-Referenzdichte (r4_neural_v06_f1, wie formulation_reference.json) im Freikamera-Gebiet unter den Zonenlasten (camera_limits); alte Patch-Definition 6,18 / 27,52 N mm; Grenze = ratio 1,5 x Referenz",
+    "fov_deg": [126.0, 94.0], "fov_source": "https://docs.hd-zero.com/camera-lux: 4:3 H 126 / V 94 deg (Nutzerentscheidung 4:3)",
+    "aperture_mm": 3.0, "aperture_source": "ANNAHME halbe Kantenlaenge der Eintrittsoeffnung (Linsenfront ~6 mm) auf der Kamerafront; Sichtkegel als Pyramidenstumpf mit den halben FOV-Winkeln, Keep-out jede Zelle mit einer Ecke im Stumpf + 0,5 mm",
+    "fov_clearance_mm": 0.5,
+    "zone_mm": {"side": 6.0, "top": 6.0}, "zone_source": "ANNAHME: Zone vor und ueber der Kamera = x +-(Keep-out-Halbbreite + 6 mm), y von der Kameramitte bis zur Huellenfront, z von der Kameramitte bis Keep-out-Oberkante + 6 mm",
+    "zone_floor": 1e-3,
+    "window_mm": {"side": 6.0, "top": 6.0}, "step_fraction": 0.5,
+    "oblique_deg": 45.0, "oblique_source": "ANNAHME Schraegcrash: volle Crashkraft unter 45 Grad von vorn links in der Horizontalen (Kraft nach hinten rechts) auf dieselbe Zone",
+    "zone_cases": {"crash_front": [0.0, -1.0, 0.0], "crash_below": [0.0, 0.0, 1.0]},
+    "displacement_cases": ["crash_front", "crash_camera_oblique"],
+    "definition": {
+        "body": "Kamera starr (Masse 2,3 g, Eigentraegheit Quader 16 x 14 x 14 mm um ihre Achsen, gekippt um tilt_deg), Volumen = Keep-out camera_envelope; Referenzpunkt Mitte der Schraubachse wie der Sigma-Kamerablock",
+        "springs": "bilaterale Federn (Normal x, Schub y/z) an den Knoten zwischen erlaubten Zellen und Kamera-Keep-out auf den Seitenflaechen innerhalb patch_radius_mm um die Schraubachse; k = Flaeche x Pad x (floor + (1 - floor) rho^3)",
+        "fov": "Keep-out Sichtfeld 4:3: Pyramidenstumpf ab der Kamerafront (Eintrittsoeffnung +-aperture_mm) entlang der gekippten optischen Achse, halbe Winkel 63 / 47 Grad, +0,5 mm",
+        "impact": "Frontalcrash (und crash_below, crash_camera_oblique) als designabhaengige Last: Gesamtkraft F auf die Elemente der Zone verteilt mit w_e = floor + (1 - floor) rho_e (erodiertes Feld), f = F w_e / sum w je Element zu gleichen Teilen auf seine 8 Knoten; Inertia Relief linear im Lastvektor neu je Auswertung (Starrkoerperbeschleunigung aus Kraft und Moment der aktuellen Verteilung, Massen fest), inkl. der Koerperwrenches von Akku und Kamera",
+        "shift": "Kameraverschiebung relativ zum Rahmen = Starrkoerperbewegung der Kamera auf den Federn am verformten Rahmen s = D^-1 (w + sum T^T K u) minus Starrkoerper-Ausgleich des Rahmens an den Stack-Montageflaechen (aio_contact_), am Kameraschwerpunkt, |delta_xyz| je Crashfall; Sensitivitaet mit Adjungierter (3 Zusatz-RHS je Fall)",
+        "coverage": "Frontabdeckung = projizierte Materialflaeche vor der Kamerafront entlang achsparalleler Strahlen (gekippte optische Achse) im Fenster Front +-(B/2 + side) x [-H/2, H/2 + top], je Strahl 1 - prod(1 - rho_s) (Stichproben im Abstand h/2, trilinear), geteilt durch die Frontflaeche B x H",
+        "area": "Montageflaeche = sum Knotenflaeche x rho der Federknoten (beide Seiten)"},
+}
+
+LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float", "support": ("prescribed", "free")},
                     "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free")}, "stack": {"standoff_mm": "float"},
                     "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
                                   "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float"}}
