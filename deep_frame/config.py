@@ -1322,7 +1322,7 @@ RUN_GRIDS = {
 
 STAGES = {
     "optimization": {"worktree": PATHS["root"], "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": PATHS["gpu_python"]},
-    "reconstruction": {"worktree": PATHS["root"], "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": PATHS["python"]},
+    "reconstruction": {"worktree": PATHS["root"], "tool": "tools/reconstruction_study.py", "argv": ["splines"], "compute": "reconstruction", "python": PATHS["python"]},
     "geometry": {"worktree": PATHS["root"], "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": PATHS["python"]},
     "evaluation": {"worktree": PATHS["root"], "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": PATHS["python"]},
     "datasheet": {"worktree": PATHS["root"], "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": PATHS["python"]},

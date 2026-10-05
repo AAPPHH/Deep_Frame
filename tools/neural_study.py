@@ -34,14 +34,14 @@ STUDY = {
     "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3, "support_half_mm": 5.0, "bore_margin_mm": 0.5},
     "hoop": {"x_mm": 12.0, "radius_mm": 1.6, "path_yz_mm": [[24, 27.5], [34, 26], [42, 23.5], [46.5, 18], [47.5, 11], [45.5, 5], [41, 2], [33, 1.5]],
              "load_y_min_mm": 44.0, "load_z_mm": [4.0, 22.0], "case_weight": 1.0},
-    "neural": {"max_frequency_per_mm": 0.2, "max_iterations": 110, "minimum_iterations": 40, "sharpness_iterations": 80, "sharpness_final": 8.0, "max_width_penalty": 0.0, "max_runtime_s": 1500.0},
+    "neural": {"max_frequency_per_mm": 0.2, "max_iterations": 110, "minimum_iterations": 40, "sharpness_iterations": 80, "sharpness_final": 8.0, "max_width_penalty": 0.0, "max_runtime_s": None},
     "render": {"sigma_cells": 1.0, "threshold": 0.5, "taubin": 12, "carve_bores": True, "keep": "motor_pads", "min_body_mm3": 1.0, "sample_sharpness": 32.0, "flatten": ["battery_rail_", "battery_contact"]},
     "prop_discs": {"mode": None, "weight": 3.0, "length_mm": 10.0, "radial_power": 2.0, "corridor_half_width_mm": 4.0, "hub_margin_mm": 2.0},
     "modal": {"f1_min_hz": None, "case": "modes", "modes": 4, "tracked": 2, "initial_iterations": 30, "warm_iterations": 2, "penalty": 10.0, "ks": 40.0, "mass_cutoff": 0.1, "multiplier_interval": 5, "start_iteration": 1},
     "stiffness": {"min_n_per_mm": None, "case": "stiffness_arm_tip", "source_case": "arm_tip", "calibration": 1.0, "penalty": 10.0, "multiplier_interval": 5, "feasibility_tolerance": 0.02},
     "method": "neural",
     "calibration": {"inputs": [], "output": "exports/r4/modal_calibration.json", "linear_solver": "cpu_superlu"},
-    "simp": {"filter_radius_mm": 4.0, "projection": "single", "beta_schedule": [1.0, 2.0, 4.0, 8.0], "beta_interval": 35, "max_iterations": 140, "minimum_iterations": 20, "move_limit": 0.1, "max_runtime_s": 1500.0},
+    "simp": {"filter_radius_mm": 4.0, "projection": "single", "beta_schedule": [1.0, 2.0, 4.0, 8.0], "beta_interval": 35, "max_iterations": 140, "minimum_iterations": 20, "move_limit": 0.1, "max_runtime_s": None},
     "variants": [{"name": "neural_r3_v05", "neural": {"volume_fraction": 0.05}}],
 }
 VARIANT_KEYS = ("prop_discs", "modal", "stiffness", "method", "simp")
