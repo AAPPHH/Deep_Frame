@@ -56,7 +56,7 @@ FORMULATION = {
     "landing": {"tilt_deg": 20.0, "output": "docs/validation/landing_limit_manafly.json", "fd_output": "docs/validation/landing_fd.json", "shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "linear_solver": "auto",
                 "fields": {}, "designs": {"stand_fix_coarse": "exports/runs/stand_fix_opt/coarse/design.npz"},
                 "proof": {"runs": {"stand_land": "exports/runs/stand_land_opt/coarse", "stand_fix": "exports/runs/stand_fix_opt/coarse"}, "output": "docs/validation/stand_land_proof.json", "image": "docs/validation/stand_land_floor.png"}},
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "cable_width": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None, "memory_log": "memory.jsonl", "fine_dir": "fine",
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "cable_width": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "multigrid": None, "memory_s": None, "memory_log": "memory.jsonl", "fine_dir": "fine",
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": PATHS["data"], "manafly_renders": str(Path(PATHS["data"]) / 'fast/_manafly_same_renderer'), "evaluation_python": PATHS["python"],
             "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -273,6 +273,8 @@ def frame_setup(cfg=FORMULATION, shape=None):
     problem = frame_problem(half, json.loads(Path(cfg["output"]).read_text(encoding="utf-8")))
     if cfg["mma"]["calibration"]:
         problem["covariance"]["limits"]["calibration"] = dict(cfg["mma"]["calibration"])
+    if cfg["mma"]["multigrid"]:
+        problem["multigrid"] = dict(cfg["mma"]["multigrid"])
     return half, problem
 
 def digest(path):
@@ -1198,6 +1200,8 @@ def optimize_stage(cfg, half, problem, design, out, start_level, stage):
     record = {"status": result["status"], "iterations": result["iterations"], "runtime_s": result["runtime_s"], "seconds_per_iteration": result["seconds_per_iteration"], "levels": result["levels"],
               "best_feasible": result["best_feasible"], "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
               "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"], "linear_solver": tp.system.linear_solver}
+    if tp.system.multigrid is not None:
+        record["multigrid"] = {"settings": tp.system.multigrid.settings, "solves": multigrid_summary(tp.system.multigrid.statistics)}
     tp.close()
     (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
     print(json.dumps({key: record[key] for key in ("status", "iterations", "seconds_per_iteration", "mass_g", "max_violation", "gray_fraction")}, default=float), flush=True)
@@ -1237,15 +1241,16 @@ def frame_mma(cfg):
             threading.Event().wait(10.0 if probe else 0.0)
         with phase("fine_setup"):
             fine, problem = frame_setup(cfg, cfg["shape"])
-        reference = embed_field(np.load(cfg["reference_density"])["density"], fine["grid"]).ravel()
-        design, stages, level = reference, {}, 0
+        stages, level = {}, 0
         if cfg["mma"]["start"]:
             source = Path(cfg["mma"]["start"])
             design, level = prolongate(np.load(source / "design.npz")["design"], read(source / "result.json")["grid"], fine), cfg["mma"]["fine_start_level"]
-        elif cfg["mma"]["coarse"]:
+        else:
+            design = embed_field(np.load(cfg["reference_density"])["density"], fine["grid"]).ravel()
+        if not cfg["mma"]["start"] and cfg["mma"]["coarse"]:
             with phase("coarse"):
                 coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
-                start = body_start(cfg, prolongate(reference, fine["grid"], coarse), coarse)
+                start = body_start(cfg, prolongate(design, fine["grid"], coarse), coarse)
                 result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0, "coarse")
             design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
         if cfg["mma"]["until"] == "coarse":
