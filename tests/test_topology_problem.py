@@ -44,17 +44,21 @@ def test_neural_start_fit_gate_and_short_probe():
         assert result["iterations"] == 2 and result["status"].startswith("not_converged_")
         assert optimizer.fit_rmse[0] <= NEURAL["fit_rmse_max"] and all(np.isfinite(row["mass_g"]) for row in result["history"])
         assert np.all(result["design"][problem.map.preserve] == 1) and np.all(result["design"][~problem.map.allowed] == 0)
-        assert "track_rmse" in result["history"][0] and set(result["result"]["names"]) == {"volume", "arm_tip_stiffness", "f1", "shadow", "crash_front", "crash_side_left"}
+        assert "track_gap" in result["history"][0] and set(result["result"]["names"]) == {"volume", "arm_tip_stiffness", "f1", "shadow", "crash_front", "crash_side_left"}
     finally:
         problem.close()
 
-def test_neural_and_mma_converge_to_similar_min_mass_cantilever():
-    pytest.importorskip("mmapy")
+def min_mass_cantilever():
     domain = cantilever_domain((16, 4, 6), 1.0)
     solid = TopologyProblem(domain, cantilever_problem(1.0))
     stiffness = {row["name"]: row for row in solid.evaluate(np.ones(solid.map.n))["rows"]}["tip_stiffness"]["value"]
     solid.close()
     problem = cantilever_problem(0.4 * stiffness)
+    return domain, problem
+
+def test_neural_and_mma_converge_to_similar_min_mass_cantilever():
+    pytest.importorskip("mmapy")
+    domain, problem = min_mass_cantilever()
     problem["continuation"]["beta_schedule"] = [1.0, 4.0]
     settings, results = {"level_max_iterations": 60, "final_max_iterations": 200, "move": 0.2}, {}
     for name, build in (("mma", lambda tp: MMAOptimizer(tp, settings)), ("neural", lambda tp: NeuralOptimizer(tp, settings, {"max_frequency_per_mm": 1.0}))):
@@ -65,10 +69,27 @@ def test_neural_and_mma_converge_to_similar_min_mass_cantilever():
         assert result["status"] == "converged" and rows["tip_stiffness"]["status"] == "active", name
         assert result["history"][-1]["max_violation"] <= 1e-3 and result["history"][-1]["change"] < 1e-3, name
         results[name] = (result["result"]["mass_g"], rows["volume"]["value"], optimizer)
+        neural_rows = result["history"]
         tp.close()
     assert results["mma"][0] <= results["neural"][0] <= 1.1 * results["mma"][0]
-    report = results["neural"][2].report()
-    assert report["track_rmse_max"] <= NEURAL["track_rmse_max"] and report["saturation"]["max_abs_logit"] < NEURAL["logit_bound"] + 0.01
+    neural = results["neural"][2]
+    tail = [row for row in neural_rows if "track_gap" in row][-MMA["level_window"]:]
+    assert tail[-1]["proposal_step"] < 1e-3 and all(row["proposal_step"] < 2e-3 for row in tail)
+    assert neural.report()["saturation"]["max_abs_logit"] < NEURAL["logit_bound"] + 0.01
+
+def test_neural_route_cannot_converge_when_the_network_does_not_follow_the_proposal():
+    pytest.importorskip("mmapy")
+    domain, problem = min_mass_cantilever()
+    problem["continuation"]["beta_schedule"] = [1.0]
+    tp = TopologyProblem(domain, problem)
+    try:
+        result = NeuralOptimizer(tp, {"final_max_iterations": 30}, {"track_learning_rate": 1e-12}).run(np.ones(domain["allowed"].size))
+        rows = [row for row in result["history"] if "track_gap" in row]
+        assert all(row["max_violation"] <= 1e-3 for row in result["history"])
+        assert result["status"] == "not_converged_iteration_cap"
+        assert all(row["change"] >= row_before["proposal_step"] > 1e-2 for row_before, row in zip(rows, result["history"][1:]))
+    finally:
+        tp.close()
 
 def box(low, high):
     return {"kind": "box", "min_mm": list(map(float, low)), "max_mm": list(map(float, high))}
@@ -358,11 +379,7 @@ def test_cantilever_stiffness_gradient_matches_finite_differences():
 
 def test_mma_min_mass_cantilever_ends_with_active_stiffness():
     pytest.importorskip("mmapy")
-    domain = cantilever_domain((16, 4, 6), 1.0)
-    solid = TopologyProblem(domain, cantilever_problem(1.0))
-    stiffness = {row["name"]: row for row in solid.evaluate(np.ones(solid.map.n))["rows"]}["tip_stiffness"]["value"]
-    solid.close()
-    problem = cantilever_problem(0.4 * stiffness)
+    domain, problem = min_mass_cantilever()
     problem["continuation"]["beta_schedule"] = [1.0, 4.0]
     optimizer = MMAOptimizer(TopologyProblem(domain, problem), {"level_max_iterations": 60, "final_max_iterations": 200, "move": 0.2})
     result = optimizer.run(np.ones(domain["allowed"].size))
@@ -709,11 +726,7 @@ class Diverging:
 
 def test_mma_late_move_and_best_feasible_fallback():
     pytest.importorskip("mmapy")
-    domain = cantilever_domain((16, 4, 6), 1.0)
-    solid = TopologyProblem(domain, cantilever_problem(1.0))
-    stiffness = {row["name"]: row for row in solid.evaluate(np.ones(solid.map.n))["rows"]}["tip_stiffness"]["value"]
-    solid.close()
-    problem = cantilever_problem(0.4 * stiffness)
+    domain, problem = min_mass_cantilever()
     problem["continuation"]["beta_schedule"] = [1.0, 32.0]
     wrapped, kept = Diverging(TopologyProblem(domain, problem)), []
     result = MMAOptimizer(wrapped, {"level_max_iterations": 60, "final_max_iterations": 200, "move": 0.2}).run(np.ones(domain["allowed"].size), keep=lambda x, best: kept.append((x.copy(), best)))

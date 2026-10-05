@@ -28,7 +28,7 @@ def test_shared_start_design_is_verified_by_sha256_and_problem(tmp_path):
     np.savez_compressed(tmp_path/"design.npz",design=design)
     (tmp_path/"result.json").write_text(json.dumps({"grid":half["grid"],"sha256":digest,"problem_definition_sha256":study.shared_definition(half,{"a":1})["sha256"]}))
     cfg={"mma":{"start":str(tmp_path),"start_sha256":digest}}
-    assert np.allclose(study.start_design(cfg,half,{"a":1}),design)
+    assert np.array_equal(study.start_design(cfg,half,{"a":1}),design) and study.design_sha256(study.start_design(cfg,half,{"a":1}))==digest
     with pytest.raises(RuntimeError,match="different problem"):
         study.start_design(cfg,half,{"a":2})
     with pytest.raises(RuntimeError,match="start_sha256"):

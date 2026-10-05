@@ -1,7 +1,7 @@
 from time import perf_counter
 import numpy as np
 
-from deep_frame.topology_neural import Adam, NeuralDesign
+from deep_frame.topology_neural import NeuralDesign
 from deep_frame.topology_optimization import continuation_decision
 
 MMA = {"package": "mmapy==0.3.1 (Deetman, Python port of Svanberg's MMA)", "move": 0.1, "move_late": 0.05, "move_late_beta": 32.0, "scale": 100.0, "asyinit": 0.5, "asydecr": 0.7, "asyincr": 1.2, "raa0": 1e-5, "c": 1e4, "d": 1.0,
@@ -65,6 +65,8 @@ class MMAOptimizer:
         x = x.copy()
         x[free] = np.clip(moved[0].ravel(), *self.bounds)
         return x
+    def change(self, x, previous, state):
+        return float(np.max(np.abs(x[self.free] - previous)))
     def move(self):
         return self.settings["move_late"] if self.problem.beta >= self.settings["move_late_beta"] else self.settings["move"]
     def diverged(self, level, tolerance):
@@ -109,7 +111,7 @@ class MMAOptimizer:
             result = problem.evaluate(x, initial if not level else None)
             f0, _, g, _ = self.terms(result)
             row = {"iteration": len(history), "level": problem.level, "beta": problem.beta, "objective": result["objective"], "f0": float(f0), "mass_g": result["mass_g"], "max_violation": float(np.max(g)),
-                   "move": self.move(), "change": None if previous is None else float(np.max(np.abs(x[self.free]-previous))), "constraints": dict(zip(result["names"], result["constraints"].tolist()))}
+                   "move": self.move(), "change": None if previous is None else self.change(x, previous, state), "constraints": dict(zip(result["names"], result["constraints"].tolist()))}
             history.append(row)
             level.append(row)
             row["objective_stalled"] = self.stalled(level)
@@ -161,13 +163,16 @@ class MMAOptimizer:
         return {"design": x, "status": status, "iterations": len(history), "runtime_s": runtime, "seconds_per_iteration": runtime / len(history), "history": history, "levels": levels, "result": result,
                 "best_feasible": kept or None, "capped_levels": [entry["beta"] for entry in levels if entry["reason"] == "iteration_cap" and "quiet" in entry], "settings": settings}
 
-NEURAL = {"frequencies": 96, "max_frequency_per_mm": 0.125, "hidden": [48, 48], "seed": 0, "mirror_axis": None, "logit_bound": 4.0, "logit_weight": 1.0,
-          "fit_iterations": 800, "fit_learning_rate": 0.01, "fit_rmse_max": 0.05, "track_iterations": 100, "track_learning_rate": 0.01, "rate_decay": 0.7, "track_rmse_max": 0.15,
+NEURAL = {"frequencies": 96, "max_frequency_per_mm": 0.25, "hidden": [48, 48], "seed": 0, "mirror_axis": None, "logit_bound": 4.0, "logit_weight": 1.0,
+          "fit_iterations": 800, "fit_learning_rate": 0.01, "fit_rmse_max": 0.05, "track_iterations": 100, "track_learning_rate": 0.01, "rate_decay": 0.7,
           "rules": {"design": "x = sigmoid(z) on the free cells, z the output of a Fourier-feature MLP; every TopologyProblem evaluation, filter, projection, constraint and the Termination are shared with the SIMP route",
-                    "step": "the MMA subproblem of the shared optimizer (same move limits, asymptotes and constraints) proposes x*; the network is warm-started and fitted to x* by at most track_iterations monotone Adam steps (a step that does not lower the squared error is undone and halves the rate), rate = track_learning_rate x rate_decay^level; x = network output, so the iterate stays on the network manifold and stops moving when x* is the manifold's fixed point",
-                    "bound": "the MMA box is [sigmoid(-logit_bound), sigmoid(logit_bound)] so every proposal is reachable; fit loss + w sum(max(0, |z| - logit_bound)^2), targets clipped to that box, so logits stay unsaturated",
-                    "start": "the network is fitted to the shared start design (fit_iterations, fit_learning_rate); a start RMSE above fit_rmse_max or a tracking RMSE above track_rmse_max raises",
+                    "step": "the MMA subproblem of the shared optimizer (same move limits, asymptotes reset per beta level as in SIMP, constraints) proposes x*; the network is warm-started and fitted to x* by at most track_iterations monotone Adam steps (a step that does not lower the squared error is undone and halves the rate), rate = track_learning_rate x rate_decay^level; x = network output",
+                    "stationarity": "the design change of a neural iterate is max(max|x - x_prev|, max|x* - x_prev|), the distance of the MMA proposal from the previous iterate; level advance, best-feasible candidates and Termination therefore need a stationary MMA proposal, and a network that cannot follow x* (track_gap = max|x - x*|) keeps the change at the proposal distance and cannot report converged",
+                    "bound": "the MMA box is [sigmoid(-logit_bound), sigmoid(logit_bound)] = [0.018, 0.982] (SIMP uses [0, 1]) so every proposal is reachable; fit loss + w sum(max(0, |z| - logit_bound)^2), targets clipped to that box, so logits stay unsaturated",
+                    "frequency": "wavenumbers uniform up to max_frequency_per_mm; 800-step fits on the 4/3 mm frame grid (91256 free cells) to the failed ground15 SIMP design gave RMSE 0.115 at 1.0/mm, 0.037 at 0.125/mm, 0.032 at 0.25/mm, max cell gap 0.73-0.96 with the default 96 frequencies and [48, 48]; 256 frequencies with [96, 96] at 0.25/mm reached RMSE 0.015, max gap 0.27, 0.03 % of cells above 0.1 (0.125/mm: 0.029, gap 0.75) at about twice the fit time, the setting of the ground15 frame configuration; the 16 mm cantilever benchmark needs 1.0/mm because 0.25/mm gives it less than one period",
+                    "start": "the network is fitted to the shared start design (fit_iterations, fit_learning_rate); a start RMSE above fit_rmse_max raises",
                     "restart": "a capped level restarting from its best feasible iterate and a returned best-feasible design restore the network parameters of that iterate",
+                    "spec_deviation": "accepted only by the orchestrator: the planned Adam/augmented-Lagrangian port is not used; logit bound = MMA box plus fit penalty, rate decay 0.7 acts on the tracking-fit rate only, no multipliers or per-constraint penalties (MMA handles the constraints), move limit and asymptotes are MMA's and reset per beta level like SIMP",
                     "adam_al": "an Adam/augmented-Lagrangian port (logit bound, per-level rate decay, per-constraint penalties 1 -> 10 kept across levels, move limit) did not reach a stationary point on the cantilever benchmark: first-order steps in network parameters end gray at 0.61-0.77 g vs MMA 0.567 g, converged only by step collapse"}}
 
 def neural_settings(settings):
@@ -203,18 +208,19 @@ class NeuralOptimizer(MMAOptimizer):
     def restore(self, best):
         self.mapping.restore(best["parameters"])
         return best["x"].copy()
+    def change(self, x, previous, state):
+        return max(super().change(x, previous, state), state["track"]["proposal_step"])
     def step(self, x, result, state):
         proposal = super().step(x, result, state)
         rate = self.neural["track_learning_rate"] * self.neural["rate_decay"] ** self.problem.level
         rmse, steps = self.mapping.fit(proposal[self.free], self.neural["track_iterations"], rate)
-        state["track"] = {"track_rmse": rmse, "track_steps": steps, "track_rate": rate}
-        self.tracking.append(rmse)
-        if rmse > self.neural["track_rmse_max"]:
-            raise RuntimeError(f"Neural tracking RMSE {rmse:.4f} exceeds {self.neural['track_rmse_max']}; the network cannot follow the MMA proposal")
-        proposal[self.free] = self.mapping.values()[0]
+        values = self.mapping.values()[0]
+        state["track"] = {"track_rmse": rmse, "track_gap": float(np.max(np.abs(values - proposal[self.free]))), "proposal_step": float(np.max(np.abs(proposal[self.free] - x[self.free]))), "track_steps": steps, "track_rate": rate}
+        self.tracking.append(state["track"]["track_gap"] / self.move())
+        proposal[self.free] = values
         return proposal
     def trace(self, state):
         return state.get("track", {})
     def report(self):
-        return {"settings": self.neural, "fit_rmse": self.fit_rmse, "track_rmse_max": max(self.tracking, default=None), "track_rmse_last": self.tracking[-1] if self.tracking else None,
+        return {"settings": self.neural, "fit_rmse": self.fit_rmse, "track_gap_per_move_max": max(self.tracking, default=None), "track_gap_per_move_last": self.tracking[-1] if self.tracking else None,
                 "parameter_count": int(sum(value.size for value in self.mapping.field.parameters)), "saturation": self.mapping.saturation()}

@@ -1236,7 +1236,7 @@ def shared_definition(half,problem):
 
 def optimize_stage(cfg, half, problem, design, out, start_level, stage):
     out.mkdir(parents=True, exist_ok=True)
-    definition = shared_definition(half,problem)
+    definition, start_sha256 = shared_definition(half,problem), design_sha256(design)
     (out / "problem_definition.json").write_text(json.dumps(definition,indent=2),encoding="utf-8")
     tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["stage_solvers"].get(stage, cfg["mma"]["linear_solver"]))
     method = cfg["mma"].get("optimizer", "mma")
@@ -1263,7 +1263,7 @@ def optimize_stage(cfg, half, problem, design, out, start_level, stage):
               "best_feasible": result["best_feasible"], "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
               "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"], "linear_solver": tp.system.linear_solver}
     record["optimizer"] = method
-    record["start_sha256"] = cfg["mma"].get("start_sha256")
+    record["start_sha256"] = start_sha256
     record.update(problem_definition_sha256=definition["sha256"],functional_requirements=half.get("functional_requirements",{}),battery_retention=(problem.get("battery") or {}).get("retention"))
     if method == "neural_al":
         record["neural"] = {**optimizer.report(), "network_artifact": "last_network.npz", "network_statement": "Last network iterate; a returned best-feasible density may come from an earlier iterate"}
@@ -1335,14 +1335,23 @@ def design_sha256(design):
 def frame_seed(cfg):
     switches(cfg)
     half, problem = frame_setup(cfg, cfg["shape"])
-    design = initial_design(cfg, half)
+    definition = shared_definition(half, problem)["sha256"]
     root = Path(cfg["mma"]["start"])
-    root.mkdir(parents=True, exist_ok=True)
+    coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
+    start = body_start(cfg, prolongate(initial_design(cfg, half), half["grid"], coarse), coarse)
+    result, stage = optimize_stage(_merge(cfg, {"mma": {"optimizer": "mma", "resume": False}}), coarse, coarse_problem, start, root / "coarse", 0, "coarse")
+    design = prolongate(result, coarse["grid"], half)
+    tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["linear_solver"])
+    while tp.level < cfg["mma"]["fine_start_level"] and tp.advance():
+        pass
+    report = tp.report(design)
+    tp.close()
     np.savez_compressed(root / "design.npz", design=design)
-    record = {"grid": half["grid"], "sha256": design_sha256(design), "problem_definition_sha256": shared_definition(half, problem)["sha256"], "initial_density": cfg["mma"].get("initial_density", 0.5), "reference_density": cfg["reference_density"],
-              "rule": "shared start of both optimizer routes: initial_design on the fine grid (uniform initial_density on the allowed cells, preserve 1, forbidden 0; not evaluated for feasibility); a route loads it only when its mma start_sha256 equals sha256 and the problem definition matches"}
+    record = {"grid": half["grid"], "sha256": design_sha256(design), "problem_definition_sha256": definition, "coarse": {key: stage[key] for key in ("status", "iterations", "runtime_s", "mass_g", "max_violation", "gray_fraction", "problem_definition_sha256")},
+              "fine_start": {"level": cfg["mma"]["fine_start_level"], "beta": tp.beta, "mass_g": report["mass_g"], "max_violation": report["max_violation"], "feasible": bool(report["max_violation"] <= problem["termination"]["violation"]), "table": format_report(report["rows"])},
+              "rule": "shared start of both optimizer routes: SIMP-MMA on the coarse grid of the shared problem from the uniform initial_density with body_start, prolongated to the fine grid (preserve 1, forbidden 0) and evaluated there at fine_start_level; a route loads it only when its mma start_sha256 equals sha256 and the fine problem definition matches"}
     (root / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
-    print(json.dumps({key: record[key] for key in ("sha256", "problem_definition_sha256")}), flush=True)
+    print(json.dumps({key: record[key] for key in ("sha256", "problem_definition_sha256", "coarse", "fine_start")}, default=float), flush=True)
 
 def start_design(cfg, half, problem):
     source = Path(cfg["mma"]["start"])
@@ -1354,7 +1363,8 @@ def start_design(cfg, half, problem):
             raise RuntimeError(f"Start design {source} has sha256 {digest}, configured start_sha256 is {expected}")
         if record.get("problem_definition_sha256") != shared_definition(half, problem)["sha256"]:
             raise RuntimeError(f"Start design {source} was generated for a different problem definition")
-    return prolongate(design, record["grid"], half)
+    same = json.loads(json.dumps(half["grid"], default=float)) == record["grid"] and design.size == np.prod(half["grid"]["shape"])
+    return design if same else prolongate(design, record["grid"], half)
 
 def frame_probe(cfg):
     switches(cfg)
@@ -1365,8 +1375,9 @@ def frame_probe(cfg):
     try:
         with probe.phase("probe"):
             half, problem = frame_setup(cfg, cfg["shape"])
+            design = start_design(cfg, half, problem) if cfg["mma"]["start"] else initial_design(cfg, half)
             problem["continuation"]["beta_schedule"] = [1.0]
-            optimize_stage(cfg, half, problem, initial_design(cfg, half), root / "fine", 0, "fine")
+            optimize_stage(cfg, half, problem, design, root / "fine", 0, "fine")
     finally:
         probe.close()
         (root / "memory.json").write_text(json.dumps(probe.summary(), indent=1, default=float), encoding="utf-8")
@@ -1410,7 +1421,7 @@ def frame_mma(cfg):
         if probe:
             probe.close()
             (root / Path(cfg["mma"]["memory_log"]).with_suffix(".json")).write_text(json.dumps(probe.summary(), indent=1, default=float), encoding="utf-8")
-    method = "Neural Fourier MLP/Adam/AL" if cfg["mma"].get("optimizer") == "neural_al" else "SIMP-MMA (mmapy 0.3.1)"
+    method = "Neural Fourier MLP tracking shared MMA proposals" if cfg["mma"].get("optimizer") == "neural_al" else "SIMP-MMA (mmapy 0.3.1)"
     info = {"variant": cfg["mma"]["variant"], "method": method + ", shared formulation " + git_sha(), "stages": stages, "body": body, "total_runtime_s": perf_counter() - started,
             "iterations": sum(stage["iterations"] for stage in stages.values()), "reference": cfg["reference_density"], "start": cfg["mma"]["start"], "memory": probe.summary() if probe else None}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=float), encoding="utf-8")

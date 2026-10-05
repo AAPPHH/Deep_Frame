@@ -63,7 +63,7 @@
     "initial_density": 0.5,
     "coarse": false,
     "start": "exports/runs/ground15_seed",
-    "start_sha256": "5a219e1365c7cdfe55e75ac027e1821e3dca750b9ce91509ec428a93e59f39c5",
+    "start_sha256": "85f48b9bec26907db18b1849ce512e090387d9ad6ea404d810505ac801cb66da",
     "fine_dir": "fine2",
     "until": "export",
     "memory_s": 1.0,
@@ -85,7 +85,15 @@
       "recon",
       "v3"
     ],
-    "fine_start_level": 0
+    "fine_start_level": 0,
+    "neural": {
+      "max_frequency_per_mm": 0.25,
+      "frequencies": 256,
+      "hidden": [
+        96,
+        96
+      ]
+    }
   },
   "v3": {
     "compute": "reconstruction",

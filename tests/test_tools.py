@@ -1286,8 +1286,9 @@ def test_shared_pipeline_gate_rejects_changed_problem_and_retention(monkeypatch,
     monkeypatch.setattr(comparison,'ROOT',tmp_path)
     tested=comparison.Comparison.__new__(comparison.Comparison)
     tested.configs={name:{'mma':{'root':name,'start_sha256':'seed'}} for name in ('simp','neural')}
+    tested.config={'pipelines':{name:name+'.json' for name in tested.configs}}
     tested.update=lambda *args,**kwargs:None
-    record={'problem_definition_sha256':'same','battery_retention':'ideal_press','functional_requirements':{'low_flight':{'pitch_deg':15}}}
+    record={'problem_definition_sha256':'same','battery_retention':'ideal_press','functional_requirements':{'low_flight':{'pitch_deg':15}},'start_sha256':'seed'}
     for name in tested.configs:
         root=tmp_path/(name+'_probe')/'fine'
         root.mkdir(parents=True)
@@ -1308,6 +1309,14 @@ def test_shared_pipeline_gate_rejects_changed_problem_and_retention(monkeypatch,
     tested.configs['neural']['mma']['start_sha256']='other'
     with pytest.raises(RuntimeError,match='shared start design'):
         tested.shared()
+    tested.configs['neural']['mma']['start_sha256']='seed'
+    target.write_text(json.dumps({**record,'start_sha256':'older'}))
+    with pytest.raises(RuntimeError,match='shared start design'):
+        tested.shared()
+    tested.configs['075']={'mma':{'root':'075'}}
+    assert tested.started({'neural':record})=={'seed'}
+    with pytest.raises(RuntimeError,match='shared start design'):
+        tested.started({'neural':{**record,'start_sha256':'older'}})
 
 def test_functional_review_rejects_a_frame_outside_recorded_pipeline_results(tmp_path):
     from tools.functional_geometry_review import PipelineReview
