@@ -1086,6 +1086,7 @@ SPLINE_RECONSTRUCTION_CONFIG = {
     "rod_raw_margin_mm": 0.5,
     "contact_regions": ["battery_contact"],
     "contact_reach_mm": 0.5,
+    "camera_contact_radius_mm": 4.0,
 }
 
 SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if isinstance(value, float) else "int" for key, value in SPLINE_RECONSTRUCTION_CONFIG.items() if isinstance(value, (int, float)) and not isinstance(value, bool)},

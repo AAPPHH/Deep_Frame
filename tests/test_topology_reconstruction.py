@@ -245,3 +245,33 @@ def test_spline_contact_surface_ends_exactly_on_the_keep_out_plane():
         tops[bool(names)] = (float(mesh.vertices[under, 2].max()), float(mesh.area_faces[up].sum()), len(mesh.split(only_watertight=False)))
     assert abs(tops[True][0]-plane) <= 0.02 and tops[True][1] >= 40.0 and tops[True][2] == 1
     assert tops[False][0] <= plane-SPLINE_RECONSTRUCTION_CONFIG["boolean_offset_mm"]+0.02 and tops[False][1] == 0.0
+
+def test_camera_contacts_close_only_the_side_screw_gap_and_keep_the_bore_free():
+    from deep_frame.topology_reconstruction import Reconstruction, finalize
+    h, shape = 0.5, (40, 40, 40)
+    envelope = {"name": "design_envelope", "role": "allowed", "kind": "box", "min_mm": [0, 0, 0], "max_mm": [20, 20, 20]}
+    camera = {"name": "camera_envelope", "role": "forbidden", "kind": "box", "min_mm": [7, 5, 5], "max_mm": [13, 15, 15]}
+    screw = {"name": "camera_screw_axis", "role": "forbidden", "kind": "cylinder", "axis": "x", "center_mm": [10, 10, 10], "radius_mm": 1.1, "height_mm": 20}
+    domain = {"grid": {"origin_mm": [0, 0, 0], "spacing_mm": [h]*3, "shape": list(shape)}, "regions": [envelope, camera, screw], "preserve": np.zeros(shape, dtype=bool)}
+    cfg = {**SPLINE_RECONSTRUCTION_CONFIG, "voxel_mm": 0.25}
+    builder = Reconstruction(domain, cfg)
+    x, y, z = builder.field.axes()
+    left = np.minimum.reduce(np.broadcast_arrays(x-3.0, 6.65-x, 4.0-np.hypot(y-10, z-10)))
+    right = np.minimum.reduce(np.broadcast_arrays(x-13.35, 17.0-x, 4.0-np.hypot(y-10, z-10)))
+    base = np.minimum.reduce(np.broadcast_arrays(x-3.0, 17.0-x, y-6.0, 14.0-y, z-1.0, 7.0-z))
+    builder.field.values = np.maximum.reduce([left, right, base]).astype(np.float32)
+    mesh = builder.finish()[0]
+    for plane, sign in ((7.0, 1), (13.0, -1)):
+        cap = (np.abs(mesh.triangles_center[:, 0]-plane) < 0.35) & (sign*mesh.face_normals[:, 0] > 0.9)
+        assert mesh.area_faces[cap].sum() > 20.0
+    exact, _ = finalize(mesh, domain, cfg)
+    for plane, sign in ((7.0, 1), (13.0, -1)):
+        cap = (np.abs(exact.triangles_center[:, 0]-plane) < 0.02) & (sign*exact.face_normals[:, 0] > 0.9)
+        assert exact.area_faces[cap].sum() > 20.0
+    radial = np.hypot(exact.triangles_center[:, 1]-10, exact.triangles_center[:, 2]-10)
+    assert not np.any((radial < 1.0) & (np.abs(exact.face_normals[:, 0]) > 0.9))
+    assert len(exact.split(only_watertight=False)) == 1
+    empty = Reconstruction(domain, cfg)
+    before = empty.field.values.copy()
+    empty.camera_contacts()
+    assert np.array_equal(empty.field.values, before)
