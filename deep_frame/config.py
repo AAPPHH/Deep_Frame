@@ -921,7 +921,6 @@ TOPOLOGY_CONFIG = {
     "battery_contact_y_mm": 0.0,
     "battery_rail_edge_inset_mm": 0.0,
     "battery_support": "free",
-    "battery_guide": {"enabled": False, "height_mm": 2.5, "wall_zone_mm": 3.0, "entry_relief_mm": 0.8, "contact_area_mm2": {"side": 24.0, "front": 12.0, "rear": 12.0}, "seat_area_mm2": 120.0, "area_measure": "nearest_grid_layer_to_battery", "handling_force_n": 0.05, "min_handling_stiffness_n_mm": 1.0},
     "low_flight": {"enabled": False, "pitch_deg": 15.0, "guard_drop_mm": 0.8, "guard_area_mm2": 12.0, "acceptance_tolerance_mm": 0.5,
                    "clearance_source": "User decision 2026-10-05: camera as low as possible relative to the lowest point of the assembled copter in flight; hard forbidden halfspace at max(lowest hardware bottom, camera bottom - guard_drop_mm), so the frame protrudes at most guard_drop_mm below the camera; no lens objective term, mass-only objective; lowest field material (rho > 0.5) reported as monitor camera_lens_clearance",
                    "guard_source": "Interim ground protection until the crash-reserve evaluator: beside the camera (|x| from half width + 0.5 to + 6 mm, |y - y_camera| <= half length + 3 mm) allowed cells whose lowest corner in flight attitude lies at or below the camera bottom, i.e. the lowest admissible layer between camera bottom - guard_drop_mm and camera bottom; projected area >= guard_area_mm2",
@@ -1290,21 +1289,18 @@ LAYOUT_REFERENCES = {
 }
 
 BATTERY_SUPPORT = {
-    "retention": "contact",
-    "retention_modes": {"ideal_press": "User assumption: an external ideal clamp keeps the battery underside seated under every applied wrench. Only underside pad nodes transfer loads; guide faces do not. No rubber stiffness, strength, preload or friction calculation.", "contact": "Historical unilateral pad contact with assumed preload; retained only for reproducibility of old runs."},
+    "retention": "ideal_press", "retention_source": "User decision 2026-10-05: battery simply ideally pressed onto its underside seat by an external ideal clamp under every applied wrench (including uplift and tipping); no rubber band geometry, stiffness, preload or friction, no positioning guide; the historical unilateral contact model with band preload was removed",
     "pad_normal_n_mm3": 1.0, "pad_shear_n_mm3": 0.3,
-    "pad_source": "ANNAHME Haftpad (Silikon/Schaum ~1 mm, Shore ~30A): Schubmodul G ~ 0,3 MPa -> 0,3 N/mm je mm2 Kontakt in x/y; Druck ~ 3 G ~ 1,0 N/mm je mm2 in Normalenrichtung (unten z, Seitenband x/y)",
-    "exponent": 3.0, "floor": 1e-4, "tension_ratio": 1e-3, "side_secant": 0.5, "active_iterations": 30, "band_preload_n": 10.0,
-    "band_source": "ANNAHME Gummiband-Vorspannung 10 N (zwei Straenge je ~5 N): nur fuer den Kontaktzustand (welche Federn auf Druck sind); die Bandkraefte selbst schliessen sich zwischen Akku und Rahmen und sind nicht modelliert",
+    "pad_source": "ANNAHME Haftpad (Silikon/Schaum ~1 mm, Shore ~30A): Schubmodul G ~ 0,3 MPa -> 0,3 N/mm je mm2 Kontakt in x/y; Druck ~ 3 G ~ 1,0 N/mm je mm2 in Normalenrichtung z",
+    "exponent": 3.0, "floor": 1e-4,
     "limit_mm": 0.5, "limit_source": "Nutzervorgabe: Akkuverschiebung relativ zum Rahmen in x und y <= 0,5 mm unter Flug- und Crashlasten",
     "sigma_factor": 3.0, "sigma_source": "Fluglast: Sigma-Akkublock (LOAD_COVARIANCE, zweites Moment) -> 3 sigma in der unguenstigsten horizontalen Richtung (sqrt lambda_max der 2x2-Verschiebungskovarianz)",
-    "min_area_mm2": 350.0, "min_area_source": "Mindest-Auflageflaeche unten = Schienenvariante 2 x 3,5 x 50 mm (TOPOLOGY_CONFIG battery_contact_width/length_mm)",
+    "min_area_mm2": 350.0, "min_area_source": "Mindest-Auflageflaeche unten = Flaeche der ManaFly-artigen Schienenvariante 2 x 3,5 x 50 mm (TOPOLOGY_CONFIG battery_contact_width/length_mm), 18,5 % der Akku-Grundflaeche 30 x 63 mm; gilt fuer Optimierung (sum Knotenflaeche x rho auf dem FE-Raster) und Abnahme (STL-Schnitt 0,05 mm unter der Akkuunterseite, 0,1-mm-Raster); beide Masse sind verschieden diskretisiert und bewusst nicht angeglichen; die 120 mm2 der ground15-Einlegehilfe hatten keine Herleitung",
     "definition": {
-        "body": "Akku starr (Masse, Eigentraegheit Quader, Volumen als Keep-out battery_insertion); Referenzpunkt Unterseitenmitte (0, y_b, deck_top) wie der Sigma-Akkublock",
-        "springs": "Kontaktknoten = Knoten zwischen erlaubten Zellen und Keep-out-Zellen des Akkus: Unterseite (Normalenfeder z + Schubfedern x/y) und Seitenband (Normalenfeder x bzw. y, bis zur Huellenoberkante); k = Flaeche x Padsteifigkeit x (floor + (1 - floor) rho^p), rho = Mittel der anliegenden erlaubten Zellen (erodiertes Feld)",
-        "load": "designabhaengige Last: Akkuwrench w -> s = D^-1 w (Starrkoerper auf Federn ueber dem Rahmen), Knotenkraefte f_j = K_j T_j s, D = sum T_j^T K_j T_j; Einweg-Kopplung (Federverteilung auf starrem Rahmen, Rahmenantwort mit diesen Kraeften)",
-        "contact": "z nur Auflage: Normalenfedern nur auf Druck (Active-Set auf die Starrkoerperbewegung unter Last + Bandvorspannung, Zug -> tension_ratio x k; die Rahmenlast kommt nur aus dem Akkuwrench mit diesem Active-Set); Sigma linearisiert um den vorgespannten Zustand (Unterseite geschlossen, Seitenbaender mit side_secant, weil bei +-Last je eine Seite anliegt); Crash- und Inertia-Relief-Faelle mit Active-Set",
-        "sensitivity": "d(u^T f)/dk_jd = [T_j s]_d ([u_j]_d - [T_j r]_d), r = D^-1 sum T_j^T K_j u_j; Active-Set eingefroren; Massenanteil des Akkus in der Modalanalyse auf die Unterseitenknoten nach k_z verteilt, Ableitung enthalten",
+        "body": "Akku starr (Masse, Eigentraegheit Quader, Volumen als Keep-out battery_envelope); Referenzpunkt Unterseitenmitte (0, y_b, deck_top) wie der Sigma-Akkublock",
+        "springs": "Kontaktknoten = Knoten zwischen erlaubten Zellen und der Unterseite des Akku-Keep-outs: Normalenfeder z + Schubfedern x/y, bilateral (ideal angepresst); k = Flaeche x Padsteifigkeit x (floor + (1 - floor) rho^p), rho = Mittel der anliegenden erlaubten Zellen (erodiertes Feld)",
+        "load": "designabhaengige Last: Akkuwrench w -> s = D^-1 w (Starrkoerper auf Federn ueber dem Rahmen), Knotenkraefte f_j = K_j T_j s, D = sum T_j^T K_j T_j; Einweg-Kopplung (Federverteilung auf starrem Rahmen, Rahmenantwort mit diesen Kraeften); alle sechs Wrenchkomponenten einschliesslich Abheben und Kippen ueber die Unterseite",
+        "sensitivity": "d(u^T f)/dk_jd = [T_j s]_d ([u_j]_d - [T_j r]_d), r = D^-1 sum T_j^T K_j u_j; Massenanteil des Akkus in der Modalanalyse auf die Unterseitenknoten nach k_z verteilt, Ableitung enthalten",
         "shift": "Relativverschiebung = Federweg am Akkuschwerpunkt (x, y); Flug: 3 sigma aus dem Sigma-Akkublock, Crash: |delta_xy| je Crashfall",
         "area": "Auflageflaeche = sum Knotenflaeche x rho der Unterseitenknoten >= min_area_mm2"},
 }
@@ -1313,7 +1309,7 @@ CAMERA_SUPPORT = {
     "pad_normal_n_mm3": 1000.0, "pad_shear_n_mm3": 400.0,
     "pad_source": "ANNAHME seitliche M2-Verschraubung der Lux: Klemmung PA6-CF (E ~ 3-4 GPa) ueber ~3 mm -> ~1000 N/mm je mm2 normal, Schub ~0,4 x; bestimmt nur die Gewichtung der Montageknoten (Kamera folgt dem gewichteten Mittel), nicht die Lastverteilung",
     "patch_radius_mm": 4.0, "patch_source": "Augenradius der bisherigen Kameralasche (TOPOLOGY_CONFIG camera_mount_radius_mm 4,1 mm), gerundet; Federn nur auf den beiden Seitenflaechen des Kamera-Keep-outs innerhalb dieses Radius um die Schraubachse",
-    "exponent": 3.0, "floor": 1e-4, "tension_ratio": 1.0, "side_secant": 1.0, "active_iterations": 1, "band_preload_n": 0.0, "shift_axes": 3,
+    "exponent": 3.0, "floor": 1e-4, "shift_axes": 3,
     "limit_mm": {"crash_front": 0.112, "crash_camera_oblique": 0.2652},
     "limit_source": "measured at 20 deg tilt, re-measure at 15 deg pending (repaired ManaFly mesh C:/clones/Deep_Frame-neural/exports/manafly_ref/manafly3_repaired.stl not on this host); ManaFly 3 mit denselben Definitionen (formulation_study camera_limits, docs/validation/camera_limits_manafly.json): Halbmodell, binaere 4/3-mm-Voxel, Lux 20 Grad gekippt in der Evaluator-Platzierung (0, 50, 16), Federn an den Innenflaechen der Seitenplatten (x = 10,67 mm, Spalt starr ueberbrueckt), Crashlast mit erhaltener Stosskraft (Abschirmung ManaFly 0,4265 frontal / 0,0336 schraeg): 0,1120 mm frontal / 0,2652 mm schraeg (bei 0 Grad Neigung 0,1074 / 0,2810); alte Zonenlast-Definition 0,0866 / 0,3816 mm; Vergleich Akku-Analogon 0,5 mm",
     "min_area_mm2": None, "min_area_fraction": 1.0, "min_area_source": "ManaFly: Seitenplatten decken die Montageflaeche (Radius 4 mm um die Schraubachse) zu 100 % (74,7 mm2 beidseitig); Grenze = Anteil 1,0 der eigenen Montageflaeche",
@@ -1321,7 +1317,7 @@ CAMERA_SUPPORT = {
     "min_shielding": None,
     "shielding_source": "Abschirmung nur ueberwacht, Grenzen deferred to crash-reserve evaluator (user decision 2026-10-05); fruehere Grenzen 0,29 frontal / 0,0336 schraeg erzwangen Material unter der Linse. ManaFly 3 mit denselben Definitionen (camera_limits, docs/validation/camera_limits_manafly.json, 4745b1b): Abschirmung 0,4265 frontal / 0,0336 schraeg; crash_below nur ueberwacht (kein ManaFly-Wert gemessen, 0,451 ist die Formulierungs-Referenzdichte); Obergrenze im Freikamera-Gebiet bei voll besetzten erlaubten Zellen frontal 0,304 (2 mm) / 0,340 (4/3 mm), schraeg 0,282 / 0,286, Ursache das 4:3-Sichtfeld-Keep-out (mit Sichtfeldzellen 0,897 / 0,900; docs/validation/camera_shielding_headroom.json): frontal im Gebiet nicht erreichbar; Grenze frontal daher 0,29 = 95 % des Gebietsmaximums 0,304 auf dem groben Gitter (Messung 2ac1d1d, Orchestrator-Entscheidung 23:35), ManaFly 0,4265 bleibt Referenz; schraeg ManaFly 0,0336",
     "crash_reference": {"crash_front": 195.2663, "crash_below": 685.2150},
-    "crash_reference_source": "Nachgiebigkeit der Formulierungs-Referenzdichte (r4_neural_v06_f1, wie formulation_reference.json) im Freikamera-Gebiet unter den Crashlasten mit erhaltener Stosskraft (camera_limits; crash_camera_oblique 202,04 N mm nur gemessen, kein Compliance-Constraint wie bisher; Abschirmung der Referenzdichte 0,154 frontal / 0,451 unten / 0,051 schraeg, der ungeschirmte Rest wirkt ueber die Kamerafedern); alte Zonenlast-Definition 10,09 / 103,0 N mm, alte Patch-Definition 6,18 / 27,52 N mm; Grenze = ratio 1,5 x Referenz",
+    "crash_reference_source": "Nachgiebigkeit der Formulierungs-Referenzdichte (r4_neural_v06_f1, wie formulation_reference.json) im Freikamera-Gebiet unter den Crashlasten mit erhaltener Stosskraft (camera_limits; crash_camera_oblique 202,04 N mm nur gemessen, kein Compliance-Constraint wie bisher; Abschirmung der Referenzdichte 0,154 frontal / 0,451 unten / 0,051 schraeg, der ungeschirmte Rest wirkt ueber die Kamerafedern); alte Zonenlast-Definition 10,09 / 103,0 N mm, alte Patch-Definition 6,18 / 27,52 N mm; Grenze = ratio 1,5 x Referenz; gemessen mit dem entfernten Akku-Kontaktmodell (Bandvorspannung 10 N), Neumessung mit ideal angepresstem Akku folgt mit der zurueckgestellten Crashreserve-Neuauslegung",
     "fov_deg": [126.0, 94.0], "fov_source": "https://docs.hd-zero.com/camera-lux: 4:3 H 126 / V 94 deg (Nutzerentscheidung 4:3)",
     "aperture_mm": 3.0, "aperture_source": "ANNAHME halbe Kantenlaenge der Eintrittsoeffnung (Linsenfront ~6 mm) auf der Kamerafront; Sichtkegel als Pyramidenstumpf mit den halben FOV-Winkeln, Keep-out jede Zelle mit einer Ecke im Stumpf + 0,5 mm",
     "fov_clearance_mm": 0.5,
@@ -1342,7 +1338,7 @@ CAMERA_SUPPORT = {
 }
 
 LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float", "support": ("prescribed", "free"), "near_ground": "flag", "flight_pitch_deg": "float"},
-                    "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free"), "positioning_aid": "flag"}, "stack": {"standoff_mm": "float", "fastening": ("heat_set", "self_tapping")},
+                    "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free")}, "stack": {"standoff_mm": "float", "fastening": ("heat_set", "self_tapping")},
                     "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
                                   "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float", "max_runtime_s": "float"}}
 

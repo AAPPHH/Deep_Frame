@@ -19,18 +19,14 @@ ROOT = Path(__file__).resolve().parents[1]
 def request(**changes):
     return {**deepcopy(run.FRAME), **changes}
 
-def test_positioner_uses_ideal_press_without_loading_guides():
+def test_near_ground_patch_keeps_ideal_press_battery_and_rejects_positioning_aid():
     from deep_frame.config import BATTERY_SUPPORT
-    old_limit = BATTERY_SUPPORT["limit_mm"]
-    layout = FrameLayout(request(overrides={"battery":{"support":"free","positioning_aid":True},"camera":{"support":"free","near_ground":True,"flight_pitch_deg":15,"bottom_clearance_mm":-4,"y_mm":52}}))
+    layout = FrameLayout(request(overrides={"battery":{"support":"free"},"camera":{"support":"free","near_ground":True,"flight_pitch_deg":15,"bottom_clearance_mm":-4,"y_mm":52}}))
     patch = layout.patch()
-    assert patch["TOPOLOGY_CONFIG"]["battery_guide"] == {"enabled":True}
-    assert patch["BATTERY_SUPPORT"]["retention"] == "ideal_press"
-    assert patch["BATTERY_SUPPORT"]["band_preload_n"] == 0
-    assert BATTERY_SUPPORT["limit_mm"] == old_limit
+    assert "BATTERY_SUPPORT" not in patch and "battery_guide" not in patch["TOPOLOGY_CONFIG"] and BATTERY_SUPPORT["retention"] == "ideal_press"
     assert patch["TOPOLOGY_CONFIG"]["low_flight"] == {"enabled":True,"pitch_deg":15}
-    with pytest.raises(ValueError,match="positioning aid"):
-        FrameLayout(request(overrides={"battery":{"support":"rails","positioning_aid":True}})).patch()
+    with pytest.raises(ValueError,match="positioning_aid"):
+        validate_request(request(overrides={"battery":{"support":"free","positioning_aid":True}}))
 
 def test_component_defaults_stay_derivable_from_the_library():
     assert COMPONENT_DEFAULTS["aio15"]["mount_pitch_mm"] == 25.5 and COMPONENT_DEFAULTS["aio15"]["stack_height_mm"] == 6.0

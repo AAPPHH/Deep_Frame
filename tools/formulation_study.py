@@ -127,18 +127,14 @@ def patched_builder(cfg, stiffness=True):
 def free_support(half):
     regions = {region["name"]: region for region in half["regions"]}
     part, clearance = config.COMPONENT_DEFAULTS["battery"], config.TOPOLOGY_CONFIG["component_clearance_mm"]
-    keep_out = regions["battery_envelope" if config.BATTERY_SUPPORT.get("retention") == "ideal_press" else "battery_insertion"]
+    keep_out = regions["battery_envelope"]
     low = np.asarray(keep_out["min_mm"]) + [clearance, clearance, 0.0]
     size = np.array([part["width_mm"], part["length_mm"], part["height_mm"]])
-    center = low + size / 2
-    if config.BATTERY_SUPPORT.get("retention") == "ideal_press":
-        position = np.asarray(half["metadata"]["components"]["battery"]["position_mm"])
-        center = position + np.array([0,0,size[2]/2])
+    center = np.asarray(half["metadata"]["components"]["battery"]["position_mm"]) + np.array([0, 0, size[2] / 2])
     mass = part["mass_g"]
     inertia = mass / 12 * np.diag([size[1] ** 2 + size[2] ** 2, size[0] ** 2 + size[2] ** 2, size[0] ** 2 + size[1] ** 2])
     half["battery"] = {"keep_out": keep_out, "reference_mm": [0.0, float(center[1]), float(low[2])], "center_mm": center.tolist(), "size_mm": size.tolist(), "mass_g": mass, "inertia_g_mm2": inertia.tolist()}
-    half["battery"]["retention"] = config.BATTERY_SUPPORT.get("retention", "contact")
-    half["battery"]["guide_regions"] = [deepcopy(region) for name, region in regions.items() if name in ("battery_guide_side", "battery_guide_front", "battery_guide_rear")]
+    half["battery"]["retention"] = config.BATTERY_SUPPORT["retention"]
     deck = half["interfaces"]["battery"]["regions"][0]
     for case in half["load_cases"]:
         if "inertia_relief" not in case:
@@ -148,7 +144,7 @@ def free_support(half):
         case["inertia_relief"] = {**deepcopy(case["inertia_relief"]), "bodies": [{"name": "battery", "mass_g": mass, "position_mm": center.tolist(), "inertia_g_mm2": inertia.tolist(), "force_n": applied.tolist()}]}
     half["point_masses"] = [item for item in half["point_masses"] if item["name"] != "battery"]
     half["metadata"]["formulation"]["battery_support"] = {"mode": "free", **{key: half["battery"][key] for key in ("reference_mm", "center_mm", "size_mm", "mass_g")},
-                                                          "retention": half["battery"]["retention"], "statement": "battery inertia and crash_back load act on its rigid body; ideal_press uses only underside pad nodes and an external ideal holding assumption; guide faces transfer no flight or crash wrench"}
+                                                          "retention": half["battery"]["retention"], "statement": "battery inertia and crash_back load act on its rigid body; ideal_press: only underside pad nodes under an external ideal holding assumption carry the full wrench"}
     return half
 
 def free_camera_mode():
@@ -1405,8 +1401,8 @@ class ResultRun(FrameRun):
         return self.result
     def reconstruction(self,density):
         if not (self.result/"domain.json").is_file():
-            if self.request["overrides"].get("battery",{}).get("positioning_aid"):
-                raise ValueError("Integrated positioning aid requires the optimization domain contract")
+            if self.request["overrides"].get("camera",{}).get("near_ground"):
+                raise ValueError("Near-ground camera reconstruction requires the optimization domain contract")
             return super().reconstruction(density)
         out=self.dir/"reconstruction"
         overrides={"source":str(density),"domain":str(self.result/"domain.json"),"output":str(out),**self.grid["reconstruction"]}
@@ -1462,7 +1458,7 @@ def frame_runs(cfg):
     with ThreadPoolExecutor(max(len(todo), 1)) as pool:
         runs.update(pool.map(lambda suffix: body_run(cfg, suffix, request, stages, runs), todo))
     (root / "runs.json").write_text(json.dumps(runs, indent=1), encoding="utf-8")
-    if (cfg.get("layout") or {}).get("overrides",{}).get("battery",{}).get("positioning_aid"):
+    if (cfg.get("layout") or {}).get("overrides",{}).get("camera",{}).get("near_ground"):
         reviewed={}
         for suffix,path in runs.items():
             if suffix=="raw":
@@ -1479,7 +1475,7 @@ def frame_runs(cfg):
             reviewed[suffix]={"exit_code":code,"report":str(output/"report.json")}
         (root/"functional_reviews.json").write_text(json.dumps(reviewed,indent=2))
         if not any(row["exit_code"]==0 for row in reviewed.values()):
-            raise RuntimeError("No reconstructed pipeline result passed the assembled camera and integrated battery-guide checks")
+            raise RuntimeError("No reconstructed pipeline result passed the assembled camera and battery seat checks")
 
 def frame_physical(cfg):
     import trimesh
@@ -1495,7 +1491,7 @@ def frame_physical(cfg):
     tp=TopologyProblem(half,problem,linear_solver=cfg["mma"]["linear_solver"])
     try:
         report=tp.physical_report(physical)
-        report.update(stl_mass_g=float(mesh.volume*half["material"]["density_g_cm3"]/1000),frame_source=spec["frame_source"],frame_sha256=hashlib.sha256(Path(spec["frame_source"]).read_bytes()).hexdigest(),problem_definition_sha256=shared_definition(half,problem)["sha256"],method="Reconstructed STL sampled at the shared FE cell centres; ideal underside battery retention, guide handling only; no filter or projection")
+        report.update(stl_mass_g=float(mesh.volume*half["material"]["density_g_cm3"]/1000),frame_source=spec["frame_source"],frame_sha256=hashlib.sha256(Path(spec["frame_source"]).read_bytes()).hexdigest(),problem_definition_sha256=shared_definition(half,problem)["sha256"],method="Reconstructed STL sampled at the shared FE cell centres; ideal underside battery retention; no filter or projection")
         report["passed"]=all(row["status"]!="violated" and np.isfinite(row["value"]) and (row["g"] is None or np.isfinite(row["g"])) for row in report["rows"])
         output=Path(spec["output_directory"])
         output.mkdir(parents=True,exist_ok=True)

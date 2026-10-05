@@ -363,12 +363,6 @@ class FrameLayout:
                  "INTEGRATION_CONFIG": {"crash_directions": list(self.style["crash_directions"])}}
         if weights:
             patch["TOPOLOGY_CONFIG"]["optimizer"] = {"case_weights": weights}
-        if self._override("battery", "positioning_aid", False):
-            if self.support() != "free":
-                raise ValueError("Battery positioning aid needs free support")
-            patch["TOPOLOGY_CONFIG"]["battery_guide"] = {"enabled": True}
-            patch["BATTERY_SUPPORT"] = {"retention": "ideal_press", "band_preload_n": 0.0, "min_area_mm2": TOPOLOGY_CONFIG["battery_guide"]["seat_area_mm2"],
-                                      "min_area_source": "Compact underside seating area; flight/crash loads use the ideally pressed battery support, never the guide faces"}
         if self._override("camera", "near_ground", False):
             if not self.free_camera:
                 raise ValueError("Near-ground camera requires free mounting and protection geometry")

@@ -1281,13 +1281,13 @@ def test_interface_couple_and_conjugate_rotation():
     volume = sum(abs(np.linalg.det(np.array([np.subtract(nodes[n], nodes[e[0]]) for n in e[1:4]]))) / 6 for e in elements.values())
     assert volume == pytest.approx(16.0)
 
-def test_shared_pipeline_gate_rejects_changed_problem_and_guide_retention(monkeypatch,tmp_path):
+def test_shared_pipeline_gate_rejects_changed_problem_and_retention(monkeypatch,tmp_path):
     from tools import compare_pipelines as comparison
     monkeypatch.setattr(comparison,'ROOT',tmp_path)
     tested=comparison.Comparison.__new__(comparison.Comparison)
     tested.configs={name:{'mma':{'root':name}} for name in ('simp','neural')}
     tested.update=lambda *args,**kwargs:None
-    record={'problem_definition_sha256':'same','battery_retention':'ideal_press','functional_requirements':{'low_flight':{'pitch_deg':15},'battery_guide':{'area_measure':'nearest_grid_layer_to_battery'}}}
+    record={'problem_definition_sha256':'same','battery_retention':'ideal_press','functional_requirements':{'low_flight':{'pitch_deg':15}}}
     for name in tested.configs:
         root=tmp_path/(name+'_probe')/'fine'
         root.mkdir(parents=True)

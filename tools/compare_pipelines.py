@@ -79,9 +79,8 @@ class Comparison:
         if len(fingerprints)!=1:
             raise RuntimeError("Optimization routes use different problem definitions")
         for row in records.values():
-            functions=row["functional_requirements"]
-            if row["battery_retention"]!="ideal_press" or functions["low_flight"]["pitch_deg"]!=15 or functions["battery_guide"]["area_measure"]!="nearest_grid_layer_to_battery":
-                raise RuntimeError("Required flight attitude, ideal retention or integrated guide formulation missing")
+            if row["battery_retention"]!="ideal_press" or row["functional_requirements"]["low_flight"]["pitch_deg"]!=15:
+                raise RuntimeError("Required flight attitude or ideal retention missing")
         self.update("shared_problem",status="VERIFIED",sha256=next(iter(fingerprints)),battery_retention="ideal_press",flight_pitch_deg=15)
     def local(self,stage,command):
         previous=self.data["stages"].get(stage,{})

@@ -30,8 +30,7 @@
         "f1_min_hz": 300.0
       },
       "battery": {
-        "support": "free",
-        "positioning_aid": true
+        "support": "free"
       },
       "camera": {
         "support": "free",

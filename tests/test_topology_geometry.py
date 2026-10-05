@@ -483,7 +483,7 @@ def test_flight_floor_lets_frame_protrude_only_guard_drop_below_lowest_hardware(
     camera={"tilt_deg":15.0,"length_mm":14.0,"height_mm":14.0,"width_mm":16.0}
     parameters={"components":{"camera":camera},"frame":{"camera_y_mm":52.0,"base_thickness_mm":2.5,"camera_bottom_clearance_mm":-4.0}}
     shapes={"camera":Pos(0,52,-1.5)*Box(16,14,14,align=(Align.CENTER,Align.CENTER,Align.MIN)),"battery":Pos(0,0,battery_bottom)*Box(30,70,20,align=(Align.CENTER,Align.CENTER,Align.MIN))}
-    settings={"battery_guide":{"enabled":False},"low_flight":{"enabled":True,"pitch_deg":15.0,"guard_drop_mm":0.8,"guard_area_mm2":12.0}}
+    settings={"low_flight":{"enabled":True,"pitch_deg":15.0,"guard_drop_mm":0.8,"guard_area_mm2":12.0}}
     flight=functional_geometry(parameters,settings,{name:{"shape":shape} for name,shape in shapes.items()})["low_flight"]
     bottoms=flight["component_bottoms_world_z_mm"]
     angle=np.radians(15)

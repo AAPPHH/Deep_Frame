@@ -267,16 +267,6 @@ def _component_regions(parameters, settings, grid):
     if settings.get("battery_support", "rails") == "free":
         regions.append(_box("battery_contact", "allowed", [-battery_half, battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_z - 3.0], [battery_half, battery_y + c["battery"]["length_mm"] / 2 + clearance, battery_z], "Free battery support: contact plane under the battery (flatten target), no prescribed geometry"))
     regions.append(_box("battery_insertion", "forbidden", [-battery_half, battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_z], [battery_half, battery_y + c["battery"]["length_mm"] / 2 + clearance, max(battery_z + c["battery"]["height_mm"] + clearance, upper[2] + 1)], "Battery insertion and removal vertically, no retaining roof"))
-    guide = settings["battery_guide"]
-    if guide["enabled"]:
-        height, width = guide["height_mm"], guide["wall_zone_mm"]
-        low_y, high_y = battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_y + c["battery"]["length_mm"] / 2 + clearance
-        regions.append(_box("battery_guide_side", "allowed", [battery_half, low_y, battery_z], [battery_half + width, high_y, battery_z + height], "Free low side guide, reflected by symmetry; no flight load interface", guide_axis=0))
-        for name, lo, hi in (("front", high_y, high_y + width), ("rear", low_y - width, low_y)):
-            regions.append(_box("battery_guide_" + name, "allowed", [-battery_half, lo, battery_z], [battery_half, hi, battery_z + height], "Free low end guide, handling only; no flight load interface", guide_axis=1))
-        relief = guide["entry_relief_mm"]
-        regions.append(_box("battery_guide_entry", "forbidden", [-battery_half-relief, low_y-relief, battery_z+height-relief], [battery_half+relief, high_y+relief, upper[2]+1], "Expanded upper insertion opening; no top overhang or latch"))
-        regions.append(_box("battery_guide_height_cap", "forbidden", [-battery_half-12, low_y-12, battery_z+height], [battery_half+12, high_y+12, upper[2]+1], "Positioner limited to a low perimeter; higher cages and retention lips excluded"))
     camera_width = c["camera"]["width_mm"] + 2 * f["camera_side_clearance_mm"]
     for sign in (-1, 1) if settings.get("camera_support", "prescribed") == "prescribed" else ():
         x = sign * (camera_width / 2 + settings["camera_contact_width_mm"] / 2)
@@ -348,8 +338,6 @@ def embed_field(field, grid):
 
 def functional_geometry(parameters, settings, components):
     result = {}
-    if settings["battery_guide"]["enabled"]:
-        result["battery_guide"] = deepcopy(settings["battery_guide"])
     flight = settings["low_flight"]
     if flight["enabled"]:
         pitch = np.radians(flight["pitch_deg"])

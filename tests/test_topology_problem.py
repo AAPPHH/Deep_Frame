@@ -422,33 +422,23 @@ def battery_domain():
             case["inertia_relief"] = {"point_masses": [], "preserve_mass_g": 0.0, "bodies": [{**body, "force_n": [0.0, 0.0, -1.0] if case["name"] == "crash_side_left" else [0.0, 0.0, 0.0]}]}
     domain["battery"] = {"keep_out": keep, "reference_mm": [0.0, 0.0, 3.0], "center_mm": [0.0, 0.0, 4.5], "mass_g": 10.0}
     problem = tiny_problem()
-    problem["battery"] = {**deepcopy(BATTERY_SUPPORT), "pad_normal_n_mm3": 50.0, "pad_shear_n_mm3": 20.0, "min_area_mm2": 4.0, "limit_mm": 0.01, "band_preload_n": 0.5}
+    problem["battery"] = {**deepcopy(BATTERY_SUPPORT), "pad_normal_n_mm3": 50.0, "pad_shear_n_mm3": 20.0, "min_area_mm2": 4.0, "limit_mm": 0.01}
     problem["shadow"] = None
     return domain, problem
 
-@pytest.mark.parametrize("retain_top", [False, True])
-def test_free_battery_support_equilibrium_and_gradients(retain_top):
+def test_ideal_press_battery_support_equilibrium_and_gradients():
     domain, problem = battery_domain()
-    if retain_top:
-        centers = cell_centers(domain["grid"]).reshape((*domain["grid"]["shape"], 3))
-        inside = (np.abs(centers[..., 0]) < 2) & (np.abs(centers[..., 1]) < 2) & (centers[..., 2] > 1) & (centers[..., 2] < 3)
-        domain.update(allowed=~inside, forbidden=inside)
-        domain["battery"].update(keep_out=box([-2, -2, 1], [2, 2, 3]), reference_mm=[0, 0, 1], center_mm=[0, 0, 2], retain_top=True)
-        for case in domain["load_cases"]:
-            for body in case.get("inertia_relief", {}).get("bodies", []):
-                body["position_mm"] = [0, 0, 2]
     tested = TopologyProblem(domain, problem)
     battery = tested.battery
-    assert battery.summary["bottom_nodes"] and battery.summary["side_nodes"] and battery.summary["bottom_area_mm2"] == pytest.approx(16.0)
-    assert bool(battery.summary["top_nodes"]) == retain_top
+    assert battery.summary["nodes"] and battery.summary["retention"] == "ideal_press" and battery.summary["bottom_area_mm2"] == pytest.approx(16.0)
     random = np.random.default_rng(4)
     design, direction = random.uniform(0.3, 0.7, tested.map.n), random.standard_normal(tested.map.n) * tested.map.free
     tested.battery_sigma = np.diag([1.0, 2.0, 1.0, 3.0, 5.0, 1.0]) + 0.3
     result, step = tested.evaluate(design), 1e-5
-    wrench = np.array([0.3, -0.2, -1.0, 0.1, 0.2, -0.1])
-    state = battery.state(wrench, False)
-    nodal = state["stiffness"] * np.einsum("ndi,i->nd", battery.rows, state["motion"])
-    assert np.allclose(np.einsum("ndi,nd->i", battery.rows, nodal), wrench)
+    for wrench in (np.array([0.3, -0.2, -1.0, 0.1, 0.2, -0.1]), np.array([1.0, -2.0, 10.0, 3.0, 4.0, 2.0])):
+        state = battery.state(wrench)
+        nodal = state["stiffness"] * np.einsum("ndi,i->nd", battery.rows, state["motion"])
+        assert np.allclose(np.einsum("ndi,nd->i", battery.rows, nodal), wrench)
     assert {"battery_shift_flight", "battery_shift_crash_front", "battery_shift_crash_side_left", "battery_contact_area"} <= set(result["names"])
     plus, minus = tested.evaluate(design + step * direction), tested.evaluate(design - step * direction)
     for index, name in enumerate(result["names"]):
@@ -776,42 +766,14 @@ def test_cable_corridor_convolution_matches_sparse():
     assert np.max(np.abs(convolution.filtered(design) - sparse.filtered(design))) < 1e-12
     assert np.max(np.abs(convolution.pullback(sensitivity, projection) - sparse.pullback(sensitivity, projection))) < 1e-12 * np.max(np.abs(sparse.pullback(sensitivity, projection)))
 
-def test_ideal_press_transfers_uplift_and_moments_through_bottom_only():
-    domain,spec = battery_domain()
-    spec['battery'].update(retention='ideal_press',band_preload_n=1e6)
-    spec['modal'] = None
-    tested = TopologyProblem(domain,spec)
-    try:
-        battery = tested.battery
-        assert not battery.contact and battery.summary['side_nodes']==0 and battery.summary['top_nodes']==0
-        assert battery.bottom.all() and not np.any(battery.preload)
-        battery.update(np.full(tested.system.nelem,0.7))
-        for wrench in (np.array([1.,-2.,10.,3.,4.,2.]),np.array([-1.,2.,-10.,-3.,-4.,-2.])):
-            state = battery.state(wrench,True)
-            assert np.all(state['active']==1)
-            nodal = state['stiffness']*np.einsum('ndi,i->nd',battery.rows,state['motion'])
-            assert np.einsum('ndi,nd->i',battery.rows,nodal)==pytest.approx(wrench,abs=1e-10)
-        random=np.random.default_rng(19)
-        design=random.uniform(.4,.8,tested.map.n)
-        direction=random.normal(size=design.size)*tested.map.free
-        tested.battery_sigma=np.eye(6)
-        result=tested.evaluate(design)
-        step=1e-5
-        plus,minus=tested.evaluate(design+step*direction),tested.evaluate(design-step*direction)
-        for index,name in enumerate(result['names']):
-            assert result['constraint_gradients'][index]@direction==pytest.approx((plus['constraints'][index]-minus['constraints'][index])/(2*step),rel=2e-4,abs=1e-8),name
-    finally:
-        tested.close()
-
 def functional_tiny():
     domain,spec=tiny_domain(),tiny_problem()
     spec['modal']=None
-    domain['regions']=[dict(box([2,-3,1],[4,3,3]),name='battery_guide_side',guide_axis=0),dict(box([0,2,1],[4,4,3]),name='battery_guide_front',guide_axis=1),dict(box([0,-4,1],[4,-2,3]),name='battery_guide_rear',guide_axis=1)]
     angle=np.radians(15)
-    domain['functional_requirements']={'battery_guide':{'contact_area_mm2':{'side':4.,'front':2.,'rear':2.}},'low_flight':{'vertical_axis':[0,-np.sin(angle),np.cos(angle)],'lens_world_z_mm':5.,'fixed_hardware_gap_mm':2.,'camera_center_mm':[0,0,3.],'camera_width_mm':1.,'camera_length_mm':4.,'camera_bottom_world_z_mm':2.,'guard_drop_mm':.2,'guard_area_mm2':2.,'maximum_gap_mm':3.2}}
+    domain['functional_requirements']={'low_flight':{'vertical_axis':[0,-np.sin(angle),np.cos(angle)],'lens_world_z_mm':5.,'fixed_hardware_gap_mm':2.,'camera_center_mm':[0,0,3.],'camera_width_mm':1.,'camera_length_mm':4.,'camera_bottom_world_z_mm':2.,'guard_drop_mm':.2,'guard_area_mm2':2.,'maximum_gap_mm':3.2}}
     return domain,spec
 
-def test_functional_mass_objective_clearance_monitor_guide_loads_and_guard_gradients():
+def test_low_flight_mass_objective_clearance_monitor_and_guard_gradients():
     domain,spec=functional_tiny()
     tested=TopologyProblem(domain,spec)
     try:
@@ -819,7 +781,7 @@ def test_functional_mass_objective_clearance_monitor_guide_loads_and_guard_gradi
         design=random.uniform(.3,.7,tested.map.n)
         direction=random.normal(size=design.size)*tested.map.free
         result=tested.evaluate(design)
-        assert {'battery_guide_area_side','battery_guide_connection_side','camera_ground_guard_area'}<=set(result['names']) and 'camera_lens_clearance' not in result['names']
+        assert 'camera_ground_guard_area' in result['names'] and 'camera_lens_clearance' not in result['names']
         assert result['objective']==pytest.approx(result['mass_g']/result['mass_scale_g'],rel=1e-12)
         density=tested.map.fields(design)[0][spec['fields']['mass']][0]
         normal=np.asarray(domain['functional_requirements']['low_flight']['vertical_axis'])

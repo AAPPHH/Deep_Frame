@@ -187,7 +187,7 @@ class TopologyProblem:
         self.battery, self.camera, self.battery_sigma = self.bodies.get("battery"), self.bodies.get("camera"), None
         for body in self.bodies.values():
             body.update(np.ones(self.system.nelem))
-        self.linear = {name: body.state(np.zeros(6), False) for name, body in self.bodies.items()}
+        self.linear = {name: body.state(np.zeros(6)) for name, body in self.bodies.items()}
         self.body_relief = [case for case in self.system.cases if case.get("inertia_relief", {}).get("bodies")]
         for case in self.body_relief:
             case["keep_fields"] = True
@@ -217,7 +217,8 @@ class TopologyProblem:
         self.ground = GroundSupport(self.system, problem["landing"], self.bodies) if (problem.get("landing") or {}).get("enabled") else None
         self.weighted = self.ground is not None and self.stability is not None and problem["landing"].get("weighted_reserve", True)
         names = [case["name"] for case in self.system.cases]
-        self.functions = FunctionalRequirements(self.system, domain)
+        flight = domain.get("functional_requirements", {}).get("low_flight")
+        self.low_flight = LowFlight(self.system, domain, flight) if flight else None
         self.crash = [name for name in (problem.get("crash") or {}).get("cases", []) if name in names]
         self.monitor = [name for name in problem.get("monitor", []) if name in names]
         missing = [name for name in (problem.get("crash") or {}).get("cases", []) if name not in names]
@@ -243,7 +244,7 @@ class TopologyProblem:
         self.physical = physical
         for body in self.bodies.values():
             body.update(physical)
-        self.linear = {name: body.state(np.zeros(6), False) for name, body in self.bodies.items()}
+        self.linear = {name: body.state(np.zeros(6)) for name, body in self.bodies.items()}
         self.battery_linear = self.linear.get("battery")
         if self.covariance is not None:
             self.covariance.body_forces(self.linear)
@@ -254,7 +255,7 @@ class TopologyProblem:
             states = self.body_cases[case["name"]] = {}
             for load in loads:
                 body, vector = self.bodies[load["name"]], np.asarray(load["force_n"], dtype=float)
-                states[load["name"]] = state = body.state(np.concatenate([vector, np.asarray(load["moment_n_mm"]) + np.cross(np.asarray(load["position_mm"]) - body.reference, vector)]), body.contact)
+                states[load["name"]] = state = body.state(np.concatenate([vector, np.asarray(load["moment_n_mm"]) + np.cross(np.asarray(load["position_mm"]) - body.reference, vector)]))
                 direct, mirror = body.forces(state)
                 force, mirrored = force + direct, mirrored + mirror
             self.system.set_force(case, force, mirrored)
@@ -318,7 +319,6 @@ class TopologyProblem:
         physical = np.asarray(physical, dtype=float).ravel()
         if self.bodies:
             self.body_update(physical)
-        self.functions.update(physical)
         solutions = self.compliances(physical)
         rows, monitor = [], []
         if self.stiffness is not None:
@@ -342,7 +342,8 @@ class TopologyProblem:
             rows.append({"name": "f1", "g": float(g), "gradient": slope, "value": info["f1_hz"], "limit": self.problem["modal"]["f1_min_hz"], "unit": "Hz", "sense": ">=", "info": info})
         if self.battery is not None:
             rows += battery_rows(self)
-        rows += self.functions.rows(physical, solutions)
+        if self.low_flight is not None:
+            rows += self.low_flight.rows(physical)
         if self.camera is not None:
             for row in self.camera_rows(solutions):
                 (rows if row["g"] is not None else monitor).append(row)
@@ -370,8 +371,8 @@ class TopologyProblem:
             value, gradient = self.coverage.measure(physical)
             minimum = self.problem["camera"]["min_coverage"]
             rows.append({"name": "camera_coverage", "g": None if minimum is None else 1 - value / minimum, "gradient": -gradient / (minimum or 1.0), "value": value, "limit": minimum, "unit": "-", "sense": ">="})
-        if self.functions.flight:
-            rows.append(self.functions.clearance(physical))
+        if self.low_flight is not None:
+            rows.append(self.low_flight.clearance(physical))
         for row in rows:
             row["field"] = self.problem["fields"]["volume"]
         return rows
@@ -853,79 +854,18 @@ class InterfaceCovariance:
             rows[1].update(g=float(ks / limits["worst_n_mm"] - 1), gradient=gradient / limits["worst_n_mm"])
         return rows
 
-class FunctionalRequirements:
-    def __init__(self, system, domain):
-        from deep_frame.topology_geometry import region_contains
-        self.system = system
-        self.spec = domain.get("functional_requirements", {})
-        centers, h = cell_centers(domain["grid"]), np.asarray(domain["grid"]["spacing_mm"])
-        self.factor = 2.0 if system.symmetry is not None else 1.0
-        allowed = system.active_elements
-        volume = float(np.prod(h))
-        self.guides, self.guide_forces = {}, {}
-        guide = self.spec.get("battery_guide")
-        if guide:
-            for region in domain["regions"]:
-                if region["name"] not in ("battery_guide_side", "battery_guide_front", "battery_guide_rear"):
-                    continue
-                name = region["name"].removeprefix("battery_guide_")
-                mask = region_contains(centers, region) & allowed
-                axis = region["guide_axis"]
-                coordinate = centers[:,axis]
-                nearest = coordinate[mask].max() if name == "rear" else coordinate[mask].min()
-                mask &= np.abs(coordinate-nearest)<1e-7
-                thickness = h[axis]
-                area = self.factor*volume/thickness*mask.astype(float)
-                direction = np.zeros(3)
-                direction[axis] = -1 if name == "front" else 1
-                source = next(case["name"] for case in system.cases if case["name"] == "stiffness_arm_tip")
-                self.guides[name] = item = {"mask":mask,"area":area,"minimum":guide["contact_area_mm2"][name],"direction":direction,"force_n":guide.get("handling_force_n",0.05),"min_stiffness_n_mm":guide.get("min_handling_stiffness_n_mm",1.0)}
-                direct, mirrored = self.forces(item,mask.astype(float))
-                item["case"] = system.add_case("guide_handling_"+name, source, direct, mirrored)
-        self.flight = self.spec.get("low_flight")
-        self.guard = np.zeros(system.nelem)
-        if self.flight:
-            flight, normal = self.flight, np.asarray(self.flight["vertical_axis"])
-            half_height = float(np.abs(normal)@h/2)
-            self.bottom = centers@normal-half_height
-            camera = np.asarray(flight["camera_center_mm"])
-            guard = (np.abs(centers[:,0])>=flight["camera_width_mm"]/2+0.5)&(np.abs(centers[:,0])<=flight["camera_width_mm"]/2+6)&(np.abs(centers[:,1]-camera[1])<=flight["camera_length_mm"]/2+3)
-            guard &= (self.bottom<=flight["camera_bottom_world_z_mm"]+1e-9) & allowed
-            self.guard = self.factor*volume/(2*half_height)*guard
-    def forces(self, guide, weights):
-        total = float(weights.sum())
-        if total<=0:
-            raise ValueError("Battery guide is unresolved by the design grid")
-        nodal = np.zeros((len(self.system.points),3))
-        contribution = guide["force_n"]/self.factor*weights[:,None]*guide["direction"]/total/8
-        np.add.at(nodal,self.system.connectivity.ravel(),np.repeat(contribution,8,axis=0))
-        if self.system.symmetry is not None:
-            nodal[self.system.plane_nodes] *= 2
-        direct = nodal.ravel()
-        return direct,direct if self.system.symmetry is not None else np.zeros_like(direct)
-    def update(self, physical):
-        rho = np.asarray(physical).ravel()
-        for name, guide in self.guides.items():
-            weights = guide["mask"]*(1e-12+rho**3)
-            self.system.set_force(guide["case"],*self.forces(guide,weights))
-            self.guide_forces[name] = weights,float(weights.sum())
-    def rows(self, physical, solutions):
-        rho, rows = np.asarray(physical).ravel(), []
-        for name, guide in self.guides.items():
-            value = float(guide["area"]@rho)
-            minimum = guide["minimum"]
-            rows.append({"name":"battery_guide_area_"+name,"g":1-value/minimum,"gradient":-guide["area"]/minimum,"value":value,"limit":minimum,"unit":"mm2","sense":">="})
-            solved = solutions[guide["case"]["name"]]
-            displacement = sum(solved["fields"].values()).reshape(-1,3)
-            projected = displacement[self.system.connectivity].mean(axis=1)@guide["direction"]
-            weights,total = self.guide_forces[name]
-            load_slope = 2*guide["force_n"]/total*3*rho**2*guide["mask"]*(projected-float(weights@projected)/total)
-            limit = guide["force_n"]**2/guide["min_stiffness_n_mm"]
-            rows.append({"name":"battery_guide_connection_"+name,"g":solved["compliance_n_mm"]/limit-1,"gradient":(solved["derivative"]+load_slope)/limit,"value":solved["compliance_n_mm"],"limit":limit,"unit":"N mm","sense":"<=","info":{"handling_force_n":guide["force_n"],"flight_load_interface":False}})
-        if self.flight:
-            value, minimum = float(self.guard@rho),self.flight["guard_area_mm2"]
-            rows.append({"name":"camera_ground_guard_area","g":1-value/minimum,"gradient":-self.guard/minimum,"value":value,"limit":minimum,"unit":"mm2","sense":">="})
-        return rows
+class LowFlight:
+    def __init__(self, system, domain, flight):
+        centers, h, normal = cell_centers(domain["grid"]), np.asarray(domain["grid"]["spacing_mm"]), np.asarray(flight["vertical_axis"])
+        self.flight, half_height = flight, float(np.abs(normal)@h/2)
+        self.bottom = centers@normal-half_height
+        camera = np.asarray(flight["camera_center_mm"])
+        guard = (np.abs(centers[:,0])>=flight["camera_width_mm"]/2+0.5)&(np.abs(centers[:,0])<=flight["camera_width_mm"]/2+6)&(np.abs(centers[:,1]-camera[1])<=flight["camera_length_mm"]/2+3)
+        guard &= (self.bottom<=flight["camera_bottom_world_z_mm"]+1e-9) & system.active_elements
+        self.guard = (2.0 if system.symmetry is not None else 1.0)*float(np.prod(h))/(2*half_height)*guard
+    def rows(self, physical):
+        value, minimum = float(self.guard@np.asarray(physical).ravel()),self.flight["guard_area_mm2"]
+        return [{"name":"camera_ground_guard_area","g":1-value/minimum,"gradient":-self.guard/minimum,"value":value,"limit":minimum,"unit":"mm2","sense":">="}]
     def clearance(self, physical):
         flight, solid = self.flight, np.asarray(physical).ravel()>0.5
         frame = float(self.bottom[solid].min()) if solid.any() else None
@@ -971,26 +911,14 @@ class RigidFit(RigidNodes):
         return self.scatter(np.einsum("ndi,i->nd", self.rows, self.inverse @ vector))
 
 class BatterySupport(RigidNodes):
-    contact = True
     def __init__(self, system, settings, battery):
         nodes, inside, low, high = self.contact_nodes(system, battery["keep_out"])
-        points = system.points[nodes]
-        bottom = np.abs(points[:, 2] - low[2]) < 1e-6
-        if settings.get("retention") == "ideal_press":
-            nodes, inside = nodes[bottom], inside[bottom]
-            points, bottom = points[bottom], bottom[bottom]
-            self.contact = False
-        top = (np.abs(points[:, 2] - high[2]) < 1e-6) & battery.get("retain_top", False)
-        axis = np.where(bottom | top, 2, np.where(np.abs(np.abs(points[:, 0]) - high[0]) < 1e-6, 0, 1))
-        sign = np.where(bottom, -1.0, np.where(top, 1.0, np.where(axis == 0, np.sign(points[:, 0]), np.where(points[:, 1] > (low[1] + high[1]) / 2, 1.0, -1.0))))
+        bottom = np.abs(system.points[nodes, 2] - low[2]) < 1e-6
+        nodes, inside = nodes[bottom], inside[bottom]
         shear = np.zeros((len(nodes), 3), dtype=bool)
-        shear[bottom, :2] = True
-        self.assemble(system, settings, battery, nodes, inside, axis, sign, bottom, shear)
-        self.summary = {"nodes": len(self.index), "bottom_nodes": int(self.bottom.sum()), "side_nodes": int((~self.bottom).sum()), "bottom_area_mm2": float(self.area[self.bottom].sum()),
-                        "side_area_mm2": float(self.area[~self.bottom].sum()), "keep_out_cells_mm": [low.tolist(), high.tolist()]}
-        self.summary["top_nodes"] = int(np.count_nonzero((self.axis == 2) & ~self.bottom))
-        self.summary["retention"] = settings.get("retention", "contact")
-        self.summary["guide_transfers_flight_loads"] = False if not self.contact else True
+        shear[:, :2] = True
+        self.assemble(system, settings, battery, nodes, inside, np.full(len(nodes), 2), shear)
+        self.summary = {"nodes": len(self.index), "bottom_area_mm2": float(self.area.sum()), "keep_out_cells_mm": [low.tolist(), high.tolist()], "retention": "ideal_press"}
     @staticmethod
     def contact_nodes(system, keep_out, overlap=False):
         from deep_frame.topology_geometry import region_contains
@@ -1001,7 +929,7 @@ class BatterySupport(RigidNodes):
         nodes = np.flatnonzero((inside > 0) & (outside > 0))
         centers = centers[cells]
         return nodes, inside[nodes], centers.min(axis=0) - h / 2, centers.max(axis=0) + h / 2
-    def assemble(self, system, settings, body, nodes, inside, axis, sign, bottom, shear):
+    def assemble(self, system, settings, body, nodes, inside, axis, shear):
         from scipy.sparse import csr_matrix
         self.settings, self.battery = settings, body
         h, allowed = system.spacing, system.active_elements
@@ -1017,14 +945,11 @@ class BatterySupport(RigidNodes):
         values = 1.0 / np.bincount(pairs[:, 0], minlength=len(nodes))[pairs[:, 0]]
         incidence = csr_matrix((values, (pairs[:, 0], pairs[:, 1])), shape=(len(nodes), system.nelem))
         self.axis, self.area = axis[self.index], area[self.index]
-        self.sign = sign[self.index] * np.where(self.copies & (self.axis == 0), -1.0, 1.0)
-        self.bottom = bottom[self.index]
         self.incidence = incidence[self.index]
         base = np.where(shear[self.index], settings["pad_shear_n_mm3"], 0.0)
         base[np.arange(len(self.index)), self.axis] = settings["pad_normal_n_mm3"]
         self.base = base * self.area[:, None]
         self.reference = np.asarray(body["reference_mm"], dtype=float)
-        self.preload = np.array([0.0, 0.0, 0.0 if settings.get("retention") == "ideal_press" else -settings["band_preload_n"], 0.0, 0.0, 0.0])
         self.rows = rigid_rows(self.points - self.reference)
         self.shift = rigid_rows(np.asarray(body["center_mm"], dtype=float)[None] - self.reference)[0, :settings.get("shift_axes", 2)]
     def update(self, physical):
@@ -1032,31 +957,16 @@ class BatterySupport(RigidNodes):
         self.rho = np.clip(self.incidence @ np.asarray(physical, dtype=float).ravel(), 0, 1)
         self.gain = floor + (1 - floor) * self.rho ** p
         self.slope = (1 - floor) * p * self.rho ** (p - 1)
-    def state(self, wrench, contact):
-        contact = contact and self.settings.get("retention") != "ideal_press"
-        active = np.ones(len(self.index))
-        if not contact:
-            active[~self.bottom] = self.settings["side_secant"]
-        for _ in range(self.settings["active_iterations"]):
-            stiffness = self.base * self.gain[:, None]
-            stiffness[np.arange(len(active)), self.axis] *= active
-            inverse = np.linalg.inv(np.einsum("nd,ndi,ndj->ij", stiffness, self.rows, self.rows))
-            motion = inverse @ wrench
-            if not contact:
-                break
-            normal = self.sign * np.einsum("ndi,i->nd", self.rows, inverse @ (wrench + self.preload))[np.arange(len(active)), self.axis]
-            updated = np.where(normal > 0, 1.0, self.settings["tension_ratio"])
-            if np.array_equal(updated, active):
-                break
-            active = updated
-        return {"active": active, "stiffness": stiffness, "inverse": inverse, "motion": motion, "wrench": np.asarray(wrench, dtype=float)}
+    def state(self, wrench):
+        stiffness = self.base * self.gain[:, None]
+        inverse = np.linalg.inv(np.einsum("nd,ndi,ndj->ij", stiffness, self.rows, self.rows))
+        return {"stiffness": stiffness, "inverse": inverse, "motion": inverse @ wrench, "wrench": np.asarray(wrench, dtype=float)}
     def forces(self, state, motion=None):
         return self.scatter(state["stiffness"] * np.einsum("ndi,i->nd", self.rows, state["motion"] if motion is None else motion))
     def element(self, nodal):
         return np.asarray(self.incidence.T @ nodal).ravel()
     def stiffness_term(self, state, weight):
-        scale = np.where(np.arange(3) == self.axis[:, None], state["active"][:, None], 1.0)
-        return self.element(np.sum(weight * self.base * scale, axis=1) * self.slope)
+        return self.element(np.sum(weight * self.base, axis=1) * self.slope)
     def relative(self, state, displacement):
         return state["inverse"] @ np.einsum("nd,ndi->i", state["stiffness"] * displacement, self.rows)
     def load_term(self, state, displacement, wrench=None):
@@ -1074,24 +984,23 @@ class BatterySupport(RigidNodes):
         delta = self.shift @ state["motion"]
         return delta, 2 * self.pair_term(state, state["inverse"] @ self.shift.T @ delta, state["motion"])
     def contact_area(self):
-        return float(np.sum(self.area[self.bottom] * self.rho[self.bottom])), self.element(np.where(self.bottom, self.area, 0.0))
+        return float(np.sum(self.area * self.rho)), self.element(self.area)
     def lumped(self, state):
-        normal = state["stiffness"][:, 2] * self.bottom
+        normal = state["stiffness"][:, 2]
         self.share, self.lumped_state = normal / normal.sum(), state
-        direct = ~self.copies & self.bottom
+        direct = ~self.copies
         masses = np.zeros(len(self.system.points))
         np.add.at(masses, self.half[self.index][direct], self.battery["mass_g"] * 1e-6 * self.share[direct] * np.where(self.plane[self.index][direct], 0.5, 1.0))
         return np.repeat(masses, 3)
     def lumped_slope(self, mode):
         state = self.lumped_state
-        energy = np.sum(mode.reshape(-1, 3) ** 2, axis=1)[self.half[self.index]] * np.where(self.plane[self.index], 0.5, 1.0) * (~self.copies & self.bottom)
-        total = float(np.sum(state["stiffness"][:, 2] * self.bottom))
-        derivative = self.base[:, 2] * state["active"] * self.slope * self.bottom
+        energy = np.sum(mode.reshape(-1, 3) ** 2, axis=1)[self.half[self.index]] * np.where(self.plane[self.index], 0.5, 1.0) * ~self.copies
+        total = float(np.sum(state["stiffness"][:, 2]))
+        derivative = self.base[:, 2] * self.slope
         mass = self.battery["mass_g"] * 1e-6
         return self.element(energy * mass * derivative / total) - float(np.sum(energy * mass * self.share)) / total * self.element(derivative)
 
 class CameraSupport(BatterySupport):
-    contact = False
     def __init__(self, system, settings, camera):
         nodes, inside, low, high = self.contact_nodes(system, camera["keep_out"], True)
         points = system.points[nodes]
@@ -1102,7 +1011,7 @@ class CameraSupport(BatterySupport):
         count = int(keep.sum())
         shear = np.ones((count, 3), dtype=bool)
         shear[:, 0] = False
-        self.assemble(system, settings, camera, nodes[keep], inside[keep], np.zeros(count, dtype=int), np.sign(points[keep, 0]), np.ones(count, dtype=bool), shear)
+        self.assemble(system, settings, camera, nodes[keep], inside[keep], np.zeros(count, dtype=int), shear)
         self.summary = {"nodes": len(self.index), "patch_area_mm2": float(self.area.sum()), "face_x_mm": float(high[0]), "keep_out_cells_mm": [low.tolist(), high.tolist()]}
 
 class RaySampler:
@@ -1268,8 +1177,7 @@ def battery_rows(problem):
             if name in problem.zones:
                 gradient = gradient + 2 * problem.zones[name].gradient(problem.physical, {}, {"battery": state["inverse"] @ battery.shift.T @ delta}, problem.bodies)
             value = max(float(np.linalg.norm(delta)), 1e-12)
-            rows.append({"name": "battery_shift_" + name, "g": value / limit - 1, "gradient": gradient / (2 * value * limit), "value": value, "limit": limit, "unit": "mm", "sense": "<=",
-                         "info": {"active_bottom": int(np.sum(state["active"][battery.bottom] == 1)), "active_side": int(np.sum(state["active"][~battery.bottom] == 1)), "wrench": state["wrench"].tolist()}})
+            rows.append({"name": "battery_shift_" + name, "g": value / limit - 1, "gradient": gradient / (2 * value * limit), "value": value, "limit": limit, "unit": "mm", "sense": "<=", "info": {"wrench": state["wrench"].tolist()}})
     area, slope = battery.contact_area()
     rows.append({"name": "battery_contact_area", "g": 1 - area / settings["min_area_mm2"], "gradient": -slope / settings["min_area_mm2"], "value": area, "limit": settings["min_area_mm2"], "unit": "mm2", "sense": ">="})
     return rows

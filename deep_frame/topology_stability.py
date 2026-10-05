@@ -182,7 +182,7 @@ class GroundSupport:
         force, mirrored, states = (self.masses[0][:, None] * acceleration).ravel(), (self.masses[1][:, None] * acceleration * self.flip).ravel(), {}
         for name, body in self.bodies.items():
             vector = body.battery["mass_g"] * acceleration
-            states[name] = state = body.state(np.concatenate([vector, np.cross(np.asarray(body.battery["center_mm"], dtype=float) - body.reference, vector)]), body.contact)
+            states[name] = state = body.state(np.concatenate([vector, np.cross(np.asarray(body.battery["center_mm"], dtype=float) - body.reference, vector)]))
             direct, mirror = body.forces(state)
             force, mirrored = force + direct, mirrored + mirror
         return force, mirrored, states

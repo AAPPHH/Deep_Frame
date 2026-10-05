@@ -69,7 +69,6 @@ class PipelineReview:
         from build123d import Vector
         from scipy.spatial import ConvexHull
         from matplotlib.path import Path as Polygon
-        guide=self.functions['battery_guide']
         part=self.parameters['components']['battery']
         frame=self.parameters['frame']
         center=np.array([0,frame['battery_y_mm'],frame['deck_top_mm']])
@@ -78,31 +77,10 @@ class PipelineReview:
         inside,seat_area=self.section(2,center[2]-.05,points,.1)
         supported=points[inside]
         stable=len(supported)>3 and np.linalg.matrix_rank(supported-supported[0])==2 and Polygon(supported[ConvexHull(supported).vertices]).contains_point(center[:2])
-        faces={}
-        spacing=np.asarray(self.half['grid']['spacing_mm'])
-        clearance=config.TOPOLOGY_CONFIG['component_clearance_mm']
-        for axis,label in [(0,'side'),(1,'end')]:
-            other=1-axis
-            patch=self.patch([center[other]-half[other],center[2]+.05],[center[other]+half[other],center[2]+guide['height_mm']])
-            maximum_gap=clearance+spacing[axis]
-            for sign in (-1,1):
-                name=('side_left' if sign<0 else 'side_right') if axis==0 else ('rear' if sign<0 else 'front')
-                _,area=self.section(axis,center[axis]+sign*(half[axis]+maximum_gap),patch,.1)
-                minimum=guide['contact_area_mm2']['side']/2 if axis==0 else guide['contact_area_mm2'][name]
-                faces[name]={'area_mm2':area,'minimum_mm2':minimum,'maximum_checked_gap_mm':maximum_gap,'passed':area>=minimum}
         insertion=[{'dz_mm':dz,'overlap_mm3':self.overlap(self.components['battery']['shape'].translate(Vector(0,0,dz)))} for dz in (0,.5,1,2,3,5,10)]
-        paths=[]
-        for sx in (-1,1):
-            for sy in (-1,1):
-                overlaps=[]
-                for dz in np.linspace(guide['height_mm']+.5,0,16):
-                    offset=guide['entry_relief_mm']*min(float(dz)/guide['height_mm'],1)
-                    overlaps.append(self.overlap(self.components['battery']['shape'].translate(Vector(sx*offset,sy*offset,float(dz)))))
-                paths.append({'initial_offset_mm':[sx*guide['entry_relief_mm'],sy*guide['entry_relief_mm']],'maximum_overlap_mm3':max(overlaps)})
-        cap=next(r for r in self.half['regions'] if r['name']=='battery_guide_height_cap')
-        cap_volume=float((self.body^region_manifold(cap,.02)[0]).volume())
-        passed=seat_area>=guide['seat_area_mm2'] and stable and all(r['passed'] for r in faces.values()) and max(r['overlap_mm3'] for r in insertion)<=1e-4 and max(r['maximum_overlap_mm3'] for r in paths)<=1e-4 and cap_volume<=1e-4
-        return {'passed':bool(passed),'seat_area_mm2':seat_area,'minimum_seat_area_mm2':guide['seat_area_mm2'],'battery_center_inside_seat_support_hull':bool(stable),'guide_faces':faces,'vertical_insertion':insertion,'guided_entry_paths':paths,'material_above_guide_height_cap_mm3':cap_volume,'height_limit_mm':guide['height_mm'],'retention':'Ideal external press; rubber geometry, stiffness and preload excluded; guide transfers handling loads only'}
+        minimum=self.problem['battery']['min_area_mm2']
+        passed=seat_area>=minimum and stable and max(r['overlap_mm3'] for r in insertion)<=1e-4
+        return {'passed':bool(passed),'seat_area_mm2':seat_area,'minimum_seat_area_mm2':minimum,'battery_center_inside_seat_support_hull':bool(stable),'vertical_insertion':insertion,'retention':'Ideal external press on the underside seat; no rubber model, no positioning guide'}
     def camera(self):
         flight=self.functions['low_flight']
         normal=np.asarray(flight['vertical_axis'])
@@ -211,10 +189,9 @@ def headroom(path):
         problem['modal']=None
         tp=TopologyProblem(half,problem,linear_solver='cpu_superlu')
         density=half['allowed'].ravel().astype(float)
-        functions=tp.functions
-        report[stage]={'grid':half['grid'],'low_flight':half['functional_requirements'].get('low_flight'),'guard_max_area_mm2':float(functions.guard@density),
-                       'guard_cells':int(np.count_nonzero(functions.guard)),'full_domain_clearance':functions.clearance(density) if functions.flight else None,
-                       'guide_max_areas_mm2':{name:float(guide['area']@density) for name,guide in functions.guides.items()},
+        flight=tp.low_flight
+        report[stage]={'grid':half['grid'],'low_flight':half['functional_requirements'].get('low_flight'),'guard_max_area_mm2':None if flight is None else float(flight.guard@density),
+                       'guard_cells':None if flight is None else int(np.count_nonzero(flight.guard)),'full_domain_clearance':None if flight is None else flight.clearance(density),
                        'max_shielding':{name:zone.protection(density)[0] for name,zone in tp.zones.items()},'max_coverage':tp.coverage.measure(density)[0] if tp.camera is not None else None}
         tp.close()
     Path(path).with_name(Path(path).stem+'_headroom.json').write_text(json.dumps(report,indent=2,default=float))
