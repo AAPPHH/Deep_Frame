@@ -122,6 +122,7 @@ def test_progress_callback_reports_iterations_without_mutating_solver_history():
     plain = optimize_topology(domain, settings)
     assert result["status"] == "ok"
     assert observed == result["history"]
+    assert result["history"][-1]["objective"] == pytest.approx(result["history"][-2]["objective"], rel=1e-12)
     assert len(observed) == 4
     assert observed[-1]["final_evaluation"]
     assert observed[-1]["maximum_design_change"] is None
@@ -259,7 +260,9 @@ def test_final_beta_level_keeps_the_per_level_minimum():
     settings = {**ROBUST_RUN, "beta_change_tolerance": 0.5, "change_tolerance": 0.5, "minimum_iterations": 1, "beta_minimum_iterations": 4}
     result = optimize_topology(beam_domain((8, 4, 4), (1.0, 1.0, 1.0)), settings)
     betas = [entry["projection_beta"] for entry in result["history"] if not entry["final_evaluation"]]
-    assert betas == [1.0] * 4 + [2.0] * 4 + [4.0] * 4 and result["summary"]["stop_reason"] == "change_tolerance"
+    assert betas[:8] == [1.0] * 4 + [2.0] * 4 and len(betas[8:]) >= 4 and set(betas[8:]) == {4.0}
+    assert result["summary"]["stop_reason"] == "change_tolerance"
+    assert result["history"][-2]["max_violation"] <= result["summary"]["settings"]["feasibility_tolerance"]
 
 def test_dilated_target_starts_each_level_at_the_dilated_volume_and_relaxes():
     domain = beam_domain((8, 4, 4), (1.0, 1.0, 1.0))
@@ -716,7 +719,7 @@ def test_neural_stiffness_constraint_stays_out_of_the_objective_and_blocks_infea
     domain["load_cases"].append({**deepcopy(domain["load_cases"][0]), "name": "push"})
     settings = {"volume_fraction": 0.5, "max_iterations": 6, "minimum_iterations": 2, "sharpness_iterations": 2, "objective_window": 2, "change_tolerance": 1.0, "frequencies": 8, "hidden": [6], "mirror_axis": None}
     free = optimize_neural(domain, settings)
-    assert free["status"] == "ok" and free["summary"]["stop_reason"] == "objective_stall"
+    assert free["status"] == "ok" and free["summary"]["stop_reason"] == "change_tolerance"
     result = optimize_neural(domain, {**settings, "stiffness": stiffness_settings(min_n_per_mm=1e6), "feasibility_tolerance": 0.0})
     summary = result["summary"]
     assert result["status"] == "ok" and "push" not in summary["normalization_compliances_n_mm"] and "push" not in summary["static_surrogate_metrics"]

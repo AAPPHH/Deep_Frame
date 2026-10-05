@@ -8,7 +8,7 @@ from scipy.spatial import cKDTree
 
 from deep_frame.config import BATTERY_SUPPORT, CABLE_WIDTH, COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
 from deep_frame.topology_neural import cell_centers
-from deep_frame.topology_optimization import SOLVER_CHOICE, DensityMap, HexElasticity, StiffnessConstraint, _settings
+from deep_frame.topology_optimization import SOLVER_CHOICE, DensityMap, HexElasticity, StiffnessConstraint, _settings, continuation_decision
 from deep_frame.topology_stability import GroundSupport, StandStability
 
 ARM_TIP = {"name": "arm_tip", "case": "stiffness_arm_tip", "min_n_per_mm": 10.0, "calibration": 1.0, "penalty": 1.0, "multiplier_interval": 1,
@@ -50,7 +50,7 @@ PROBLEM = {
     "interpolation": {"penalization": 3.0, "min_stiffness_ratio": 1e-6, "stiffness": "SIMP p=3, E_min = 1e-6 E", "mass": "linear, rho^6/c^5 below c = 0.1 (modal only, against spurious low-density modes)"},
     "fields": {"stiffness": "eroded", "mass": "intermediate", "volume": "intermediate", "shadow": "intermediate"},
     "continuation": {"beta_schedule": [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]},
-    "termination": {"mass_change": 1e-3, "violation": 1e-3, "window": 5, "active": 0.01},
+    "termination": {"mass_change": 1e-3, "design_change": 1e-3, "violation": 1e-3, "window": 5, "active": 0.01},
     "material": "orthotropic",
     "battery": None,
     "solver_choice": SOLVER_CHOICE,
@@ -136,13 +136,18 @@ def format_report(report):
 class Termination:
     def __init__(self, settings=PROBLEM["termination"]):
         self.settings, self.masses, self.violations = settings, [], []
-    def __call__(self, mass, violation, final_level=True):
+    def __call__(self, mass, violation, final_level=True, change=None, minimum_iterations=0):
+        if not final_level:
+            self.masses.clear()
+            self.violations.clear()
+            return False
         self.masses.append(float(mass))
         self.violations.append(float(violation))
         window = self.masses[-self.settings["window"]:]
-        if len(window) < self.settings["window"] or not final_level:
+        if len(window) < self.settings["window"]:
             return False
-        return (max(window) - min(window)) / max(min(window), 1e-30) < self.settings["mass_change"] and self.violations[-1] <= self.settings["violation"]
+        stable = (max(window) - min(window)) / max(min(window), 1e-30) < self.settings["mass_change"]
+        return stable and continuation_decision(len(self.masses), True, change, violation, minimum_iterations, float("inf"), self.settings.get("design_change", 1e-3), self.settings["violation"]) == "converged"
 
 def prolongate(design, coarse_grid, fine_domain):
     shape = tuple(coarse_grid["shape"])
@@ -458,7 +463,7 @@ def cantilever_dual(volume_fraction=0.3, domain=None, problem=None):
             "statement": "min-compliance at volume V* (OC, same robust filter) gives stiffness k*; min-mass subject to k >= k* must return volume ~ V* with the stiffness constraint active"}
 
 MMA = {"package": "mmapy==0.3.1 (Deetman, Python port of Svanberg's MMA)", "move": 0.1, "move_late": 0.05, "move_late_beta": 32.0, "scale": 100.0, "asyinit": 0.5, "asydecr": 0.7, "asyincr": 1.2, "raa0": 1e-5, "c": 1e4, "d": 1.0,
-       "start_level": 0, "level_window": 5, "level_mass_change": 1e-2, "level_violation": 1e-2, "level_min_iterations": 10, "level_max_iterations": 80, "final_max_iterations": 300,
+       "start_level": 0, "level_window": 5, "level_mass_change": 1e-2, "level_design_change": 1e-2, "level_violation": 1e-2, "level_min_iterations": 10, "level_max_iterations": 80, "final_min_iterations": 10, "final_max_iterations": 300,
        "stall_window": 40, "stall_improvement": 1e-3, "diverge_window": 10, "diverge_violation": 1.0, "checkpoint_interval": 10, "objective": None}
 
 class MMAOptimizer:
@@ -507,14 +512,7 @@ class MMAOptimizer:
         return (max(masses) - min(masses)) / max(min(masses), 1e-30) < self.settings["level_mass_change"] and violations[0] - min(violations) < self.settings["stall_improvement"]
     def advance_ready(self, level):
         settings = self.settings
-        if len(level) >= settings["level_max_iterations"]:
-            return "iteration_cap"
-        if len(level) < max(settings["level_min_iterations"], settings["level_window"]):
-            return None
-        masses = [row["f0"] for row in level[-settings["level_window"]:]]
-        if (max(masses) - min(masses)) / max(min(masses), 1e-30) < settings["level_mass_change"] and level[-1]["max_violation"] <= settings["level_violation"]:
-            return "converged"
-        return "stalled" if self.stalled(level) else None
+        return continuation_decision(len(level), False, level[-1]["change"], level[-1]["max_violation"], max(settings["level_min_iterations"], settings["level_window"]), settings["level_max_iterations"], settings["level_design_change"], settings["level_violation"])
     def run(self, design, progress=None, checkpoint=None, keep=None):
         problem, settings = self.problem, self.settings
         while problem.level < settings["start_level"] and problem.advance():
@@ -523,32 +521,37 @@ class MMAOptimizer:
         state, initial = self.fresh(x), problem.problem["modal"]["initial_iterations"] if problem.modal is not None else None
         tolerance = problem.problem["termination"]["violation"]
         started = perf_counter()
+        previous = None
         while True:
             clock = perf_counter()
             result = problem.evaluate(x, initial if not level else None)
             f0, _, g, _ = self.terms(result)
             row = {"iteration": len(history), "level": problem.level, "beta": problem.beta, "objective": result["objective"], "f0": float(f0), "mass_g": result["mass_g"], "max_violation": float(np.max(g)),
-                   "move": self.move(), "constraints": dict(zip(result["names"], result["constraints"].tolist()))}
+                   "move": self.move(), "change": None if previous is None else float(np.max(np.abs(x[self.free]-previous))), "constraints": dict(zip(result["names"], result["constraints"].tolist()))}
             history.append(row)
             level.append(row)
+            row["objective_stalled"] = self.stalled(level)
             if row["max_violation"] <= tolerance and (best is None or row["f0"] < best["f0"]):
                 best = {key: row[key] for key in ("iteration", "level", "beta", "f0", "mass_g", "max_violation")}
                 best.update(x=x.copy(), result={key: value for key, value in result.items() if "gradient" not in key})
                 if keep:
                     keep(x, best)
-            converged = termination(row["f0"], row["max_violation"], problem.final_level)
+            converged = termination(row["f0"], row["max_violation"], problem.final_level, row["change"], settings["final_min_iterations"])
             reason = "converged" if converged else None
             if problem.final_level and not converged:
-                reason = "iteration_cap" if len(level) >= settings["final_max_iterations"] else "stalled" if self.stalled(level) else "diverged" if self.diverged(level, best) else None
+                reason = "iteration_cap" if len(level) >= settings["final_max_iterations"] else "stalled" if len(level) >= settings["final_min_iterations"] and row["max_violation"] > tolerance and self.stalled(level) else "diverged" if self.diverged(level, best) else None
             elif not problem.final_level:
-                ready = self.advance_ready(level) or ("diverged" if self.diverged(level, best) else None)
-                if ready:
-                    fallback = ready != "converged" and best is not None
-                    levels.append({"beta": problem.beta, "iterations": len(level), "reason": ready, "mass_g": row["mass_g"], "max_violation": row["max_violation"],
+                ready = "diverged" if self.diverged(level, best) else self.advance_ready(level)
+                if ready == "advance":
+                    fallback = len(level) >= settings["level_max_iterations"] and best is not None
+                    levels.append({"beta": problem.beta, "iterations": len(level), "reason": "iteration_cap" if len(level) >= settings["level_max_iterations"] else "change_tolerance", "mass_g": row["mass_g"], "max_violation": row["max_violation"],
                                    "best_feasible": {key: value for key, value in best.items() if key not in ("x", "result")} if best else None, "continued_from_best": fallback})
                     x = best["x"].copy() if fallback else x
                     problem.advance()
                     level, state, best = [], self.fresh(x), None
+                    previous = None
+                elif ready:
+                    reason = ready
             if reason:
                 fallback = reason != "converged" and best is not None
                 levels.append({"beta": problem.beta, "iterations": len(level), "reason": reason, "mass_g": row["mass_g"], "max_violation": row["max_violation"],
@@ -558,6 +561,7 @@ class MMAOptimizer:
                     x, result, kept = best["x"], {**result, **best["result"]}, {key: value for key, value in best.items() if key not in ("x", "result")}
                 break
             if level:
+                previous = x[self.free].copy()
                 x = self.step(x, result, state)
             row["seconds"] = perf_counter() - clock
             if progress:

@@ -58,14 +58,25 @@ def test_masks_hold_every_iteration_and_in_the_fine_sample():
     for density, case in ((result["optimization_density"], domain), (result["density"], fine)):
         assert np.all(density[case["preserve"]] == 1) and np.all(density[case["forbidden"]] == 0)
 
-def test_cantilever_reduces_compliance_and_meets_volume():
+def test_cantilever_reduces_compliance_without_claiming_objective_stall_convergence():
     domain = beam_domain((16, 4, 4))
     result = optimize_neural(domain, {"volume_fraction": 0.4, "max_iterations": 80, "minimum_iterations": 30, "sharpness_iterations": 30, "learning_rate": 0.02, "mirror_axis": None})
     summary = result["summary"]
     assert result["status"] == "ok"
-    assert summary["objective_final"] < 0.3 * summary["objective_initial"] and summary["converged"]
+    assert summary["objective_final"] < 0.3 * summary["objective_initial"]
+    assert not summary["converged"] and summary["stop_reason"] == "max_iterations"
+    assert result["history"][-2]["maximum_design_change"] >= summary["settings"]["change_tolerance"]
     assert abs(summary["volume_fraction"] - 0.4) < 1e-6
     assert summary["gray_fraction_free"] < 0.1
+
+def test_neural_final_sharpness_minimum_and_returned_evaluated_density():
+    domain = beam_domain((8, 3, 3))
+    result = optimize_neural(domain, {"volume_fraction": 0.4, "max_iterations": 12, "minimum_iterations": 5, "sharpness_iterations": 4, "change_tolerance": 1.0, "frequencies": 8, "hidden": [6], "mirror_axis": None})
+    summary, history = result["summary"], result["history"]
+    assert summary["converged"] and summary["iterations"] == 9
+    assert [row["final_level_iterations"] for row in history[:-1]] == [0, 0, 0, 0, 1, 2, 3, 4, 5]
+    assert history[-1]["objective"] == pytest.approx(history[-2]["objective"], rel=1e-12)
+    assert history[-1]["physical_density_sum"] == pytest.approx(history[-2]["physical_density_sum"], rel=1e-12)
 
 def test_local_volume_penalty_gradient_and_blob_vs_strut():
     from deep_frame.topology_neural import LocalVolumePenalty

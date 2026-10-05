@@ -14,6 +14,16 @@ from scipy.spatial import cKDTree
 
 from deep_frame.config import _json_copy
 
+def continuation_decision(iterations, final_level, change, violation, minimum, maximum, change_tolerance, violation_tolerance):
+    settled = change is not None and np.isfinite(change) and change < change_tolerance
+    feasible = np.isfinite(violation) and violation <= violation_tolerance
+    if iterations >= minimum:
+        if settled and feasible:
+            return "converged" if final_level else "advance"
+    if iterations >= maximum:
+        return "iteration_cap" if final_level or iterations < minimum else "advance"
+    return None
+
 def _library():
     try:
         import cupy
@@ -966,6 +976,7 @@ DEFAULT_SETTINGS = {
     "gpu_solver_residency": "resident",
     "prop_discs": None,
     "modal": None,
+    "feasibility_tolerance": 1e-3,
     "solver_choice": SOLVER_CHOICE,
     "density_filter": "auto",
     "corridor": None,
@@ -1287,22 +1298,26 @@ def optimize_topology(domain, settings, *, progress_callback=None):
                 recent = [entry["objective"] for entry in history[-min(level_iterations + 1, settings["objective_window"]):]]
                 stall = (max(recent) - min(recent)) / min(recent) if len(recent) == settings["objective_window"] else None
                 history[-1].update(_stage_entry(mapping, fields, volume_target, move_limit), objective_stall=stall)
+            level_iterations += 1
+            final_level = level == len(schedule) - 1
+            violation = max(float(mapping.weights @ fields[volume_name][0] / volume_target - 1), modal_info.get("violation", 0.0))
+            history[-1]["max_violation"] = violation
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
-            design = candidate
-            level_iterations += 1
-            if level == len(schedule) - 1:
-                if level_iterations >= minimum_iterations and change < settings["change_tolerance"]:
-                    converged = True
-                    stop_reason = "change_tolerance"
-                    break
-            elif level_iterations >= settings["beta_interval"] or (level_iterations >= settings["beta_minimum_iterations"] and change < settings["beta_change_tolerance"]):
-                level += 1
-                level_iterations = 0
-                mapping.beta = schedule[level]
+            decision = continuation_decision(level_iterations, final_level, change, violation, minimum_iterations if final_level else settings["beta_minimum_iterations"], float("inf") if final_level else settings["beta_interval"], settings["change_tolerance"] if final_level else settings["beta_change_tolerance"], settings["feasibility_tolerance"])
+            if decision == "converged":
+                converged, stop_reason = True, "change_tolerance"
+                break
             if settings["max_runtime_s"] is not None and perf_counter() - started >= settings["max_runtime_s"]:
                 stop_reason = "max_runtime_s"
                 break
+            if iteration == settings["max_iterations"]:
+                break
+            design = candidate
+            if decision == "advance":
+                level += 1
+                level_iterations = 0
+                mapping.beta = schedule[level]
         fields, filtered = mapping.fields(design)
         physical = fields["intermediate"][0]
         density = physical.reshape(tuple(domain["grid"]["shape"]))

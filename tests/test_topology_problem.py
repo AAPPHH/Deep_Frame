@@ -113,14 +113,78 @@ def test_report_status():
     assert [row["status"] for row in constraint_report(rows)] == ["violated", "active", "satisfied", "monitored"]
     assert constraint_report(rows)[2]["margin"] == 0.5
 
-def test_termination_needs_mass_and_violation():
+def test_termination_needs_design_change_feasibility_and_a_fresh_final_window():
     stop = Termination({"mass_change": 1e-3, "violation": 1e-3, "window": 3, "active": 0.01})
-    assert not stop(10.0, 0.0) and not stop(10.0, 0.0)
+    assert not stop(10.0, 0.0, change=0.0) and not stop(10.0, 0.0, change=0.0)
     assert not stop(10.0, 0.0, final_level=False)
-    assert not Termination({"mass_change": 1e-3, "violation": 1e-3, "window": 2, "active": 0.01})(1, 0) and stop(10.0, 0.0)
-    late = Termination({"mass_change": 1e-3, "violation": 1e-3, "window": 2, "active": 0.01})
-    late(10.0, 0.1)
-    assert not late(10.0, 0.1)
+    assert not stop(10.0, 0.0, change=0.0) and not stop(10.0, 0.0, change=0.0)
+    assert not stop(10.0, 0.0, change=0.1)
+    assert not stop(10.0, 0.1, change=0.0)
+    assert not stop(10.0, 0.0, change=0.0, minimum_iterations=6)
+    assert stop(10.0, 0.0, change=0.0, minimum_iterations=6)
+
+class PlateauProblem:
+    def __init__(self, violation):
+        from types import SimpleNamespace
+        self.level, self.modal, self.violation = 0, None, violation
+        self.problem = {"termination": {"mass_change": 1e-3, "design_change": 1e-3, "violation": 1e-3, "window": 2}}
+        self.map = SimpleNamespace(free=np.ones(2, dtype=bool), preserve=np.zeros(2, dtype=bool), allowed=np.ones(2, dtype=bool))
+    @property
+    def final_level(self):
+        return self.level == 1
+    @property
+    def beta(self):
+        return [1.0, 2.0][self.level]
+    def advance(self):
+        self.level += 1
+        return True
+    def evaluate(self, x, initial=None):
+        return {"objective": 1.0, "objective_gradient": np.zeros(2), "mass_g": 1.0, "constraints": np.array([self.violation]), "constraint_gradients": np.zeros((1, 2)), "names": ["fixed"]}
+
+def plateau_optimizer(violation, settings):
+    from deep_frame.topology_problem import MMA
+    optimizer = MMAOptimizer.__new__(MMAOptimizer)
+    optimizer.problem = PlateauProblem(violation)
+    optimizer.settings = {**MMA, **settings}
+    optimizer.free = optimizer.problem.map.free
+    return optimizer
+
+@pytest.mark.parametrize("violation", [0.0, 0.5])
+def test_mma_final_objective_plateau_does_not_claim_convergence(violation, monkeypatch):
+    optimizer = plateau_optimizer(violation, {"start_level": 1, "final_min_iterations": 2, "stall_window": 3, "final_max_iterations": 10})
+    monkeypatch.setattr(optimizer, "step", lambda x, result, state: 1-x)
+    result = optimizer.run(np.full(2, 0.2))
+    assert result["status"] == ("not_converged_iteration_cap_best_feasible" if violation == 0 else "not_converged_stalled")
+    assert optimizer.problem.level == 1 and result["iterations"] == (10 if violation == 0 else 3)
+    assert all(row["change"] > 0.5 for row in result["history"][1:])
+
+def test_mma_intermediate_stall_waits_for_the_regular_stage_budget(monkeypatch):
+    optimizer = plateau_optimizer(0.0, {"level_min_iterations": 2, "level_window": 2, "stall_window": 3, "level_max_iterations": 5, "final_min_iterations": 4, "final_max_iterations": 4})
+    monkeypatch.setattr(optimizer, "step", lambda x, result, state: 1-x)
+    result = optimizer.run(np.full(2, 0.2))
+    assert [row["beta"] for row in result["history"]] == [1.0]*5+[2.0]*4
+    assert result["levels"][0]["reason"] == "iteration_cap"
+    assert result["history"][2]["objective_stalled"]
+    assert result["status"] == "not_converged_iteration_cap_best_feasible"
+
+def test_mma_final_stage_observes_its_minimum(monkeypatch):
+    optimizer = plateau_optimizer(0.0, {"start_level": 1, "final_min_iterations": 4})
+    monkeypatch.setattr(optimizer, "step", lambda x, result, state: x)
+    result = optimizer.run(np.full(2, 0.2))
+    assert result["status"] == "converged" and result["iterations"] == 4
+
+def test_mma_divergence_at_stage_budget_stops_instead_of_advancing(monkeypatch):
+    optimizer = plateau_optimizer(0.0, {"level_min_iterations": 2, "level_window": 2, "level_max_iterations": 3, "diverge_window": 2})
+    evaluate, seen = optimizer.problem.evaluate, []
+    def diverging(x, initial=None):
+        optimizer.problem.violation = 2.0 if seen else 0.0
+        seen.append(x.copy())
+        return evaluate(x, initial)
+    monkeypatch.setattr(optimizer.problem, "evaluate", diverging)
+    monkeypatch.setattr(optimizer, "step", lambda x, result, state: x)
+    result = optimizer.run(np.full(2, 0.2))
+    assert result["status"] == "not_converged_diverged_best_feasible"
+    assert optimizer.problem.level == 0 and result["iterations"] == 3
 
 def test_prolongate_keeps_masks_and_constants():
     coarse = cantilever_domain((8, 2, 4), 2.0)
