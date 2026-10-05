@@ -86,7 +86,10 @@ def execute(token):
     payload = json.loads(base64.urlsafe_b64decode(token))
     command = payload["command"]
     job = contain()
-    watch(supervisor())
+    pid = supervisor()
+    if os.name == "nt" and pid is None:
+        return 1
+    watch(pid)
     process = subprocess.Popen(command[0] if len(command) == 1 else command, shell=len(command) == 1,
                                cwd=payload["cwd"], env={**os.environ, **payload["env"]})
     return process.wait()
@@ -106,6 +109,8 @@ def watch(pid):
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.OpenProcess.restype = ctypes.c_void_p
     handle = kernel.OpenProcess(0x00100000, False, pid)
+    if not handle:
+        os._exit(1)
     if handle:
         threading.Thread(target=lambda: (kernel.WaitForSingleObject(ctypes.c_void_p(handle), 0xFFFFFFFF), os._exit(1)), daemon=True).start()
 
