@@ -1,0 +1,194 @@
+{
+ "root": ".",
+ "tool": "tools/reconstruction_study.py",
+ "action": "cli",
+ "patch": {
+  "FRAME_DEFAULTS": {
+   "wheelbase_mm": 132.5,
+   "lateral_longitudinal_ratio": 1.3658536585365855,
+   "arm_height_mm": 9.333333333333334,
+   "camera_y_mm": 41.1,
+   "aio_standoff_mm": 3.0,
+   "camera_bottom_clearance_mm": 7.0,
+   "battery_y_mm": -2.8,
+   "camera_screw_diameter_mm": 2.2,
+   "deck_top_mm": 20.0
+  },
+  "COMPONENT_DEFAULTS": {
+   "aio15": {
+    "width_mm": 31.3,
+    "length_mm": 31.3,
+    "stack_height_mm": 6.0,
+    "grommet_height_mm": 3.0,
+    "mount_layout": "square",
+    "mount_pitch_mm": 25.5,
+    "screw_diameter_mm": 2.0,
+    "elrs_antenna_clearance_mm": 3.0,
+    "mass_g": 7.2,
+    "source": "user: HDZero AIO15 dimensions, M2 mounting pattern and mass",
+    "parameter_sources": {
+     "stack_height_mm": "PROVISIONAL: complete populated board envelope; measure actual stack",
+     "grommet_height_mm": "PROVISIONAL: HDZero manual, soft mount on the 4 included rubber grommets; height not given, typical whoop grommet",
+     "elrs_antenna_clearance_mm": "HDZero AIO15 manual: lift the ELRS antenna at least 3 mm off the board",
+     "vtx_antenna": "HDZero AIO15 manual: UFL VTX antenna mounted outward; strapped with a rubber band where it fits, no frame eyelet"
+    }
+   },
+   "camera": {
+    "length_mm": 14.0,
+    "width_mm": 16.0,
+    "height_mm": 14.0,
+    "mount_layout": "side_pair",
+    "screw_diameter_mm": 2.0,
+    "screw_clearance_mm": 2.2,
+    "mass_g": 2.3,
+    "source": "user: HDZero Lux dimensions and mass",
+    "parameter_sources": {
+     "clearance_diameter_mm": "frame v0: 2.2 mm side screw bore",
+     "keep_out": "frame v0: 2 mm side and bottom camera clearance",
+     "tilt_deg": "design: adjustable initial camera tilt"
+    },
+    "tilt_deg": 20.0
+   },
+   "battery": {
+    "length_mm": 63.0,
+    "width_mm": 30.0,
+    "height_mm": 11.0,
+    "cells": 2,
+    "capacity_mah": 550,
+    "power_connector": "AMASS XT30U-F",
+    "balance_connector": "JST XHP-3",
+    "mass_g": 37.0,
+    "source": "user: GNB5502S120A dimensions and mass",
+    "mass_scope": "battery including leads and connectors; represented at battery center"
+   },
+   "motor": {
+    "diameter_mm": 15.76,
+    "height_mm": 9.9,
+    "shaft_diameter_mm": 1.5,
+    "mount_layout": "bolt_circle",
+    "mount_pitch_mm": 9.0,
+    "screw_diameter_mm": 2.0,
+    "screw_clearance_mm": 2.2,
+    "kv": 8000,
+    "thrust_n": 1.8,
+    "mass_g": 4.5,
+    "source": "Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg (RCinPower GTS V3 1203 8000KV data sheet)",
+    "model": "RCinPower GTS V3 1203 8000KV (user decision)",
+    "parameter_sources": {
+     "diameter_mm": "data sheet: motor dimension 15.76 x 9.9 mm",
+     "height_mm": "data sheet: body length 9.9 mm, shaft tip excluded",
+     "shaft_diameter_mm": "data sheet drawing: shaft tip 1.5 mm",
+     "mount_layout": "data sheet drawing: 4 x M2 on 9 mm bolt circle, cross pattern",
+     "mass_g": "data sheet: 4.5 g with 3 cm wire",
+     "thrust_n": "data sheet: GF 65R, 7.4 V, 100 % throttle, 184 g pull = 1.80 N",
+     "screw_clearance_mm": "design: 0.2 mm diametral clearance for M2"
+    }
+   },
+   "xt30": {
+    "width_mm": 10.2,
+    "length_mm": 12.4,
+    "height_mm": 5.2,
+    "mass_g": 0.0,
+    "source": "https://images.100y.com.tw/pdf_file/AMASS-XT30U.pdf#page=2",
+    "model": "AMASS XT30U-F bounding envelope",
+    "mass_scope": "already_in_battery",
+    "parameter_sources": {
+     "mass_g": "battery mass includes leads and connectors; avoid double counting"
+    }
+   },
+   "balancer": {
+    "width_mm": 9.8,
+    "length_mm": 7.5,
+    "height_mm": 5.7,
+    "pins": 3,
+    "mass_g": 0.0,
+    "source": "https://www.jst-mfg.com/product/pdf/eng/eXH.pdf#page=4",
+    "model": "PROVISIONAL: JST XHP-3 housing envelope; verify actual GNB connector",
+    "mass_scope": "already_in_battery",
+    "parameter_sources": {
+     "pins": "user: 3-pin balance connector",
+     "mass_g": "battery mass includes leads and connectors; avoid double counting"
+    }
+   },
+   "prop": {
+    "diameter_mm": 63.5,
+    "hub_diameter_mm": 9.8,
+    "hub_height_mm": 5.0,
+    "shaft_diameter_mm": 1.5,
+    "size_in": 2.5,
+    "pitch_in": 2.0,
+    "blades": 3,
+    "material": "polycarbonate",
+    "rotation": "2 CW + 2 CCW",
+    "adaptor_rings": false,
+    "thrust_g_estimate": 206.0,
+    "thrust_n_estimate": 2.02,
+    "mass_g": 1.2,
+    "source": "user decision: HQProp T2.5X2X3V2S (HQ Durable Prop T2.5X2X3 V2S), 2 CW + 2 CCW, polycarbonate, 1.5 mm shaft, no adaptor rings",
+    "model": "HQProp T2.5X2X3V2S 2.5 x 2 x 3 (user decision)",
+    "parameter_sources": {
+     "diameter_mm": "HQProp data: 2.5 inch = 63.5 mm",
+     "hub_diameter_mm": "HQProp data: hub diameter 9.8 mm",
+     "hub_height_mm": "HQProp data: hub thickness 5 mm; used as the axial extent of the swept prop disc",
+     "shaft_diameter_mm": "HQProp data: 1.5 mm shaft bore, matches GTS V3 1203 shaft tip",
+     "mass_g": "HQProp data: 1.2 g",
+     "thrust_n_estimate": "ESTIMATE: Hardware/GTS V3 1203/GTSV31203chanpinyemian301-54f4e.jpg, GTS V3 1203 8000KV table, row HQ T65R, 7.4 V, 100 % throttle: 206 g pull = 2.02 N; T65R is a 65 mm 3-blade HQ prop, not the T2.5X2X3V2S itself",
+     "keep_out_clearance_mm": "design: radial and axial prop clearance as TOPOLOGY_CONFIG prop_clearance_mm"
+    },
+    "thickness_mm": 5.0
+   }
+  },
+  "FEA_CONFIG": {
+   "material": {
+    "density_g_cm3": 1.09,
+    "young_modulus_mpa": 4430.0,
+    "poisson_ratio": 0.3
+   }
+  },
+  "TOPOLOGY_CONFIG": {
+   "manufacturing": {
+    "nozzle_width_mm": 0.4,
+    "minimum_feature_mm": 2.0
+   },
+   "battery_support": "free",
+   "camera_support": "free",
+   "stack_post": {
+    "fastening": "heat_set"
+   }
+  },
+  "INTEGRATION_CONFIG": {
+   "crash_directions": [
+    "front",
+    "side_left",
+    "side_right",
+    "arm_front_left",
+    "arm_front_right",
+    "arm_rear_left",
+    "arm_rear_right",
+    "below",
+    "back"
+   ]
+  }
+ },
+ "argv": [
+  "splines"
+ ],
+ "overrides": {
+  "source": "exports/runs/free_layout4_opt/free_layout4/density_fine.npz",
+  "output": "exports/runs/free_layout4_v3_contact/reconstruction",
+  "fine_shape": [
+   204,
+   192,
+   48
+  ],
+  "study": {
+   "pad": {
+    "top_mm": 9.333333333333334,
+    "thickness_mm": 2.6666666666666665,
+    "support_half_mm": 5.0,
+    "bore_margin_mm": 0.5
+   },
+   "hoop": null
+  }
+ }
+}

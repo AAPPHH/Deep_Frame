@@ -1,0 +1,323 @@
+{
+ "v3c": {
+  "stl": "exports/runs/free_layout_v3_2/reconstruction/geometry.stl",
+  "solid_cells_half": 2937,
+  "mass_g_voxel": 15.176675555555555,
+  "rows": [
+   {
+    "name": "load_mean",
+    "value": 0.5675513796248115,
+    "limit": 0.904779,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.3727182222124834
+   },
+   {
+    "name": "load_worst",
+    "value": 0.16858330754329467,
+    "limit": 0.312585,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.4604371932134186
+   },
+   {
+    "name": "crash_front",
+    "value": 10862.466897006563,
+    "limit": 292.89945,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": 36.085992810865854
+   },
+   {
+    "name": "crash_side_left",
+    "value": 6.82266961198671,
+    "limit": 20.438937229804516,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.6661925453717945
+   },
+   {
+    "name": "crash_side_right",
+    "value": 6.822669611986622,
+    "limit": 20.43893722980452,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.666192545371799
+   },
+   {
+    "name": "crash_arm_front_left",
+    "value": 53.77207308940889,
+    "limit": 211.62622638695808,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.7459101643144798
+   },
+   {
+    "name": "crash_arm_front_right",
+    "value": 20.58189672957052,
+    "limit": 33.80899650269828,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.3912301795787435
+   },
+   {
+    "name": "crash_arm_rear_left",
+    "value": 38.510549273332764,
+    "limit": 65.64105289024488,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.4133160944611244
+   },
+   {
+    "name": "crash_arm_rear_right",
+    "value": 49.56848824683144,
+    "limit": 108.16575437523417,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.5417358429833987
+   },
+   {
+    "name": "crash_below",
+    "value": 12904.543052991821,
+    "limit": 1027.8225,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": 11.555225297161543
+   },
+   {
+    "name": "crash_back",
+    "value": 4.897676137728688,
+    "limit": 10.414240549567483,
+    "unit": "N mm",
+    "sense": "<=",
+    "g": -0.5297135576600356
+   },
+   {
+    "name": "battery_shift_flight",
+    "value": 0.10962179832396791,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.7807564033520642
+   },
+   {
+    "name": "battery_shift_crash_front",
+    "value": 0.14304693238475516,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.7139061352304896
+   },
+   {
+    "name": "battery_shift_crash_side_left",
+    "value": 0.1520081771933733,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.6959836456132533
+   },
+   {
+    "name": "battery_shift_crash_side_right",
+    "value": 0.15200817719337353,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.6959836456132529
+   },
+   {
+    "name": "battery_shift_crash_arm_front_left",
+    "value": 0.09699138297042234,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.8060172340591554
+   },
+   {
+    "name": "battery_shift_crash_arm_front_right",
+    "value": 0.1323028202521364,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.7353943594957272
+   },
+   {
+    "name": "battery_shift_crash_arm_rear_left",
+    "value": 0.1481716499126455,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.7036567001747089
+   },
+   {
+    "name": "battery_shift_crash_arm_rear_right",
+    "value": 0.094173086439708,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.811653827120584
+   },
+   {
+    "name": "battery_shift_crash_below",
+    "value": 0.06789079211124897,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.864218415777502
+   },
+   {
+    "name": "battery_shift_crash_back",
+    "value": 0.0038652204724559085,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.9922695590550882
+   },
+   {
+    "name": "battery_shift_crash_camera_oblique",
+    "value": 0.1442246201346103,
+    "limit": 0.5,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.7115507597307794
+   },
+   {
+    "name": "battery_contact_area",
+    "value": 421.60423280423277,
+    "limit": 350.0,
+    "unit": "mm2",
+    "sense": ">=",
+    "g": -0.20458352229780785
+   },
+   {
+    "name": "camera_shift_crash_front",
+    "value": 168.57303023031113,
+    "limit": 0.112,
+    "unit": "mm",
+    "sense": "<=",
+    "g": 1504.1163413420636
+   },
+   {
+    "name": "camera_shift_crash_camera_oblique",
+    "value": 111.57195323369896,
+    "limit": 0.2652,
+    "unit": "mm",
+    "sense": "<=",
+    "g": 419.70872260067483
+   },
+   {
+    "name": "camera_shielding_crash_front",
+    "value": 0.23825961425427664,
+    "limit": 0.29,
+    "unit": "-",
+    "sense": ">=",
+    "g": 0.17841512326111497
+   },
+   {
+    "name": "camera_shielding_crash_camera_oblique",
+    "value": 0.02542945764931992,
+    "limit": 0.0336,
+    "unit": "-",
+    "sense": ">=",
+    "g": 0.24317090329405
+   },
+   {
+    "name": "camera_mount_area",
+    "value": 44.44444444444444,
+    "limit": 99.55555555555557,
+    "unit": "mm2",
+    "sense": ">=",
+    "g": 0.5535714285714286
+   },
+   {
+    "name": "camera_shielding_crash_below",
+    "value": 0.00991035533339603,
+    "limit": null,
+    "unit": "-",
+    "sense": "",
+    "g": null
+   },
+   {
+    "name": "thrust_all",
+    "value": 1.4326150056882296,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "g": null
+   },
+   {
+    "name": "torsion_yaw",
+    "value": 0.05729107874327201,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "g": null
+   },
+   {
+    "name": "twist",
+    "value": 5.309995211455406,
+    "limit": null,
+    "unit": "N mm",
+    "sense": "",
+    "g": null
+   },
+   {
+    "name": "volume",
+    "value": 0.033166203672335526,
+    "limit": 0.1,
+    "unit": "-",
+    "sense": "<=",
+    "g": -0.6683379632766447
+   },
+   {
+    "name": "shadow",
+    "value": 0.2669702867852304,
+    "limit": 0.3137367868997963,
+    "unit": "mm",
+    "sense": "<=",
+    "g": -0.1490628516237803
+   },
+   {
+    "name": "camera_coverage",
+    "value": 0.3213070279955768,
+    "limit": 0.4227,
+    "unit": "-",
+    "sense": ">=",
+    "g": 0.23986981784817418
+   }
+  ],
+  "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| load_mean | 0.5676 | <= 0.9048 | N mm | satisfied | +37.3 % |\n| load_worst | 0.1686 | <= 0.3126 | N mm | satisfied | +46.0 % |\n| crash_front | 1.086e+04 | <= 292.9 | N mm | violated | -3608.6 % |\n| crash_side_left | 6.823 | <= 20.44 | N mm | satisfied | +66.6 % |\n| crash_side_right | 6.823 | <= 20.44 | N mm | satisfied | +66.6 % |\n| crash_arm_front_left | 53.77 | <= 211.6 | N mm | satisfied | +74.6 % |\n| crash_arm_front_right | 20.58 | <= 33.81 | N mm | satisfied | +39.1 % |\n| crash_arm_rear_left | 38.51 | <= 65.64 | N mm | satisfied | +41.3 % |\n| crash_arm_rear_right | 49.57 | <= 108.2 | N mm | satisfied | +54.2 % |\n| crash_below | 1.29e+04 | <= 1028 | N mm | violated | -1155.5 % |\n| crash_back | 4.898 | <= 10.41 | N mm | satisfied | +53.0 % |\n| battery_shift_flight | 0.1096 | <= 0.5 | mm | satisfied | +78.1 % |\n| battery_shift_crash_front | 0.143 | <= 0.5 | mm | satisfied | +71.4 % |\n| battery_shift_crash_side_left | 0.152 | <= 0.5 | mm | satisfied | +69.6 % |\n| battery_shift_crash_side_right | 0.152 | <= 0.5 | mm | satisfied | +69.6 % |\n| battery_shift_crash_arm_front_left | 0.09699 | <= 0.5 | mm | satisfied | +80.6 % |\n| battery_shift_crash_arm_front_right | 0.1323 | <= 0.5 | mm | satisfied | +73.5 % |\n| battery_shift_crash_arm_rear_left | 0.1482 | <= 0.5 | mm | satisfied | +70.4 % |\n| battery_shift_crash_arm_rear_right | 0.09417 | <= 0.5 | mm | satisfied | +81.2 % |\n| battery_shift_crash_below | 0.06789 | <= 0.5 | mm | satisfied | +86.4 % |\n| battery_shift_crash_back | 0.003865 | <= 0.5 | mm | satisfied | +99.2 % |\n| battery_shift_crash_camera_oblique | 0.1442 | <= 0.5 | mm | satisfied | +71.2 % |\n| battery_contact_area | 421.6 | >= 350 | mm2 | satisfied | +20.5 % |\n| camera_shift_crash_front | 168.6 | <= 0.112 | mm | violated | -150411.6 % |\n| camera_shift_crash_camera_oblique | 111.6 | <= 0.2652 | mm | violated | -41970.9 % |\n| camera_shielding_crash_front | 0.2383 | >= 0.29 | - | violated | -17.8 % |\n| camera_shielding_crash_camera_oblique | 0.02543 | >= 0.0336 | - | violated | -24.3 % |\n| camera_mount_area | 44.44 | >= 99.56 | mm2 | violated | -55.4 % |\n| camera_shielding_crash_below | 0.00991 |  | - | monitored |  |\n| thrust_all | 1.433 |  | N mm | monitored |  |\n| torsion_yaw | 0.05729 |  | N mm | monitored |  |\n| twist | 5.31 |  | N mm | monitored |  |\n| volume | 0.03317 | <= 0.1 | - | satisfied | +66.8 % |\n| shadow | 0.267 | <= 0.3137 | mm | satisfied | +14.9 % |\n| camera_coverage | 0.3213 | >= 0.4227 | - | violated | -24.0 % |",
+  "shielding": {
+   "crash_front": 0.23825961425427655,
+   "crash_below": 0.009910355333395904,
+   "crash_camera_oblique": 0.02542945764931992
+  },
+  "camera_look": {
+   "front_0_10mm": {
+    "material_mm3_full_model": 207.40740740740736,
+    "solid_cells": 35,
+    "allowed_cells": 100
+   },
+   "above_0_6mm": {
+    "material_mm3_full_model": 0.0,
+    "solid_cells": 0,
+    "allowed_cells": 399
+   },
+   "beside_0_6mm": {
+    "material_mm3_full_model": 512.5925925925925,
+    "solid_cells": 102,
+    "allowed_cells": 767
+   }
+  },
+  "keep_out_min_mm": [
+   -8.5,
+   31.628010651218958,
+   9.0
+  ],
+  "keep_out_max_mm": [
+   8.5,
+   50.57198934878104,
+   27.94397869756208
+  ]
+ },
+ "statement": "body STL voxelised at h/4 into the 4/3 mm frame half grid (free battery, free camera, same layout patch as fine2), binary at >= 50 % cell fill inside the allowed cells; rows of the optimizer formulation with modal and arm-tip rows off, SuperLU; camera look boxes as in the fine2 report (half grid, x >= 0, mirrored volume)"
+}
