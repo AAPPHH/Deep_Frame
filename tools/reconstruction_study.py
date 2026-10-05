@@ -142,6 +142,13 @@ def render_views(mesh, out, views=VIEWS):
     for name, (direction, up) in views.items():
         render(shaded, direction, up).save(out / f"{name}.png")
 
+def peak_rss_gb():
+    if os.name == "nt":
+        import psutil
+        return psutil.Process().memory_info().peak_wset / 2**30
+    import resource
+    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (1 if sys.platform == "darwin" else 1024) / 2**30
+
 def full_domain(config):
     if config["domain"]:
         return stored_domain(config["domain"])
@@ -236,7 +243,7 @@ def splines_main(overrides):
     bodies = {"recon_v3": mesh, **{label: trimesh.load_mesh(path, process=True) for label, path in zip(config["compare_labels"], config["compare_bodies"])}}
     report["bumps_by_body"] = {"raw": report["bumps"], **{label: bumps(graph, domain, rods, graph.areas(body_weights(item, domain["grid"], config["body_subdivisions"])), config) for label, item in bodies.items()}}
     report["bump_summary"] = {label: bump_summary(rows) for label, rows in report["bumps_by_body"].items()}
-    report["peak_rss_gb"] = psutil.Process().memory_info().peak_wset/2**30 if hasattr(psutil.Process().memory_info(), "peak_wset") else None
+    report["peak_rss_gb"] = peak_rss_gb()
     (config["output"]/"reconstruction.json").write_text(json.dumps({**report, "config": {k: str(v) if isinstance(v, Path) else v for k, v in config.items()}}, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value) if isinstance(value, np.floating) else str(value)), encoding="utf-8")
     render_views(mesh, config["output"])
     print(json.dumps({k: report[k] for k in ("members", "shells", "nodes", "control_points", "continuity", "joint_sections", "load_paths", "volume_mm3", "mass_g", "mass_budget", "bodies", "watertight", "bump_summary", "peak_rss_gb", "runtime_s")}, default=float), flush=True)
@@ -533,10 +540,10 @@ def cables_main(overrides):
         source = config["section_body"] or config["source"].with_name("geometry.stl")
         graph, rods = spline_graph(domain, density, config, trimesh.load_mesh(source, process=True) if Path(source).is_file() else None)[:2]
         cache.write_bytes(pickle.dumps((graph, rods)))
-    graph_peak = getattr(psutil.Process().memory_info(), "peak_wset", 0)/2**30
+    graph_peak = peak_rss_gb()
     body = trimesh.load_mesh(config["body"], process=True)
     channels = CableChannels(graph, rods, domain, cables)
-    peak = lambda: round(getattr(psutil.Process().memory_info(), "peak_wset", 0)/2**30, 2)
+    peak = lambda: round(peak_rss_gb(), 2)
     peaks = {"graph": graph_peak}
     channels.plan(body)
     peaks["plan"] = peak()
