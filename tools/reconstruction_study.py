@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 import numpy as np
 import trimesh
 from PIL import Image
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter, map_coordinates
 
 from deep_frame.config import PATHS, CABLES, CABLES_KINDS, DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, RUN_SETTINGS, STAGES, SPLINE_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_KINDS, command_line, configure
 from deep_frame.frame_run import FrameRun, _git
@@ -155,6 +155,28 @@ def full_domain(config):
     from tools.neural_study import R2Domain, configure as study_config
     return R2Domain(study_config(config["study"])).build(config["fine_shape"])[0]
 
+def isotropic_materialization(domain, density):
+    grid = domain["grid"]
+    spacing = np.asarray(grid["spacing_mm"], dtype=float)
+    shape = np.asarray(grid["shape"], dtype=int)
+    if tuple(shape) != density.shape:
+        raise ValueError(f"Density shape {density.shape} differs from domain shape {tuple(shape)}")
+    h = float(spacing.min())
+    if not np.all(np.isfinite(spacing)) or h <= 0:
+        raise ValueError("Grid spacing must be finite and positive")
+    if np.allclose(spacing, h, rtol=1e-10, atol=1e-12):
+        return domain, density
+    fine_shape = np.ceil(shape*spacing/h).astype(int)
+    coordinates = np.array(np.meshgrid(*[(np.arange(n)+0.5)*h/step-0.5 for n, step in zip(fine_shape, spacing)], indexing="ij"))
+    masks = {key: map_coordinates(np.asarray(domain[key], dtype=np.uint8), coordinates, order=0, mode="grid-constant", cval=int(key == "forbidden"), prefilter=False).astype(bool) for key in ("allowed", "preserve", "forbidden")}
+    masks["allowed"] &= ~masks["forbidden"]
+    masks["preserve"] &= masks["allowed"]
+    masks["forbidden"] = ~masks["allowed"]
+    density = map_coordinates(density, coordinates, order=1, mode="grid-constant", cval=0.0, prefilter=False)
+    density[~masks["allowed"]] = 0.0
+    density[masks["preserve"]] = 1.0
+    return {**domain, "grid": {**grid, "shape": fine_shape.tolist(), "spacing_mm": [h]*3}, **masks}, density
+
 def _widen(region, band):
     if region.get("kind") != "box":
         return region
@@ -230,9 +252,11 @@ def splines_main(overrides):
     config = configure(SPLINE_RUN_CONFIG, SPLINE_RUN_KINDS, overrides, ("source", "output"))
     config["output"].mkdir(parents=True, exist_ok=True)
     domain = full_domain(config)
+    density = np.load(config["source"])["density"]
+    domain, density = isotropic_materialization(domain, density)
     stored = {key: value for key, value in domain.items() if key not in ("allowed", "preserve", "forbidden")}
     (config["output"] / "domain.json").write_text(json.dumps(stored, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else str(value)), encoding="utf-8")
-    density = np.load(config["source"])["density"]
+    np.savez_compressed(config["output"] / "density_fine.npz", density=density)
     source = config["section_body"] or config["source"].with_name("geometry.stl")
     body = trimesh.load_mesh(source, process=True) if Path(source).is_file() else None
     mesh, graph, rods, report = reconstruct_splines(domain, density, config, body)
