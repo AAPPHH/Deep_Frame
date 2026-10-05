@@ -59,6 +59,9 @@
   "coarse": false,
   "cable_width": {
    "enabled": false
+  },
+  "landing": {
+   "enabled": false
   }
  },
  "shape": [

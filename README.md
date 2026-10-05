@@ -2,6 +2,8 @@
 
 Automatisch erzeugte, einteilig gedruckte 2,5-Zoll-FPV-Frames aus Topologieoptimierung. Python mit CuPy/cuDSS, Gmsh, CalculiX und build123d. Konfigurationen sind einfache Dicts.
 
+Aktueller Arbeitsstand und Neustart ohne große lokale Dateien: [DGX-Übergabe](docs/dgx_handoff.md). Die neue freie Akku-/Kameravariante und ihre offenen Nachweise sind dort beschrieben; die Ergebnisse unten beziehen sich auf die ältere Schienenvariante.
+
 ## Ziel und Fahrplan
 
 Ziel ist eine Pipeline, die ohne menschliche Formvorgaben druckfertige und mit FEA geprüfte Frames im Stil von ManaFly erzeugt. Sie soll robust und schnell genug sein, um Datensätze über variierte Anforderungen zu erzeugen. Diese klassische Kette dient als Teacher für die späteren ML-Stufen.

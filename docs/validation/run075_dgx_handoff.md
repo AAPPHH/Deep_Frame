@@ -26,7 +26,7 @@ Die geplante isolierte Pruefung mit echter FP64-Hierarchie und gepinnter Formuli
 
 `free_075_dgx_probe_cfg.json` und `free_075_dgx_cfg.json` enthalten keine alten Worktree-Pfade. Vorbedingungen aus dem neuen 4/3-mm-Lauf:
 
-1. `exports/runs/free_layout4/requests/optimization.json`: der neu erzeugte Optimierungsrequest, dessen Layout/Material mit `fine2` uebereinstimmen.
+1. Der explizite Layoutvertrag der DGX-Konfiguration: `request` ist `null`, kein alter Optimierungsrequest erforderlich. Den frischen 4/3-mm-Lauf mit `dgx/free_43_coldstart.json` erzeugen; vollständige Startbefehle stehen in [dgx_handoff.md](../dgx_handoff.md).
 2. `exports/runs/free_layout4_opt/fine2/design.npz`, `result.json` und `density_half.npz`: fertig berechnete 4/3-mm-Feinstufe.
 3. Projektabhaengigkeiten und Ray auf DGX; GPU-Python und Scheduler passend zu Linux konfigurieren. `tools/compute.py` muss die tatsaechliche DGX-RAM-/GPU-Anforderung deklarieren. Der bisherige lokale Typ reserviert nur 14 GPU-GiB und darf nicht unveraendert als Deklaration fuer einen bis zu 80-GiB-cuDSS-Lauf verwendet werden.
 
@@ -41,6 +41,6 @@ python tools/formulation_study.py frame_mma docs/validation/free_075_dgx_cfg.jso
 
 Dies sind die Payload-Kommandos **innerhalb des Ray-Jobs**, keine Anweisung zum lokalen Direktstart. Die Probe umfasst drei Iterationen bei Beta 64. Der Vollrun startet die gleiche Fein-Fortsetzung wie `fine2` bei Beta 8 und durchlaeuft 8/16/32/64; die letzte Stufe hat maximal 300 Iterationen und die bestehenden Konvergenz-/Best-feasible-Regeln. Der Vollrun ist erst nach bestandener Speicher-/Loeseprobe sinnvoll.
 
-Fuer weitere MG-Diagnose statt cuDSS `mma.linear_solver` auf `multigrid` setzen und `mma.multigrid` zum Beispiel mit `{"trace": true, "max_iterations": 400, "retries": 0}` belegen. Dabei die Fehlerschwelle `1e-8` beibehalten. Diese Konfiguration ist ein begrenzter Diagnoseversuch, kein nachgewiesen funktionierender Vollrun.
+Fuer weitere MG-Diagnose den gesicherten Branch `codex/finish-075` verwenden; dessen Trace-Patch ist nicht in `main` integriert. `mma.linear_solver` auf `multigrid` setzen und `mma.multigrid` zum Beispiel mit `{"trace": true, "max_iterations": 400, "retries": 0}` belegen. Dabei die Fehlerschwelle `1e-8` beibehalten. Diese Konfiguration ist ein begrenzter Diagnoseversuch, kein nachgewiesen funktionierender Vollrun.
 
 Nach Optimierung fehlen weiterhin Rohkoerper, v3c-Rekonstruktion, Neun-Kriterien-Auswertung, Kalibrierpruefung und gegebenenfalls ein Nachkalibrierlauf, STLs, Bilder und Vergleich mit 4/3 mm/ManaFly. Die kleinen Messbelege liegen in `run075_local_20261005.json`; keine grossen Felder, STLs oder alten Worktree-Verzeichnisse wurden eingecheckt.

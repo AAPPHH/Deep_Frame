@@ -1287,6 +1287,7 @@ def initial_design(cfg, half):
 def frame_mma(cfg):
     started = perf_counter()
     config.STAND_STABILITY.update(cfg["mma"]["stand"])
+    config.LANDING.update(cfg["mma"].get("landing", {}))
     config.CABLE_WIDTH.update(cfg["mma"]["cable_width"])
     root = Path(cfg["mma"]["root"])
     root.mkdir(parents=True, exist_ok=True)
