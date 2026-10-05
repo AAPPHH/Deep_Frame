@@ -1,4 +1,5 @@
 import ctypes
+import json
 import os
 from collections import defaultdict
 from copy import deepcopy
@@ -727,7 +728,9 @@ class HexElasticity:
         floating = self.support is not None and bool(np.isin(part["support"], self.support[1]).all())
         solutions, report = self.multigrid.solve(key, part["fixed"], full, part["support"] if floating else None)
         if not report["converged"]:
-            raise RuntimeError(f"Multigrid PCG did not converge: {max(report['relative_residual'])}")
+            names = [case["name"] for case, _ in self.groups[key]] if key in self.groups else []
+            summary = {name: report.get(name) for name in ("relative_residual", "iterations", "floating", "kernel", "kernel_check", "rhs_kernel_component", "retried_columns", "zero_rhs_columns", "levels", "coarsest_dofs", "lambda_max", "seconds")}
+            raise RuntimeError(f"Multigrid PCG did not converge: {max(report['relative_residual'])} " + json.dumps({"key": str(key), "cases": names, "columns": forces.shape[1], **summary, "history_sampled": [part[::max(len(part) // 25, 1)] + part[-1:] for part in report["history"]]}, default=str))
         return solutions[part["free"]]
     def _multigrid_product(self, free, solutions):
         full = np.zeros((self.ndof, solutions.shape[1]))
