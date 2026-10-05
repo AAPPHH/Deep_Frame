@@ -1,4 +1,5 @@
 from time import perf_counter
+import json
 import numpy as np
 from scipy.linalg import qr
 from scipy.sparse import coo_matrix
@@ -6,7 +7,7 @@ from scipy.sparse import coo_matrix
 from deep_frame.topology_optimization import _CORNERS, CudaDirectSolver, ModalConstraint, regular_grid
 
 MULTIGRID = {"coarse": "galerkin", "coarsest_dofs": 80000, "max_levels": 8, "smoother": "chebyshev", "sweeps": 2, "damping": 1.0, "chebyshev_degree": 3, "chebyshev_ratio": 20.0, "growth": 2.0, "cycle": "V",
-             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "batch": 12, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "zero_rhs": 1e-12, "retries": 2, "device": "cuda",
+             "power_iterations": 20, "precision": "float32", "tolerance": 1e-8, "max_iterations": 2000, "batch": 12, "projection": True, "coarsest_projection": True, "dead_ratio": 1e-12, "zero_rhs": 1e-12, "retries": 2, "device": "cuda", "trace": False,
              "eigen_tolerance": 1e-8, "eigen_iterations": 300, "eigen_guard": 2, "eigen_refresh": 10, "eigen_drop": 1e-12, "eigen_seed": 0}
 PRECISIONS = {"float64": ("float64", None), "float32": ("float32", None), "bfloat16": ("float32", "bfloat16"), "float16": ("float32", "float16")}
 _CHILDREN = np.array(list(np.ndindex(2, 2, 2)))
@@ -410,6 +411,8 @@ class GeometricMultigrid:
         tolerance, limit = self.settings["tolerance"], self.settings["max_iterations"]
         apply = lambda grid: self._remove(fine.kernel, self.operator(grid, mask=fine.mask64))
         norm = torch.linalg.vector_norm(rhs.flatten(1), dim=1)
+        if self.settings.get("trace"):
+            print(json.dumps({"pcg_start": len(self.statistics), "rhs_norm": norm.cpu().tolist(), "preconditioner_dtype": str(self.work), "operator_dtype": str(rhs.dtype), "initial": initial is not None}), flush=True)
         solution = torch.zeros_like(rhs) if initial is None else initial.clone()
         count = rhs.shape[0]
         iterations, relative = np.zeros(count, dtype=int), np.ones(count)
@@ -427,6 +430,11 @@ class GeometricMultigrid:
             step += 1
             current = torch.linalg.vector_norm(residual.flatten(1), dim=1) / norm[active]
             history.append(current.max().item())
+            if self.settings.get("trace") and step % 100 == 0:
+                raw = rhs[active] - self.operator(solution[active], mask=fine.mask64)
+                projected = self._remove(fine.kernel, raw)
+                relative_norm = lambda value: (torch.linalg.vector_norm(value.flatten(1), dim=1) / norm[active]).cpu().tolist()
+                print(json.dumps({"pcg_step": step, "active": active.cpu().tolist(), "recursive": current.cpu().tolist(), "true_projected": relative_norm(projected), "true_unprojected": relative_norm(raw), "kernel_component": relative_norm(raw - projected), "solution_max": solution[active].abs().flatten(1).amax(1).cpu().tolist()}), flush=True)
             converged = current < tolerance
             restarted = bool(converged.any())
             if restarted:
@@ -452,7 +460,10 @@ class GeometricMultigrid:
             final = rhs[active] - apply(solution[active])
             relative[active.cpu().numpy()] = (torch.linalg.vector_norm(final.flatten(1), dim=1) / norm[active]).cpu().numpy()
             iterations[active.cpu().numpy()] = step
-        return solution, {"iterations": iterations.tolist(), "relative_residual": relative.tolist(), "converged": bool(np.all(relative < tolerance)), "history": history}
+        report = {"iterations": iterations.tolist(), "relative_residual": relative.tolist(), "converged": bool(np.all(relative < tolerance)), "history": history}
+        if self.settings.get("trace"):
+            print(json.dumps({"pcg_end": {key: value for key, value in report.items() if key != "history"}}), flush=True)
+        return solution, report
     def product(self, flat):
         batch = self.settings["batch"]
         return np.hstack([self.flat(self.operator(self.grid(flat[:, start:start + batch]))).cpu().numpy() for start in range(0, flat.shape[1], batch)])
