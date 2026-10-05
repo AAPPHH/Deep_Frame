@@ -59,7 +59,8 @@ def density_entry(directory, shape, max_iterations, linear_solver, status, start
             "runtime_s": perf_counter() - started, "timings_s": None, "iterations": (result or {}).get("summary", {}).get("iterations"),
             "gpu_pool_mb": cupy.get_default_memory_pool().total_bytes() / 2**20 if cupy else None}
 
-def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu", optimizer=None, run_log=None, generator=optimize_topology, output_shape=None):
+def run_study(directory, shape, max_iterations, change_tolerance, max_runtime_s, linear_solver="cpu_superlu", optimizer=None, run_log=None, generator=None, output_shape=None):
+    generator = optimize_topology if generator is None else generator
     optimizer = optimizer or {}
     directory = Path(directory).resolve()
     directory.mkdir(parents=True, exist_ok=False)

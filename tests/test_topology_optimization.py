@@ -6,6 +6,12 @@ from scipy.sparse import csr_matrix
 
 from deep_frame.topology_optimization import DensityMap, HexElasticity, _oc_update, _settings, elasticity_matrix, hexahedron_matrices, optimize_topology, regular_grid
 
+def test_legacy_none_feasibility_uses_shared_default_without_accepting_violation():
+    from deep_frame.topology_optimization import continuation_decision
+    args = (10, True, 1e-4)
+    assert continuation_decision(*args, 9e-4, 10, 100, 0.005, None) == "converged"
+    assert continuation_decision(*args, 1.1e-3, 10, 100, 0.005, None) is None
+
 def beam_domain(shape=(10, 5, 5), spacing=(2.0, 2.0, 2.0)):
     extent = np.array(shape) * spacing
     fixture = {"kind": "box", "min_mm": [-0.01, -0.01, -0.01], "max_mm": [0.01, extent[1] + 0.01, extent[2] + 0.01]}

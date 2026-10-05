@@ -15,6 +15,7 @@ from scipy.spatial import cKDTree
 from deep_frame.config import _json_copy
 
 def continuation_decision(iterations, final_level, change, violation, minimum, maximum, change_tolerance, violation_tolerance):
+    violation_tolerance = 1e-3 if violation_tolerance is None else violation_tolerance
     settled = change is not None and np.isfinite(change) and change < change_tolerance
     feasible = np.isfinite(violation) and violation <= violation_tolerance
     if iterations >= minimum:
