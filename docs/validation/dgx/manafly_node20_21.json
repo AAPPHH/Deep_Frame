@@ -1,0 +1,65 @@
+{
+ "source": "Examples/Frames/ManaFly3/Manafly+3inch+BETA+V4+Frame.stl",
+ "source_sha256": "bd3c371ab09570e86143b5b81464b34cb7aacc8ed88b9b78f6500d91291e388a",
+ "geometry_sha256": "af4f611b879d2bce87d83051e2b0c7fac19e9bed9daa7680c2776d28f253e786",
+ "preparation": "Original manufacturer STL, processed by trimesh; rotation 180 degrees about Z and translation of bottom to Z=0. No voxel repair or decimation.",
+ "transform": [
+  [
+   -1.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  [
+   0.0,
+   -1.0,
+   0.0,
+   0.0
+  ],
+  [
+   0.0,
+   0.0,
+   1.0,
+   0.0
+  ],
+  [
+   0.0,
+   0.0,
+   0.0,
+   1.0
+  ]
+ ],
+ "translation_mm": [
+  0.0,
+  0.0,
+  -22.962310791015625
+ ],
+ "bounds_mm": [
+  [
+   -67.38642883300781,
+   -77.91938018798828,
+   0.0
+  ],
+  [
+   67.38642883300781,
+   67.38642883300781,
+   32.43960189819336
+  ]
+ ],
+ "triangles": 349616,
+ "watertight": false,
+ "winding_consistent": true,
+ "bodies": 1,
+ "signed_volume_mm3": 30187.149776213704,
+ "reference_limits": "Frozen mechanics references used a voxel-repaired geometry; this original geometry is not that repaired reference. Individual renders fit their own view; common-scale comparisons require separate shared framing.",
+ "date": "2026-10-05",
+ "ray_job": "raysubmit_dqyMcx22ssrH71hk",
+ "node": "node20",
+ "output": "exports/runs/reference_manafly_original",
+ "views": [
+  "iso",
+  "top",
+  "side",
+  "front"
+ ]
+}

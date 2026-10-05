@@ -23,6 +23,7 @@ export RAY_ADDRESS=http://192.168.2.20:8266
 export RAY_PYTHON="$python_path"
 export DEEP_FRAME_PYTHON="$python_path"
 export DEEP_FRAME_GPU_PYTHON="$python_path"
+export PATH="$project_root/.venv/bin:\$PATH"
 export CALCULIX_PATH="$project_root/.wf/sysroot/usr/bin/ccx"
 export DEEP_FRAME_SLICER="$project_root/.wf/sysroot/usr/bin/prusa-slicer"
 export LD_LIBRARY_PATH="$project_root/.wf/nvidia_node21/usr/lib/x86_64-linux-gnu:$project_root/.wf/sysroot/lib/x86_64-linux-gnu:$project_root/.wf/sysroot/usr/lib/x86_64-linux-gnu:$project_root/.wf/sysroot/usr/lib/x86_64-linux-gnu/lapack:$project_root/.wf/sysroot/usr/lib/x86_64-linux-gnu/blas:$project_root/.venv/lib/python3.12/site-packages/nvidia/cublas/lib:$project_root/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib:$project_root/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib"

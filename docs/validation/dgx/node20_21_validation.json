@@ -1,0 +1,91 @@
+{
+ "date": "2026-10-05",
+ "platform": "Linux Ubuntu 22.04, Python 3.12.11, isolated Ray cluster on node20/node21",
+ "validated_code_commits": [
+  "0a2c41d",
+  "13ff141"
+ ],
+ "packages": {
+  "ray": "2.59.0",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "torch": "2.9.0+cu129",
+  "cupy-cuda12x": "14.2.0",
+  "matplotlib": "3.11.2"
+ },
+ "suites": [
+  {
+   "node": "node20",
+   "ray_job": "raysubmit_arSxESgd2FKWqVD8",
+   "command": ".venv/bin/python -m pytest -q --lf --junitxml=.wf/ray_nodes/cpu_lastfailed.xml",
+   "code_at_start": "13ff141",
+   "collected": 858,
+   "passed": 837,
+   "skipped": 21,
+   "failed": 0,
+   "errors": 0,
+   "seconds": 867.787,
+   "timestamp": "2026-10-05T09:42:08.396783+02:00",
+   "junit": ".wf/ray_nodes/cpu_lastfailed.xml"
+  },
+  {
+   "node": "node21",
+   "ray_job": "raysubmit_ARSFVEG8UGWAiKsu",
+   "command": ".venv/bin/python -m pytest -q --junitxml=.wf/ray_nodes/gpu_full_suite.xml",
+   "code_at_start": "0a2c41d",
+   "collected": 858,
+   "passed": 856,
+   "skipped": 2,
+   "failed": 0,
+   "errors": 0,
+   "seconds": 1000.057,
+   "timestamp": "2026-10-05T09:34:10.698703+02:00",
+   "junit": ".wf/ray_nodes/gpu_full_suite.xml"
+  }
+ ],
+ "corrective_validation": {
+  "node": "node20",
+  "ray_job": "raysubmit_niwXZtmfPZ187Hdi",
+  "command": ".venv/bin/python -m pytest tests/test_topology_optimization.py tests/test_tools.py -k \"compute or topology or cuda\" -q",
+  "code_at_start": "13ff141 working tree before commit",
+  "collected": 83,
+  "passed": 77,
+  "skipped": 6,
+  "failed": 0,
+  "errors": 0,
+  "seconds": 8.518,
+  "timestamp": "2026-10-05T09:40:41.382141+02:00",
+  "junit": ".wf/ray_nodes/cpu_allocation_fixed.xml"
+ },
+ "first_cpu_run": {
+  "node": "node20",
+  "ray_job": "raysubmit_3LBxzagvaRrh1apu",
+  "command": ".venv/bin/python -m pytest -q --junitxml=.wf/ray_nodes/cpu_suite.xml",
+  "code_at_start": "node20_21 setup working tree",
+  "collected": 858,
+  "passed": 837,
+  "skipped": 15,
+  "failed": 0,
+  "errors": 6,
+  "seconds": 867.696,
+  "timestamp": "2026-10-05T09:24:00.706709+02:00",
+  "junit": ".wf/ray_nodes/cpu_suite.xml"
+ },
+ "first_cpu_run_diagnosis": "Six fixture errors from querying CUDA without a GPU reservation on node20. Fixed by forwarding DEEP_FRAME_GPU_RESERVED and skipping GPU fixture before driver access. Subsequent full CPU suite and GPU suite passed. No production solver accuracy limits were relaxed.",
+ "coverage": "CPU --lf rerun collected the full 858-test suite. GPU suite began before the explicit reservation marker was added; marker CPU/GPU request semantics were checked in the corrective CPU regression and full CPU suite. The GPU test branch is unchanged.",
+ "skips": "CPU: CUDA-only and GPU multigrid tests without GPU reservation, optional PaStiX backend absent, slow Ray end-to-end fixture opt-in. GPU: optional PaStiX and opt-in slow end-to-end fixture only.",
+ "operational_checks": [
+  "bash -n tools/ray_nodes.sh passed",
+  "After sourcing cluster env, python resolves to repository .venv/bin/python",
+  "pip check: No broken requirements found",
+  "GPU smoke: node21 A100, Torch/CuPy and cuDSS direct solve residual 0"
+ ],
+ "active_compute": {
+  "baseline43_job": "raysubmit_sUwR5QggA7Ju1X9Z",
+  "start": "2026-10-05T09:50:59+02:00",
+  "controller": ".wf/ray_nodes/continue_handoff.py",
+  "state": ".wf/ray_nodes/pipeline/status.json",
+  "limits_unchanged": true
+ },
+ "remaining": "4/3 design convergence, reconstruction and evaluation/cables; 0.75 probe and gated full run; final physical comparisons, calibration and reporting. Tests and a running optimization do not establish printability."
+}
