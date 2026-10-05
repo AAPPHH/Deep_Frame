@@ -1,4 +1,6 @@
 {
+ "request": null,
+ "reference_density": null,
  "layout": {
   "name": "free_layout",
   "style": "freestyle",
@@ -37,34 +39,36 @@
   "grid": "fine",
   "reconstruction": false
  },
- "reference_density": null,
+ "shape": [
+  102,
+  96,
+  24
+ ],
+ "coarse_shape": [
+  68,
+  64,
+  24
+ ],
  "mma": {
-  "root": "exports/runs/free_075_opt",
-  "variant": "free_075",
-  "method": "free_075",
+  "root": "exports/runs/free_layout4_opt",
+  "variant": "free_layout4",
+  "method": "free_layout4",
   "linear_solver": "cuda_cudss",
   "stage_solvers": {},
-  "memory_s": 1.0,
+  "initial_density": 0.5,
+  "coarse": true,
+  "start": null,
+  "fine_dir": "fine2",
   "until": "export",
-  "start": "exports/runs/free_layout4_opt/fine2",
-  "fine_start_level": 3,
-  "settings": {
-   "final_max_iterations": 300
-  },
+  "memory_s": 1.0,
   "stand": {
    "enabled": false
   },
-  "fine_dir": "fine",
-  "memory_log": "memory.jsonl",
-  "coarse": false,
   "cable_width": {
    "enabled": false
+  },
+  "settings": {
+   "final_max_iterations": 300
   }
- },
- "shape": [
-  182,
-  170,
-  48
- ],
- "request": null
+ }
 }

@@ -1,68 +1,70 @@
 {
-    "layout":  {
-                   "name":  "free_layout",
-                   "style":  "freestyle",
-                   "durability":  "standard",
-                   "prop_size_in":  2.5,
-                   "layout":  {
-                                  "x_type":  "compressed_x",
-                                  "battery_mount":  "top"
-                              },
-                   "components":  {
-                                      "motor":  "GTS V3 1203",
-                                      "aio":  "HDZero AIO15",
-                                      "camera":  "HDZero Lux",
-                                      "battery":  "GNB5502S120A",
-                                      "antennas":  "HDZero VTX + ELRS",
-                                      "prop":  "HQProp T2.5X2X3V2S"
-                                  },
-                   "material":  "PA6-CF",
-                   "print":  {
-                                 "nozzle_mm":  0.4,
-                                 "layer_mm":  0.2
-                             },
-                   "overrides":  {
-                                     "optimizer":  {
-                                                       "volume_fraction":  0.06,
-                                                       "prop_discs":  "soft",
-                                                       "f1_min_hz":  300.0
-                                                   },
-                                     "battery":  {
-                                                     "support":  "free"
-                                                 },
-                                     "camera":  {
-                                                    "support":  "free"
-                                                }
-                                 },
-                   "grid":  "fine",
-                   "reconstruction":  false
-               },
-    "reference_density":  "exports/runs/free_layout4_opt/fine2/density_half.npz",
-    "mma":  {
-                "root":  "exports/runs/free_075_probe",
-                "variant":  "free_075",
-                "method":  "free_075",
-                "linear_solver":  "cuda_cudss",
-                "stage_solvers":  {
-
-                                  },
-                "memory_s":  1.0,
-                "until":  "fine",
-                "start":  "exports/runs/free_layout4_opt/fine2",
-                "fine_start_level":  6,
-                "settings":  {
-                                 "final_max_iterations":  3
-                             },
-                "stand":  {
-                              "enabled":  false
-                          },
-                "fine_dir":  "fine",
-                "memory_log":  "memory.jsonl"
-            },
-    "shape":  [
-                  182,
-                  170,
-                  48
-              ],
-    "request":  "exports/runs/free_layout4/requests/optimization.json"
+ "layout": {
+  "name": "free_layout",
+  "style": "freestyle",
+  "durability": "standard",
+  "prop_size_in": 2.5,
+  "layout": {
+   "x_type": "compressed_x",
+   "battery_mount": "top"
+  },
+  "components": {
+   "motor": "GTS V3 1203",
+   "aio": "HDZero AIO15",
+   "camera": "HDZero Lux",
+   "battery": "GNB5502S120A",
+   "antennas": "HDZero VTX + ELRS",
+   "prop": "HQProp T2.5X2X3V2S"
+  },
+  "material": "PA6-CF",
+  "print": {
+   "nozzle_mm": 0.4,
+   "layer_mm": 0.2
+  },
+  "overrides": {
+   "optimizer": {
+    "volume_fraction": 0.06,
+    "prop_discs": "soft",
+    "f1_min_hz": 300.0
+   },
+   "battery": {
+    "support": "free"
+   },
+   "camera": {
+    "support": "free"
+   }
+  },
+  "grid": "fine",
+  "reconstruction": false
+ },
+ "reference_density": null,
+ "mma": {
+  "root": "exports/runs/free_075_probe",
+  "variant": "free_075",
+  "method": "free_075",
+  "linear_solver": "cuda_cudss",
+  "stage_solvers": {},
+  "memory_s": 1.0,
+  "until": "fine",
+  "start": "exports/runs/free_layout4_opt/fine2",
+  "fine_start_level": 6,
+  "settings": {
+   "final_max_iterations": 3
+  },
+  "stand": {
+   "enabled": false
+  },
+  "fine_dir": "fine",
+  "memory_log": "memory.jsonl",
+  "coarse": false,
+  "cable_width": {
+   "enabled": false
+  }
+ },
+ "shape": [
+  182,
+  170,
+  48
+ ],
+ "request": null
 }

@@ -223,6 +223,8 @@ def splines_main(overrides):
     config = configure(SPLINE_RUN_CONFIG, SPLINE_RUN_KINDS, overrides, ("source", "output"))
     config["output"].mkdir(parents=True, exist_ok=True)
     domain = full_domain(config)
+    stored = {key: value for key, value in domain.items() if key not in ("allowed", "preserve", "forbidden")}
+    (config["output"] / "domain.json").write_text(json.dumps(stored, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else str(value)), encoding="utf-8")
     density = np.load(config["source"])["density"]
     source = config["section_body"] or config["source"].with_name("geometry.stl")
     body = trimesh.load_mesh(source, process=True) if Path(source).is_file() else None

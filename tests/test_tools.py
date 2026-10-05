@@ -27,6 +27,22 @@ from tools import neural_study
 from tools import workstation_study as workstation
 from tools.topology_study import field_comparison, plot_gpu, verify_artifacts, verify_comparable_settings, verify_frozen_reference
 
+def test_coldstart_design_enforces_domain_without_saved_density(tmp_path):
+    from tools import formulation_study as study
+    allowed = np.array([True, False, True, True]).reshape(2, 2, 1)
+    preserve = np.array([False, False, True, False]).reshape(2, 2, 1)
+    cfg = study.configure({"request": None, "reference_density": None, "mma": {"initial_density": 0.4}})
+    half = {"grid": {"shape": [2, 2, 1]}, "allowed": allowed, "preserve": preserve}
+    np.testing.assert_array_equal(study.initial_design(cfg, half), [0.4, 0.0, 1.0, 0.4])
+    cfg["mma"]["initial_density"] = -0.1
+    with pytest.raises(ValueError, match="Initial density"):
+        study.initial_design(cfg, half)
+
+def test_coldstart_requires_explicit_layout():
+    from tools import formulation_study as study
+    with pytest.raises(ValueError, match="explicit layout"):
+        study.patched_settings(study.configure({"request": None, "reference_density": None}))
+
 def test_comparison_rejects_changed_physical_filter_but_allows_iteration_budget():
     reference = _settings({})
     studied = deepcopy(reference)

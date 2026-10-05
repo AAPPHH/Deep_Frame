@@ -92,7 +92,9 @@ def patched_settings(cfg):
     from run import _update
     from deep_frame.frame_run import FrameLayout
     from tools.neural_study import configure as study
-    request = json.loads(Path(cfg["request"]).read_text(encoding="utf-8"))
+    if not cfg["request"] and not cfg["layout"]:
+        raise ValueError("A request or an explicit layout is required")
+    request = json.loads(Path(cfg["request"]).read_text(encoding="utf-8")) if cfg["request"] else {"overrides": {}, "patch": {}}
     overrides = deepcopy(request["overrides"])
     patches = [request["patch"]]
     if cfg["layout"]:
@@ -1211,6 +1213,7 @@ def optimize_stage(cfg, half, problem, design, out, start_level, stage):
 def export_body(cfg, physical, out):
     from tools.neural_study import R2Domain, finish, upsample
     settings = patched_settings(cfg)
+    settings["fine_shape"] = [2 * size for size in cfg["shape"]]
     fine_full, _ = R2Domain(settings).build(settings["fine_shape"], cfg["reference_fraction"])
     density = upsample(physical, fine_full)
     np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
@@ -1226,6 +1229,18 @@ def body_start(cfg, design, half):
         if spec.get("zone"):
             near |= region_contains(centers, half[name]["zone"])
         design[near & allowed] = np.maximum(design[near & allowed], spec["density"])
+    return design
+
+def initial_design(cfg, half):
+    if cfg["reference_density"]:
+        design = embed_field(np.load(cfg["reference_density"])["density"], half["grid"]).ravel()
+    else:
+        value = cfg["mma"].get("initial_density", 0.5)
+        if not 0.0 < value <= 1.0:
+            raise ValueError("Initial density must be in (0, 1]")
+        design = np.full(np.prod(half["grid"]["shape"]), value, dtype=float)
+    design[~half["allowed"].ravel()] = 0.0
+    design[half["preserve"].ravel()] = 1.0
     return design
 
 def frame_mma(cfg):
@@ -1246,7 +1261,7 @@ def frame_mma(cfg):
             source = Path(cfg["mma"]["start"])
             design, level = prolongate(np.load(source / "design.npz")["design"], read(source / "result.json")["grid"], fine), cfg["mma"]["fine_start_level"]
         else:
-            design = embed_field(np.load(cfg["reference_density"])["density"], fine["grid"]).ravel()
+            design = initial_design(cfg, fine)
         if not cfg["mma"]["start"] and cfg["mma"]["coarse"]:
             with phase("coarse"):
                 coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
