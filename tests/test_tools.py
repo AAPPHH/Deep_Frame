@@ -1189,3 +1189,20 @@ def test_keep_connected_drops_floating_parts():
     kept, report = neural_study.keep_connected(field, {"spacing_mm": [1, 1, 1]}, 0.5, anchor)
     assert report["components_raw"] == 2 and report["dropped_count"] == 1 and report["dropped_volume_mm3"] == 96
     assert kept[3, 3, 3] == 1 and not kept[12:18].any()
+
+def test_interface_couple_and_conjugate_rotation():
+    from tools.interface_stiffness import block_mesh, conjugate, nodal_loads
+    points = np.random.default_rng(0).uniform(-3, 3, (40, 3))
+    for axis in range(3):
+        loads = nodal_loads(points, "moment", axis, 2.0)
+        r = points - points.mean(axis=0)
+        assert np.allclose(loads.sum(axis=0), 0, atol=1e-12)
+        assert np.allclose(np.cross(r, loads).sum(axis=0), np.eye(3)[axis] * 2.0)
+        rotation = np.cross(np.eye(3)[axis] * 0.01, r) + [0.3, -0.2, 0.1]
+        assert conjugate(loads, rotation) / 2.0 == pytest.approx(0.01)
+    force = nodal_loads(points, "force", 2, 1.0)
+    assert conjugate(force, np.tile([0.0, 0.0, 0.5], (40, 1))) == pytest.approx(0.5)
+    nodes, elements = block_mesh([4.0, 2.0, 2.0], 1.0)
+    assert len(elements) == 6 * 16
+    volume = sum(abs(np.linalg.det(np.array([np.subtract(nodes[n], nodes[e[0]]) for n in e[1:4]]))) / 6 for e in elements.values())
+    assert volume == pytest.approx(16.0)
