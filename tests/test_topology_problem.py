@@ -5,12 +5,12 @@ import pytest
 from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, COMPONENT_DEFAULTS, PRINT_MATERIAL
 from deep_frame.topology_optimization import HexElasticity, elasticity_matrix, hexahedron_matrices, orthotropic_matrix
 from deep_frame.topology_stability import FOUR_FEET, GroundSupport, StandStability, stand_design, stand_domain
-from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, corridor_weights, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
+from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, corridor_weights, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, PROBLEM, load_covariance, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 from deep_frame.topology_neural import cell_centers
+from deep_frame.topology_optimizers import MMA, MMAOptimizer, NeuralALOptimizer, Termination
 
 @pytest.mark.parametrize("functional",[False,True])
 def test_neural_al_shared_constraints_match_directional_finite_differences(functional):
-    from deep_frame.topology_problem import NeuralALOptimizer
     domain, spec = functional_tiny() if functional else (tiny_domain(), tiny_problem())
     spec["continuation"]["beta_schedule"] = [1.0]
     problem = TopologyProblem(domain, spec, linear_solver="cpu_superlu")
@@ -46,7 +46,6 @@ def test_neural_al_shared_constraints_match_directional_finite_differences(funct
         problem.close()
 
 def test_neural_al_short_shared_problem_probe_does_not_claim_convergence():
-    from deep_frame.topology_problem import NeuralALOptimizer
     domain, spec = tiny_domain(), tiny_problem()
     spec["continuation"]["beta_schedule"] = [1.0]
     problem = TopologyProblem(domain, spec, linear_solver="cpu_superlu")
@@ -192,7 +191,6 @@ class PlateauProblem:
         return {"objective": 1.0, "objective_gradient": np.zeros(2), "mass_g": 1.0, "constraints": np.array([self.violation]), "constraint_gradients": np.zeros((1, 2)), "names": ["fixed"]}
 
 def plateau_optimizer(violation, settings):
-    from deep_frame.topology_problem import MMA
     optimizer = MMAOptimizer.__new__(MMAOptimizer)
     optimizer.problem = PlateauProblem(violation)
     optimizer.settings = {**MMA, **settings}
@@ -204,7 +202,7 @@ def test_mma_final_objective_plateau_does_not_claim_convergence(violation, monke
     optimizer = plateau_optimizer(violation, {"start_level": 1, "final_min_iterations": 2, "stall_window": 3, "final_max_iterations": 10})
     monkeypatch.setattr(optimizer, "step", lambda x, result, state: 1-x)
     result = optimizer.run(np.full(2, 0.2))
-    assert result["status"] == ("not_converged_iteration_cap_best_feasible" if violation == 0 else "not_converged_stalled")
+    assert result["status"] == ("not_converged_iteration_cap" if violation == 0 else "not_converged_stalled") and result["best_feasible"] is None
     assert optimizer.problem.level == 1 and result["iterations"] == (10 if violation == 0 else 3)
     assert all(row["change"] > 0.5 for row in result["history"][1:])
 
@@ -213,9 +211,9 @@ def test_mma_intermediate_stall_waits_for_the_regular_stage_budget(monkeypatch):
     monkeypatch.setattr(optimizer, "step", lambda x, result, state: 1-x)
     result = optimizer.run(np.full(2, 0.2))
     assert [row["beta"] for row in result["history"]] == [1.0]*5+[2.0]*4
-    assert result["levels"][0]["reason"] == "iteration_cap"
-    assert result["history"][2]["objective_stalled"]
-    assert result["status"] == "not_converged_iteration_cap_best_feasible"
+    assert result["levels"][0]["reason"] == "iteration_cap" and result["levels"][0]["feasible"] and not result["levels"][0]["quiet"] and result["levels"][0]["continued_from_best"]
+    assert result["history"][2]["objective_stalled"] and result["capped_levels"] == [1.0]
+    assert result["status"] == "not_converged_iteration_cap"
 
 def test_mma_final_stage_observes_its_minimum(monkeypatch):
     optimizer = plateau_optimizer(0.0, {"start_level": 1, "final_min_iterations": 4})
@@ -224,7 +222,7 @@ def test_mma_final_stage_observes_its_minimum(monkeypatch):
     assert result["status"] == "converged" and result["iterations"] == 4
 
 def test_mma_divergence_at_stage_budget_stops_instead_of_advancing(monkeypatch):
-    optimizer = plateau_optimizer(0.0, {"level_min_iterations": 2, "level_window": 2, "level_max_iterations": 3, "diverge_window": 2})
+    optimizer = plateau_optimizer(0.0, {"level_min_iterations": 2, "level_window": 2, "level_max_iterations": 3, "diverge_window": 2, "diverge_grace": 0})
     evaluate, seen = optimizer.problem.evaluate, []
     def diverging(x, initial=None):
         optimizer.problem.violation = 2.0 if seen else 0.0
@@ -233,8 +231,60 @@ def test_mma_divergence_at_stage_budget_stops_instead_of_advancing(monkeypatch):
     monkeypatch.setattr(optimizer.problem, "evaluate", diverging)
     monkeypatch.setattr(optimizer, "step", lambda x, result, state: x)
     result = optimizer.run(np.full(2, 0.2))
-    assert result["status"] == "not_converged_diverged_best_feasible"
+    assert result["status"] == "not_converged_diverged" and result["best_feasible"] is None
     assert optimizer.problem.level == 0 and result["iterations"] == 3
+
+class ScriptedProblem(PlateauProblem):
+    def __init__(self, script):
+        super().__init__(0.0)
+        self.script, self.calls = script, 0
+    def evaluate(self, x, initial=None):
+        objective, mass, violation = self.script[min(self.calls, len(self.script) - 1)]
+        self.calls += 1
+        return {"objective": objective, "objective_gradient": np.zeros(2), "mass_g": mass, "constraints": np.array([violation]), "constraint_gradients": np.zeros((1, 2)), "names": ["fixed"]}
+
+def scripted_optimizer(script, steps, settings, monkeypatch):
+    optimizer = plateau_optimizer(0.0, settings)
+    optimizer.problem = ScriptedProblem(script)
+    moves = iter(steps)
+    monkeypatch.setattr(optimizer, "step", lambda x, result, state: x + next(moves, 0.0))
+    return optimizer
+
+def test_mma_best_feasible_must_be_stationary_at_the_final_level(monkeypatch):
+    script = [(1.0, 1.0, 0.0), (0.5, 0.5, 0.0), (0.8, 0.8, 0.0), (0.8, 0.8, 0.0), (0.9, 0.9, 0.0), (0.9, 0.9, 2.0)]
+    kept = []
+    optimizer = scripted_optimizer(script, [0.5], {"start_level": 1, "final_min_iterations": 50, "diverge_window": 2, "diverge_grace": 0}, monkeypatch)
+    result = optimizer.run(np.full(2, 0.2), keep=lambda x, best: kept.append(best["iteration"]))
+    assert result["status"] == "not_converged_diverged_best_feasible" and result["iterations"] == 6 and result["levels"][-1]["returned_best"]
+    assert result["best_feasible"]["iteration"] == 3 and result["best_feasible"]["mass_g"] == 0.8 and np.allclose(result["design"], 0.7) and kept == [3]
+    assert [row["stationary"] for row in result["history"]] == [False, False, False, True, True, False]
+    restless = scripted_optimizer([(1.0, 1.0, 0.0), (0.5, 0.5, 0.0), (0.5, 0.5, 2.0)], [0.5, -0.5, 0.5, -0.5], {"start_level": 1, "final_min_iterations": 50, "diverge_window": 2, "diverge_grace": 0}, monkeypatch).run(np.full(2, 0.2))
+    assert restless["status"] == "not_converged_diverged" and restless["best_feasible"] is None and restless["iterations"] == 3
+
+@pytest.mark.parametrize("grace, iterations", [(0, 3), (4, 6)])
+def test_mma_divergence_waits_for_the_grace_window(grace, iterations, monkeypatch):
+    optimizer = scripted_optimizer([(1.0, 1.0, 0.0), (1.0, 1.0, 2.0)], [], {"start_level": 1, "final_min_iterations": 50, "final_max_iterations": 20, "diverge_window": 2, "diverge_grace": grace}, monkeypatch)
+    result = optimizer.run(np.full(2, 0.2))
+    assert result["status"] == "not_converged_diverged" and result["iterations"] == iterations
+
+def test_mma_level_advances_only_after_a_quiet_feasible_window(monkeypatch):
+    optimizer = scripted_optimizer([(1.0, 1.0, 0.0)], [0.5], {"level_min_iterations": 2, "level_window": 3, "level_max_iterations": 10, "final_min_iterations": 3}, monkeypatch)
+    result = optimizer.run(np.full(2, 0.2))
+    assert result["levels"][0]["iterations"] == 5 and result["levels"][0]["reason"] == "change_tolerance" and result["levels"][0]["quiet"]
+    assert result["status"] == "converged" and result["capped_levels"] == []
+
+def test_mma_infeasible_level_cap_is_marked_and_never_converges(monkeypatch):
+    optimizer = scripted_optimizer([(1.0, 1.0, 0.5)], [], {"level_max_iterations": 4, "final_max_iterations": 3}, monkeypatch)
+    result = optimizer.run(np.full(2, 0.2))
+    level = result["levels"][0]
+    assert level["reason"] == "iteration_cap" and not level["feasible"] and not level["quiet"] and not level["continued_from_best"] and level["best_feasible"] is None
+    assert result["capped_levels"] == [1.0] and result["status"] == "not_converged_iteration_cap"
+
+def test_mma_termination_and_stall_follow_mass_not_objective(monkeypatch):
+    feasible = scripted_optimizer([(1.0, 2.0, 0.0), (3.0, 2.0, 0.0)] * 5, [], {"start_level": 1, "final_min_iterations": 3}, monkeypatch).run(np.full(2, 0.2))
+    assert feasible["status"] == "converged" and feasible["iterations"] == 3
+    stuck = scripted_optimizer([(1.0, 2.0, 0.5), (3.0, 2.0, 0.5)] * 5, [], {"start_level": 1, "final_min_iterations": 2, "stall_window": 3}, monkeypatch).run(np.full(2, 0.2))
+    assert stuck["status"] == "not_converged_stalled" and stuck["iterations"] == 3
 
 def test_prolongate_keeps_masks_and_constants():
     coarse = cantilever_domain((8, 2, 4), 2.0)
@@ -656,11 +706,14 @@ def test_mma_late_move_and_best_feasible_fallback():
     result = MMAOptimizer(wrapped, {"level_max_iterations": 60, "final_max_iterations": 200, "move": 0.2}).run(np.ones(domain["allowed"].size), keep=lambda x, best: kept.append((x.copy(), best)))
     moves = {row["beta"]: row["move"] for row in result["history"]}
     assert moves == {1.0: 0.2, 32.0: 0.05}
-    assert result["status"] == "not_converged_diverged_best_feasible" and result["levels"][-1]["returned_best"]
+    assert result["status"].startswith("not_converged_diverged")
+    final = [row for row in result["history"] if row["beta"] == 32.0]
+    assert len(final) >= MMA["diverge_grace"] + MMA["diverge_window"]
     best = result["best_feasible"]
-    assert best["beta"] == 32.0 and best["max_violation"] <= 1e-3 and np.array_equal(kept[-1][0], result["design"]) and kept[-1][1]["iteration"] == best["iteration"]
-    check = wrapped.inner.evaluate(result["design"])
-    assert check["mass_g"] == pytest.approx(best["mass_g"]) and np.max(check["constraints"]) <= 1e-3
+    if best is not None:
+        assert result["levels"][-1]["returned_best"] and result["history"][best["iteration"]]["stationary"] and np.array_equal(kept[-1][0], result["design"])
+        check = wrapped.inner.evaluate(result["design"])
+        assert check["mass_g"] == pytest.approx(best["mass_g"]) and np.max(check["constraints"]) <= 1e-3
     wrapped.inner.close()
 
 def landing_case(design, feet, pads=()):

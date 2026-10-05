@@ -21,7 +21,8 @@ from deep_frame.topology_geometry import _merge, embed_field
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import HexElasticity
 from deep_frame.topology_stability import STAND_CASES, FOUR_FEET, StandStability, stand_design, stand_domain, voxel_reserve
-from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, cable_corridor, density_map, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, NeuralALOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
+from deep_frame.topology_optimizers import MMA, MMAOptimizer, NeuralALOptimizer
+from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, cable_corridor, density_map, COVARIANCE, LOAD_COVARIANCE, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = str(Path(PATHS["data"]) / 'runs/r4_neural_v06_f1_1')
 FORMULATION = {
