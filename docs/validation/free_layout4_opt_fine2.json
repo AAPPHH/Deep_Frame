@@ -1,0 +1,137 @@
+{
+ "stage": "fine",
+ "run": "exports/runs/free_layout4_opt/fine2",
+ "ray_job": "raysubmit_Rwv27dTYnMYKarPV (density_simp)",
+ "start": "exports/runs/free_layout4_opt/coarse (prolongated, beta 8)",
+ "mma_damping": {
+  "move": 0.1,
+  "move_late": 0.05,
+  "move_late_beta": 32.0,
+  "asymptotes": "reset at every beta jump (fresh state)"
+ },
+ "status": "converged",
+ "iterations": 155,
+ "runtime_s": 9852.271269600009,
+ "seconds_per_iteration": 63.563040449032314,
+ "levels": [
+  {
+   "beta": 8.0,
+   "iterations": 26,
+   "reason": "converged",
+   "mass_g": 19.32742895732079,
+   "max_violation": 0.0007064124346970457,
+   "best_feasible": {
+    "iteration": 25,
+    "level": 3,
+    "beta": 8.0,
+    "f0": 0.42237013166328546,
+    "mass_g": 19.32742895732079,
+    "max_violation": 0.0007064124346970457
+   },
+   "continued_from_best": false
+  },
+  {
+   "beta": 16.0,
+   "iterations": 23,
+   "reason": "converged",
+   "mass_g": 17.804627850328533,
+   "max_violation": 0.0009304897673599877,
+   "best_feasible": {
+    "iteration": 48,
+    "level": 4,
+    "beta": 16.0,
+    "f0": 0.3890917424125676,
+    "mass_g": 17.804627850328533,
+    "max_violation": 0.0009304897673599877
+   },
+   "continued_from_best": false
+  },
+  {
+   "beta": 32.0,
+   "iterations": 13,
+   "reason": "converged",
+   "mass_g": 16.86733313242935,
+   "max_violation": 0.00022792276333660766,
+   "best_feasible": {
+    "iteration": 61,
+    "level": 5,
+    "beta": 32.0,
+    "f0": 0.3686086613840159,
+    "mass_g": 16.86733313242935,
+    "max_violation": 0.00022792276333660766
+   },
+   "continued_from_best": false
+  },
+  {
+   "beta": 64.0,
+   "iterations": 93,
+   "reason": "converged",
+   "mass_g": 15.560581731997074,
+   "max_violation": 0.0008120827493351968,
+   "best_feasible": {
+    "iteration": 154,
+    "level": 6,
+    "beta": 64.0,
+    "f0": 0.3400516938602675,
+    "mass_g": 15.560581731997074,
+    "max_violation": 0.0008120827493351968
+   },
+   "returned_best": false
+  }
+ ],
+ "best_feasible": null,
+ "mass_g": 15.560581731997074,
+ "linear_solver": "multigrid",
+ "grid": {
+  "origin_mm": [
+   0.0,
+   -64.0,
+   -4.0
+  ],
+  "spacing_mm": [
+   1.3333333333333333,
+   1.3333333333333333,
+   1.3333333333333333
+  ],
+  "shape": [
+   51,
+   96,
+   27
+  ],
+  "axis_order": "xyz",
+  "order": "C"
+ },
+ "gray_fraction": 0.0002611796234471168,
+ "table": "| constraint | value | limit | unit | status | margin |\n|---|---|---|---|---|---|\n| load_mean | 0.9046 | <= 0.9048 | N mm | active | +0.0 % |\n| load_worst | 0.2472 | <= 0.3126 | N mm | satisfied | +20.7 % |\n| crash_front | 18 | <= 292.9 | N mm | satisfied | +93.9 % |\n| crash_side_left | 11.44 | <= 20.44 | N mm | satisfied | +44.0 % |\n| crash_side_right | 11.44 | <= 20.44 | N mm | satisfied | +44.0 % |\n| crash_arm_front_left | 95.56 | <= 211.6 | N mm | satisfied | +54.8 % |\n| crash_arm_front_right | 32.69 | <= 33.81 | N mm | satisfied | +3.3 % |\n| crash_arm_rear_left | 65.69 | <= 65.64 | N mm | active | -0.1 % |\n| crash_arm_rear_right | 90.21 | <= 108.2 | N mm | satisfied | +16.6 % |\n| crash_below | 35.96 | <= 1028 | N mm | satisfied | +96.5 % |\n| crash_back | 6.559 | <= 10.41 | N mm | satisfied | +37.0 % |\n| f1 | 300 | >= 300 | Hz | active | -0.0 % |\n| battery_shift_flight | 0.07875 | <= 0.5 | mm | satisfied | +84.3 % |\n| battery_shift_crash_front | 0.09735 | <= 0.5 | mm | satisfied | +80.5 % |\n| battery_shift_crash_side_left | 0.1104 | <= 0.5 | mm | satisfied | +77.9 % |\n| battery_shift_crash_side_right | 0.1104 | <= 0.5 | mm | satisfied | +77.9 % |\n| battery_shift_crash_arm_front_left | 0.06659 | <= 0.5 | mm | satisfied | +86.7 % |\n| battery_shift_crash_arm_front_right | 0.09963 | <= 0.5 | mm | satisfied | +80.1 % |\n| battery_shift_crash_arm_rear_left | 0.1093 | <= 0.5 | mm | satisfied | +78.1 % |\n| battery_shift_crash_arm_rear_right | 0.06406 | <= 0.5 | mm | satisfied | +87.2 % |\n| battery_shift_crash_below | 0.04644 | <= 0.5 | mm | satisfied | +90.7 % |\n| battery_shift_crash_back | 0.004728 | <= 0.5 | mm | satisfied | +99.1 % |\n| battery_shift_crash_camera_oblique | 0.09946 | <= 0.5 | mm | satisfied | +80.1 % |\n| battery_contact_area | 591.8 | >= 350 | mm2 | satisfied | +69.1 % |\n| camera_shift_crash_front | 0.1113 | <= 0.112 | mm | active | +0.6 % |\n| camera_shift_crash_camera_oblique | 0.265 | <= 0.2652 | mm | active | +0.1 % |\n| camera_shielding_crash_front | 0.29 | >= 0.29 | - | active | -0.0 % |\n| camera_shielding_crash_camera_oblique | 0.0336 | >= 0.0336 | - | active | +0.0 % |\n| camera_mount_area | 99.56 | >= 99.56 | mm2 | active | -0.0 % |\n| volume | 0.03401 | <= 0.1 | - | satisfied | +66.0 % |\n| shadow | 0.2621 | <= 0.3137 | mm | satisfied | +16.5 % |\n| camera_coverage | 0.4227 | >= 0.4227 | - | active | +0.0 % |\n| camera_shielding_crash_below | 1.548e-08 |  | - | monitored |  |\n| thrust_all | 1.619 |  | N mm | monitored |  |\n| torsion_yaw | 0.09192 |  | N mm | monitored |  |\n| twist | 7.782 |  | N mm | monitored |  |\n| f1_intermediate | 330.5 |  | Hz | monitored |  |",
+ "max_violation": 0.0008120827471431724,
+ "memory": {
+  "fine_peak": {
+   "rss_gb": 4.287174224853516,
+   "pool_used_gb": 0.285616397857666,
+   "pool_total_gb": 0.45018911361694336,
+   "device_used_gb": 15.99169921875,
+   "smi_used_gb": 15.357421875,
+   "dedicated_gb": 5.632465362548828,
+   "shared_gb": 0.259765625
+  },
+  "note": "dedicated/shared = Windows GPU Process Memory counters of the solver process; device_used/smi = whole GPU incl. two orphan fine processes (pid 1736 free_layout4 fine, pid 27764 free_layout3 fine) that ran outside Ray from 02:58 until ~03:20/~03:50"
+ },
+ "camera_look": {
+  "definition": "half grid cells, keep-out [-8.5,31.63,9]..[8.5,50.57,27.94] mm; front: 0-10 mm beyond the +y face within +-6 mm of the face in x and z; above: 0-6 mm over the top inside the x/y footprint; beside: 0-6 mm beyond the x faces",
+  "front_0_10mm": {
+   "material_mm3_full_model": 252.00265842013889,
+   "solid_cells_rho_gt_0.5": 53,
+   "cells": 1694
+  },
+  "above_0_6mm": {
+   "material_mm3_full_model": 0.0,
+   "solid_cells_rho_gt_0.5": 0,
+   "cells": 252
+  },
+  "beside_0_6mm": {
+   "material_mm3_full_model": 795.4046585648148,
+   "solid_cells_rho_gt_0.5": 167,
+   "cells": 980
+  }
+ }
+}
