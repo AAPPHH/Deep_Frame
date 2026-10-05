@@ -449,7 +449,7 @@ def _prepare_surface(source, settings, refine, target, record=None):
     if refine:
         meshes.meshing_surface_subdivision_midpoint(iterations=64, threshold=pymeshlab.PureValue(settings["fea_refine_edge_mm"]))
     meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_remesh_iterations"], targetlen=pymeshlab.PureValue(target), featuredeg=settings["fea_remesh_feature_deg"],
-                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_refine_max_surface_distance_mm" if refine else "fea_remesh_max_surface_distance_mm"]))
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_refine_max_surface_distance_mm" if refine else "fea_remesh_max_surface_distance_mm"]), selectedonly=False)
     tolerance = settings["fea_merge_relative_tolerance"]*float(source.scale)
     steps = {"merge_close_vertices": lambda: meshes.meshing_merge_close_vertices(threshold=pymeshlab.PureValue(tolerance)),
              "remove_t_vertices": lambda: meshes.meshing_remove_t_vertices(method="Edge Collapse", threshold=settings["fea_t_vertex_ratio"], repeat=True)}
@@ -483,7 +483,7 @@ def uniform_surface(mesh, target, taubin):
     import trimesh
     meshes = pymeshlab.MeshSet()
     meshes.add_mesh(pymeshlab.Mesh(np.asarray(mesh.vertices, dtype=np.float64), np.asarray(mesh.faces, dtype=np.int32)))
-    meshes.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(target), iterations=6, featuredeg=40)
+    meshes.meshing_isotropic_explicit_remeshing(targetlen=pymeshlab.PureValue(target), iterations=6, featuredeg=40, selectedonly=False)
     if taubin:
         meshes.apply_coord_taubin_smoothing(stepsmoothnum=taubin)
     return trimesh.Trimesh(meshes.current_mesh().vertex_matrix(), meshes.current_mesh().face_matrix())
@@ -533,7 +533,7 @@ def clean_slivers(mesh, settings):
     meshes = pymeshlab.MeshSet()
     meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
     meshes.meshing_isotropic_explicit_remeshing(iterations=settings["fea_sliver_iterations"], targetlen=pymeshlab.PureValue(settings["fea_sliver_target_mm"]), featuredeg=settings["fea_remesh_feature_deg"],
-                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_remesh_max_surface_distance_mm"]))
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(settings["fea_remesh_max_surface_distance_mm"]), selectedonly=False)
     current = meshes.current_mesh()
     surface = trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
     collapsed = _collapse_short_edges(surface, settings["fea_sliver_collapse_mm"])

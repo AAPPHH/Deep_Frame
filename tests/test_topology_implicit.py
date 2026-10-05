@@ -282,6 +282,20 @@ def stage_checks(mesh):
 
 CONFIG = implicit_settings({"threshold": 0.35, "extension": "preserve"})
 
+@pytest.mark.parametrize("method", ["implicit", "fea_prepare", "fea_uniform", "fea_slivers"])
+def test_whole_surface_remeshing_ignores_previous_selected_only_filter(method):
+    import pymeshlab
+    from deep_frame.fea import _mesh_settings, _prepare_surface, clean_slivers, uniform_surface
+    source = trimesh.creation.box(extents=(8, 4, 3))
+    previous = pymeshlab.MeshSet()
+    previous.add_mesh(pymeshlab.Mesh(source.vertices, source.faces))
+    previous.meshing_isotropic_explicit_remeshing(iterations=1, selectedonly=True)
+    settings = _mesh_settings({})
+    operations = {"implicit": lambda: remesh(source, CONFIG), "fea_prepare": lambda: _prepare_surface(source, settings, False, 1.0)[0],
+                  "fea_uniform": lambda: uniform_surface(source, 1.0, 0), "fea_slivers": lambda: clean_slivers(source, settings)[0]}
+    result = operations[method]()
+    assert result.is_watertight and result.body_count == 1 and len(result.faces) > len(source.faces)
+
 def random_field(seed):
     noise = gaussian_filter(np.random.default_rng(seed).normal(size=(64, 64, 64)), 6)
     noise *= 2.0/np.abs(noise).max()
