@@ -500,7 +500,7 @@ def battery_fd(cfg):
     design = np.random.default_rng(spec["seed"]).uniform(spec["low"], spec["high"], tp.map.n)
     result = tp.evaluate(design)
     checks = finite_differences(tp, design, spec["step"], spec["seed"])
-    record = {"statement": "central finite differences along one random direction on a uniform random design; all rows incl. the design-dependent battery load (springs), crash active sets frozen", "grid": half["grid"],
+    record = {"statement": "central finite differences along one random direction on a uniform random design; all rows incl. the design-dependent battery load (bilateral ideal-press springs)", "grid": half["grid"],
               "battery": tp.battery.summary, "battery_body": half["battery"], "rows": result["rows"], "table": format_report(result["rows"]), "finite_differences": checks, "settings": problem["battery"], "sha": git_sha()}
     tp.close()
     Path(spec["output"]).write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")

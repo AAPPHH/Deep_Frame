@@ -366,6 +366,8 @@ class FrameLayout:
         if self._override("camera", "near_ground", False):
             if not self.free_camera:
                 raise ValueError("Near-ground camera requires free mounting and protection geometry")
+            if self.support() != "free":
+                raise ValueError("Near-ground camera requires the free ideally pressed battery")
             pitch = self._override("camera", "flight_pitch_deg", 15.0)
             if not 0 <= pitch < 60:
                 raise ValueError("Flight pitch must lie between 0 and 60 degrees nose down")

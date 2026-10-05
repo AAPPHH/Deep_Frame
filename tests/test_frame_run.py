@@ -25,6 +25,8 @@ def test_near_ground_patch_keeps_ideal_press_battery_and_rejects_positioning_aid
     patch = layout.patch()
     assert "BATTERY_SUPPORT" not in patch and "battery_guide" not in patch["TOPOLOGY_CONFIG"] and BATTERY_SUPPORT["retention"] == "ideal_press"
     assert patch["TOPOLOGY_CONFIG"]["low_flight"] == {"enabled":True,"pitch_deg":15}
+    with pytest.raises(ValueError,match="ideally pressed battery"):
+        FrameLayout(request(overrides={"battery":{"support":"rails"},"camera":{"support":"free","near_ground":True}})).patch()
     with pytest.raises(ValueError,match="positioning_aid"):
         validate_request(request(overrides={"battery":{"support":"free","positioning_aid":True}}))
 

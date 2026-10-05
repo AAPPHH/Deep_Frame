@@ -131,20 +131,19 @@ Faktor 0 → 1 gegen das volle Maß: +70 % / +80 % (> 10 %, nächster Lauf mit F
 
 ## Freie Akkulagerung (`BATTERY_SUPPORT`, Schalter `TOPOLOGY_CONFIG["battery_support"]`)
 
-Standard bleibt `"rails"` (zwei Schienen als feste Bereiche). Mit `"free"` (Auftrag: `overrides.battery.support = "free"`, Formulierung: `FORMULATION["layout"]`) entfallen die Schienen; der Akku ist ein Starrkörper, der Rahmen trägt ihn über dichteabhängige Federn.
+Standard bleibt `"rails"` (zwei Schienen als feste Bereiche). Mit `"free"` (Auftrag: `overrides.battery.support = "free"`, Formulierung: `FORMULATION["layout"]`) entfallen die Schienen; der Akku ist ein Starrkörper, der Rahmen trägt ihn über dichteabhängige Federn an seiner Unterseite. Einziges Haltemodell ist `retention = "ideal_press"` (Nutzerentscheidung 5. Oktober): Der Akku gilt unter jeder Last als ideal auf seinen Sitz gepresst. Gummiband, Vorspannung, Reibung und Einlegehilfe sind nicht modelliert; das frühere einseitige Kontaktmodell mit Bandvorspannung ist entfernt. `camera.near_ground` setzt diese freie Lagerung voraus (`FrameLayout.patch`).
 
-- Körper: 37 g, Quader 30 × 63 × 11 mm, Eigenträgheit als Quader, Volumen = Keep-out `battery_insertion`. Referenzpunkt Unterseitenmitte (0, y_b, deck_top) wie der Sigma-Akkublock; Schwerpunkt 5,5 mm darüber.
-- Designraum: Kontaktbereich unter dem Akku und ein Band an allen vier Seiten bis zur Hüllenoberkante. Kontaktknoten sind die Knoten zwischen erlaubten Zellen und Keep-out-Zellen des Akkus. Unten wirken eine Normalenfeder z und Schubfedern x/y, an den Seiten eine Normalenfeder x bzw. y. Steifigkeit: Knotenfläche × Pad (Normal 1,0 N/mm³, Schub 0,3 N/mm³, ANNAHME Haftpad) × (floor + (1 − floor) ρ³). ρ ist das Mittel der anliegenden erlaubten Zellen im erodierten Feld.
-- Designabhängige Last: Akkuwrench w → s = D⁻¹ w mit D = Σ T_jᵀ K_j T_j; die Knotenkräfte sind f_j = K_j T_j s. Das gilt für die sechs Akkuspalten von Sigma (linearisiert, Unterseite geschlossen, Seitenbänder mit Sekante 0,5) und für jeden Inertia-Relief-Fall. Die Akkuträgheit und die crash_back-Decklast wirken auf den Körper, nicht auf Rahmenknoten.
-- z nur Auflage: Normalenfedern wirken nur auf Druck (Active-Set auf die Starrkörperbewegung unter Last + 10 N Bandvorspannung, Zug → 10⁻³ k). Das Gummiband selbst ist nicht modelliert.
+- Körper: 37 g, Quader 30 × 63 × 11 mm, Eigenträgheit als Quader, Volumen = Keep-out `battery_envelope`. Referenzpunkt Unterseitenmitte (0, y_b, deck_top) wie der Sigma-Akkublock; Schwerpunkt 5,5 mm darüber. Das senkrechte Einschubvolumen `battery_insertion` bleibt verboten (kein Dach).
+- Federn nur unten: Kontaktknoten sind die Knoten zwischen erlaubten Zellen und der Unterseite von `battery_envelope`. Je Knoten wirken eine Normalenfeder z und Schubfedern x/y, alle bilateral (ideal angepresst, kein Active-Set). Steifigkeit: Knotenfläche × Pad (Normal 1,0 N/mm³, Schub 0,3 N/mm³, ANNAHME Haftpad) × (floor + (1 − floor) ρ³). ρ ist das Mittel der anliegenden erlaubten Zellen im erodierten Feld.
+- Designabhängige Last: Akkuwrench w → s = D⁻¹ w mit D = Σ T_jᵀ K_j T_j; die Knotenkräfte sind f_j = K_j T_j s (Einweg-Kopplung: Verteilung auf starrem Rahmen, Rahmenantwort mit diesen Kräften). Das gilt für die sechs Akkuspalten von Sigma und für jeden Inertia-Relief-Fall, alle sechs Wrenchkomponenten einschließlich Abheben und Kippen über die Unterseite. Die Akkuträgheit und die crash_back-Decklast wirken auf den Körper, nicht auf Rahmenknoten.
 - Nebenbedingungen:
   - Federweg am Akkuschwerpunkt in x/y ≤ 0,5 mm: im Flug 3σ aus dem Sigma-Akkublock, im Crash |δ_xy| je Crashfall;
-  - Auflagefläche unten Σ A_j ρ_j ≥ 350 mm² (Schienenvariante 2 × 3,5 × 50 mm);
+  - Auflagefläche unten Σ A_j ρ_j ≥ 350 mm² (`min_area_mm2`, Fläche der Schienenvariante 2 × 3,5 × 50 mm). Dieselbe Zahl gilt in der Abnahme (`tools/functional_geometry_review.py`: STL-Schnitt 0,05 mm unter der Akkuunterseite, 0,1-mm-Raster, Schwerpunkt innerhalb der konvexen Hülle der Auflage, freies senkrechtes Einlegen); beide Maße sind verschieden diskretisiert;
   - der Massenanteil des Akkus in der Modalanalyse liegt nach k_z verteilt auf den Unterseitenknoten.
-- Sensitivitäten: d(uᵀf)/dk_jd = [T_j s]_d ([u_j]_d − [T_j r]_d) mit r = D⁻¹ Σ T_jᵀ K_j u_j, Active-Set eingefroren. Die Kompatibilitäten erhalten 2 × diesen Term; f1 erhält −λ φᵀ(dM_lumped)φ.
+- Sensitivitäten: d(uᵀf)/dk_jd = [T_j s]_d ([u_j]_d − [T_j r]_d) mit r = D⁻¹ Σ T_jᵀ K_j u_j. Die Kompatibilitäten erhalten 2 × diesen Term; f1 erhält −λ φᵀ(dM_lumped)φ.
 - Prüfung:
-  - `tests/test_topology_problem.py::test_free_battery_support_equilibrium_and_gradients` (Gleichgewicht Σ T_jᵀ f_j = w, FD aller Zeilen auf dem Minigitter);
-  - `tools/formulation_study.py battery_fd` (FD auf dem Rahmengitter 68 × 64 × 24 → `docs/validation/battery_support_fd.json`).
+  - `tests/test_topology_problem.py::test_ideal_press_battery_support_equilibrium_and_gradients` (Gleichgewicht Σ T_jᵀ f_j = w, FD aller Zeilen auf dem Minigitter);
+  - `tools/formulation_study.py battery_fd` (FD auf dem Rahmengitter 68 × 64 × 24 → `docs/validation/battery_support_fd.json`; der gespeicherte Datensatz stammt noch vom entfernten Kontaktmodell und ist bei der nächsten Ausführung neu zu erzeugen).
 
 ## Freier Kamerakäfig (`CAMERA_SUPPORT`, Schalter `TOPOLOGY_CONFIG["camera_support"]`)
 
