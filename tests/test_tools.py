@@ -1141,19 +1141,24 @@ def test_compute_node20_21_routes_gpu_jobs_to_the_working_a100():
     assert head[head.index("--num-gpus") + 1] == "0" and head[head.index("--dashboard-port") + 1] == "8266"
     assert "--port=6380" in head and "--min-worker-port=22000" in head
 
-def test_compute_parallel_comparison_reserves_two_halves_of_the_a100():
-    need = compute.request("gpu_compare", ["x"], ".", machine="node20_21")
-    assert need["entrypoint_num_gpus"] == 0.5
-    assert need["entrypoint_resources"] == {"gpu_gb": 32, "node:192.168.2.21": 0.001}
-    assert 2 * need["entrypoint_num_cpus"] == 32
-    assert 2 * need["entrypoint_resources"]["gpu_gb"] <= 80
+def test_compute_parallel_comparison_declares_measured_gpu_memory_without_fixed_slot():
+    job, need = compute.JOB_TYPES["gpu_compare"], compute.request("gpu_compare", ["x"], ".", machine="node20_21")
+    assert "num_gpus" not in job and 20 <= need["entrypoint_resources"]["gpu_gb"] <= 24
+    assert need["entrypoint_resources"] == {"gpu_gb": round(job["gpu_gb"] * job["gpu_margin"], 1), "node:192.168.2.21": 0.001}
+    assert need["entrypoint_num_gpus"] == pytest.approx(need["entrypoint_resources"]["gpu_gb"] / 80, abs=1e-4)
+    assert 2 * need["entrypoint_resources"]["gpu_gb"] <= 80 and 2 * need["entrypoint_num_gpus"] <= 1
+    measured = compute.request("gpu_compare", ["x"], ".", machine="node20_21", gpu_gb=18.0)
+    assert measured["entrypoint_resources"]["gpu_gb"] == 23.4 and measured["entrypoint_num_gpus"] == pytest.approx(23.4 / 80, abs=1e-4)
+    assert compute.request("gpu_a100", ["x"], ".", machine="node20_21")["entrypoint_num_gpus"] == 1
 
 @pytest.mark.skipif(os.name == "nt", reason="Linux cluster controller")
-@pytest.mark.parametrize("gpu,rss,passed", [(20.0,10.0,True),(32.1,10.0,False),(20.0,float("nan"),False),(float("nan"),10.0,False),(None,10.0,False)])
-def test_parallel_controller_gate_uses_own_pid_memory(gpu,rss,passed,tmp_path,monkeypatch):
+@pytest.mark.parametrize("gpu,rss,passed", [(20.0,10.0,True),(21.7,10.0,False),(20.0,46.5,False),(20.0,float("nan"),False),(float("nan"),10.0,False),(None,10.0,False)])
+def test_parallel_controller_gate_uses_own_pid_memory_against_declared_reservation(gpu,rss,passed,tmp_path,monkeypatch):
     from tools import compare_pipelines
     comparison=compare_pipelines.Comparison.__new__(compare_pipelines.Comparison)
     comparison.configs={"simp":{"mma":{"root":"run"}}}
+    spec=compute.request("gpu_compare",["x"],".",machine="node20_21")
+    comparison.data={"stages":{"simp_probe":{"gpu_limit_gb":spec["entrypoint_resources"]["gpu_gb"],"host_limit_gb":compute.JOB_TYPES["gpu_compare"]["memory_gb"]}}}
     comparison.update=lambda *args,**kwargs:None
     monkeypatch.setattr(compare_pipelines,"ROOT",tmp_path)
     out=tmp_path/"run_probe"
@@ -1281,6 +1286,11 @@ def test_interface_couple_and_conjugate_rotation():
     volume = sum(abs(np.linalg.det(np.array([np.subtract(nodes[n], nodes[e[0]]) for n in e[1:4]]))) / 6 for e in elements.values())
     assert volume == pytest.approx(16.0)
 
+def saved_definition(path,problem):
+    definition={'domain':{'grid':[1,2]},'problem':problem}
+    path.write_text(json.dumps({'sha256':hashlib.sha256(json.dumps(definition,sort_keys=True,separators=(',',':')).encode()).hexdigest(),**definition},indent=2))
+    return json.loads(path.read_text())['sha256']
+
 def test_shared_pipeline_gate_rejects_changed_problem_and_retention(monkeypatch,tmp_path):
     from tools import compare_pipelines as comparison
     monkeypatch.setattr(comparison,'ROOT',tmp_path)
@@ -1293,7 +1303,18 @@ def test_shared_pipeline_gate_rejects_changed_problem_and_retention(monkeypatch,
         root=tmp_path/(name+'_probe')/'fine'
         root.mkdir(parents=True)
         (root/'result.json').write_text(json.dumps(record))
+        production=saved_definition(root.parent/'production_definition.json',{'beta':[1,2,4]})
+    tested.data={'stages':{'shared_seed':{'problem_definition_sha256':production}}}
     tested.shared()
+    saved_definition(tmp_path/'neural_probe/production_definition.json',{'beta':[1,2,8]})
+    with pytest.raises(RuntimeError,match='different production problem'):
+        tested.shared()
+    tampered=json.loads((tmp_path/'simp_probe/production_definition.json').read_text())
+    tampered['problem']['beta']=[1]
+    (tmp_path/'neural_probe/production_definition.json').write_text(json.dumps(tampered))
+    with pytest.raises(RuntimeError,match='does not match its fingerprint'):
+        tested.shared()
+    saved_definition(tmp_path/'neural_probe/production_definition.json',{'beta':[1,2,4]})
     changed=deepcopy(record)
     changed['problem_definition_sha256']='different'
     target=tmp_path/'neural_probe/fine/result.json'
@@ -1402,6 +1423,7 @@ def test_controller_acceptance_keeps_stand_and_prop_clearance_required(tmp_path,
     tested=study.Comparison.__new__(study.Comparison)
     tested.ray=lambda *args,**kwargs:None
     tested.update=lambda *args,**kwargs:None
+    tested.data={'stages':{'simp_optimization':{'field_mass_g':19.67}}}
     cfg={'mma':{'root':'optimization'}}
     path=tmp_path/'pipeline.json'
     path.write_text(json.dumps(cfg))
@@ -1414,7 +1436,106 @@ def test_controller_acceptance_keeps_stand_and_prop_clearance_required(tmp_path,
     (run/'manifest.json').write_text(json.dumps({'wall_rule_passed':True,'evaluation_gates':{'missed':[]}}))
     (run/'evaluation.json').write_text(json.dumps({'geometry':{'mass':{'standing':{'stability':{'reserve_passed':standing,'prop_clearance_passed':True}}}}}))
     (run/'functional_review/physical_evaluation.json').write_text(json.dumps({'stl_mass_g':20}))
-    assert bool(tested.physical('simp',str(path))) is standing
+    accepted=tested.physical('simp',str(path))
+    assert bool(accepted) is standing
+    assert not standing or (accepted[0]['mass_g'],accepted[0]['field_mass_g'])==(20,19.67)
+
+def controller(tmp_path,monkeypatch):
+    from tools import compare_pipelines as study
+    monkeypatch.setattr(study,'ROOT',tmp_path)
+    tested=study.Comparison.__new__(study.Comparison)
+    tested.root=tmp_path/'state'
+    tested.root.mkdir()
+    tested.python=sys.executable
+    tested.data={'stages':{},'branches':{}}
+    tested.update=lambda stage,**fields:tested.data['stages'].setdefault(stage,{}).update(fields)
+    tested.config={'pipelines':{'simp':'simp.json','neural':'neural.json'}}
+    tested.configs={name:{'mma':{'root':name+'_opt','fine_dir':'fine2','variant':name,'start':'start','start_sha256':None}} for name in tested.config['pipelines']}
+    tested.paths=dict(tested.config['pipelines'])
+    return study,tested
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+def test_controller_generates_verifies_and_passes_one_shared_seed(tmp_path,monkeypatch):
+    study,tested=controller(tmp_path,monkeypatch)
+    design=np.linspace(0,1,12)
+    digest=hashlib.sha256(np.ascontiguousarray(design,dtype=np.float64).tobytes()).hexdigest()
+    tested.config['seed']={'start':'start','sha256':digest}
+    jobs=[]
+    def generate(stage,action,path,**kwargs):
+        jobs.append((stage,action,json.loads(Path(path).read_text())['mma']))
+        (tmp_path/'start').mkdir()
+        np.savez_compressed(tmp_path/'start/design.npz',design=design)
+        (tmp_path/'start/result.json').write_text(json.dumps({'sha256':digest,'problem_definition_sha256':'production'}))
+    tested.ray=generate
+    tested.seed()
+    assert [job[:2] for job in jobs]==[('shared_seed','frame_seed')] and jobs[0][2]['start_sha256']==digest
+    assert {json.dumps(json.loads(Path(path).read_text())['mma']['start_sha256']) for path in tested.paths.values()}=={json.dumps(digest)}
+    assert tested.data['stages']['shared_seed']['problem_definition_sha256']=='production'
+    tested.seed()
+    assert len(jobs)==1
+    np.savez_compressed(tmp_path/'start/design.npz',design=design+1)
+    with pytest.raises(RuntimeError,match='controller seed'):
+        tested.seed()
+    tested.config.pop('seed')
+    tested.configs['neural']['mma']['start_sha256']='other'
+    tested.configs['simp']['mma']['start_sha256']=digest
+    with pytest.raises(RuntimeError,match='shared start design'):
+        tested.seed()
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+def test_controller_records_field_and_stl_mass_and_rejects_other_production_definition(tmp_path,monkeypatch):
+    study,tested=controller(tmp_path,monkeypatch)
+    fine=tmp_path/'simp_opt/fine2'
+    fine.mkdir(parents=True)
+    production=saved_definition(fine/'problem_definition.json',{'beta':[1,2,4]})
+    record={'status':'not_converged_diverged_best_feasible','mass_g':19.67,'max_violation':0.0,'start_sha256':'seed','problem_definition_sha256':production}
+    (fine/'result.json').write_text(json.dumps(record))
+    tested.optimized('simp','simp_optimization',production)
+    assert tested.data['stages']['simp_optimization']['stl_mass_g'] is None
+    (tmp_path/'simp_opt/simp').mkdir()
+    (tmp_path/'simp_opt/simp/info.json').write_text(json.dumps({'body':{'mass_g':13.73,'bodies':3,'watertight':True}}))
+    tested.optimized('simp','simp_optimization',production)
+    state=tested.data['stages']['simp_optimization']
+    assert (state['field_mass_g'],state['stl_mass_g'],state['stl_bodies'],state['design_status'])==(19.67,13.73,3,'not_converged_diverged_best_feasible')
+    with pytest.raises(RuntimeError,match='other than the verified'):
+        tested.optimized('simp','simp_optimization','probe')
+    (fine/'result.json').write_text(json.dumps({**record,'problem_definition_sha256':'probe'}))
+    with pytest.raises(RuntimeError,match='other than the verified'):
+        tested.optimized('simp','simp_optimization',production)
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+@pytest.mark.parametrize('statuses,reason',[({'simp':'not_converged_diverged_best_feasible','neural':'not_converged_stalled'},'Optimizer not converged (simp: not_converged_diverged_best_feasible, neural: not_converged_stalled)'),
+                                            ({'simp':'converged','neural':None},'Optimizer not converged (neural: no optimization result)'),
+                                            ({'simp':'converged','neural':'converged'},'No reconstructed frame of simp, neural passed')])
+def test_continuation_names_optimizer_non_convergence_as_the_cause(tmp_path,monkeypatch,statuses,reason):
+    study,tested=controller(tmp_path,monkeypatch)
+    for name,status in statuses.items():
+        if status:
+            tested.update(name+'_optimization',design_status=status)
+    tested.continuation()
+    state=tested.data['stages']['continuation']
+    assert state['status']=='AWAITING_DESIGN_CORRECTION' and reason in state['reason'] and ('No reconstructed' in state['reason'])==('converged' in statuses.values())
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+def test_controller_records_source_and_measured_reservation_and_refuses_dirty_tree(tmp_path,monkeypatch):
+    study,tested=controller(tmp_path,monkeypatch)
+    submitted=[]
+    tested.client=type('Client',(),{'submit_job':lambda self,**spec:submitted.append(spec) or 'job','get_job_logs':lambda self,job:''})()
+    tested.wait=lambda job:None
+    path=tmp_path/'pipeline.json'
+    path.write_text('{}')
+    monkeypatch.setattr(study,'_git',lambda worktree:{'sha':'abc','branch':'main','dirty':False})
+    tested.ray('simp_optimization','frame_mma',str(path),gpu_gb=16.65)
+    state=tested.data['stages']['simp_optimization']
+    assert state['source']=={'sha':'abc','branch':'main','dirty':False}
+    assert state['gpu_limit_gb']==submitted[0]['entrypoint_resources']['gpu_gb']==round(16.65*study.JOB_TYPES['gpu_compare']['gpu_margin'],1)
+    assert state['host_limit_gb']==study.JOB_TYPES['gpu_compare']['memory_gb']
+    monkeypatch.setattr(study,'_git',lambda worktree:{'sha':'abc','branch':'main','dirty':True})
+    with pytest.raises(RuntimeError,match='dirty'):
+        tested.ray('neural_optimization','frame_neural',str(path))
+    with pytest.raises(RuntimeError,match='dirty'):
+        tested.local('neural_postprocessing',['true'])
+    assert len(submitted)==1 and 'neural_postprocessing' not in tested.data['stages']
 
 @pytest.mark.parametrize('bottom,passed',[(1.75,True),(1.65,False),(3.4,True),(3.6,False)])
 def test_functional_review_bounds_lens_gap_by_hardware_guard_drop_and_tolerance(bottom,passed):

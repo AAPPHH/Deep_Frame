@@ -14,7 +14,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+import numpy as np
 from tools.compute import request, JOB_TYPES
+from deep_frame.frame_run import _git
 from ray.job_submission import JobStatus, JobSubmissionClient
 
 class Comparison:
@@ -29,6 +31,7 @@ class Comparison:
         self.data = json.loads((self.root/"status.json").read_text()) if self.config.get("resume") and (self.root/"status.json").exists() else {"created": datetime.now(timezone.utc).isoformat(), "config": self.config, "stages": {}, "branches": {}}
         self.data["config"]=self.config
         self.configs = {name: json.loads((ROOT / path).read_text()) for name, path in self.config["pipelines"].items()}
+        self.paths = dict(self.config["pipelines"])
     def save(self):
         with self.lock:
             target = self.root / "status.tmp"
@@ -45,7 +48,12 @@ class Comparison:
         info = self.client.get_job_info(job)
         if info.status != JobStatus.SUCCEEDED:
             raise RuntimeError(f"{job}: {info.status}: {info.message}")
-    def ray(self, stage, action, path,kind="gpu_compare",tool="tools/formulation_study.py"):
+    def launchable(self):
+        source=_git(str(ROOT))
+        if source["dirty"] is not False or not source["sha"]:
+            raise RuntimeError(f"Working tree at {source['sha']} is dirty or unreadable; commit before launching production jobs")
+        return source
+    def ray(self, stage, action, path,kind="gpu_compare",tool="tools/formulation_study.py",gpu_gb=None):
         previous=self.data["stages"].get(stage,{})
         inputs={"action":action,"path":str(path),"tool":tool,"sha256":hashlib.sha256(Path(path).read_bytes()).hexdigest()}
         if previous.get("inputs") and previous["inputs"]!=inputs:
@@ -54,8 +62,10 @@ class Comparison:
             job=previous["job"]
             self.update(stage,resumed=True,inputs=inputs)
         else:
-            job = self.client.submit_job(**request(kind, [self.python, tool, action, path], ROOT, python=self.python))
-            self.update(stage, status="RUNNING", job=job,kind=kind,gpu_limit_gb=JOB_TYPES[kind]["gpu_gb"],host_limit_gb=JOB_TYPES[kind]["memory_gb"],started=datetime.now(timezone.utc).isoformat(),inputs=inputs)
+            source=self.launchable()
+            spec=request(kind, [self.python, tool, action, path], ROOT, python=self.python, gpu_gb=gpu_gb)
+            job = self.client.submit_job(**spec)
+            self.update(stage, status="RUNNING", job=job,kind=kind,gpu_limit_gb=(spec["entrypoint_resources"] or {}).get("gpu_gb",0),host_limit_gb=JOB_TYPES[kind]["memory_gb"],started=datetime.now(timezone.utc).isoformat(),inputs=inputs,source=source)
         try:
             self.wait(job)
             self.update(stage, status="SUCCEEDED")
@@ -64,25 +74,64 @@ class Comparison:
             raise
         finally:
             (self.root / (stage + ".log")).write_text(self.client.get_job_logs(job))
+    def within(self,stage,memory):
+        state,gpu=self.data["stages"][stage],memory.get("process_gpu_gb")
+        return gpu is not None and math.isfinite(gpu) and 0<gpu<=state["gpu_limit_gb"] and 0<memory["rss_gb"]<=state["host_limit_gb"]
     def gate(self, name):
         root = ROOT / (self.configs[name]["mma"]["root"] + "_probe")
         record = json.loads((root / "fine/result.json").read_text())
         memory = json.loads((root / "memory.json").read_text())["peaks"]["probe"]
         rows = (root / "fine/iterations.jsonl").read_text().splitlines()
-        gpu = memory.get("process_gpu_gb")
-        if record["iterations"] != 3 or len(rows) != 3 or gpu is None or not 0 < gpu <= 32 or not math.isfinite(gpu) or not 0 < memory["rss_gb"] <= 46 or not all(math.isfinite(record[key]) for key in ("mass_g", "max_violation")):
+        if record["iterations"] != 3 or len(rows) != 3 or not self.within(name+"_probe",memory) or not all(math.isfinite(record[key]) for key in ("mass_g", "max_violation")):
             raise RuntimeError(f"{name}: three-iteration solver/memory gate failed")
-        self.update(name + "_probe", gate="PASSED", gpu_peak_gb=gpu, host_peak_gb=memory["rss_gb"], design_status=record["status"], note="Numerical/resource probe; no design acceptance")
+        self.update(name + "_probe", gate="PASSED", gpu_peak_gb=memory["process_gpu_gb"], host_peak_gb=memory["rss_gb"], design_status=record["status"], note="Numerical/resource probe; no design acceptance")
+    def seed(self):
+        routes={(cfg["mma"].get("start"),cfg["mma"].get("start_sha256")) for cfg in self.configs.values()}
+        start,sha=(self.config["seed"]["start"],self.config["seed"]["sha256"]) if "seed" in self.config else (routes.pop() if len(routes)==1 else (None,None))
+        if not start or not sha:
+            raise RuntimeError("Optimization routes must reference and start from one shared start design (controller seed or common mma start/start_sha256)")
+        for name,cfg in self.configs.items():
+            cfg["mma"].update(start=start,start_sha256=sha)
+            path=self.root/(name+"_pipeline.json")
+            path.write_text(json.dumps(cfg,indent=2))
+            self.paths[name]=str(path)
+        source=ROOT/start
+        if not (source/"design.npz").is_file():
+            self.ray("shared_seed","frame_seed",self.paths[next(iter(self.paths))])
+        record=json.loads((source/"result.json").read_text())
+        digest=hashlib.sha256(np.ascontiguousarray(np.load(source/"design.npz")["design"],dtype=np.float64).tobytes()).hexdigest()
+        if digest!=sha or record.get("sha256")!=sha or not record.get("problem_definition_sha256"):
+            raise RuntimeError(f"Shared start design {start} has sha256 {digest} (recorded {record.get('sha256')}), controller seed is {sha}")
+        self.update("shared_seed",status="VERIFIED",start=start,sha256=sha,problem_definition_sha256=record["problem_definition_sha256"],pipelines=self.paths)
+    def definition(self,path):
+        definition=json.loads(Path(path).read_text())
+        sha=definition.pop("sha256",None)
+        if sha!=hashlib.sha256(json.dumps(definition,sort_keys=True,separators=(",",":")).encode()).hexdigest():
+            raise RuntimeError(f"{path}: saved problem definition does not match its fingerprint")
+        return sha
     def shared(self):
         records={name:json.loads((ROOT/(cfg["mma"]["root"]+"_probe")/"fine/result.json").read_text()) for name,cfg in self.configs.items()}
-        fingerprints={row["problem_definition_sha256"] for row in records.values()}
-        if len(fingerprints)!=1:
-            raise RuntimeError("Optimization routes use different problem definitions")
+        if len({row["problem_definition_sha256"] for row in records.values()})!=1:
+            raise RuntimeError("Optimization routes use different problem definitions in their probes")
+        production={name:self.definition(ROOT/(cfg["mma"]["root"]+"_probe")/"production_definition.json") for name,cfg in self.configs.items()}
+        expected=self.data["stages"]["shared_seed"]["problem_definition_sha256"]
+        if set(production.values())!={expected}:
+            raise RuntimeError(f"Optimization routes use different production problem definitions {production}; shared seed was generated for {expected}")
         starts=self.started(records)
         for row in records.values():
             if row["battery_retention"]!="ideal_press" or row["functional_requirements"]["low_flight"]["pitch_deg"]!=15:
                 raise RuntimeError("Required flight attitude or ideal retention missing")
-        self.update("shared_problem",status="VERIFIED",sha256=next(iter(fingerprints)),start_sha256=next(iter(starts)),battery_retention="ideal_press",flight_pitch_deg=15)
+        self.update("shared_problem",status="VERIFIED",sha256=expected,probe_sha256=next(iter(records.values()))["problem_definition_sha256"],start_sha256=next(iter(starts)),battery_retention="ideal_press",flight_pitch_deg=15)
+    def optimized(self,name,stage,expected=None):
+        cfg=self.configs[name]
+        root=ROOT/cfg["mma"]["root"]
+        record=json.loads((root/cfg["mma"]["fine_dir"]/"result.json").read_text())
+        info=root/cfg["mma"]["variant"]/"info.json"
+        body=(json.loads(info.read_text()).get("body") or {}) if info.is_file() else {}
+        self.update(stage,design_status=record["status"],field_mass_g=record["mass_g"],stl_mass_g=body.get("mass_g"),stl_bodies=body.get("bodies"),stl_watertight=body.get("watertight"),max_violation=record["max_violation"],start_sha256=record.get("start_sha256"),problem_definition_sha256=record.get("problem_definition_sha256"))
+        if expected and {record.get("problem_definition_sha256"),self.definition(root/cfg["mma"]["fine_dir"]/"problem_definition.json")}!={expected}:
+            raise RuntimeError(f"{name}: production run used a problem definition other than the verified {expected}; results withheld")
+        return record
     def started(self,records):
         starts={self.configs[name]["mma"].get("start_sha256") for name in self.config["pipelines"]}|{row.get("start_sha256") for row in records.values()}
         if len(starts)!=1 or None in starts:
@@ -94,7 +143,7 @@ class Comparison:
             raise RuntimeError(f"{stage}: recorded command changed")
         if previous.get("status")=="SUCCEEDED":
             return
-        self.update(stage,status="RUNNING",command=command)
+        self.update(stage,status="RUNNING",command=command,source=self.launchable())
         with (self.root/(stage+".log")).open("w") as log:
             code=subprocess.call(command,cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
         self.update(stage,status="SUCCEEDED" if code==0 else "FAILED",exit_code=code)
@@ -126,7 +175,7 @@ class Comparison:
                 self.update(name+"_physical_"+suffix,acceptance="FAILED",wall_rule_passed=manifest.get("wall_rule_passed"),independent_evaluation=manifest.get("evaluation_gates"),stand=stand)
                 continue
             report=json.loads((run/"functional_review/physical_evaluation.json").read_text())
-            accepted.append({"route":name,"suffix":suffix,"run":str(run),"mass_g":report["stl_mass_g"],"pipeline":path})
+            accepted.append({"route":name,"suffix":suffix,"run":str(run),"mass_g":report["stl_mass_g"],"field_mass_g":self.data["stages"].get(name+"_optimization",{}).get("field_mass_g"),"pipeline":path})
         self.update(name+"_acceptance",status="PASSED" if accepted else "FAILED",candidates=accepted)
         return accepted
     def branch(self, name, path):
@@ -140,10 +189,8 @@ class Comparison:
             self.problem_ready.wait()
             self.shared()
             action = "frame_neural" if name == "neural" else "frame_mma"
-            self.ray(name + "_optimization", action, path)
-            cfg = self.configs[name]
-            record = json.loads((ROOT / cfg["mma"]["root"] / cfg["mma"]["fine_dir"] / "result.json").read_text())
-            self.update(name + "_optimization", design_status=record["status"], mass_g=record["mass_g"], max_violation=record["max_violation"], start_sha256=record.get("start_sha256"))
+            self.ray(name + "_optimization", action, path, gpu_gb=self.data["stages"][name + "_probe"]["gpu_peak_gb"])
+            record = self.optimized(name, name + "_optimization", self.data["stages"]["shared_problem"]["sha256"])
             self.started({name: record})
             if record["status"] != "converged":
                 raise RuntimeError(f"{name}: {record['status']}; dependent production postprocessing withheld")
@@ -170,7 +217,7 @@ class Comparison:
                 stage = name + suffix
                 state = self.data["stages"].get(stage, {})
                 path = ROOT / directory / "memory.jsonl"
-                if state.get("status") != "RUNNING" or not path.exists():
+                if state.get("status") != "RUNNING" or not state.get("job") or not path.exists():
                     continue
                 with path.open("rb") as stream:
                     stream.seek(max(0, path.stat().st_size - 65536))
@@ -181,7 +228,7 @@ class Comparison:
                         samples.append(json.loads(line))
                     except ValueError:
                         pass
-                if any(row.get("process_gpu_gb", 0) > state.get("gpu_limit_gb",32) or row.get("rss_gb", 0) > state.get("host_limit_gb",46) for row in samples):
+                if any(row.get("process_gpu_gb", 0) > state["gpu_limit_gb"] or row.get("rss_gb", 0) > state["host_limit_gb"] for row in samples):
                     self.client.stop_job(state["job"])
                     self.update(stage, stop_reason="Measured memory exceeds declared reservation")
     def display(self,candidate,review=None):
@@ -254,7 +301,11 @@ class Comparison:
     def continuation(self):
         candidates=[candidate for name in self.configs for candidate in self.data["stages"].get(name+"_acceptance",{}).get("candidates",[])]
         if not candidates:
-            self.update("continuation",status="AWAITING_DESIGN_CORRECTION",reason="No reconstructed frame passed geometry, shared physics, independent evaluation and wall rule; 0.75 input withheld")
+            statuses={name:self.data["stages"].get(name+"_optimization",{}).get("design_status") for name in self.config["pipelines"]}
+            unconverged=[f"{name}: {status or 'no optimization result'}" for name,status in statuses.items() if status!="converged"]
+            converged=[name for name,status in statuses.items() if status=="converged"]
+            reasons=(["Optimizer not converged ("+", ".join(unconverged)+"); reconstruction and acceptance withheld"] if unconverged else [])+(["No reconstructed frame of "+", ".join(converged)+" passed geometry, shared physics, independent evaluation and wall rule"] if converged else [])
+            self.update("continuation",status="AWAITING_DESIGN_CORRECTION",reason="; ".join(reasons)+"; 0.75 input withheld",design_status=statuses)
             return
         best=min(candidates,key=lambda candidate:candidate["mass_g"])
         self.update("best_43",status="SELECTED",**best)
@@ -272,11 +323,11 @@ class Comparison:
             self.configs["075"]=cfg
             self.ray("075_"+("probe" if name=="probe" else "optimization"),"frame_mma",str(path),kind="gpu_075")
             root=ROOT/cfg["mma"]["root"]
-            record=json.loads((root/"fine/result.json").read_text())
+            record=json.loads((root/"fine/result.json").read_text()) if name=="probe" else self.optimized("075","075_optimization")
             if name=="probe":
                 memory=json.loads((root/"memory.json").read_text())["peaks"]["fine"]
                 lines=(root/"fine/iterations.jsonl").read_text().splitlines()
-                if record["iterations"]!=3 or len(lines)!=3 or not all(math.isfinite(record[key]) for key in ("mass_g","max_violation","seconds_per_iteration")) or not 0<memory.get("process_gpu_gb",float("inf"))<=80 or not 0<memory["rss_gb"]<=160:
+                if record["iterations"]!=3 or len(lines)!=3 or not all(math.isfinite(record[key]) for key in ("mass_g","max_violation","seconds_per_iteration")) or not self.within("075_probe",memory):
                     raise RuntimeError("0.75-mm numerical/resource probe failed; full run withheld")
                 self.update("075_probe",gate="PASSED",seconds_per_iteration=record["seconds_per_iteration"],gpu_peak_gb=memory["process_gpu_gb"],host_peak_gb=memory["rss_gb"],note="Numerical probe, not design acceptance")
                 self.update("075_schedule",status="MEASURED_PROBE_ESTIMATE",iteration_budget=540,iteration_budget_hours=540*record["seconds_per_iteration"]/3600,note="Projection levels 8/16/32: at most 80 iterations each; final level 64: at most 300. Additional initialization, export and acceptance time required; three probe iterations do not establish convergence time.")
@@ -308,12 +359,14 @@ class Comparison:
                 if not self.config.get("resume") and ((ROOT / cfg["mma"]["root"]).exists() or (ROOT / (cfg["mma"]["root"] + "_probe")).exists()):
                     raise RuntimeError("Fresh comparison output directories required")
             (self.root / "controller.pid").write_text(str(os.getpid()))
+            self.data["source"]=self.launchable()
             self.save()
+            self.seed()
             done=threading.Event()
             monitor=threading.Thread(target=self.monitor,args=(done,),daemon=True)
             monitor.start()
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-                futures = [pool.submit(self.branch, name, path) for name, path in self.config["pipelines"].items()]
+                futures = [pool.submit(self.branch, name, self.paths[name]) for name in self.config["pipelines"]]
                 for future in futures:
                     future.result()
             if self.config.get("continue_plan",True):

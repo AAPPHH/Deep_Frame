@@ -46,7 +46,7 @@ JOB_TYPES = {
     "cpu": {"num_cpus": 2, "memory_gb": 4, "gpu_gb": 0},
     "gpu": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 5.5},
     "gpu_a100": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 80},
-    "gpu_compare": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 32, "num_gpus": 0.5},
+    "gpu_compare": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 16.65, "gpu_margin": 1.3, "shared_gpu": True},
     "gpu_075": {"num_cpus": 16, "memory_gb": 160, "gpu_gb": 80},
 }
 join = subprocess.list2cmdline if os.name == "nt" else shlex.join
@@ -58,12 +58,12 @@ def profile(config=CONFIG, machine=None):
     spec = config["heads"][machine or config["machine"]]
     return dict(spec, ray_python=os.environ.get("RAY_PYTHON", spec["ray_python"]))
 
-def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=getattr(sys, "_base_executable", sys.executable), machine=None):
-    need, spec = JOB_TYPES[kind], profile(config, machine)
+def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=getattr(sys, "_base_executable", sys.executable), machine=None, gpu_gb=None):
+    need, spec = dict(JOB_TYPES[kind], **({"gpu_gb": gpu_gb} if gpu_gb else {})), profile(config, machine)
     if spec["gpus_per_job"] and need["gpu_gb"] > spec["card_gb"]:
         raise ValueError(f"{kind} needs {need['gpu_gb']} GiB GPU memory; {machine or config['machine']} provides {spec['card_gb']} GiB per GPU")
     measured = need["gpu_gb"] or (JOB_TYPES["gpu"]["gpu_gb"] if any("gpu-venv" in str(part) or "Deep_Frame-gpu/" in str(part) for part in command) else 0)
-    gpu_gb = min(round(measured * spec["gpu_margin"], 1), spec["card_gb"]) if measured else 0
+    gpu_gb = min(round(measured * need.get("gpu_margin", spec["gpu_margin"]), 1), spec["card_gb"]) if measured else 0
     env = {key: value for key, value in environ.items() if key in config["forward_env"] or key.startswith(config["forward_prefix"])}
     env["DEEP_FRAME_GPU_RESERVED"] = "1" if gpu_gb else "0"
     env.update({key: str(need["num_cpus"]) for key in config["thread_env"]})
@@ -76,7 +76,7 @@ def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=getatt
     return {"entrypoint": join([python, str(Path(__file__).resolve()), "exec", encode(payload)]),
             "entrypoint_num_cpus": need["num_cpus"], "entrypoint_memory": int(need["memory_gb"] * 2**30),
             "entrypoint_resources": resources or None,
-            "entrypoint_num_gpus": need.get("num_gpus", spec["gpus_per_job"]) if gpu_gb and spec["gpus_per_job"] else None,
+            "entrypoint_num_gpus": (round(gpu_gb / spec["card_gb"], 4) if need.get("shared_gpu") else spec["gpus_per_job"]) if gpu_gb and spec["gpus_per_job"] else None,
             "metadata": {"type": kind, "cwd": payload["cwd"], "command": join(command)[:500]}}
 
 def contain():

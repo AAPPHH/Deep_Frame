@@ -1378,6 +1378,7 @@ def frame_probe(cfg):
         with probe.phase("probe"):
             half, problem = frame_setup(cfg, cfg["shape"])
             design = start_design(cfg, half, problem) if cfg["mma"]["start"] else initial_design(cfg, half)
+            (root / "production_definition.json").write_text(json.dumps(shared_definition(half, problem), indent=2), encoding="utf-8")
             problem["continuation"]["beta_schedule"] = [1.0]
             optimize_stage(cfg, half, problem, design, root / "fine", 0, "fine")
     finally:
