@@ -1433,6 +1433,16 @@ LANDING = {
         "value": "reported reserve = support-function distance over cells with rho > 0.5 AND s_e > 0.5"},
 }
 
+CABLE_WIDTH = {
+    "enabled": False, "source": None, "kinds": ["motor", "camera"], "minimum_mm": 4.5, "radius_mm": 3.5, "taper_mm": 2.0, "sample_mm": 0.25,
+    "minimum_source": "user cable-channel spec step 4: minimum width 4-5 mm along the cable paths; 4.5 mm covers the C channel outer width of one motor bundle (4.4 mm = 2.2 mm bundle + 0.2 mm + 2 x 1.0 mm shell); members shared by two bundles need 6.6 mm and are not covered",
+    "source_note": "cables.json of the cable-channel stage on the previous frame (feature/cable-channels, paths[].centerline_mm, full-frame mm), routed paths of the listed kinds; half models get the mirrored copies as well",
+    "definition": {
+        "weight": "c_e = clip((r + t - d_e) / t, 0, 1), d_e = distance of the cell centre to the nearest cable centre line (polylines sampled every sample_mm), r = radius_mm, t = taper_mm; design-independent",
+        "filter": "rho~_e = (1 - c_e) (F_R rho)_e / (F_R 1)_e + c_e (F_Rc rho)_e / (F_Rc 1)_e with cone filters F_R (R = filter_radius of the global minimum width) and F_Rc (Rc = filter_radius with minimum_mm); linear in rho, pullback F_R^T((1 - c) s / F_R 1) + F_Rc^T(c s / F_Rc 1)",
+        "width": "where c = 1 the robust eroded / intermediate / dilated projections see only F_Rc, so the intermediate design has the robust minimum member width minimum_mm there (same length-scale argument as the global width); in the taper band the length scale lies between both"},
+}
+
 def command_line(commands, argv=None):
     argv = sys.argv[1:] if argv is None else argv
     if not 1 <= len(argv) <= 2 or argv[0] not in commands:

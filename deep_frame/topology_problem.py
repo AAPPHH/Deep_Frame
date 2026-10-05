@@ -1,9 +1,12 @@
+import json
 from copy import deepcopy
+from pathlib import Path
 from time import perf_counter
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
+from scipy.spatial import cKDTree
 
-from deep_frame.config import BATTERY_SUPPORT, COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
+from deep_frame.config import BATTERY_SUPPORT, CABLE_WIDTH, COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import SOLVER_CHOICE, DensityMap, HexElasticity, StiffnessConstraint, _settings
 from deep_frame.topology_stability import GroundSupport, StandStability
@@ -43,7 +46,7 @@ PROBLEM = {
     "shadow": {"limit_mm": None, "exponent": 2.0, "hub_radius_mm": 7.88, "motors_mm": [], "radius_mm": None, "source": None,
                "definition": "w = ((r - r_hub) / (R - r_hub))^n inside the prop cylinder (full height), 0 inside the hub; t_w = sum(w rho V) / sum_discs(int w dA) = radially weighted equivalent material thickness under the props in mm"},
     "monitor": ["thrust_all", "torsion_yaw", "twist"],
-    "width": {"minimum_mm": 2.5, "eta": 0.5, "delta": 0.25, "minimum_cells": 1.5},
+    "width": {"minimum_mm": 2.5, "eta": 0.5, "delta": 0.25, "minimum_cells": 1.5, "corridor": None},
     "interpolation": {"penalization": 3.0, "min_stiffness_ratio": 1e-6, "stiffness": "SIMP p=3, E_min = 1e-6 E", "mass": "linear, rho^6/c^5 below c = 0.1 (modal only, against spurious low-density modes)"},
     "fields": {"stiffness": "eroded", "mass": "intermediate", "volume": "intermediate", "shadow": "intermediate"},
     "continuation": {"beta_schedule": [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]},
@@ -71,6 +74,29 @@ def length_scale_ratio(eta_eroded, samples=2001):
 
 def filter_radius(width, spacing):
     return max(width["minimum_mm"] / length_scale_ratio(width["eta"] + width["delta"]), width["minimum_cells"] * float(np.max(spacing)))
+
+def polyline_samples(path, step):
+    path = np.asarray(path, dtype=float)
+    pieces = [np.linspace(a, b, max(int(np.ceil(np.linalg.norm(b - a) / step)), 1), endpoint=False) for a, b in zip(path[:-1], path[1:])]
+    return np.vstack(pieces + [path[-1:]])
+
+def corridor_weights(points, corridor, symmetry=None):
+    paths = [path for path in corridor["paths_mm"] if len(path) > 1]
+    if not paths:
+        return np.zeros(len(points))
+    if corridor["taper_mm"] <= 0 or corridor["radius_mm"] < 0:
+        raise ValueError("Cable corridor needs radius_mm >= 0 and taper_mm > 0")
+    samples = np.vstack([polyline_samples(path, corridor["sample_mm"]) for path in paths])
+    if symmetry:
+        mirrored = samples.copy()
+        mirrored[:, symmetry["axis"]] = 2 * symmetry["plane_mm"] - mirrored[:, symmetry["axis"]]
+        samples = np.vstack([samples, mirrored])
+    reach = corridor["radius_mm"] + corridor["taper_mm"]
+    return np.clip((reach - cKDTree(samples).query(points, distance_upper_bound=reach)[0]) / corridor["taper_mm"], 0, 1)
+
+def cable_corridor(settings=CABLE_WIDTH):
+    paths = [path for path in json.loads(Path(settings["source"]).read_text(encoding="utf-8"))["paths"] if path["routed"] and path["kind"] in settings["kinds"]]
+    return {**{key: settings[key] for key in ("minimum_mm", "radius_mm", "taper_mm", "sample_mm", "source")}, "paths_mm": [path["centerline_mm"] for path in paths], "names": [path["name"] for path in paths]}
 
 def radial_weight(points, shadow):
     weights = np.zeros(len(points))
@@ -127,16 +153,21 @@ def prolongate(design, coarse_grid, fine_domain):
     fine[~np.asarray(fine_domain["allowed"]).ravel()] = 0
     return fine
 
+def density_map(domain, problem):
+    width, spacing = problem["width"], domain["grid"]["spacing_mm"]
+    radius, corridor = filter_radius(width, spacing), None
+    if width.get("corridor"):
+        corridor = {"weights": corridor_weights(cell_centers(domain["grid"]), width["corridor"], domain.get("symmetry")), "radius_mm": filter_radius({**width, "minimum_mm": width["corridor"]["minimum_mm"]}, spacing)}
+    settings = {"projection": "robust", "projection_eta": width["eta"], "robust_delta": width["delta"], "filter_radius_mm": radius, "beta_schedule": problem["continuation"]["beta_schedule"], "corridor": corridor}
+    return DensityMap(domain, _settings(settings)), radius, corridor
+
 class TopologyProblem:
     def __init__(self, domain, problem=PROBLEM, linear_solver="cpu_superlu"):
         self.problem = problem = deepcopy(problem)
         self.domain = domain
         interpolation = problem["interpolation"]
         self.penalization, self.min_stiffness_ratio = interpolation["penalization"], interpolation["min_stiffness_ratio"]
-        width = problem["width"]
-        self.radius = filter_radius(width, domain["grid"]["spacing_mm"])
-        self.map = DensityMap(domain, _settings({"projection": "robust", "projection_eta": width["eta"], "robust_delta": width["delta"], "filter_radius_mm": self.radius,
-                                                 "beta_schedule": problem["continuation"]["beta_schedule"]}))
+        self.map, self.radius, self.corridor = density_map(domain, problem)
         self.level = 0
         self.system = HexElasticity(domain, interface_node_policy=domain.get("optimizer_settings", {}).get("interface_node_policy", "allowed_adjacent"), linear_solver=linear_solver, share_static=problem.get("share_static", "auto"), multigrid=problem.get("multigrid"), solver_choice=problem.get("solver_choice"))
         self.factor = 1.0 if self.system.symmetry is None else 2.0

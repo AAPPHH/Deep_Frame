@@ -968,6 +968,7 @@ DEFAULT_SETTINGS = {
     "modal": None,
     "solver_choice": SOLVER_CHOICE,
     "density_filter": "auto",
+    "corridor": None,
 }
 
 def _settings(settings):
@@ -1060,6 +1061,22 @@ class ConeFilter:
         field = self.torch.as_tensor(np.asarray(vector, dtype=float).reshape(self.shape), device=self.mask.device) * self.mask
         return (self.torch.nn.functional.conv3d(field[None, None], self.kernel, padding=self.padding)[0, 0] * self.mask).cpu().numpy().ravel()
 
+def cone_filter(allowed, shape, spacing, radius, kind, rows=None):
+    if choose_filter(kind) == "convolution":
+        convolution = ConeFilter(allowed, shape, spacing, radius)
+        return None, convolution, convolution(allowed)
+    coordinates = np.indices(shape).reshape(3, -1).T * spacing
+    active = np.flatnonzero(allowed)
+    tree = cKDTree(coordinates[active])
+    rows = active if rows is None else np.asarray(rows)
+    distances = (tree if rows is active else cKDTree(coordinates[rows])).sparse_distance_matrix(tree, radius, output_type="coo_matrix")
+    matrix = coo_matrix((radius - distances.data, (rows[distances.row], active[distances.col])), shape=(allowed.size, allowed.size)).tocsr()
+    matrix.eliminate_zeros()
+    return matrix, None, np.asarray(matrix.sum(axis=1)).ravel()
+
+def cone(matrix, convolution, vector, transpose=False):
+    return convolution(vector) if convolution else np.asarray((matrix.T if transpose else matrix) @ vector).ravel()
+
 class DensityMap:
     def __init__(self, domain, settings):
         self.settings = settings
@@ -1073,19 +1090,13 @@ class DensityMap:
         shape = tuple(domain["grid"]["shape"])
         spacing = np.asarray(domain["grid"]["spacing_mm"], dtype=float)
         coordinates = np.indices(shape).reshape(3, -1).T * spacing
-        radius = settings["filter_radius_mm"]
-        self.filter, self.convolution = None, None
-        if choose_filter(settings["density_filter"]) == "convolution":
-            self.convolution = ConeFilter(self.allowed, shape, spacing, radius)
-            self.sums = self.convolution(self.allowed)
-        else:
-            active = np.flatnonzero(self.allowed)
-            tree = cKDTree(coordinates[active])
-            distances = tree.sparse_distance_matrix(tree, radius, output_type="coo_matrix")
-            weights = radius - distances.data
-            self.filter = coo_matrix((weights, (active[distances.row], active[distances.col])), shape=(self.n, self.n)).tocsr()
-            self.filter.eliminate_zeros()
-            self.sums = np.asarray(self.filter.sum(axis=1)).ravel()
+        self.filter, self.convolution, self.sums = cone_filter(self.allowed, shape, spacing, settings["filter_radius_mm"], settings["density_filter"])
+        self.blend = None
+        corridor = settings["corridor"]
+        if corridor is not None and np.any(np.asarray(corridor["weights"]) * self.allowed > 0):
+            self.blend = np.clip(np.asarray(corridor["weights"], dtype=float).ravel(), 0, 1) * self.allowed
+            self.corridor_filter, self.corridor_convolution, self.corridor_sums = cone_filter(self.allowed, shape, spacing, corridor["radius_mm"], settings["density_filter"], np.flatnonzero(self.blend > 0))
+            self.corridor_sums[self.blend <= 0] = 1
         self.sums[self.forbidden] = 1
         if np.any(self.sums <= 0):
             raise ValueError("Density filter contains an empty allowed-cell neighborhood")
@@ -1095,7 +1106,10 @@ class DensityMap:
         design = np.asarray(design, dtype=float).ravel()
         if design.size != self.n or not np.all(np.isfinite(design)) or np.any(design < 0) or np.any(design > 1):
             raise ValueError("Design densities must be finite and within [0, 1]")
-        return (self.convolution(design) if self.convolution else np.asarray(self.filter @ design).ravel()) / self.sums
+        filtered = cone(self.filter, self.convolution, design) / self.sums
+        if self.blend is None:
+            return filtered
+        return (1 - self.blend) * filtered + self.blend * cone(self.corridor_filter, self.corridor_convolution, design) / self.corridor_sums
     def physical(self, design):
         return self.project(self.filtered(design), self.settings["projection_eta"])
     def fields(self, design):
@@ -1125,8 +1139,11 @@ class DensityMap:
         derivative[~self.free] = 0
         return np.clip(physical, 0, 1), derivative
     def pullback(self, sensitivity, projection_derivative):
-        scaled = np.asarray(sensitivity).ravel() * projection_derivative / self.sums
-        result = self.convolution(scaled) if self.convolution else np.asarray(self.filter.T @ scaled).ravel()
+        scaled = np.asarray(sensitivity).ravel() * projection_derivative
+        narrow = scaled / self.sums if self.blend is None else (1 - self.blend) * scaled / self.sums
+        result = cone(self.filter, self.convolution, narrow, True)
+        if self.blend is not None:
+            result = result + cone(self.corridor_filter, self.corridor_convolution, self.blend * scaled / self.corridor_sums, True)
         result[~self.free] = 0
         return result
     def initial(self, target):
