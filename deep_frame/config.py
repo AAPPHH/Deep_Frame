@@ -1097,7 +1097,7 @@ SPLINE_RECONSTRUCTION_KINDS = {**DESIGN_RECONSTRUCTION_KINDS, **{key: "float" if
                                "section_body": "path", "spline_lengths_mm": ["float"], "contact_regions": ["text"]}
 
 CABLES = {
-    "cables": {"motor": {"part": "GTS V3 1203", "regions": "_motor_contact", "count": 4}, "camera": {"part": "HDZero Lux", "regions": "camera_mount_", "count": 1}},
+    "cables": {"motor": {"part": "GTS V3 1203", "regions": "_motor_contact", "count": 4}, "camera": {"part": "HDZero Lux", "regions": "camera_mount_", "count": 1, "load_case": "crash_front"}},
     "stack_regions": "aio_contact_",
     "clearance_mm": 0.2,
     "slot_interference_mm": 0.35,

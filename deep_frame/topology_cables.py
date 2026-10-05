@@ -286,6 +286,18 @@ class CableChannels:
         routes = []
         for kind, spec in cfg["cables"].items():
             starts = router.terminals(spec["regions"])
+            if not starts and spec.get("load_case"):
+                cases = self.domain.get("comparison_load_cases", [])+self.domain.get("load_cases", [])
+                case = next((case for case in cases if case["name"] == spec["load_case"]), None)
+                if case:
+                    for k, load in enumerate(case["loads"]):
+                        name = f"{kind}_terminal_{k}"
+                        region = {**load["region"], "name": name, "role": "terminal"}
+                        nodes = [i+1 for i, node in enumerate(self.graph.nodes) if i+1 in router.adjacent and region_contains(np.asarray(node["center"])[None], region)[0]]
+                        if nodes:
+                            self.preserves[name] = region
+                            router.names.update({node: name for node in nodes})
+                            starts += nodes
             groups = [[node] for node in starts] if spec["count"] > 1 else [starts]
             for group in groups:
                 found = router.route(group, stack)
@@ -426,7 +438,7 @@ class CableChannels:
         reports = []
         for path in self.paths:
             if not path["routed"]:
-                reports.append({"name": path["name"], "routed": False, "continuous": False, "closed_to_props": False})
+                reports.append({"name": path["name"], "routed": False, "continuous": False, "closed_to_props": False, "start": path["start_regions"], "reason": "no connected graph route from a component preserve or load-contact node to the stack"})
                 continue
             step = max(int(round(cfg["check_step_mm"]/cfg["sample_mm"])), 1)
             rows = np.flatnonzero(~self._inside(path["points"], path["end_regions"], max(p.radius for p in path["profiles"])))[::step]

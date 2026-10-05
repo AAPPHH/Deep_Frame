@@ -5,7 +5,7 @@ import trimesh
 from scipy.spatial import ConvexHull
 
 from deep_frame.config import CABLES, COMPONENT_LIBRARY
-from deep_frame.topology_cables import CableRouter, ChannelProfile, bundle_diameter, folded_edges, profile_frames, weld_folds
+from deep_frame.topology_cables import CableChannels, CableRouter, ChannelProfile, bundle_diameter, folded_edges, profile_frames, weld_folds
 
 MOTOR = COMPONENT_LIBRARY["GTS V3 1203"]["cable"]["bundle_diameter_mm"]
 
@@ -92,6 +92,27 @@ def test_prop_proximity_cost():
     assert inside["prop_mm"] > 0 and hub["prop_mm"] == 0 and outside["prop_mm"] == 0
     assert inside["cost"] == pytest.approx(inside["length_mm"]+CABLES["prop_weight"]*inside["prop_mm"])
     assert inside["cost"] > outside["cost"]
+
+def test_free_camera_routes_from_an_existing_load_contact_node(monkeypatch):
+    router = _router(CABLES)
+    region = {"kind": "box", "min_mm": [0, 0, 0], "max_mm": [2, 2, 2]}
+    domain = {**router.domain, "comparison_load_cases": [{"name": "crash_front", "loads": [{"region": region}]}]}
+    config = {**CABLES, "cables": {"camera": CABLES["cables"]["camera"]}}
+    channels = CableChannels(router.graph, router.rods, domain, config)
+    monkeypatch.setattr(channels, "_path", lambda item, body: item)
+    path = channels.plan()[0]
+    assert path["route"]["source"] == 1
+    assert path["route"]["target"] == "preserve2"
+    assert path["start_regions"] == ["camera_terminal_0"]
+    assert channels.preserves["camera_terminal_0"]["role"] == "terminal"
+    assert all(region["name"] != "camera_terminal_0" for region in domain["regions"])
+
+def test_free_camera_does_not_invent_a_route_outside_its_contact(monkeypatch):
+    router = _router(CABLES)
+    domain = {**router.domain, "comparison_load_cases": [{"name": "crash_front", "loads": [{"region": {"kind": "box", "min_mm": [100, 100, 100], "max_mm": [102, 102, 102]}}]}]}
+    channels = CableChannels(router.graph, router.rods, domain, {**CABLES, "cables": {"camera": CABLES["cables"]["camera"]}})
+    monkeypatch.setattr(channels, "_path", lambda item, body: item)
+    assert channels.plan()[0]["route"] is None
 
 def test_weld_folds_removes_knife_edge_and_respects_keepouts():
     box = trimesh.creation.box((4, 4, 2)).subdivide().subdivide()
