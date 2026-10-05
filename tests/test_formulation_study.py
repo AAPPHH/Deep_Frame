@@ -36,6 +36,34 @@ def test_shared_start_design_is_verified_by_sha256_and_problem(tmp_path):
     assert np.allclose(study.start_design({"mma":{"start":str(tmp_path)}},half,{"a":2}),design)
 
 
+def test_missing_shared_start_is_regenerated_deterministically(monkeypatch,tmp_path):
+    import numpy as np
+    class Problem:
+        level,beta=0,1.0
+        def __init__(self,*args,**kwargs):
+            pass
+        def advance(self):
+            return False
+        def report(self,design):
+            return {"mass_g":float(design.sum()),"max_violation":0.0,"rows":[]}
+        def close(self):
+            pass
+    monkeypatch.setattr(study,"TopologyProblem",Problem)
+    shape=(2,3,2)
+    allowed,preserve=np.ones(shape,bool),np.zeros(shape,bool)
+    allowed[0,0,0],preserve[1,2,1]=False,True
+    half={"grid":{"origin_mm":[0.0,0.0,0.0],"spacing_mm":[1.0,1.0,1.0],"shape":list(shape)},"allowed":allowed,"preserve":preserve,"forbidden":~allowed}
+    problem={"termination":{"violation":1e-3}}
+    cfg=lambda name,digest=None:{"reference_density":None,"mma":{"start":str(tmp_path/name),"start_sha256":digest,"linear_solver":"cpu_superlu","fine_start_level":0,"initial_density":0.5,"body_start":{}}}
+    first,second=study.start_design(cfg("a"),half,problem),study.start_design(cfg("b"),half,problem)
+    digest=study.design_sha256(first)
+    assert digest==study.design_sha256(second)==study.read(tmp_path/"a"/"result.json")["sha256"]
+    assert first[0]==0.0 and first[np.flatnonzero(preserve.ravel())[0]]==1.0 and np.count_nonzero(first==0.5)==10
+    assert np.array_equal(study.start_design(cfg("c",digest),half,problem),first)
+    with pytest.raises(RuntimeError,match="start_sha256"):
+        study.start_design(cfg("c","0"*64),half,problem)
+
+
 @pytest.mark.parametrize("kind,line,expected", [
     ("smi", "4242, 1536\n", {"process_gpu_bytes": 1536 * 2**20}),
     ("smi", "9999, 71680\n", {}),

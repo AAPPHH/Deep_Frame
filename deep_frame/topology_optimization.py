@@ -837,15 +837,33 @@ def volume_weights(points, discs):
     return weights + discs["weight"] * share * np.exp(-np.abs(points[:, 2] - discs["plane_mm"]) / discs["length_mm"])
 
 class AugmentedLagrangian:
-    def __init__(self, settings):
-        self.settings, self.multiplier, self.calls = settings, 0.0, 0
+    def __init__(self, settings, count=None):
+        self.settings, self.calls, self.count, self.progress = settings, 0, count, None
+        self.multiplier = 0.0 if count is None else np.zeros(count)
+        self.penalty = float(settings["penalty"]) if count is None else np.full(count, float(settings["penalty"]))
+    def terms(self, violation, slope):
+        penalty, multiplier = self.penalty, self.multiplier
+        active = np.maximum(0.0, np.asarray(violation, dtype=float) + multiplier / penalty)
+        weights = penalty * active
+        return float(np.sum(penalty / 2 * active ** 2 - multiplier ** 2 / (2 * penalty))), weights * slope if self.count is None else weights @ np.asarray(slope), weights
+    def update(self, violation):
+        violation = np.asarray(violation, dtype=float)
+        infeasibility = np.abs(np.maximum(violation, -self.multiplier / self.penalty))
+        self.multiplier = np.maximum(0.0, self.multiplier + self.penalty * violation)
+        growth = self.settings.get("penalty_growth", 1.0)
+        if self.progress is not None and growth > 1:
+            stalled = infeasibility > self.settings["penalty_progress"] * self.progress
+            self.penalty = np.where(stalled, np.minimum(self.penalty * growth, self.settings["penalty_max"]), self.penalty)
+        self.progress = infeasibility
+        if self.count is None:
+            self.multiplier, self.penalty = float(self.multiplier), float(self.penalty)
     def augment(self, violation, slope):
-        penalty, multiplier = self.settings["penalty"], self.multiplier
-        active = max(0.0, violation + multiplier / penalty)
+        multiplier = self.multiplier
+        value, gradient, _ = self.terms(violation, slope)
         self.calls += 1
         if self.calls % self.settings["multiplier_interval"] == 0:
-            self.multiplier = max(0.0, multiplier + penalty * violation)
-        return penalty / 2 * active ** 2 - multiplier ** 2 / (2 * penalty), penalty * active * slope, multiplier
+            self.update(violation)
+        return value, gradient, multiplier
 
 class StiffnessConstraint(AugmentedLagrangian):
     def __init__(self, system, settings):

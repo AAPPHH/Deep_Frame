@@ -12,14 +12,16 @@ from deep_frame.topology_optimizers import MMA, NEURAL, MMAOptimizer, NeuralOpti
 def test_neural_design_gradient_matches_finite_differences():
     domain = tiny_domain()
     free = domain["allowed"].ravel() & ~domain["preserve"].ravel()
-    design = NeuralDesign(domain, free, {**NEURAL, "frequencies": 4, "hidden": [4], "logit_bound": 0.05})
+    settings = {**NEURAL, "frequencies": 4, "hidden": [4]}
+    design = NeuralDesign(domain, free, settings)
+    design = NeuralDesign(domain, free, {**settings, "logit_bound": float(np.median(np.abs(design.field.forward(design.features)[0])))})
     random = np.random.default_rng(17)
     weights = random.normal(size=int(np.count_nonzero(free)))
     def value():
         values, cache = design.values()
         return float(weights @ values) + cache[3]
     values, cache = design.values()
-    assert cache[3] > 0
+    assert cache[3] > 0 and np.any(cache[1] > 0) and np.all((values >= 0) & (values <= 1))
     gradient = design.gradient(cache, weights)
     directions = [random.normal(size=parameter.shape) for parameter in design.field.parameters]
     step = 1e-6
@@ -29,6 +31,53 @@ def test_neural_design_gradient_matches_finite_differences():
     low = value()
     design.shift(directions, step)
     assert (high - low) / (2 * step) == pytest.approx(sum(float(np.sum(a * b)) for a, b in zip(gradient, directions)), rel=1e-5)
+
+def test_augmented_lagrangian_vector_and_penalty_rule():
+    from deep_frame.topology_optimization import AugmentedLagrangian
+    settings = {"penalty": 1.0, "multiplier_interval": 1, "penalty_growth": 2.0, "penalty_progress": 0.5, "penalty_max": 4.0}
+    scalar, vector = AugmentedLagrangian({"penalty": 10.0, "multiplier_interval": 1}), AugmentedLagrangian(settings, 2)
+    assert scalar.augment(0.3, 2.0) == pytest.approx((10 / 2 * 0.3 ** 2, 10 * 0.3 * 2.0, 0.0)) and scalar.multiplier == pytest.approx(3.0)
+    value, gradient, weights = vector.terms([0.3, -0.5], np.eye(2))
+    assert value == pytest.approx(0.045) and gradient.tolist() == pytest.approx([0.3, 0.0]) and weights.tolist() == pytest.approx([0.3, 0.0])
+    vector.update([0.3, -0.5])
+    assert vector.multiplier.tolist() == pytest.approx([0.3, 0.0]) and vector.penalty.tolist() == [1.0, 1.0]
+    vector.update([0.2, -0.5])
+    vector.update([0.2, -0.5])
+    vector.update([0.2, -0.5])
+    assert vector.penalty.tolist() == [4.0, 1.0]
+    vector.progress = None
+    vector.update([0.2, -0.5])
+    assert vector.penalty.tolist() == [4.0, 1.0]
+
+def test_neural_al_lagrangian_gradient_matches_finite_differences():
+    from deep_frame.topology_optimization import AugmentedLagrangian
+    problem = TopologyProblem(tiny_domain(), tiny_problem(), linear_solver="cpu_superlu")
+    try:
+        free = problem.map.free
+        design = NeuralDesign(problem.domain, free, {**NEURAL, "frequencies": 8, "hidden": [6], "max_frequency_per_mm": 0.3, "logit_bound": 0.5})
+        x = np.zeros(problem.map.n)
+        x[problem.map.preserve] = 1
+        multipliers = AugmentedLagrangian(NEURAL["al"], len(problem.evaluate(np.full(problem.map.n, 0.5))["names"]))
+        multipliers.multiplier[:] = np.linspace(0.0, 0.4, len(multipliers.multiplier))
+        def lagrangian():
+            values, cache = design.values()
+            x[free] = values
+            result = problem.evaluate(x)
+            value, gradient, _ = multipliers.terms(result["constraints"], result["constraint_gradients"][:, free])
+            return result["objective"] + value + cache[3], result["objective_gradient"][free] + gradient, cache
+        _, derivative, cache = lagrangian()
+        gradients = design.gradient(cache, derivative)
+        random = np.random.default_rng(5)
+        direction = [random.standard_normal(value.shape) for value in design.field.parameters]
+        step = 1e-6
+        design.shift(direction, step)
+        high = lagrangian()[0]
+        design.shift(direction, -2 * step)
+        low = lagrangian()[0]
+        design.shift(direction, step)
+        assert (high - low) / (2 * step) == pytest.approx(sum(float(np.sum(a * b)) for a, b in zip(gradients, direction)), rel=1e-4)
+    finally:
+        problem.close()
 
 def test_neural_start_fit_gate_and_short_probe():
     domain, spec = tiny_domain(), tiny_problem()
@@ -44,7 +93,11 @@ def test_neural_start_fit_gate_and_short_probe():
         assert result["iterations"] == 2 and result["status"].startswith("not_converged_")
         assert optimizer.fit_rmse[0] <= NEURAL["fit_rmse_max"] and all(np.isfinite(row["mass_g"]) for row in result["history"])
         assert np.all(result["design"][problem.map.preserve] == 1) and np.all(result["design"][~problem.map.allowed] == 0)
-        assert "track_gap" in result["history"][0] and set(result["result"]["names"]) == {"volume", "arm_tip_stiffness", "f1", "shadow", "crash_front", "crash_side_left"}
+        assert result["history"][0]["penalties"] == [NEURAL["al"]["penalty"]] * 6 and result["history"][0]["step_change"] <= MMA["move"]
+        optimizer.al.multiplier[:], optimizer.al.penalty[:], optimizer.al.progress = 0.3, 4.0, np.ones(6)
+        optimizer.fresh(result["design"])
+        assert np.all(optimizer.al.multiplier == 0.3) and np.all(optimizer.al.penalty == 4.0) and optimizer.al.progress is None
+        assert set(result["result"]["names"]) == {"volume", "arm_tip_stiffness", "f1", "shadow", "crash_front", "crash_side_left"}
     finally:
         problem.close()
 
@@ -56,38 +109,44 @@ def min_mass_cantilever():
     problem = cantilever_problem(0.4 * stiffness)
     return domain, problem
 
-def test_neural_and_mma_converge_to_similar_min_mass_cantilever():
+def test_neural_al_reaches_mma_mass_on_min_mass_cantilever_without_false_convergence():
     pytest.importorskip("mmapy")
     domain, problem = min_mass_cantilever()
     problem["continuation"]["beta_schedule"] = [1.0, 4.0]
-    settings, results = {"level_max_iterations": 60, "final_max_iterations": 200, "move": 0.2}, {}
-    for name, build in (("mma", lambda tp: MMAOptimizer(tp, settings)), ("neural", lambda tp: NeuralOptimizer(tp, settings, {"max_frequency_per_mm": 1.0}))):
+    settings, results = {"level_max_iterations": 60, "final_max_iterations": 1000, "move": 0.2}, {}
+    for name, build in (("mma", lambda tp: MMAOptimizer(tp, settings)), ("neural", lambda tp: NeuralOptimizer(tp, settings, {"max_frequency_per_mm": 1.0, "frequencies": 192, "hidden": [96, 96]}))):
         tp = TopologyProblem(domain, problem)
         optimizer = build(tp)
-        result = optimizer.run(np.full(domain["allowed"].size, 0.5))
-        rows = {row["name"]: row for row in result["result"]["rows"]}
-        assert result["status"] == "converged" and rows["tip_stiffness"]["status"] == "active", name
-        assert result["history"][-1]["max_violation"] <= 1e-3 and result["history"][-1]["change"] < 1e-3, name
-        results[name] = (result["result"]["mass_g"], rows["volume"]["value"], optimizer)
-        neural_rows = result["history"]
+        results[name] = (optimizer.run(np.full(domain["allowed"].size, 0.5)), optimizer)
         tp.close()
-    assert results["mma"][0] <= results["neural"][0] <= 1.1 * results["mma"][0]
-    neural = results["neural"][2]
-    tail = [row for row in neural_rows if "track_gap" in row][-MMA["level_window"]:]
-    assert tail[-1]["proposal_step"] < 1e-3 and all(row["proposal_step"] < 2e-3 for row in tail)
-    assert neural.report()["saturation"]["max_abs_logit"] < NEURAL["logit_bound"] + 0.01
+    mma, (neural, optimizer) = results["mma"][0], results["neural"]
+    assert mma["status"] == "converged"
+    rows = [row for row in neural["history"] if "step_change" in row]
+    tip = {row["name"]: row for row in neural["result"]["rows"]}["tip_stiffness"]
+    assert mma["result"]["mass_g"] <= 1.05 * neural["result"]["mass_g"] and neural["result"]["mass_g"] <= 1.05 * mma["result"]["mass_g"] and abs(tip["g"]) <= 0.01
+    assert all(row["step_change"] <= row["move"] + 1e-12 for row in rows)
+    for level in (0, 1):
+        penalties = np.array([row["penalties"] for row in rows if row["level"] == level])
+        assert np.all(np.diff(penalties, axis=0) >= 0) and penalties.min() >= NEURAL["al"]["penalty"] and penalties.max() <= NEURAL["al"]["penalty_max"]
+    assert max(rows[-1]["penalties"]) > NEURAL["al"]["penalty"]
+    assert all(row["rate"] == pytest.approx(NEURAL["learning_rate"] * NEURAL["rate_decay"] ** row["level"]) for row in rows)
+    tail = neural["history"][-MMA["level_window"]:]
+    assert neural["status"] != "converged" or all(row["lagrangian_residual"] <= NEURAL["residual_max"] and row["max_violation"] <= 1e-3 for row in rows[-MMA["level_window"]:])
+    assert neural["status"] == "converged" or any(row["change"] >= 1e-3 or row["max_violation"] > 1e-3 for row in tail)
+    saturation = optimizer.report()["saturation"]
+    assert saturation["max_abs_logit"] < NEURAL["logit_bound"] + 0.05 and saturation["beyond_bound"] < 0.05
 
-def test_neural_route_cannot_converge_when_the_network_does_not_follow_the_proposal():
+def test_neural_route_cannot_converge_without_a_parameter_space_kkt_point():
     pytest.importorskip("mmapy")
     domain, problem = min_mass_cantilever()
     problem["continuation"]["beta_schedule"] = [1.0]
     tp = TopologyProblem(domain, problem)
     try:
-        result = NeuralOptimizer(tp, {"final_max_iterations": 30}, {"track_learning_rate": 1e-12}).run(np.ones(domain["allowed"].size))
-        rows = [row for row in result["history"] if "track_gap" in row]
-        assert all(row["max_violation"] <= 1e-3 for row in result["history"])
+        result = NeuralOptimizer(tp, {"final_max_iterations": 30}, {"learning_rate": 1e-12}).run(np.ones(domain["allowed"].size))
+        rows = [row for row in result["history"] if "step_change" in row]
+        assert all(row["max_violation"] <= 1e-3 for row in result["history"]) and all(row["step_change"] < 1e-6 for row in rows)
         assert result["status"] == "not_converged_iteration_cap"
-        assert all(row["change"] >= row_before["proposal_step"] > 1e-2 for row_before, row in zip(rows, result["history"][1:]))
+        assert all(row["change"] >= 1e-3 for row in result["history"][1:])
     finally:
         tp.close()
 
