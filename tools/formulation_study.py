@@ -50,6 +50,9 @@ FORMULATION = {
     "stand_fd": {"shape": [68, 64, 24], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.05, "output": "docs/validation/stand_stability_fd.json", "exact": "docs/validation/stand_stability.json",
                  "fields": {"rail_v3b": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/domain.json"],
                             "battery_free": ["C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/domain.json"]}},
+    "landing": {"tilt_deg": 20.0, "output": "docs/validation/landing_limit_manafly.json", "fd_output": "docs/validation/landing_fd.json", "shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "linear_solver": "auto",
+                "fields": {}, "designs": {"stand_fix_coarse": "exports/runs/stand_fix_opt/coarse/design.npz"},
+                "proof": {"runs": {"stand_land": "exports/runs/stand_land_opt/coarse", "stand_fix": "exports/runs/stand_fix_opt/coarse"}, "output": "docs/validation/stand_land_proof.json", "image": "docs/validation/stand_land_floor.png"}},
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None, "memory_log": "memory.jsonl", "fine_dir": "fine",
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
@@ -255,6 +258,8 @@ def frame_problem(half, references=None):
     problem["shadow"].update(half["metadata"]["formulation"]["shadow"])
     if config.STAND_STABILITY["enabled"]:
         problem["stability"] = deepcopy(config.STAND_STABILITY)
+    if config.LANDING["enabled"]:
+        problem["landing"] = deepcopy(config.LANDING)
     if references:
         problem["crash"].update(reference=references["crash_compliance_n_mm"], reference_source=references["source"])
         problem["shadow"].update(limit_mm=references["manafly_shadow_mm"], source=references["source"])
@@ -641,6 +646,122 @@ def camera_limits(cfg):
     Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
     print(json.dumps({key: {name: value[name] for name in ("camera_shift_crash_front", "camera_shift_crash_camera_oblique", "camera_coverage", "camera_mount_area", "mount_fraction", "plate_face_x_mm", "camera_cells_cut")} for key, value in results.items()}, default=float), flush=True)
     print(json.dumps({"crash_reference_n_mm": reference, "reference_shielding": shielding}), flush=True)
+
+def landing_rows(tp, physical):
+    if tp.bodies:
+        tp.body_update(physical)
+    tp.ground.solve(physical, tp.penalization, tp.min_stiffness_ratio)
+    rows = tp.ground.rows(tp.problem["landing"]["limit_n_mm"]) + (tp.stability.rows(physical, tp.ground)[:1] if tp.stability is not None else [])
+    return {row["name"]: {key: row.get(key) for key in ("value", "limit", "g", "info")} for row in rows}
+
+def landing_limit(cfg):
+    spec = cfg["landing"]
+    domain, info = manafly_camera_domain(cfg, spec["tilt_deg"])
+    for case in domain["load_cases"]:
+        for item in case["inertia_relief"]["point_masses"]:
+            item["region"]["min_mm"][0] = -item["region"]["max_mm"][0] if item["name"] == "frame" else item["region"]["min_mm"][0]
+    landing = {**deepcopy(config.LANDING), "limit_n_mm": None}
+    problem = {**deepcopy(PROBLEM), "stiffness": None, "covariance": None, "modal": None, "shadow": None, "monitor": [], "crash": {"cases": [], "ratio": 1.5, "reference": {}}, "camera": deepcopy(config.CAMERA_SUPPORT), "landing": landing}
+    tp = TopologyProblem(domain, problem, linear_solver="cpu_superlu")
+    manafly = {**landing_rows(tp, np.asarray(domain["allowed"], dtype=float).ravel()), "floor_z_mm": tp.ground.floor, "floor_cells_half": len(tp.ground.cells), "loaded_mass_g": tp.ground.total_g, **{key: info[key] for key in ("frame_mass_g", "solid_cells_half", "island_cells_dropped", "grid")}}
+    tp.close()
+    print("manafly", json.dumps(manafly, default=float), flush=True)
+    landing["limit_n_mm"] = manafly["landing_vertical"]["value"]
+    config.LANDING.update(limit_n_mm=landing["limit_n_mm"])
+    config.STAND_STABILITY.update(enabled=True, start_beta=0.0)
+    half, problem = frame_setup(cfg, spec["shape"])
+    tp = TopologyProblem(half, problem, linear_solver=spec["linear_solver"])
+    ours = {}
+    for name, path in spec["fields"].items():
+        physical = embed_field(np.load(path)["density"], half["grid"]).ravel()
+        ours[name] = {"source": path, "mass_g": tp.mass_g(physical), **landing_rows(tp, np.clip(physical, 0, 1))}
+        print(name, json.dumps(ours[name], default=float), flush=True)
+    tp.close()
+    record = {"statement": "landing compliance (LANDING definition) of ManaFly 3 standing on its own lowest plates: half model, binary 4/3 mm voxels at >= 50 % volume fraction (manafly_camera_domain), floor springs under its lowest solid cell layer, "
+                           "frame mass box mirrored to both halves (manafly_camera_domain puts the whole frame mass on the half-domain nodes, an x-offset that the landing case would read as a roll load), "
+                           "3 g on the thrust_all relief masses (frame, AIO, motors + props, battery) and the camera body on its screw springs; its value is the limit. Our fields on the coarse frame half domain for comparison",
+              "settings": config.LANDING, "manafly": manafly, "ours": ours, "limit_n_mm": landing["limit_n_mm"], "sha": git_sha()}
+    Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
+
+def landing_fd(cfg):
+    spec = cfg["landing"]
+    config.LANDING.update(limit_n_mm=config.LANDING["limit_n_mm"] or 1.0)
+    config.STAND_STABILITY.update(enabled=True, start_beta=0.0)
+    half, problem = frame_setup(cfg, spec["shape"])
+    tp = TopologyProblem(half, problem, linear_solver=spec["linear_solver"])
+    random = np.random.default_rng(spec["seed"])
+    designs = {"uniform": random.uniform(spec["low"], spec["high"], tp.map.n), **{name: np.load(path)["design"] for name, path in spec["designs"].items()}}
+    record = {"statement": "central finite differences of all rows (incl. landing_vertical compliance with design-dependent floor springs and body springs, and the reaction-weighted stand_reserve through its adjoint) through the density map pullback along one random direction on the coarse frame half domain",
+              "grid": half["grid"], "floor_cells_half": len(tp.ground.cells), "loaded_mass_g": tp.ground.total_g, "settings": config.LANDING, "designs": {}, "sha": git_sha()}
+    for label, design in designs.items():
+        result = tp.evaluate(design)
+        checks = finite_differences(tp, design, spec["step"], spec["seed"])
+        record["designs"][label] = {"rows": result["rows"], "table": format_report(result["rows"]), "finite_differences": checks}
+        print(record["designs"][label]["table"], flush=True)
+        print(json.dumps({name: [row["analytic"], row["finite_difference"], row["relative_error"]] for name, row in checks.items()}, default=float), flush=True)
+    tp.close()
+    Path(spec["fd_output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
+
+def connected_stand(domain, stability, physical):
+    from scipy.ndimage import label
+    shape = tuple(domain["grid"]["shape"])
+    solid = physical.reshape(shape) > 0.5
+    full = np.concatenate([solid[::-1], solid], axis=0)
+    labels, count = label(full)
+    sizes = np.bincount(labels.ravel())
+    sizes[0] = 0
+    main = (labels == np.argmax(sizes))[shape[0]:]
+    cog = stability.measure(physical)["center_of_gravity_xy_mm"]
+    floor = solid[:, :, 0]
+    h, origin = np.asarray(domain["grid"]["spacing_mm"]), np.asarray(domain["grid"]["origin_mm"])
+    cells = lambda mask: (origin[:2] + (np.argwhere(mask) + 0.5) * h[:2]).tolist()
+    return {"components": int(count), "main_cells_half": int(main.sum()), "solid_cells_half": int(solid.sum()), "floor_solid_cells_half": int(floor.sum()), "floor_cells_in_main_half": int((floor & main[:, :, 0]).sum()),
+            "main_lowest_z_mm": float(origin[2] + h[2] * np.argwhere(main)[:, 2].min()), "center_of_gravity_xy_mm": cog.tolist(),
+            "reserve_main_component": voxel_reserve(domain, main.ravel().astype(float), cog), "reserve_all_solid": voxel_reserve(domain, solid.ravel().astype(float), cog),
+            "floor_cells_main_xy_mm": cells(floor & main[:, :, 0]), "floor_cells_island_xy_mm": cells(floor & ~main[:, :, 0])}, main, solid
+
+def stand_proof(cfg):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    spec = cfg["landing"]["proof"]
+    config.STAND_STABILITY.update(enabled=True)
+    half, _ = frame_setup(cfg, cfg["coarse_shape"])
+    stability = StandStability(half, config.STAND_STABILITY)
+    h, origin = np.asarray(half["grid"]["spacing_mm"]), np.asarray(half["grid"]["origin_mm"])
+    record, panels = {"statement": "connected main component of the converged coarse field (threshold 0.5, mirrored to the full craft, 6-connected labels): exact voxel reserve (cell faces) of the CoG of frame field + layout components against the hull of the lowest solid cells of the main component; floor-layer cells inside / outside it", "runs": {}, "sha": git_sha()}, []
+    for name, path in spec["runs"].items():
+        run = Path(path)
+        if not (run / "density_half.npz").is_file():
+            continue
+        physical = np.load(run / "density_half.npz")["density"].astype(float).ravel()
+        result = read(run / "result.json")
+        measure, main, solid = connected_stand(half, stability, physical)
+        record["runs"][name] = {"run": path, "status": result["status"], "iterations": result["iterations"], "mass_g": result["mass_g"], "max_violation": result["max_violation"],
+                                "rows": {row["name"]: {key: row.get(key) for key in ("value", "limit", "status", "info")} for row in result["rows"] if row["name"].startswith(("stand_", "landing_"))}, **measure}
+        panels.append((name, measure, main, solid))
+        print(name, json.dumps({key: value for key, value in record["runs"][name].items() if not key.startswith("floor_cells_")}, default=float), flush=True)
+    figure, axes = plt.subplots(1, len(panels), figsize=(6 * len(panels), 7), squeeze=False)
+    extent = [-origin[0] - h[0] * half["grid"]["shape"][0], origin[0] + h[0] * half["grid"]["shape"][0], origin[1], origin[1] + h[1] * half["grid"]["shape"][1]]
+    for axis, (name, measure, main, solid) in zip(axes[0], panels):
+        mirror = lambda field: np.concatenate([field[::-1], field], axis=0).T
+        footprint, floor = mirror(main.any(axis=2)), mirror(solid[:, :, 0])
+        image = np.full(footprint.shape + (3,), 1.0)
+        image[footprint] = [0.75, 0.82, 0.95]
+        image[floor & ~mirror(main[:, :, 0])] = [0.85, 0.2, 0.2]
+        image[floor & mirror(main[:, :, 0])] = [0.1, 0.45, 0.15]
+        axis.imshow(image, origin="lower", extent=extent)
+        cog = measure["center_of_gravity_xy_mm"]
+        axis.plot(cog[0], cog[1], "k+", markersize=14, mew=2)
+        axis.add_patch(plt.Circle(cog, config.STAND_STABILITY["reserve_min_mm"], fill=False, ls="--", color="k"))
+        reserve = measure["reserve_main_component"]["cell_faces_mm"]
+        axis.set_title(f"{name}: main-component reserve {reserve:.1f} mm (lowest z {measure['main_lowest_z_mm']:.2f})\nfloor cells in main {2 * measure['floor_cells_in_main_half']} (green), islands {2 * (measure['floor_solid_cells_half'] - measure['floor_cells_in_main_half'])} (red)", fontsize=9)
+        axis.set_xlabel("x mm")
+        axis.set_ylabel("y mm")
+    figure.suptitle("floor layer z = %.2f mm; blue = plan footprint of the connected main component\ncircle = 15 mm around the CoG" % origin[2], fontsize=10)
+    figure.tight_layout()
+    figure.savefig(spec["image"], dpi=110)
+    Path(spec["output"]).write_text(json.dumps(record, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else float(value)), encoding="utf-8")
 
 def camera_fd(cfg):
     spec = cfg["camera_fd"]
@@ -1294,6 +1415,7 @@ def main(argv=None):
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),
                          "cov_compare": lambda overrides: cov_compare(configure(overrides)), "battery_fd": lambda overrides: battery_fd(configure(overrides)),
                          "battery_compare": lambda overrides: battery_compare(configure(overrides)), "camera_limits": lambda overrides: camera_limits(configure(overrides)), "camera_fd": lambda overrides: camera_fd(configure(overrides)),
+                         "landing_limit": lambda overrides: landing_limit(configure(overrides)), "landing_fd": lambda overrides: landing_fd(configure(overrides)), "stand_proof": lambda overrides: stand_proof(configure(overrides)),
                          "solver_memory": lambda overrides: solver_memory(configure(overrides)), "setup_memory": lambda overrides: setup_memory(configure(overrides)), "stand_fd": lambda overrides: stand_fd(configure(overrides))}, argv)
 
 if __name__ == "__main__":

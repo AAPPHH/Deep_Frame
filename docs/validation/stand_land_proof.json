@@ -1,0 +1,295 @@
+{
+ "statement": "connected main component of the converged coarse field (threshold 0.5, mirrored to the full craft, 6-connected labels): exact voxel reserve (cell faces) of the CoG of frame field + layout components against the hull of the lowest solid cells of the main component; floor-layer cells inside / outside it",
+ "runs": {
+  "stand_land": {
+   "run": "exports/runs/stand_land_opt/coarse",
+   "status": "converged",
+   "iterations": 251,
+   "mass_g": 16.824037047970688,
+   "max_violation": 0.0007741157274898658,
+   "rows": {
+    "landing_vertical": {
+     "value": 0.0018260403034961858,
+     "limit": 0.001826,
+     "status": "active",
+     "info": {
+      "weight_n": 2.88350286734496,
+      "mass_g": 98.0118208,
+      "factor_g": 3.0,
+      "floor_reaction_share": 1.0000000000004472
+     }
+    },
+    "stand_reserve": {
+     "value": 39.62463452494698,
+     "limit": 15.0,
+     "status": "satisfied",
+     "info": {
+      "center_of_gravity_xy_mm": [
+       -4.231828687992646e-15,
+       0.3753654750530199
+      ],
+      "mass_g": 82.69422465484281,
+      "min_beyond_mm2": 9.78605614282559,
+      "contact_area_mm2": 243.16817349257462,
+      "carrying_area_mm2": 41.66439898566623,
+      "reaction_weighted": true
+     }
+    },
+    "stand_prop_clearance": {
+     "value": 23.233333333333334,
+     "limit": 17.0,
+     "status": "satisfied",
+     "info": null
+    },
+    "stand_ground_z": {
+     "value": -4.0,
+     "limit": null,
+     "status": "monitored",
+     "info": null
+    }
+   },
+   "components": 3,
+   "main_cells_half": 1437,
+   "solid_cells_half": 1438,
+   "floor_solid_cells_half": 36,
+   "floor_cells_in_main_half": 36,
+   "main_lowest_z_mm": -4.0,
+   "center_of_gravity_xy_mm": [
+    2.6300608200663273e-15,
+    0.6446646539045153
+   ],
+   "reserve_main_component": {
+    "cell_centres_mm": 38.35533534609549,
+    "cell_faces_mm": 39.35533534609549,
+    "ground_z_mm": -4.0
+   },
+   "reserve_all_solid": {
+    "cell_centres_mm": 38.35533534609549,
+    "cell_faces_mm": 39.35533534609549,
+    "ground_z_mm": -4.0
+   },
+   "floor_cells_main_xy_mm": [
+    [
+     11.0,
+     -7.0
+    ],
+    [
+     11.0,
+     -5.0
+    ],
+    [
+     11.0,
+     -3.0
+    ],
+    [
+     11.0,
+     -1.0
+    ],
+    [
+     11.0,
+     1.0
+    ],
+    [
+     11.0,
+     3.0
+    ],
+    [
+     11.0,
+     5.0
+    ],
+    [
+     11.0,
+     7.0
+    ],
+    [
+     11.0,
+     9.0
+    ],
+    [
+     13.0,
+     -17.0
+    ],
+    [
+     13.0,
+     -15.0
+    ],
+    [
+     13.0,
+     -13.0
+    ],
+    [
+     13.0,
+     -11.0
+    ],
+    [
+     13.0,
+     -9.0
+    ],
+    [
+     13.0,
+     -7.0
+    ],
+    [
+     13.0,
+     -5.0
+    ],
+    [
+     13.0,
+     -3.0
+    ],
+    [
+     13.0,
+     -1.0
+    ],
+    [
+     13.0,
+     1.0
+    ],
+    [
+     13.0,
+     3.0
+    ],
+    [
+     13.0,
+     5.0
+    ],
+    [
+     13.0,
+     7.0
+    ],
+    [
+     13.0,
+     9.0
+    ],
+    [
+     13.0,
+     11.0
+    ],
+    [
+     13.0,
+     13.0
+    ],
+    [
+     13.0,
+     15.0
+    ],
+    [
+     15.0,
+     -17.0
+    ],
+    [
+     15.0,
+     -15.0
+    ],
+    [
+     15.0,
+     -13.0
+    ],
+    [
+     15.0,
+     -11.0
+    ],
+    [
+     15.0,
+     -9.0
+    ],
+    [
+     15.0,
+     13.0
+    ],
+    [
+     15.0,
+     15.0
+    ],
+    [
+     49.0,
+     -39.0
+    ],
+    [
+     57.0,
+     -39.0
+    ],
+    [
+     57.0,
+     39.0
+    ]
+   ],
+   "floor_cells_island_xy_mm": []
+  },
+  "stand_fix": {
+   "run": "exports/runs/stand_fix_opt/coarse",
+   "status": "converged",
+   "iterations": 150,
+   "mass_g": 16.944164802533006,
+   "max_violation": 1.8691880079302337e-05,
+   "rows": {
+    "stand_reserve": {
+     "value": 17.14768605488286,
+     "limit": 15.0,
+     "status": "satisfied",
+     "info": {
+      "center_of_gravity_xy_mm": [
+       7.349203721455442e-15,
+       1.1476860548828567
+      ],
+      "mass_g": 86.244164802533,
+      "min_beyond_mm2": 7.862863280274777,
+      "contact_area_mm2": 32.00138251691867
+     }
+    },
+    "stand_prop_clearance": {
+     "value": 23.233333333333334,
+     "limit": 17.0,
+     "status": "satisfied",
+     "info": null
+    },
+    "stand_ground_z": {
+     "value": -4.0,
+     "limit": null,
+     "status": "monitored",
+     "info": null
+    }
+   },
+   "components": 15,
+   "main_cells_half": 1445,
+   "solid_cells_half": 1455,
+   "floor_solid_cells_half": 4,
+   "floor_cells_in_main_half": 0,
+   "main_lowest_z_mm": -1.3333333333333335,
+   "center_of_gravity_xy_mm": [
+    6.13843057935702e-15,
+    1.1476860565489255
+   ],
+   "reserve_main_component": {
+    "cell_centres_mm": 3.8523139434510743,
+    "cell_faces_mm": 4.852313943451074,
+    "ground_z_mm": -1.3333333333333335
+   },
+   "reserve_all_solid": {
+    "cell_centres_mm": 15.468242972592934,
+    "cell_faces_mm": 16.49720977865918,
+    "ground_z_mm": -4.0
+   },
+   "floor_cells_main_xy_mm": [],
+   "floor_cells_island_xy_mm": [
+    [
+     15.0,
+     -15.0
+    ],
+    [
+     15.0,
+     -13.0
+    ],
+    [
+     15.0,
+     13.0
+    ],
+    [
+     17.0,
+     53.0
+    ]
+   ]
+  }
+ },
+ "sha": "aba23a0aa92144c138272d8658a44cf60aec7d6b"
+}

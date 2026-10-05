@@ -4,7 +4,7 @@ import pytest
 
 from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, COMPONENT_DEFAULTS, PRINT_MATERIAL
 from deep_frame.topology_optimization import HexElasticity, elasticity_matrix, hexahedron_matrices, orthotropic_matrix
-from deep_frame.topology_stability import FOUR_FEET, StandStability, stand_design, stand_domain
+from deep_frame.topology_stability import FOUR_FEET, GroundSupport, StandStability, stand_design, stand_domain
 from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, MMAOptimizer, PROBLEM, load_covariance, Termination, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
 
 def box(low, high):
@@ -461,32 +461,42 @@ def test_shared_static_falls_back_to_own_factorization_when_inaccurate():
 def test_stand_reserve_box_on_four_feet(half):
     domain = stand_domain(half)
     rows = {row["name"]: row for row in StandStability(domain, {"enabled": True}).rows(stand_design(domain, FOUR_FEET))}
-    assert 18.0 < rows["stand_reserve"]["value"] <= 19.5 and rows["stand_reserve"]["g"] < 0
-    assert rows["stand_ground_z"]["value"] == pytest.approx(0.0, abs=0.01)
+    assert rows["stand_reserve"]["value"] == pytest.approx(20.0, abs=0.01) and rows["stand_reserve"]["g"] < 0
+    assert rows["stand_ground_z"]["value"] == 0.0
     assert rows["stand_prop_clearance"]["value"] == pytest.approx(20.0 - COMPONENT_DEFAULTS["prop"]["thickness_mm"] / 2, abs=0.01)
+    narrow = StandStability(domain, {"enabled": True, "reserve_min_mm": 21.0}).rows(stand_design(domain, FOUR_FEET))[0]
+    assert narrow["g"] > 0.8
 
 def test_stand_reserve_violated_on_one_sided_or_tilted_feet():
     domain = stand_domain(True)
     stability = StandStability(domain, {"enabled": True})
-    raised = stability.rows(stand_design(domain, [(sx * 18, 18, 0) for sx in (-1, 1)] + [(sx * 18, -18, 3) for sx in (-1, 1)]))[0]
+    raised = stability.rows(stand_design(domain, [(sx * 18, 18, 0) for sx in (-1, 1)] + [(sx * 18, -18, 3) for sx in (-1, 1)], 0.0))[0]
     assert raised["value"] < -15.0 and raised["g"] > 1
     heavy = StandStability({**domain, "metadata": {"components": {"battery": {"center_of_mass_mm": [0.0, 30.0, 20.0], "mass_g": 200.0}}}}, {"enabled": True})
-    shifted = heavy.rows(stand_design(domain, FOUR_FEET))[0]
+    shifted = heavy.rows(stand_design(domain, FOUR_FEET, 0.0))[0]
     assert shifted["value"] < 0 and shifted["g"] > 1 and shifted["info"]["center_of_gravity_xy_mm"][1] > 20
 
+def test_stand_floor_cells_beyond_the_line_are_rewarded():
+    from deep_frame.topology_neural import cell_centers
+    domain = stand_domain(False)
+    stability = StandStability(domain, {"enabled": True})
+    design = stand_design(domain, [(0, 0, 0)], 0.0)
+    row = stability.rows(design)[0]
+    c, gradient = cell_centers(domain["grid"]), row["gradient"]
+    rim = (np.hypot(c[:, 0], c[:, 1]) > 20) & (c[:, 2] < 1)
+    assert row["g"] > 1 and np.all(gradient[rim] < 0) and np.abs(gradient[(c[:, 2] > 1) & (c[:, 2] < 2)]).max() < 1e-9 * np.abs(gradient[rim]).min()
+
 def test_stand_prop_clearance_and_gradients():
-    domain = stand_domain(True, components={"prop_a": {"center_of_mass_mm": [10.0, 0.0, 14.5], "mass_g": 1.0}})
+    domain = stand_domain(True, components={"prop_a": {"center_of_mass_mm": [10.0, 0.0, 14.5], "mass_g": 1.0}, "battery": {"center_of_mass_mm": [0.0, 3.0, 15.0], "mass_g": 5.0}})
     stability = StandStability(domain, {"enabled": True, "prop_clearance_min_mm": 17.0})
     design = stand_design(domain, [(sx * 18, sy * 18, 4) for sx in (-1, 1) for sy in (-1, 1)])
     rows = stability.rows(design)
-    assert rows[1]["name"] == "stand_prop_clearance" and rows[1]["value"] == pytest.approx(8.0, abs=0.01) and rows[1]["g"] == pytest.approx(1 - 8.0 / 17.0, abs=1e-3)
+    assert rows[1]["name"] == "stand_prop_clearance" and rows[1]["value"] == pytest.approx(12.0, abs=0.01) and rows[1]["g"] == pytest.approx(1 - 12.0 / 17.0, abs=1e-3) and not np.any(rows[1]["gradient"])
     random = np.random.default_rng(3)
-    design = np.clip(0.8 * design + random.uniform(0, 0.2, design.size), 0, 1)
+    design = np.clip(0.8 * stand_design(domain, FOUR_FEET, 0.0) + random.uniform(0, 0.2, design.size), 0, 1)
     direction, step = random.standard_normal(design.size), 1e-5
     rows, plus, minus = stability.rows(design), stability.rows(design + step * direction), stability.rows(design - step * direction)
-    for row, high, low in zip(rows, plus, minus):
-        key = "value" if row["g"] is None else "g"
-        assert row["gradient"] @ direction == pytest.approx((high[key] - low[key]) / (2 * step), rel=1e-4)
+    assert rows[0]["gradient"] @ direction == pytest.approx((plus[0]["g"] - minus[0]["g"]) / (2 * step), rel=1e-4)
 
 def test_stand_rows_in_the_shared_formulation():
     domain = cantilever_domain((12, 3, 4), 1.0)
@@ -495,7 +505,7 @@ def test_stand_rows_in_the_shared_formulation():
     off = TopologyProblem(domain, problem)
     assert off.stability is None and not any(name.startswith("stand_") for name in off.evaluate(np.full(off.map.n, 0.5))["names"])
     off.close()
-    on = TopologyProblem(domain, {**problem, "stability": {"enabled": True, "reserve_min_mm": 1.0, "prop_clearance_min_mm": 17.0}})
+    on = TopologyProblem(domain, {**problem, "stability": {"enabled": True, "reserve_min_mm": 1.0, "prop_clearance_min_mm": 17.0, "start_beta": 4.0}})
     result = on.evaluate(np.full(on.map.n, 0.5))
     assert result["names"][-2:] == ["stand_reserve", "stand_prop_clearance"] and any(row["name"] == "stand_ground_z" and row["status"] == "monitored" for row in result["rows"])
     on.close()
@@ -536,3 +546,37 @@ def test_mma_late_move_and_best_feasible_fallback():
     check = wrapped.inner.evaluate(result["design"])
     assert check["mass_g"] == pytest.approx(best["mass_g"]) and np.max(check["constraints"]) <= 1e-3
     wrapped.inner.close()
+
+def landing_case(design, feet, pads=()):
+    from deep_frame.topology_neural import cell_centers
+    domain = stand_domain(True, (40, 40, 12))
+    rho, c = stand_design(domain, feet), cell_centers(domain["grid"])
+    for x, y in pads:
+        rho[(np.abs(c[:, 0] - x) < 2) & (np.abs(c[:, 1] - y) < 2) & (c[:, 2] < 1)] = 1
+    system = HexElasticity(domain)
+    ground, stability = GroundSupport(system, {}, {}), StandStability(domain, {"enabled": True})
+    def rows(physical):
+        ground.solve(physical, 3.0, 1e-6)
+        return ground.rows(1.0)[0], stability.rows(physical, ground)[0], stability.rows(physical)[0]
+    return rho if design is None else design(rho), rows
+
+def test_landing_islands_get_no_reserve_credit_connected_feet_do():
+    front = [(sx * 18, 18, 0) for sx in (-1, 1)]
+    rho, rows = landing_case(None, FOUR_FEET)
+    landing, weighted, plain = rows(rho)
+    assert weighted["value"] == pytest.approx(20.0, abs=0.01) and weighted["g"] < 0 and plain["value"] == pytest.approx(20.0, abs=0.01)
+    assert landing["info"]["floor_reaction_share"] == pytest.approx(1.0, abs=1e-6)
+    rho, rows = landing_case(None, front, [(sx * 18, -18) for sx in (-1, 1)])
+    island, weighted, plain = rows(rho)
+    assert plain["value"] > 15 and plain["g"] < 0
+    assert weighted["value"] < 0 and weighted["g"] > 1 and weighted["info"]["carrying_area_mm2"] < 0.5 * landing["info"]["floor_reaction_share"] * 64
+    assert island["value"] > 10 * landing["value"]
+
+def test_landing_and_weighted_reserve_gradients():
+    rng = np.random.default_rng(3)
+    rho, rows = landing_case(lambda rho: np.clip(0.7 * rho + rng.uniform(0.05, 0.3, len(rho)), 0.01, 0.99), FOUR_FEET)
+    landing, weighted, _ = rows(rho)
+    direction, step = rng.standard_normal(len(rho)), 1e-5
+    plus, minus = rows(rho + step * direction), rows(rho - step * direction)
+    for index, row in enumerate((landing, weighted)):
+        assert row["gradient"] @ direction == pytest.approx((plus[index]["g"] - minus[index]["g"]) / (2 * step), rel=1e-5)

@@ -1,0 +1,96 @@
+{
+ "statement": "coarse free_layout proof run (4/3 mm z, 2 mm plan, half domain 34x64x27, density_simp via Ray, until coarse) with the floor-band stand_reserve row live from beta 1",
+ "run": "exports/runs/stand_fix_opt/coarse (worktree Deep_Frame-standfix, job raysubmit_tbKk9hub3g2Mb8iE)",
+ "status": "converged",
+ "iterations": 150,
+ "runtime_s": 1255.7153715000022,
+ "mass_g": 16.944164802533006,
+ "max_violation": 1.8691880079302337e-05,
+ "gray_fraction": 0.00038995476524723133,
+ "stand": {
+  "stand_reserve": {
+   "value": 17.14768605488286,
+   "limit": 15.0,
+   "status": "satisfied",
+   "info": {
+    "center_of_gravity_xy_mm": [
+     7.349203721455442e-15,
+     1.1476860548828567
+    ],
+    "mass_g": 86.244164802533,
+    "min_beyond_mm2": 7.862863280274777,
+    "contact_area_mm2": 32.00138251691867
+   }
+  },
+  "stand_prop_clearance": {
+   "value": 23.233333333333334,
+   "limit": 17.0,
+   "status": "satisfied",
+   "info": null
+  },
+  "stand_ground_z": {
+   "value": -4.0,
+   "limit": null,
+   "status": "monitored",
+   "info": null
+  }
+ },
+ "comparison": {
+  "free_layout_opt (stand off)": {
+   "mass_g": 15.766,
+   "iterations": 169
+  },
+  "free_layout3_opt (stand off, same code base as free_layout2)": {
+   "mass_g": 16.36,
+   "iterations": 193
+  },
+  "free_layout2_opt (lifted-height stand row)": {
+   "mass_g": "38-40",
+   "iterations": "364, stopped, stand_reserve g ~ 0.96"
+  }
+ },
+ "connectivity": {
+  "solid_components_full_domain": 15,
+  "main_component_cells": 2890,
+  "floor_layer_solid_cells": 8,
+  "floor_cells_in_main_component": 0,
+  "layer_-2.67_solid_cells": 0,
+  "floor_cells_xy_mm": [
+   [
+    -17,
+    53
+   ],
+   [
+    17,
+    53
+   ],
+   [
+    -15,
+    -15
+   ],
+   [
+    15,
+    -15
+   ],
+   [
+    -15,
+    -13
+   ],
+   [
+    15,
+    -13
+   ],
+   [
+    -15,
+    13
+   ],
+   [
+    15,
+    13
+   ]
+  ],
+  "reserve_on_floor_cells_mm": 16.5,
+  "reserve_on_lowest_layer_of_main_component_mm": 4.85,
+  "finding": "the feet are one-layer islands on the floor, not connected to the frame: the row is met on the density field but not by a connected body; after island removal the craft stands on the central posts (reserve 4.9 mm). UNMET: needs a connectivity term (feet must carry load), see report"
+ }
+}
