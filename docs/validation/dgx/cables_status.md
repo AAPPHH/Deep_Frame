@@ -8,7 +8,7 @@ Die neue portable Stufenkonfiguration ist `docs/validation/dgx/cables_free_layou
 python tools/compute.py reconstruction -- python tools/reconstruction_study.py cables docs/validation/dgx/cables_free_layout4_v3c.json
 ```
 
-Voraussetzungen: `free_layout4_post/free_layout4/density_fine.npz` aus dem fine2-Lauf, der daraus abgeleitete finale Kontaktkoerper `free_layout4_v3_contact/frame.stl` und dessen identische Layout-/Lastdomaene `domain.json`. Alle Pfade sind relativ zum Repository. Der DGX soll diese grossen Artefakte neu erzeugen. Das Graphcache wird dort neu berechnet; kein Windows-Cache uebertragen.
+Voraussetzungen: `exports/runs/free_layout4_opt/free_layout4/density_fine.npz` aus dem DGX-Optimierungslauf, der daraus abgeleitete finale Kontaktkoerper `exports/runs/free_layout4_v3_contact/frame.stl` und dessen identische Layout-/Lastdomaene `domain.json`. Alle Pfade sind relativ zum Repository. Der DGX soll diese grossen Artefakte neu erzeugen. Das Graphcache wird dort neu berechnet; kein Windows-Cache uebertragen.
 
 Der reparierte Kontaktkoerper war lokal mit 15.67059 g, einem wasserdichten Koerper und Kamera-Seitenkontaktflaechen 45.08/45.07 mm2 vorhanden. Die Kabelanwendung auf diesen Koerper wurde vor dem Start wegen des DGX-Wechsels gestoppt. Es gibt dafuer noch keinen Kanalnachweis und keinen FEA-Nachweis.
 
