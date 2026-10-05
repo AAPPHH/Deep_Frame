@@ -487,7 +487,7 @@ def remesh(mesh, config):
     meshes = pymeshlab.MeshSet()
     meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
     meshes.meshing_isotropic_explicit_remeshing(iterations=config["remesh_iterations"], targetlen=pymeshlab.PureValue(config["remesh_target_mm"]), featuredeg=config["remesh_feature_deg"],
-                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(config["remesh_max_surface_distance_mm"]))
+                                                checksurfdist=True, maxsurfdist=pymeshlab.PureValue(config["remesh_max_surface_distance_mm"]), selectedonly=False)
     meshes.meshing_remove_unreferenced_vertices()
     result = meshes.current_mesh()
     return trimesh.Trimesh(result.vertex_matrix(), result.face_matrix(), process=False)
