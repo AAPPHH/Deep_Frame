@@ -123,8 +123,14 @@ class PipelineReview:
         fov=self.problem['camera']
         tangents=np.tan(np.radians(fov['fov_deg'])/2)
         blocked=(depth>=-fov['fov_clearance_mm'])&(np.abs(across)<fov['aperture_mm']+fov['fov_clearance_mm']+np.maximum(depth,0)*tangents[0])&(np.abs(height)<fov['aperture_mm']+fov['fov_clearance_mm']+np.maximum(depth,0)*tangents[1])
-        passed=gap<=flight['maximum_gap_mm']+1e-5 and camera_overlap<=1e-4 and drop is not None and drop>=flight['guard_drop_mm']-1e-5 and not blocked.any()
-        return {'passed':bool(passed),'pitch_nose_down_deg':flight['pitch_deg'],'lens_mm':flight['lens_mm'],'lens_source':flight['lens_source'],'lens_to_whole_assembly_bottom_mm':float(gap),'maximum_gap_mm':flight['maximum_gap_mm'],'lowest_part':lowest,'part_bottoms_world_z_mm':bottoms,'camera_frame_overlap_mm3':camera_overlap,'local_guard_drop_below_camera_mm':drop,'minimum_guard_drop_mm':flight['guard_drop_mm'],'fov_blocked_surface_samples':int(blocked.sum()),'fov_check':'Vertices and triangle centroids in the shared 4:3 cone; sampled geometric check, independent mechanics remains required'}
+        tolerance=flight['acceptance_tolerance_mm']
+        limit=flight['fixed_hardware_gap_mm']+flight['guard_drop_mm']+tolerance
+        passed=gap<=limit and camera_overlap<=1e-4 and drop is not None and drop>=-tolerance and not blocked.any()
+        return {'passed':bool(passed),'pitch_nose_down_deg':flight['pitch_deg'],'lens_mm':flight['lens_mm'],'lens_source':flight['lens_source'],'lens_to_whole_assembly_bottom_mm':float(gap),'gap_limit_mm':limit,'gap_margin_mm':float(limit-gap),
+                'fixed_hardware_gap_mm':flight['fixed_hardware_gap_mm'],'guard_drop_mm':flight['guard_drop_mm'],'acceptance_tolerance_mm':tolerance,'design_maximum_gap_mm':flight['maximum_gap_mm'],'lowest_part':lowest,'part_bottoms_world_z_mm':bottoms,'camera_frame_overlap_mm3':camera_overlap,
+                'local_guard_drop_below_camera_mm':drop,'minimum_guard_drop_mm':-tolerance,'fov_blocked_surface_samples':int(blocked.sum()),
+                'lens_proxy_note':'Lens = front-face midpoint of the camera envelope (proxy); the physical optical-centre offset is unmeasured, so the gap is envelope-relative',
+                'fov_check':'Vertices and triangle centroids in the shared 4:3 cone; sampled geometric check, independent mechanics remains required'}
     def plot(self,report):
         import matplotlib
         matplotlib.use('Agg')
@@ -194,6 +200,26 @@ class PipelineReview:
         show(*models,names=names,colors=['#6b879a','#9b9b9b'],alphas=[1,1],axes=False,grid=False,reset_camera='reset',progress='',timeit=False)
         (self.out/'ocp_artifacts.json').write_text(json.dumps({'names':names,'frame_source':str(self.source),'frame_sha256':digest,'reference':'exports/runs/reference_manafly_original/geometry.stl'},indent=2))
 
+def headroom(path):
+    from deep_frame.topology_problem import TopologyProblem
+    cfg=configure(json.loads(Path(path).read_text()))
+    for key,name in [('stand','STAND_STABILITY'),('landing','LANDING'),('cable_width','CABLE_WIDTH')]:
+        getattr(config,name).update(cfg['mma'].get(key,{}))
+    report={}
+    for stage in ('coarse_shape','shape'):
+        half,problem=frame_setup(cfg,cfg[stage])
+        problem['modal']=None
+        tp=TopologyProblem(half,problem,linear_solver='cpu_superlu')
+        density=half['allowed'].ravel().astype(float)
+        functions=tp.functions
+        report[stage]={'grid':half['grid'],'low_flight':half['functional_requirements'].get('low_flight'),'guard_max_area_mm2':float(functions.guard@density),
+                       'guard_cells':int(np.count_nonzero(functions.guard)),'full_domain_clearance':functions.clearance(density) if functions.flight else None,
+                       'guide_max_areas_mm2':{name:float(guide['area']@density) for name,guide in functions.guides.items()},
+                       'max_shielding':{name:zone.protection(density)[0] for name,zone in tp.zones.items()},'max_coverage':tp.coverage.measure(density)[0] if tp.camera is not None else None}
+        tp.close()
+    Path(path).with_name(Path(path).stem+'_headroom.json').write_text(json.dumps(report,indent=2,default=float))
+    print(json.dumps(report,default=float),flush=True)
+
 def send(path):
     import time
     from ocp_vscode.comms import comms
@@ -215,6 +241,8 @@ if __name__=='__main__':
     action,path=(sys.argv[1],sys.argv[2]) if len(sys.argv)==3 else ('run',sys.argv[1])
     if action=='send':
         send(path)
+    elif action=='headroom':
+        headroom(path)
     elif action=='ocp':
         PipelineReview(path).ocp()
     else:

@@ -1402,3 +1402,18 @@ def test_controller_acceptance_keeps_stand_and_prop_clearance_required(tmp_path,
     (run/'evaluation.json').write_text(json.dumps({'geometry':{'mass':{'standing':{'stability':{'reserve_passed':standing,'prop_clearance_passed':True}}}}}))
     (run/'functional_review/physical_evaluation.json').write_text(json.dumps({'stl_mass_g':20}))
     assert bool(tested.physical('simp',str(path))) is standing
+
+@pytest.mark.parametrize('bottom,passed',[(1.75,True),(1.65,False),(3.4,True),(3.6,False)])
+def test_functional_review_bounds_lens_gap_by_hardware_guard_drop_and_tolerance(bottom,passed):
+    from tools.functional_geometry_review import PipelineReview
+    tested=PipelineReview.__new__(PipelineReview)
+    tested.functions={'low_flight':{'pitch_deg':0.,'vertical_axis':[0,0,1],'lens_mm':[0,7,10],'lens_world_z_mm':10.,'lens_source':'proxy','component_bottoms_world_z_mm':{'camera':3.},'fixed_hardware_gap_mm':7.,
+                                    'camera_bottom_world_z_mm':3.,'guard_drop_mm':.8,'acceptance_tolerance_mm':.5,'maximum_gap_mm':7.8,'camera_center_mm':[0,0,10],'camera_width_mm':16.,'camera_length_mm':14.}}
+    tested.mesh=trimesh.creation.box(bounds=[[8.6,-5,bottom],[12,5,12]])
+    tested.overlap=lambda shape:0.
+    tested.components={'camera':{'shape':None}}
+    tested.half={'camera':{'coverage':{'axes':[[0,1,0],[1,0,0],[0,0,1]],'front_mm':[0,100,10]}}}
+    tested.problem={'camera':{'fov_deg':[126.,94.],'aperture_mm':3.,'fov_clearance_mm':.5}}
+    report=tested.camera()
+    assert report['passed']==passed and report['gap_limit_mm']==pytest.approx(8.3)
+    assert report['gap_margin_mm']==pytest.approx(8.3-(10-min(3.,bottom)))

@@ -361,7 +361,7 @@ def functional_geometry(parameters, settings, components):
         lens_z = float(lens @ vertical)
         fixed_gap = lens_z - min(bottoms.values())
         camera_gap = lens_z - bottoms["camera"]
-        maximum = max(fixed_gap, camera_gap+flight["guard_drop_mm"]) + flight["maximum_extra_gap_mm"]
+        maximum = max(fixed_gap, camera_gap+flight["guard_drop_mm"])
         result["low_flight"] = {**deepcopy(flight), "vertical_axis": vertical.tolist(), "lens_mm": lens.tolist(), "lens_world_z_mm": lens_z,
                                 "component_bottoms_world_z_mm": bottoms, "fixed_hardware_gap_mm": fixed_gap, "camera_bottom_world_z_mm": bottoms["camera"],
                                 "maximum_gap_mm": maximum, "minimum_frame_world_z_mm": lens_z-maximum,

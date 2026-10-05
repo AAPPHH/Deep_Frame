@@ -1,0 +1,192 @@
+{
+  "coarse_shape": {
+    "grid": {
+      "origin_mm": [
+        0.0,
+        -64.0,
+        -4.0
+      ],
+      "spacing_mm": [
+        2.0,
+        2.0,
+        1.3333333333333333
+      ],
+      "shape": [
+        34,
+        64,
+        27
+      ],
+      "axis_order": "xyz",
+      "order": "C"
+    },
+    "low_flight": {
+      "enabled": true,
+      "pitch_deg": 15.0,
+      "guard_drop_mm": 0.8,
+      "guard_area_mm2": 12.0,
+      "acceptance_tolerance_mm": 0.5,
+      "clearance_source": "User decision 2026-10-05: camera as low as possible relative to the lowest point of the assembled copter in flight; hard forbidden halfspace at max(lowest hardware bottom, camera bottom - guard_drop_mm), so the frame protrudes at most guard_drop_mm below the camera; no lens objective term, mass-only objective; lowest field material (rho > 0.5) reported as monitor camera_lens_clearance",
+      "guard_source": "Interim ground protection until the crash-reserve evaluator: beside the camera (|x| from half width + 0.5 to + 6 mm, |y - y_camera| <= half length + 3 mm) allowed cells whose lowest corner in flight attitude lies at or below the camera bottom, i.e. the lowest admissible layer between camera bottom - guard_drop_mm and camera bottom; projected area >= guard_area_mm2",
+      "acceptance_source": "Reconstructed frame: lens to whole-assembly bottom <= maximum_gap_mm + acceptance_tolerance_mm and frame beside the camera reaching the camera bottom within acceptance_tolerance_mm (surface smoothing of the voxel result)",
+      "pose_source": "ground15 runs (docs/validation/dgx/ground15_*.json): camera tilt 15 deg at 15 deg nose-down flight attitude, optical axis level (user decision 2026-10-05); camera y 52 mm and bottom_clearance -4 mm set with the ground15 integration (a647e6c) without recorded derivation, camera envelope bottom z = base plate 2.5 - 4 = -1.5 mm above the design floor z = -4 mm",
+      "vertical_axis": [
+        0.0,
+        -0.25881904510252074,
+        0.9659258262890683
+      ],
+      "lens_mm": [
+        0.0,
+        58.761480784023476,
+        8.884947415458768
+      ],
+      "lens_world_z_mm": -6.626390171519146,
+      "component_bottoms_world_z_mm": {
+        "aio15": 1.262073988735425,
+        "camera": -13.626390171519146,
+        "battery": 18.893123215364504,
+        "motor_front_left": -3.153444681781761,
+        "prop_front_left": 0.2312103918828452,
+        "motor_front_right": -3.153444681781761,
+        "prop_front_right": 0.2312103918828452,
+        "motor_rear_left": 17.105071955028645,
+        "prop_rear_left": 20.489727028693252,
+        "motor_rear_right": 17.105071955028645,
+        "prop_rear_right": 20.489727028693252
+      },
+      "fixed_hardware_gap_mm": 7.0,
+      "camera_bottom_world_z_mm": -13.626390171519146,
+      "maximum_gap_mm": 7.8,
+      "minimum_frame_world_z_mm": -14.426390171519145,
+      "camera_center_mm": [
+        0,
+        52.0,
+        7.073214099741122
+      ],
+      "camera_width_mm": 16.0,
+      "camera_length_mm": 14.0,
+      "lens_source": "Front-face midpoint of the selected camera envelope; physical optical-centre offset remains unmeasured"
+    },
+    "guard_max_area_mm2": 70.89295019047258,
+    "guard_cells": 12,
+    "full_domain_clearance": {
+      "name": "camera_lens_clearance",
+      "g": null,
+      "gradient": null,
+      "value": 7.6148514329133405,
+      "limit": 7.8,
+      "unit": "mm",
+      "sense": "<=",
+      "info": {
+        "frame_bottom_world_z_mm": -14.241241604432487,
+        "hardware_bottom_world_z_mm": -13.626390171519146,
+        "measure": "lens height above the lowest of hardware and field cells with rho > 0.5 (lowest voxel corner) in flight attitude; monitor only"
+      }
+    },
+    "guide_max_areas_mm2": {
+      "side": 170.66666666666666,
+      "front": 42.666666666666664,
+      "rear": 42.666666666666664
+    },
+    "max_shielding": {
+      "crash_front": 0.2739805668587672,
+      "crash_below": 0.02185208053814938,
+      "crash_camera_oblique": 0.44781804143834364
+    },
+    "max_coverage": 1.2443257603171705
+  },
+  "shape": {
+    "grid": {
+      "origin_mm": [
+        0.0,
+        -64.0,
+        -4.0
+      ],
+      "spacing_mm": [
+        1.3333333333333333,
+        1.3333333333333333,
+        1.3333333333333333
+      ],
+      "shape": [
+        51,
+        96,
+        27
+      ],
+      "axis_order": "xyz",
+      "order": "C"
+    },
+    "low_flight": {
+      "enabled": true,
+      "pitch_deg": 15.0,
+      "guard_drop_mm": 0.8,
+      "guard_area_mm2": 12.0,
+      "acceptance_tolerance_mm": 0.5,
+      "clearance_source": "User decision 2026-10-05: camera as low as possible relative to the lowest point of the assembled copter in flight; hard forbidden halfspace at max(lowest hardware bottom, camera bottom - guard_drop_mm), so the frame protrudes at most guard_drop_mm below the camera; no lens objective term, mass-only objective; lowest field material (rho > 0.5) reported as monitor camera_lens_clearance",
+      "guard_source": "Interim ground protection until the crash-reserve evaluator: beside the camera (|x| from half width + 0.5 to + 6 mm, |y - y_camera| <= half length + 3 mm) allowed cells whose lowest corner in flight attitude lies at or below the camera bottom, i.e. the lowest admissible layer between camera bottom - guard_drop_mm and camera bottom; projected area >= guard_area_mm2",
+      "acceptance_source": "Reconstructed frame: lens to whole-assembly bottom <= maximum_gap_mm + acceptance_tolerance_mm and frame beside the camera reaching the camera bottom within acceptance_tolerance_mm (surface smoothing of the voxel result)",
+      "pose_source": "ground15 runs (docs/validation/dgx/ground15_*.json): camera tilt 15 deg at 15 deg nose-down flight attitude, optical axis level (user decision 2026-10-05); camera y 52 mm and bottom_clearance -4 mm set with the ground15 integration (a647e6c) without recorded derivation, camera envelope bottom z = base plate 2.5 - 4 = -1.5 mm above the design floor z = -4 mm",
+      "vertical_axis": [
+        0.0,
+        -0.25881904510252074,
+        0.9659258262890683
+      ],
+      "lens_mm": [
+        0.0,
+        58.761480784023476,
+        8.884947415458768
+      ],
+      "lens_world_z_mm": -6.626390171519146,
+      "component_bottoms_world_z_mm": {
+        "aio15": 1.262073988735425,
+        "camera": -13.626390171519146,
+        "battery": 18.893123215364504,
+        "motor_front_left": -3.153444681781761,
+        "prop_front_left": 0.2312103918828452,
+        "motor_front_right": -3.153444681781761,
+        "prop_front_right": 0.2312103918828452,
+        "motor_rear_left": 17.105071955028645,
+        "prop_rear_left": 20.489727028693252,
+        "motor_rear_right": 17.105071955028645,
+        "prop_rear_right": 20.489727028693252
+      },
+      "fixed_hardware_gap_mm": 7.0,
+      "camera_bottom_world_z_mm": -13.626390171519146,
+      "maximum_gap_mm": 7.8,
+      "minimum_frame_world_z_mm": -14.426390171519145,
+      "camera_center_mm": [
+        0,
+        52.0,
+        7.073214099741122
+      ],
+      "camera_width_mm": 16.0,
+      "camera_length_mm": 14.0,
+      "lens_source": "Front-face midpoint of the selected camera envelope; physical optical-centre offset remains unmeasured"
+    },
+    "guard_max_area_mm2": 116.1239581763877,
+    "guard_cells": 40,
+    "full_domain_clearance": {
+      "name": "camera_lens_clearance",
+      "g": null,
+      "gradient": null,
+      "value": 7.775009215393997,
+      "limit": 7.8,
+      "unit": "mm",
+      "sense": "<=",
+      "info": {
+        "frame_bottom_world_z_mm": -14.401399386913143,
+        "hardware_bottom_world_z_mm": -13.626390171519146,
+        "measure": "lens height above the lowest of hardware and field cells with rho > 0.5 (lowest voxel corner) in flight attitude; monitor only"
+      }
+    },
+    "guide_max_areas_mm2": {
+      "side": 170.66666666666663,
+      "front": 42.66666666666668,
+      "rear": 42.66666666666668
+    },
+    "max_shielding": {
+      "crash_front": 0.36276180063517194,
+      "crash_below": 0.05361349810195755,
+      "crash_camera_oblique": 0.45543503485690623
+    },
+    "max_coverage": 1.3222713940540947
+  }
+}

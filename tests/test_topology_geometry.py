@@ -11,7 +11,7 @@ from scipy.ndimage import label
 from deep_frame.config import FEA_CONFIG, IMPLICIT_CONFIG, TOPOLOGY_CONFIG
 from deep_frame.fea import evaluate
 from deep_frame.frame import mount_positions, reference_parameters
-from deep_frame.topology_geometry import build_design_domain, embed_field, grid_centers, lowered_grid, region_bounds, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, stack_pattern, validate_topology, voxel_boxes
+from deep_frame.topology_geometry import build_design_domain, embed_field, functional_geometry, grid_centers, lowered_grid, region_bounds, prescribed_clearance, rasterize_regions, reconstruct_topology, region_contains, stack_pattern, validate_topology, voxel_boxes
 
 @pytest.fixture(scope="module")
 def domain():
@@ -476,3 +476,19 @@ def test_flight_halfspace_uses_pitched_lens_plane_and_entire_voxel():
     masks=rasterize_regions(grid,regions)
     centers=grid_centers(grid)
     assert np.all((centers@normal)[masks['allowed']]>=np.abs(normal)@np.array([.5,.5,.5])-1e-8)
+
+@pytest.mark.parametrize("battery_bottom",[5.0,-12.0])
+def test_flight_floor_lets_frame_protrude_only_guard_drop_below_lowest_hardware(battery_bottom):
+    from build123d import Align, Box, Pos
+    camera={"tilt_deg":15.0,"length_mm":14.0,"height_mm":14.0,"width_mm":16.0}
+    parameters={"components":{"camera":camera},"frame":{"camera_y_mm":52.0,"base_thickness_mm":2.5,"camera_bottom_clearance_mm":-4.0}}
+    shapes={"camera":Pos(0,52,-1.5)*Box(16,14,14,align=(Align.CENTER,Align.CENTER,Align.MIN)),"battery":Pos(0,0,battery_bottom)*Box(30,70,20,align=(Align.CENTER,Align.CENTER,Align.MIN))}
+    settings={"battery_guide":{"enabled":False},"low_flight":{"enabled":True,"pitch_deg":15.0,"guard_drop_mm":0.8,"guard_area_mm2":12.0}}
+    flight=functional_geometry(parameters,settings,{name:{"shape":shape} for name,shape in shapes.items()})["low_flight"]
+    bottoms=flight["component_bottoms_world_z_mm"]
+    angle=np.radians(15)
+    corners=np.array(list(product((-8,8),(45,59),(-1.5,12.5))))
+    assert bottoms["camera"]==pytest.approx(min(-corners[:,1]*np.sin(angle)+corners[:,2]*np.cos(angle)),abs=1e-6)
+    floor=min(bottoms["battery"],bottoms["camera"]-0.8)
+    assert flight["minimum_frame_world_z_mm"]==pytest.approx(floor,abs=1e-9)
+    assert flight["maximum_gap_mm"]==pytest.approx(flight["lens_world_z_mm"]-floor,abs=1e-9)

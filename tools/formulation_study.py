@@ -1266,7 +1266,7 @@ def optimize_stage(cfg, half, problem, design, out, start_level, stage):
               "best_feasible": result["best_feasible"], "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
               "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"], "linear_solver": tp.system.linear_solver}
     record["optimizer"] = method
-    record.update(problem_definition_sha256=definition["sha256"],functional_requirements=half.get("functional_requirements",{}),battery_retention=(problem.get("battery") or {}).get("retention"),objective_components=report["objective_components"],camera_lens_clearance_smooth_mm=report["camera_lens_clearance_smooth_mm"])
+    record.update(problem_definition_sha256=definition["sha256"],functional_requirements=half.get("functional_requirements",{}),battery_retention=(problem.get("battery") or {}).get("retention"))
     if method == "neural_al":
         record["neural"] = {"settings": optimizer.neural, "fit_rmse": optimizer.fit_rmse, "parameter_count": sum(value.size for value in optimizer.mapping.field.parameters),
                             "network_artifact": "last_network.npz", "network_statement": "Last network iterate; a returned best-feasible density may come from an earlier iterate"}

@@ -808,10 +808,10 @@ def functional_tiny():
     spec['modal']=None
     domain['regions']=[dict(box([2,-3,1],[4,3,3]),name='battery_guide_side',guide_axis=0),dict(box([0,2,1],[4,4,3]),name='battery_guide_front',guide_axis=1),dict(box([0,-4,1],[4,-2,3]),name='battery_guide_rear',guide_axis=1)]
     angle=np.radians(15)
-    domain['functional_requirements']={'battery_guide':{'contact_area_mm2':{'side':4.,'front':2.,'rear':2.}},'low_flight':{'vertical_axis':[0,-np.sin(angle),np.cos(angle)],'lens_world_z_mm':5.,'fixed_hardware_gap_mm':2.,'ks_per_mm':5.,'camera_center_mm':[0,0,3.],'camera_width_mm':1.,'camera_length_mm':4.,'camera_bottom_world_z_mm':2.,'guard_drop_mm':.2,'guard_area_mm2':2.,'objective_weight':1.,'objective_scale_mm':1.}}
+    domain['functional_requirements']={'battery_guide':{'contact_area_mm2':{'side':4.,'front':2.,'rear':2.}},'low_flight':{'vertical_axis':[0,-np.sin(angle),np.cos(angle)],'lens_world_z_mm':5.,'fixed_hardware_gap_mm':2.,'camera_center_mm':[0,0,3.],'camera_width_mm':1.,'camera_length_mm':4.,'camera_bottom_world_z_mm':2.,'guard_drop_mm':.2,'guard_area_mm2':2.,'maximum_gap_mm':3.2}}
     return domain,spec
 
-def test_functional_objective_guide_loads_and_guard_gradients():
+def test_functional_mass_objective_clearance_monitor_guide_loads_and_guard_gradients():
     domain,spec=functional_tiny()
     tested=TopologyProblem(domain,spec)
     try:
@@ -819,8 +819,13 @@ def test_functional_objective_guide_loads_and_guard_gradients():
         design=random.uniform(.3,.7,tested.map.n)
         direction=random.normal(size=design.size)*tested.map.free
         result=tested.evaluate(design)
-        assert {'battery_guide_area_side','battery_guide_connection_side','camera_ground_guard_area'}<=set(result['names'])
-        assert result['objective_components']['camera_lens_clearance']>0
+        assert {'battery_guide_area_side','battery_guide_connection_side','camera_ground_guard_area'}<=set(result['names']) and 'camera_lens_clearance' not in result['names']
+        assert result['objective']==pytest.approx(result['mass_g']/result['mass_scale_g'],rel=1e-12)
+        density=tested.map.fields(design)[0][spec['fields']['mass']][0]
+        normal=np.asarray(domain['functional_requirements']['low_flight']['vertical_axis'])
+        bottom=(cell_centers(domain['grid'])@normal-np.abs(normal).sum()/2)[density>0.5]
+        row=next(row for row in result['rows'] if row['name']=='camera_lens_clearance')
+        assert bottom.size and row['status']=='monitored' and row['value']==pytest.approx(5.-min(3.,bottom.min()),abs=1e-12)
         step=1e-5
         plus,minus=tested.evaluate(design+step*direction),tested.evaluate(design-step*direction)
         assert result['objective_gradient']@direction==pytest.approx((plus['objective']-minus['objective'])/(2*step),rel=1e-5)

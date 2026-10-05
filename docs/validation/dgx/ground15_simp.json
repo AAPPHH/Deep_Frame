@@ -36,7 +36,7 @@
       "camera": {
         "support": "free",
         "bottom_clearance_mm": -4.0,
-        "tilt_deg": 20.0,
+        "tilt_deg": 15.0,
         "y_mm": 52.0,
         "near_ground": true,
         "flight_pitch_deg": 15.0

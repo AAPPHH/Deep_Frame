@@ -370,6 +370,8 @@ class TopologyProblem:
             value, gradient = self.coverage.measure(physical)
             minimum = self.problem["camera"]["min_coverage"]
             rows.append({"name": "camera_coverage", "g": None if minimum is None else 1 - value / minimum, "gradient": -gradient / (minimum or 1.0), "value": value, "limit": minimum, "unit": "-", "sense": ">="})
+        if self.functions.flight:
+            rows.append(self.functions.clearance(physical))
         for row in rows:
             row["field"] = self.problem["fields"]["volume"]
         return rows
@@ -386,11 +388,9 @@ class TopologyProblem:
         geometric = [row for row in geometric if row["g"] is not None]
         mass = self.mass_g(intermediate[0])
         scale = self.mass_g(np.full(self.map.n, self.problem["volume_max"]) * self.map.allowed)
-        camera_objective, camera_slope, camera_gap = self.functions.objective(intermediate[0])
         gradients = [self.map.pullback(row["gradient"], eroded[1]) for row in rows] + [self.map.pullback(row["gradient"], intermediate[1]) for row in geometric]
         rows += geometric
-        return {"objective": mass / scale + camera_objective, "objective_gradient": self.map.pullback(np.full(self.map.n, self.mass_g(np.ones(1)) / scale) + camera_slope, intermediate[1]),
-                "objective_components": {"mass": mass / scale, "camera_lens_clearance": camera_objective}, "camera_lens_clearance_smooth_mm": camera_gap,
+        return {"objective": mass / scale, "objective_gradient": self.map.pullback(np.full(self.map.n, self.mass_g(np.ones(1)) / scale), intermediate[1]),
                 "mass_g": mass, "mass_scale_g": scale, "constraints": np.array([row["g"] for row in rows]), "constraint_gradients": np.array(gradients), "names": [row["name"] for row in rows],
                 "rows": constraint_report(rows + monitor, self.problem["termination"]), "beta": self.beta, "max_violation": float(max(row["g"] for row in rows))}
     def report(self, design):
@@ -884,17 +884,13 @@ class FunctionalRequirements:
                 item["case"] = system.add_case("guide_handling_"+name, source, direct, mirrored)
         self.flight = self.spec.get("low_flight")
         self.guard = np.zeros(system.nelem)
-        self.gap_terms = np.zeros(system.nelem)
         if self.flight:
             flight, normal = self.flight, np.asarray(self.flight["vertical_axis"])
             half_height = float(np.abs(normal)@h/2)
-            bottom = centers@normal-half_height
-            gap = flight["lens_world_z_mm"]-bottom
-            base = flight["fixed_hardware_gap_mm"]
-            self.gap_terms = self.factor*volume/0.1*np.expm1(np.clip(flight["ks_per_mm"]*(gap-base),0,100))*allowed
+            self.bottom = centers@normal-half_height
             camera = np.asarray(flight["camera_center_mm"])
             guard = (np.abs(centers[:,0])>=flight["camera_width_mm"]/2+0.5)&(np.abs(centers[:,0])<=flight["camera_width_mm"]/2+6)&(np.abs(centers[:,1]-camera[1])<=flight["camera_length_mm"]/2+3)
-            guard &= (bottom<=flight["camera_bottom_world_z_mm"]-flight["guard_drop_mm"]) & allowed
+            guard &= (self.bottom<=flight["camera_bottom_world_z_mm"]+1e-9) & allowed
             self.guard = self.factor*volume/(2*half_height)*guard
     def forces(self, guide, weights):
         total = float(weights.sum())
@@ -930,13 +926,13 @@ class FunctionalRequirements:
             value, minimum = float(self.guard@rho),self.flight["guard_area_mm2"]
             rows.append({"name":"camera_ground_guard_area","g":1-value/minimum,"gradient":-self.guard/minimum,"value":value,"limit":minimum,"unit":"mm2","sense":">="})
         return rows
-    def objective(self, physical):
-        if not self.flight:
-            return 0.0,np.zeros(self.system.nelem),None
-        total = 1+float(self.gap_terms@np.asarray(physical).ravel())
-        extra = float(np.log(total)/self.flight["ks_per_mm"])
-        scale = self.flight["objective_weight"]/self.flight["objective_scale_mm"]
-        return scale*extra,scale*self.gap_terms/(self.flight["ks_per_mm"]*total),self.flight["fixed_hardware_gap_mm"]+extra
+    def clearance(self, physical):
+        flight, solid = self.flight, np.asarray(physical).ravel()>0.5
+        frame = float(self.bottom[solid].min()) if solid.any() else None
+        hardware = flight["lens_world_z_mm"]-flight["fixed_hardware_gap_mm"]
+        value = flight["lens_world_z_mm"]-min(hardware, np.inf if frame is None else frame)
+        return {"name":"camera_lens_clearance","g":None,"gradient":None,"value":value,"limit":flight["maximum_gap_mm"],"unit":"mm","sense":"<=",
+                "info":{"frame_bottom_world_z_mm":frame,"hardware_bottom_world_z_mm":hardware,"measure":"lens height above the lowest of hardware and field cells with rho > 0.5 (lowest voxel corner) in flight attitude; monitor only"}}
 
 class RigidNodes:
     def select(self, system, nodes):
