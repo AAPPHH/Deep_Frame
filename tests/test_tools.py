@@ -4,7 +4,9 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
+import threading
 from types import ModuleType, SimpleNamespace
 
 from build123d import Box, export_step
@@ -1536,6 +1538,70 @@ def test_controller_records_source_and_measured_reservation_and_refuses_dirty_tr
     with pytest.raises(RuntimeError,match='dirty'):
         tested.local('neural_postprocessing',['true'])
     assert len(submitted)==1 and 'neural_postprocessing' not in tested.data['stages']
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+def test_continuation_starts_075_from_the_43_result_without_the_shared_seed_sha(tmp_path,monkeypatch):
+    study,tested=controller(tmp_path,monkeypatch)
+    (tmp_path/'simp_pipeline.json').write_text(json.dumps({'shape':[103,97,25],'mma':{'root':'runs/simp','fine_dir':'fine','start':'start','start_sha256':'seed','settings':{}}}))
+    tested.update('simp_acceptance',candidates=[{'mass_g':20,'pipeline':'simp_pipeline.json'}])
+    tested.display=tested.comparisons=lambda *args:None
+    tested.channels=lambda best:best
+    launched=[]
+    def stop(stage,action,path,**kwargs):
+        launched.append((stage,action,kwargs))
+        raise RuntimeError('stop')
+    tested.ray=stop
+    with pytest.raises(RuntimeError,match='stop'):
+        tested.continuation()
+    cfg=json.loads((tested.root/'075_probe.json').read_text())
+    assert launched==[('075_probe','frame_mma',{'kind':'gpu_075'})]
+    assert cfg['mma']['start_sha256'] is None and cfg['mma']['start']==str(tmp_path/'runs/simp/fine') and cfg['shape']==[182,172,44]
+    assert (cfg['mma']['fine_start_level'],cfg['mma']['until'],cfg['mma']['settings'])==(6,'fine',{'final_max_iterations':3,'final_min_iterations':10})
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+@pytest.mark.parametrize('resume',[True,False])
+def test_controller_resumes_from_dirty_tree_but_refuses_fresh_launch_before_pid(tmp_path,monkeypatch,resume):
+    study,tested=controller(tmp_path,monkeypatch)
+    tested.config={'pipelines':{},'resume':resume,'continue_plan':False}
+    tested.configs={}
+    tested.lock=threading.RLock()
+    tested.seed=lambda:None
+    tested.monitor=lambda done:None
+    (tested.root/'status.json').write_text('{}')
+    monkeypatch.setattr(study,'_git',lambda worktree:{'sha':'abc','branch':'main','dirty':True})
+    if resume:
+        tested.run()
+        assert tested.data['source']['dirty'] is True and (tested.root/'controller.pid').exists() and 'finished' in tested.data
+    else:
+        with pytest.raises(RuntimeError,match='Comparison state exists'):
+            tested.run()
+        (tested.root/'status.json').unlink()
+        with pytest.raises(RuntimeError,match='dirty'):
+            tested.run()
+        assert not (tested.root/'controller.pid').exists()
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+def test_controller_seed_and_shared_report_missing_records(tmp_path,monkeypatch):
+    study,tested=controller(tmp_path,monkeypatch)
+    tested.config['seed']={'start':'start','sha256':'seed'}
+    (tmp_path/'start').mkdir()
+    np.savez_compressed(tmp_path/'start/design.npz',design=np.zeros(3))
+    tested.ray=lambda *args,**kwargs:pytest.fail('seed present')
+    with pytest.raises(RuntimeError,match='result.json missing'):
+        tested.seed()
+    with pytest.raises(RuntimeError,match='production problem definition missing'):
+        tested.definition(tmp_path/'simp_opt_probe/production_definition.json')
+
+def test_git_source_counts_untracked_files_as_dirty(tmp_path):
+    from deep_frame.frame_run import _git
+    subprocess.run(['git','init','-q',str(tmp_path)],check=True)
+    (tmp_path/'a.py').write_text('')
+    subprocess.run(['git','-C',str(tmp_path),'add','a.py'],check=True)
+    subprocess.run(['git','-C',str(tmp_path),'-c','user.name=t','-c','user.email=t@t','commit','-qm','a'],check=True)
+    assert _git(tmp_path)['dirty'] is False
+    (tmp_path/'b.py').write_text('')
+    assert _git(tmp_path)['dirty'] is True
+
 
 @pytest.mark.parametrize('bottom,passed',[(1.75,True),(1.65,False),(3.4,True),(3.6,False)])
 def test_functional_review_bounds_lens_gap_by_hardware_guard_drop_and_tolerance(bottom,passed):

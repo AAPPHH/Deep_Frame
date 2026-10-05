@@ -98,12 +98,16 @@ class Comparison:
         source=ROOT/start
         if not (source/"design.npz").is_file():
             self.ray("shared_seed","frame_seed",self.paths[next(iter(self.paths))])
+        if not (source/"result.json").is_file():
+            raise RuntimeError(f"Shared start design {start} is incomplete: result.json missing next to design.npz")
         record=json.loads((source/"result.json").read_text())
         digest=hashlib.sha256(np.ascontiguousarray(np.load(source/"design.npz")["design"],dtype=np.float64).tobytes()).hexdigest()
         if digest!=sha or record.get("sha256")!=sha or not record.get("problem_definition_sha256"):
             raise RuntimeError(f"Shared start design {start} has sha256 {digest} (recorded {record.get('sha256')}), controller seed is {sha}")
         self.update("shared_seed",status="VERIFIED",start=start,sha256=sha,problem_definition_sha256=record["problem_definition_sha256"],pipelines=self.paths)
     def definition(self,path):
+        if not Path(path).is_file():
+            raise RuntimeError(f"{path}: production problem definition missing; run the probe with the current frame_probe")
         definition=json.loads(Path(path).read_text())
         sha=definition.pop("sha256",None)
         if sha!=hashlib.sha256(json.dumps(definition,sort_keys=True,separators=(",",":")).encode()).hexdigest():
@@ -316,7 +320,7 @@ class Comparison:
         for name in ("probe","full"):
             cfg=json.loads(json.dumps(base))
             cfg["shape"]=[182,172,44]
-            cfg["mma"].update(root="exports/runs/ground15_075_"+name,variant="ground15_075",method="ground15_075",optimizer="mma",coarse=False,start=str(ROOT/base["mma"]["root"]/base["mma"]["fine_dir"]),fine_dir="fine",fine_start_level=6 if name=="probe" else 3,until="fine" if name=="probe" else "export",settings={"final_max_iterations":3,"final_min_iterations":10} if name=="probe" else {"final_max_iterations":300})
+            cfg["mma"].update(root="exports/runs/ground15_075_"+name,variant="ground15_075",method="ground15_075",optimizer="mma",coarse=False,start=str(ROOT/base["mma"]["root"]/base["mma"]["fine_dir"]),start_sha256=None,fine_dir="fine",fine_start_level=6 if name=="probe" else 3,until="fine" if name=="probe" else "export",settings={"final_max_iterations":3,"final_min_iterations":10} if name=="probe" else {"final_max_iterations":300})
             cfg["v3"]={"compute":"reconstruction","copy":cfg["mma"]["root"]+"/v3_source"}
             path=self.root/("075_"+name+".json")
             path.write_text(json.dumps(cfg,indent=2))
@@ -358,8 +362,8 @@ class Comparison:
             for cfg in self.configs.values():
                 if not self.config.get("resume") and ((ROOT / cfg["mma"]["root"]).exists() or (ROOT / (cfg["mma"]["root"] + "_probe")).exists()):
                     raise RuntimeError("Fresh comparison output directories required")
+            self.data["source"]=_git(str(ROOT)) if self.config.get("resume") else self.launchable()
             (self.root / "controller.pid").write_text(str(os.getpid()))
-            self.data["source"]=self.launchable()
             self.save()
             self.seed()
             done=threading.Event()

@@ -64,6 +64,35 @@ def test_missing_shared_start_is_regenerated_deterministically(monkeypatch,tmp_p
         study.start_design(cfg("c","0"*64),half,problem)
 
 
+def test_frame_probe_saves_the_production_definition_before_the_probe_schedule(monkeypatch,tmp_path):
+    pytest.importorskip("fcntl")
+    import contextlib
+    import numpy as np
+    from tools.compare_pipelines import Comparison
+    shape=(2,3,2)
+    half={"grid":{"origin_mm":[0.0,0.0,0.0],"spacing_mm":[1.0,1.0,1.0],"shape":list(shape)},"allowed":np.ones(shape,bool),"preserve":np.zeros(shape,bool),"forbidden":np.zeros(shape,bool)}
+    problem={"continuation":{"beta_schedule":[1.0,2.0,4.0]}}
+    expected=study.shared_definition(half,problem)["sha256"]
+    class Probe:
+        def __init__(self,*args):
+            pass
+        def phase(self,name):
+            return contextlib.nullcontext()
+        def close(self):
+            pass
+        def summary(self):
+            return {}
+    stages=[]
+    monkeypatch.setattr(study,"MemoryProbe",Probe)
+    monkeypatch.setattr(study,"switches",lambda cfg:None)
+    monkeypatch.setattr(study,"frame_setup",lambda cfg,shape:(half,problem))
+    monkeypatch.setattr(study,"start_design",lambda cfg,half,problem:np.zeros(12))
+    monkeypatch.setattr(study,"optimize_stage",lambda cfg,half,problem,design,out,level,stage:stages.append((cfg["mma"]["settings"],list(problem["continuation"]["beta_schedule"]))))
+    study.frame_probe({"shape":list(shape),"mma":{"root":str(tmp_path/"route"),"start":"seed","settings":{}}})
+    assert Comparison.definition(None,tmp_path/"route_probe/production_definition.json")==expected
+    assert stages==[({"final_max_iterations":3,"final_min_iterations":10},[1.0])]
+
+
 @pytest.mark.parametrize("kind,line,expected", [
     ("smi", "4242, 1536\n", {"process_gpu_bytes": 1536 * 2**20}),
     ("smi", "9999, 71680\n", {}),
