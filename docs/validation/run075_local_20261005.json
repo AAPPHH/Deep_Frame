@@ -1,0 +1,93 @@
+{
+    "status":  "blocked_by_twist_linear_residual",
+    "source_commit":  "5b73802f7e2964196ac81c84c1b2ffe2340738e5",
+    "request":  "0.75 mm from converged free_layout4 fine2",
+    "probe_job":  "raysubmit_QVzkGw3xqmgvZH5t",
+    "probe_iterations_completed":  0,
+    "probe_seconds":  554,
+    "pcg_tolerance":  1E-08,
+    "pcg_limit_per_attempt":  1000,
+    "pcg_retries":  2,
+    "twist_relative_residual":  4.1995045235348208E-08,
+    "twist_iterations":  3000,
+    "other_rhs_max_relative_residual":  9.7220414157003456E-09,
+    "tests":  {
+                  "passed":  15,
+                  "command":  "python -m pytest tests/test_topology_multigrid.py -q",
+                  "seconds":  11.23,
+                  "job":  "raysubmit_jjxvifyszi5wTUgy"
+              },
+    "memory":  {
+                   "interval_s":  1.0,
+                   "idle_mean":  {
+                                     "smi_used_gb":  1.031005859375,
+                                     "rss_gb":  0.6168386285955255,
+                                     "pool_used_gb":  0.0,
+                                     "pool_total_gb":  4.76837158203125E-07,
+                                     "device_used_gb":  1.27294921875,
+                                     "dedicated_gb":  0.20456314086914062,
+                                     "shared_gb":  0.072265625
+                                 },
+                   "peaks":  {
+                                 "idle":  {
+                                              "smi_used_gb":  1.0478515625,
+                                              "rss_gb":  0.6168441772460938,
+                                              "pool_used_gb":  0.0,
+                                              "pool_total_gb":  4.76837158203125E-07,
+                                              "device_used_gb":  1.27294921875,
+                                              "dedicated_gb":  0.20456314086914062,
+                                              "shared_gb":  0.072265625
+                                          },
+                                 "fine_setup":  {
+                                                    "dedicated_gb":  0.20456314086914062,
+                                                    "shared_gb":  0.072265625,
+                                                    "rss_gb":  0.8733482360839844,
+                                                    "pool_used_gb":  0.0,
+                                                    "pool_total_gb":  4.76837158203125E-07,
+                                                    "device_used_gb":  1.27294921875,
+                                                    "smi_used_gb":  1.0234375
+                                                },
+                                 "fine":  {
+                                              "rss_gb":  9.008983612060547,
+                                              "pool_used_gb":  0.07680320739746094,
+                                              "pool_total_gb":  0.08390426635742188,
+                                              "device_used_gb":  11.06591796875,
+                                              "smi_used_gb":  10.8310546875,
+                                              "dedicated_gb":  9.997722625732422,
+                                              "shared_gb":  0.130859375
+                                          }
+                             },
+                   "last":  {
+                                "idle":  {
+                                             "smi_used_gb":  1.015625,
+                                             "rss_gb":  0.6168441772460938,
+                                             "pool_used_gb":  0.0,
+                                             "pool_total_gb":  4.76837158203125E-07,
+                                             "device_used_gb":  1.27294921875,
+                                             "dedicated_gb":  0.20456314086914062,
+                                             "shared_gb":  0.072265625
+                                         },
+                                "fine_setup":  {
+                                                   "dedicated_gb":  0.20456314086914062,
+                                                   "shared_gb":  0.072265625,
+                                                   "rss_gb":  0.6385765075683594,
+                                                   "pool_used_gb":  0.0,
+                                                   "pool_total_gb":  4.76837158203125E-07,
+                                                   "device_used_gb":  1.27294921875,
+                                                   "smi_used_gb":  1.0234375
+                                               },
+                                "fine":  {
+                                             "rss_gb":  8.519645690917969,
+                                             "pool_used_gb":  0.07680320739746094,
+                                             "pool_total_gb":  0.08390426635742188,
+                                             "device_used_gb":  11.06591796875,
+                                             "smi_used_gb":  10.7666015625,
+                                             "dedicated_gb":  9.997722625732422,
+                                             "shared_gb":  0.130859375
+                                         }
+                            },
+                   "device_total_gb":  15.99169921875
+               },
+    "unrun_diagnostic_job":  "raysubmit_h2aYiuruEBF3KTWJ",
+    "unrun_diagnostic_status":  "STOPPED before execution"
+}
