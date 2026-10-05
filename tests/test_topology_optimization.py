@@ -387,7 +387,7 @@ def test_preserved_interface_policy_excludes_unattached_free_load_nodes():
 
 @pytest.fixture
 def cuda_solver():
-    if os.environ.get("CUDA_VISIBLE_DEVICES") == "":
+    if os.environ.get("DEEP_FRAME_GPU_RESERVED") == "0" or os.environ.get("CUDA_VISIBLE_DEVICES") == "":
         pytest.skip("This Ray job does not reserve a CUDA device")
     cupy = pytest.importorskip("cupy")
     if cupy.cuda.runtime.getDeviceCount() < 1:

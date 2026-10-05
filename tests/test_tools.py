@@ -1134,6 +1134,9 @@ def test_compute_node20_21_routes_gpu_jobs_to_the_working_a100():
     assert cpu["entrypoint_resources"] == {"node:192.168.2.20": 0.001}
     payload = json.loads(compute.base64.urlsafe_b64decode(cpu["entrypoint"].split()[-1]))
     assert payload["env"]["RAY_ADDRESS"] == "http://192.168.2.20:8266"
+    assert payload["env"]["DEEP_FRAME_GPU_RESERVED"] == "0"
+    gpu_payload = json.loads(compute.base64.urlsafe_b64decode(gpu["entrypoint"].split()[-1]))
+    assert gpu_payload["env"]["DEEP_FRAME_GPU_RESERVED"] == "1"
     head = compute.head_command("node20_21")
     assert head[head.index("--num-gpus") + 1] == "0" and head[head.index("--dashboard-port") + 1] == "8266"
     assert "--port=6380" in head and "--min-worker-port=22000" in head

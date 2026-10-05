@@ -63,6 +63,7 @@ def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=getatt
     measured = need["gpu_gb"] or (JOB_TYPES["gpu"]["gpu_gb"] if any("gpu-venv" in str(part) or "Deep_Frame-gpu/" in str(part) for part in command) else 0)
     gpu_gb = min(round(measured * spec["gpu_margin"], 1), spec["card_gb"]) if measured else 0
     env = {key: value for key, value in environ.items() if key in config["forward_env"] or key.startswith(config["forward_prefix"])}
+    env["DEEP_FRAME_GPU_RESERVED"] = "1" if gpu_gb else "0"
     env.update({key: str(need["num_cpus"]) for key in config["thread_env"]})
     payload = {"command": list(command), "cwd": str(Path(cwd).resolve()), "env": env}
     resources = {"gpu_gb": gpu_gb} if gpu_gb else {}
