@@ -38,7 +38,7 @@ def test_prop_disc_share_of_half_covering_plate():
     solid, lower, unbalanced = voxel_grid(plate, 0.5)
     result = top_view(solid, lower, 0.5, spec, 0.0)
     assert unbalanced == 0 and not result["discs_overlap"]
-    assert result["prop_disc_share"] == pytest.approx(0.5, abs=0.01)
+    assert result["prop_disc_share"] == pytest.approx(0.5, abs=0.01) and result["prop_radial_share"] == pytest.approx(0.5, abs=0.01)
     assert result["hull_share"] == pytest.approx(1.0, abs=0.02)
 
 def test_unevaluable_conditions_count_as_missed():

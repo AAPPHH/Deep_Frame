@@ -447,7 +447,7 @@ class FrameRun:
         out = self.dir / "optimization"
         options = self.layout.overrides.get("optimizer", {})
         frequency = 1 / (2 * LAYOUT_RULES["neural"]["half_wavelength_per_width"] * self.layout.durability["minimum_width_mm"])
-        neural = {"max_frequency_per_mm": options.get("max_frequency_per_mm", frequency), **self.grid["neural"]}
+        neural = {"max_frequency_per_mm": options.get("max_frequency_per_mm", frequency), **self.grid["neural"], **({"max_runtime_s": options["max_runtime_s"]} if options.get("max_runtime_s") else {})}
         overrides = {"root": str(out), "viewer_root": "", "shape": self.grid["shape"], "fine_shape": self.grid["fine_shape"], "neural": neural,
                      "pad": {**LAYOUT_RULES["pad"], "support_half_mm": 5.0, "bore_margin_mm": 0.5}, "variants": [{"name": variant, "neural": {"volume_fraction": options.get("volume_fraction", self.layout.durability["volume_fraction"])}}]}
         overrides.update({key: value for key, value in (("prop_discs", {"mode": options.get("prop_discs")}), ("modal", {"f1_min_hz": options.get("f1_min_hz")}), ("method", options.get("method"))) if value not in (None, {"mode": None}, {"f1_min_hz": None})})

@@ -1053,7 +1053,7 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "maximum_aspect": 2.0,
     "joint_blend_factor": 0.5,
     "anchor_reach_mm": 3.0,
-    "volume_match": True,
+    "volume_match": False,
     "shell_aspect": 2.2,
     "shell_sigma_mm": 1.0,
     "transition_radius_mm": 1.5,
@@ -1079,6 +1079,7 @@ DESIGN_RECONSTRUCTION_CONFIG = {
     "minimum_scale": 0.7,
     "maximum_scale": 1.15,
     "calibration_tolerance": 0.03,
+    "calibrate_volume": False,
     "load_path_voxel_mm": 0.3,
     "load_path_core_mm": [0.5, 0.9],
     "load_path_mounts": ["motor_contact", "aio_contact", "battery_rail", "camera_mount"],
@@ -1090,6 +1091,7 @@ DESIGN_RECONSTRUCTION_KINDS = {
     "output": "path",
     "fine_shape": ["int", "int", "int"],
     "volume_match": "flag",
+    "calibrate_volume": "flag",
     "root_preserves": "text",
     "load_path_core_mm": ["float"],
     "load_path_mounts": ["text"],
@@ -1231,7 +1233,7 @@ CAMERA_SUPPORT = {
 LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float", "support": ("prescribed", "free")},
                     "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free")}, "stack": {"standoff_mm": "float", "fastening": ("heat_set", "self_tapping")},
                     "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
-                                  "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float"}}
+                                  "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float", "max_runtime_s": "float"}}
 
 STYLES = {
     "freestyle": {"crash_directions": ["front", "side_left", "side_right", "arm_front_left", "arm_front_right", "arm_rear_left", "arm_rear_right", "below", "back"],
