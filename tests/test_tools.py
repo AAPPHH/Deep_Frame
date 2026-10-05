@@ -43,6 +43,23 @@ def test_coldstart_requires_explicit_layout():
     with pytest.raises(ValueError, match="explicit layout"):
         study.patched_settings(study.configure({"request": None, "reference_density": None}))
 
+def test_reference_run_disables_stand_and_landing_before_setup(monkeypatch, tmp_path):
+    from tools import formulation_study as study
+    monkeypatch.setattr(study.config, "STAND_STABILITY", {"enabled": True})
+    monkeypatch.setattr(study.config, "LANDING", {"enabled": True})
+    monkeypatch.setattr(study.config, "CABLE_WIDTH", {"enabled": True})
+    half = {"grid": {"shape": [1, 1, 1]}, "allowed": np.ones((1, 1, 1), bool), "preserve": np.zeros((1, 1, 1), bool)}
+    def setup(*args):
+        assert study.config.STAND_STABILITY["enabled"] is False
+        assert study.config.LANDING["enabled"] is False
+        assert study.config.CABLE_WIDTH["enabled"] is False
+        return half, {}
+    monkeypatch.setattr(study, "frame_setup", setup)
+    monkeypatch.setattr(study, "optimize_stage", lambda cfg, half, problem, design, *args: (design, {}))
+    cfg = study.configure(json.loads((Path(__file__).parents[1] / "docs/validation/dgx/free_43_coldstart.json").read_text(encoding="utf-8")))
+    cfg["mma"].update(root=str(tmp_path), memory_s=None, coarse=False, until="fine")
+    study.frame_mma(cfg)
+
 def test_comparison_rejects_changed_physical_filter_but_allows_iteration_budget():
     reference = _settings({})
     studied = deepcopy(reference)
