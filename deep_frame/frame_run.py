@@ -315,7 +315,9 @@ class FrameLayout:
         extent_y = abs(c["camera"]["length_mm"] * cos(tilt)) + abs(c["camera"]["height_mm"] * sin(tilt))
         camera_top = camera_mount_z(self.parameters()) + (abs(c["camera"]["height_mm"] * cos(tilt)) + abs(c["camera"]["length_mm"] * sin(tilt))) / 2
         hoop = self.hoop()
-        front = max(f["camera_y_mm"] + extent_y / 2, max(y for y, _ in hoop["path_yz_mm"]) + hoop["radius_mm"])
+        front = f["camera_y_mm"] + extent_y / 2
+        if self.style["hoops"]:
+            front = max(front, max(y for y, _ in hoop["path_yz_mm"]) + hoop["radius_mm"])
         if front > high[1] or f["camera_y_mm"] - extent_y / 2 < c["aio15"]["length_mm"] / 2:
             raise ValueError(f"Camera at y = {f['camera_y_mm']:.1f} mm with tilt {c['camera']['tilt_deg']} deg does not fit between the stack and the envelope front {high[1]} mm")
         stack_top = f["base_thickness_mm"] + f["aio_standoff_mm"] + c["aio15"]["stack_height_mm"] + c["aio15"]["elrs_antenna_clearance_mm"]

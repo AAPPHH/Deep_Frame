@@ -69,7 +69,24 @@ python tools/compute.py gpu_a100 -- python -m pytest tests/test_topology_problem
 
 ## Frisch rechnen
 
-SIMP/MMA mit gemeinsamer Lastkovarianz, freiem Akku und freier Kamera. Keine Neural-AL-Rechnung und keine Rückkehr zu einzelnen Steifigkeitsconstraints. Startdichte 0,5; Montagebereiche bleiben erhalten und verbotene Zellen leer. Der Stand-Fix und der Kabel-Mindestbreitenconstraint bleiben für diese Referenzläufe ausgeschaltet. Keine Grenzwerte lockern.
+Aktueller Auftrag vom 5. Oktober: **beide Pipelines parallel weiterentwickeln**, SIMP/MMA und neuronale Fourier-MLP-Reparametrisierung mit Adam und Augmented Lagrangian auf derselben `TopologyProblem`-Formulierung. Der alte Lauf `raysubmit_sUwR5QggA7Ju1X9Z` und sein Controller sind auf Nutzerauftrag gestoppt; seine Ergebnisse sind historische Zwischenstände. Die folgenden alten 4/3- und 0,75-mm-Konfigurationen bleiben als historische Referenz erhalten und werden nicht automatisch weitergerechnet.
+
+Aktueller Funktionsauftrag: **Optimierung angehalten**, beide Routen bleiben Projektbestandteil. Maßgebliche Fluglage ist 15° Nase nach unten. Entscheidend ist der senkrechte Abstand des Linsenmittelpunkts zur tiefsten Stelle des bestückten Copters nach dieser Drehung. Der Designraum-Boden und ein freies Sichtfeld ersetzen diese Messung nicht.
+
+Die Top-Mount-Aufnahme dient nur zum Einlegen und Positionieren des Akkus bis zum Befestigen des Gummis. Das Gummi übernimmt die Sicherung im Flug. Die zuvor vorgeschlagenen oberen Haltekanten, zwei 4-mm-Halteclips und das zugehörige obere Kontaktfedermodell sind damit überholt; die `low_clip_*`-Konfigurationen sind historische Arbeitsentwürfe und dürfen nicht als akzeptierte neue Anforderungen weitergerechnet werden. Das Gummi muss bei der weiteren mechanischen Formulierung ausdrücklich berücksichtigt werden, statt die kleinen Führungen als alleinige Akkusicherung zu behandeln.
+
+Die Funktionsprüfung zeigt den historischen SIMP-Zwischenrahmen mit Akku, AIO, vier Motoren, Propeller-Hüllscheiben und Kamera in dieser Fluglage. Daneben steht ein separater Führungsentwurf mit eingesetztem Akku und dargestelltem Gummiverlauf. Er besitzt 2-mm-Anschläge, 0,4 mm Sitzspiel je Seite, aufgeweitete Einführkanten und keine obere Verriegelung. Der Gummiverlauf ist vorläufig; reale Gummiabmessungen und Vorspannung sind nicht nachgewiesen. Die Linsenposition ist der Mittelpunkt der Kamerafront des Lux-Hüllmodells; reale optische Lage und Kameraschrauben müssen noch gemessen werden.
+
+Prüfkonfiguration und ausführbare Geometrieprüfung:
+
+```sh
+source .wf/ray_nodes/env.sh
+.venv/bin/python tools/compute.py reconstruction -- .venv/bin/python tools/functional_geometry_review.py docs/validation/dgx/functional_geometry_review.json
+```
+
+Messbericht und Ansicht liegen unter `exports/runs/functional_geometry_review`. Die tiefer versetzte Kamera ist noch nicht montierbar: Sie überschneidet den historischen Rahmen und benötigt passende Anschluss- und Schutzgeometrie. Der Führungsentwurf ist noch kein in diesen Rahmen integrierter neuer Körper. Kein Optimierungsprozess, Kontakt-Screen oder Geometriebild ersetzt diesen ausstehenden Nachweis.
+
+`gpu_compare` ermöglicht weiterhin zwei parallele Routen mit je 16 CPUs, 46 GiB Host-RAM, 32 GiB GPU-Speicher und 0,5 A100 auf Node 21. Der Vergleichstreiber und die beiden Proben sind auf Nutzerauftrag gestoppt; derzeit läuft keine Deep_Frame-Optimierung. Die bestehende Statusdatei unter `exports/runs/low_clip_comparison` hält die Job-IDs und den Stoppgrund fest. Neue Läufe benötigen die korrigierte gemeinsame Formulierung für Kamera, Akku-Führung und Gummi.
 
 ```sh
 python tools/compute.py gpu_a100 -- python tools/formulation_study.py frame_mma docs/validation/dgx/free_43_coldstart.json
@@ -123,4 +140,4 @@ Die belegten alten Messungen sind keine Ergebnisse der neuen DGX-Rechnung. Detai
 
 Feste Bauteilentscheidungen: WHOOP-Stackpfosten 4,5 mm, M2 von oben; HDZero Lux 4:3-FOV 126°/94°; Boden des Designraums z=−4 mm. Kabel-/Stand-Fixes getrennt bewerten, bevor sie in die nächsten Optimierungsanforderungen eingeschaltet werden.
 
-Große Ergebnisse bleiben unter den ignorierten Exportverzeichnissen. Kleine nachvollziehbare Messbelege und Codeänderungen committen. Keine alten Ergebnisdateien als neuen Nachweis übernehmen. Windows-Jobs wurden für die Übergabe beendet; die Neuberechnung auf Node 20/21 läuft seit dem oben dokumentierten Start. Ein gestarteter Lauf belegt noch kein fertiges oder druckbares Design.
+Große Ergebnisse bleiben unter den ignorierten Exportverzeichnissen. Kleine nachvollziehbare Messbelege und Codeänderungen committen. Keine alten Ergebnisdateien als neuen Nachweis übernehmen. Windows-Jobs wurden für die Übergabe beendet; die Neuberechnung auf Node 20/21 wurde für die Funktionsprüfung angehalten. Ein gestarteter Lauf belegt noch kein fertiges oder druckbares Design.

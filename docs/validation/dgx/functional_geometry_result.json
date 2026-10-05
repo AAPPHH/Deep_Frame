@@ -1,0 +1,466 @@
+{
+  "status": "FUNCTION_REVIEW_NOT_OPTIMIZATION_APPROVAL",
+  "frame_source": "exports/runs/free_layout4_live_view/fine_checkpoint_0110_beta16/geometry.stl",
+  "frame_sha256": "1dbb5fbdc10daa1464e2901d91179adfaa9467c09651ad635db2f4d0b1c729e2",
+  "flight_pitch_nose_down_deg": 15.0,
+  "camera": {
+    "previous": [
+      {
+        "pitch_nose_down_deg": 0,
+        "lens_world_mm": [
+          0.0,
+          47.67784834550136,
+          20.866130352060722
+        ],
+        "lowest_part": "frame_checkpoint_110",
+        "whole_assembly_min_z_mm": -4.0,
+        "lens_to_whole_assembly_bottom_mm": 24.866130352060722,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -4.0,
+          "aio15": 5.5,
+          "camera": 9.5,
+          "battery": 20.0,
+          "motor_front_left": 9.333333333333334,
+          "prop_front_left": 19.233333333333334,
+          "motor_front_right": 9.333333333333334,
+          "prop_front_right": 19.233333333333334,
+          "motor_rear_left": 9.333333333333334,
+          "prop_rear_left": 19.233333333333334,
+          "motor_rear_right": 9.333333333333334,
+          "prop_rear_right": 19.233333333333334,
+          "proposed_battery_guide": 18.0,
+          "illustrative_rubber_band": 16.9
+        },
+        "lowest_frame_vertex_mm": [
+          -25.999998092651367,
+          -25.999998092651367,
+          -4.0
+        ],
+        "camera_optical_axis_above_horizon_deg": 20.0
+      },
+      {
+        "pitch_nose_down_deg": 10,
+        "lens_world_mm": [
+          0.0,
+          50.57688020818598,
+          12.269955465796171
+        ],
+        "lowest_part": "frame_checkpoint_110",
+        "whole_assembly_min_z_mm": -8.917100439999285,
+        "lens_to_whole_assembly_bottom_mm": 21.187055905795454,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -8.917100439999285,
+          "aio15": 2.6988486610796834,
+          "camera": 2.94522670737369,
+          "battery": 14.712452361203258,
+          "motor_front_left": 1.0272183660516774,
+          "prop_front_left": 6.631833119962908,
+          "motor_front_right": 1.0272183660516774,
+          "prop_front_right": 6.631833119962908,
+          "motor_rear_left": 14.619164410145384,
+          "prop_rear_left": 20.223779164056612,
+          "motor_rear_right": 14.619164410145384,
+          "prop_rear_right": 20.223779164056612,
+          "proposed_battery_guide": 12.326081228778213,
+          "illustrative_rubber_band": 16.782169568039862
+        },
+        "lowest_frame_vertex_mm": [
+          -25.999998092651367,
+          27.536574038086425,
+          -8.917100439999285
+        ],
+        "camera_optical_axis_above_horizon_deg": 10.0
+      },
+      {
+        "pitch_nose_down_deg": 15.0,
+        "lens_world_mm": [
+          0.0,
+          51.453816991518366,
+          7.815199020444201
+        ],
+        "lowest_part": "frame_checkpoint_110",
+        "whole_assembly_min_z_mm": -11.283138743694161,
+        "lens_to_whole_assembly_bottom_mm": 19.098337764138364,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -11.283138743694161,
+          "aio15": 1.262073988735425,
+          "camera": -0.3783442646652354,
+          "battery": 11.890409931339018,
+          "motor_front_left": -3.153444681781761,
+          "prop_front_left": 0.2312103918828452,
+          "motor_front_right": -3.153444681781761,
+          "prop_front_right": 0.2312103918828452,
+          "motor_rear_left": 17.105071955028645,
+          "prop_rear_left": 20.489727028693252,
+          "motor_rear_right": 17.105071955028645,
+          "prop_rear_right": 20.489727028693252,
+          "proposed_battery_guide": 9.337392570514833,
+          "illustrative_rubber_band": 16.531201700367273
+        },
+        "lowest_frame_vertex_mm": [
+          -25.999998092651367,
+          26.654612548348897,
+          -11.283138743694161
+        ],
+        "camera_optical_axis_above_horizon_deg": 5.0
+      },
+      {
+        "pitch_nose_down_deg": 20,
+        "lens_world_mm": [
+          0.0,
+          51.93915915888116,
+          3.3009641916004577
+        ],
+        "lowest_part": "frame_checkpoint_110",
+        "whole_assembly_min_z_mm": -13.56330554860408,
+        "lens_to_whole_assembly_bottom_mm": 16.864269740204538,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -13.56330554860408,
+          "aio15": -0.18430582872422008,
+          "camera": -3.6990358083995436,
+          "battery": 8.977874302271477,
+          "motor_front_left": -7.310108111484883,
+          "prop_front_left": -6.171171986888103,
+          "motor_front_right": -7.310108111484883,
+          "prop_front_right": -6.171171986888103,
+          "motor_rear_left": 19.460799574009307,
+          "prop_rear_left": 20.599735698606082,
+          "motor_rear_right": 19.460799574009307,
+          "prop_rear_right": 20.599735698606082,
+          "proposed_battery_guide": 6.277640716718056,
+          "illustrative_rubber_band": 16.154421405942387
+        },
+        "lowest_frame_vertex_mm": [
+          -25.999998092651367,
+          25.56979336262334,
+          -13.56330554860408
+        ],
+        "camera_optical_axis_above_horizon_deg": 0.0
+      },
+      {
+        "pitch_nose_down_deg": 30,
+        "lens_world_mm": [
+          0.0,
+          51.72329304101641,
+          -5.768325209188557
+        ],
+        "lowest_part": "frame_checkpoint_110",
+        "whole_assembly_min_z_mm": -22.061608694870372,
+        "lens_to_whole_assembly_bottom_mm": 16.293283485681815,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -22.061608694870372,
+          "aio15": -3.061860279185586,
+          "camera": -12.661979480274013,
+          "battery": 2.970508075688773,
+          "motor_front_left": -15.425320653147164,
+          "prop_front_left": -18.786669155681217,
+          "motor_front_right": -15.425320653147164,
+          "prop_front_right": -18.786669155681217,
+          "motor_rear_left": 23.71112819045669,
+          "prop_rear_left": 20.349779687922634,
+          "motor_rear_right": 23.71112819045669,
+          "prop_rear_right": 20.349779687922634,
+          "proposed_battery_guide": 0.03845726811990069,
+          "illustrative_rubber_band": 15.035829323957014
+        },
+        "lowest_frame_vertex_mm": [
+          -8.666666984558105,
+          51.15615260330132,
+          -22.061608694870372
+        ],
+        "camera_optical_axis_above_horizon_deg": -10.0
+      }
+    ],
+    "low_camera_proposal": [
+      {
+        "pitch_nose_down_deg": 0,
+        "lens_world_mm": [
+          0.0,
+          58.57784834550136,
+          9.866130352060722
+        ],
+        "lowest_part": "frame_checkpoint_110",
+        "whole_assembly_min_z_mm": -4.0,
+        "lens_to_whole_assembly_bottom_mm": 13.866130352060722,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -4.0,
+          "aio15": 5.5,
+          "camera": -1.5,
+          "battery": 20.0,
+          "motor_front_left": 9.333333333333334,
+          "prop_front_left": 19.233333333333334,
+          "motor_front_right": 9.333333333333334,
+          "prop_front_right": 19.233333333333334,
+          "motor_rear_left": 9.333333333333334,
+          "prop_rear_left": 19.233333333333334,
+          "motor_rear_right": 9.333333333333334,
+          "prop_rear_right": 19.233333333333334,
+          "proposed_battery_guide": 18.0,
+          "illustrative_rubber_band": 16.9
+        },
+        "lowest_frame_vertex_mm": [
+          -25.999998092651367,
+          -25.999998092651367,
+          -4.0
+        ],
+        "camera_optical_axis_above_horizon_deg": 20.0
+      },
+      {
+        "pitch_nose_down_deg": 10,
+        "lens_world_mm": [
+          0.0,
+          59.40115476168281,
+          -0.4556949539076569
+        ],
+        "lowest_part": "camera",
+        "whole_assembly_min_z_mm": -9.780423712330139,
+        "lens_to_whole_assembly_bottom_mm": 9.324728758422482,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -8.917100439999285,
+          "aio15": 2.6988486610796834,
+          "camera": -9.780423712330139,
+          "battery": 14.712452361203258,
+          "motor_front_left": 1.0272183660516774,
+          "prop_front_left": 6.631833119962908,
+          "motor_front_right": 1.0272183660516774,
+          "prop_front_right": 6.631833119962908,
+          "motor_rear_left": 14.619164410145384,
+          "prop_rear_left": 20.223779164056612,
+          "motor_rear_right": 14.619164410145384,
+          "prop_rear_right": 20.223779164056612,
+          "proposed_battery_guide": 12.326081228778213,
+          "illustrative_rubber_band": 16.782169568039862
+        },
+        "lowest_frame_vertex_mm": [
+          -25.999998092651367,
+          27.536574038086425,
+          -8.917100439999285
+        ],
+        "camera_optical_axis_above_horizon_deg": 10.0
+      },
+      {
+        "pitch_nose_down_deg": 15.0,
+        "lens_world_mm": [
+          0.0,
+          59.13539900194149,
+          -5.631112660353026
+        ],
+        "lowest_part": "camera",
+        "whole_assembly_min_z_mm": -13.824655945462462,
+        "lens_to_whole_assembly_bottom_mm": 8.193543285109435,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -11.283138743694161,
+          "aio15": 1.262073988735425,
+          "camera": -13.824655945462462,
+          "battery": 11.890409931339018,
+          "motor_front_left": -3.153444681781761,
+          "prop_front_left": 0.2312103918828452,
+          "motor_front_right": -3.153444681781761,
+          "prop_front_right": 0.2312103918828452,
+          "motor_rear_left": 17.105071955028645,
+          "prop_rear_left": 20.489727028693252,
+          "motor_rear_right": 17.105071955028645,
+          "prop_rear_right": 20.489727028693252,
+          "proposed_battery_guide": 9.337392570514833,
+          "illustrative_rubber_band": 16.531201700367273
+        },
+        "lowest_frame_vertex_mm": [
+          -25.999998092651367,
+          26.654612548348897,
+          -11.283138743694161
+        ],
+        "camera_optical_axis_above_horizon_deg": 5.0
+      },
+      {
+        "pitch_nose_down_deg": 20,
+        "lens_world_mm": [
+          0.0,
+          58.4195871488652,
+          -10.763674199294323
+        ],
+        "lowest_part": "camera",
+        "whole_assembly_min_z_mm": -17.763674199294325,
+        "lens_to_whole_assembly_bottom_mm": 7.000000000000002,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -13.56330554860408,
+          "aio15": -0.18430582872422008,
+          "camera": -17.763674199294325,
+          "battery": 8.977874302271477,
+          "motor_front_left": -7.310108111484883,
+          "prop_front_left": -6.171171986888103,
+          "motor_front_right": -7.310108111484883,
+          "prop_front_right": -6.171171986888103,
+          "motor_rear_left": 19.460799574009307,
+          "prop_rear_left": 20.599735698606082,
+          "motor_rear_right": 19.460799574009307,
+          "prop_rear_right": 20.599735698606082,
+          "proposed_battery_guide": 6.277640716718056,
+          "illustrative_rubber_band": 16.154421405942387
+        },
+        "lowest_frame_vertex_mm": [
+          -25.999998092651367,
+          25.56979336262334,
+          -13.56330554860408
+        ],
+        "camera_optical_axis_above_horizon_deg": 0.0
+      },
+      {
+        "pitch_nose_down_deg": 30,
+        "lens_world_mm": [
+          0.0,
+          55.66296994226679,
+          -20.744604650817383
+        ],
+        "lowest_part": "camera",
+        "whole_assembly_min_z_mm": -27.638258921902843,
+        "lens_to_whole_assembly_bottom_mm": 6.89365427108546,
+        "part_min_z_mm": {
+          "frame_checkpoint_110": -22.061608694870372,
+          "aio15": -3.061860279185586,
+          "camera": -27.638258921902843,
+          "battery": 2.970508075688773,
+          "motor_front_left": -15.425320653147164,
+          "prop_front_left": -18.786669155681217,
+          "motor_front_right": -15.425320653147164,
+          "prop_front_right": -18.786669155681217,
+          "motor_rear_left": 23.71112819045669,
+          "prop_rear_left": 20.349779687922634,
+          "motor_rear_right": 23.71112819045669,
+          "prop_rear_right": 20.349779687922634,
+          "proposed_battery_guide": 0.03845726811990069,
+          "illustrative_rubber_band": 15.035829323957014
+        },
+        "lowest_frame_vertex_mm": [
+          -8.666666984558105,
+          51.15615260330132,
+          -22.061608694870372
+        ],
+        "camera_optical_axis_above_horizon_deg": -10.0
+      }
+    ]
+  },
+  "battery_guide": {
+    "guide_geometric_screen_passed": true,
+    "vertical_insertion": [
+      {
+        "vertical_offset_mm": 0,
+        "guide_intersection_mm3": 0.0
+      },
+      {
+        "vertical_offset_mm": 0.2,
+        "guide_intersection_mm3": 0.0
+      },
+      {
+        "vertical_offset_mm": 0.5,
+        "guide_intersection_mm3": 0.0
+      },
+      {
+        "vertical_offset_mm": 1,
+        "guide_intersection_mm3": 0.0
+      },
+      {
+        "vertical_offset_mm": 2,
+        "guide_intersection_mm3": 0.0
+      },
+      {
+        "vertical_offset_mm": 3,
+        "guide_intersection_mm3": 0.0
+      },
+      {
+        "vertical_offset_mm": 6,
+        "guide_intersection_mm3": 0.0
+      },
+      {
+        "vertical_offset_mm": 15,
+        "guide_intersection_mm3": 0.0
+      }
+    ],
+    "guided_diagonal_insertion_paths": [
+      {
+        "initial_xy_offset_mm": [
+          -1,
+          -1
+        ],
+        "seated_xy_offset_mm": [
+          -0.3,
+          -0.3
+        ],
+        "max_intersection_mm3": 0.0,
+        "sample_count": 13
+      },
+      {
+        "initial_xy_offset_mm": [
+          -1,
+          1
+        ],
+        "seated_xy_offset_mm": [
+          -0.3,
+          0.3
+        ],
+        "max_intersection_mm3": 0.0,
+        "sample_count": 13
+      },
+      {
+        "initial_xy_offset_mm": [
+          1,
+          -1
+        ],
+        "seated_xy_offset_mm": [
+          0.3,
+          -0.3
+        ],
+        "max_intersection_mm3": 0.0,
+        "sample_count": 13
+      },
+      {
+        "initial_xy_offset_mm": [
+          1,
+          1
+        ],
+        "seated_xy_offset_mm": [
+          0.3,
+          0.3
+        ],
+        "max_intersection_mm3": 0.0,
+        "sample_count": 13
+      }
+    ],
+    "nominal_guide_battery_intersection_mm3": 0.0,
+    "lateral_contact_at_0_41mm_intersection_mm3": {
+      "x_plus": 0.12049999999999553,
+      "x_minus": 0.1204999999999991,
+      "y_plus": 0.14460000000002268,
+      "y_minus": 0.1446000000000654
+    },
+    "connected_guide_corner_count": 4,
+    "seat_top_z_mm": 20.0,
+    "side_gap_mm": 0.4,
+    "end_gap_mm": 0.4,
+    "guide_height_above_battery_seat_mm": 2,
+    "entry_side_gap_mm": 1.2,
+    "top_overhang": false,
+    "retention": "Rubber band secures flight assembly; guide only positions battery during handling. Band is illustrative, no measured band specification or preload.",
+    "low_camera_geometry_fit_passed": false,
+    "low_camera_frame_vertices_inside_camera_envelope": 72,
+    "camera_interference_limit": "Vertex containment detects intersections; zero would not prove absence. Camera mount is not relocated in historical frame.",
+    "excluded_unmodelled_hardware": [
+      "battery leads",
+      "XT30 and balance connector loose placement",
+      "VTX antenna flexible placement",
+      "motor screws/shaft extensions"
+    ],
+    "lens_definition": "Front-face midpoint of 16 x 14 x 14 mm Lux envelope; actual lens optical centre and side screw placement require hardware measurement."
+  },
+  "limitations": "Historical raw density frame, not postprocessed; new camera has no matching mounting geometry yet; guide is separate CAD concept. This does not verify a new complete design, physical insertion friction, rubber band forces or print feasibility.",
+  "execution": {
+    "ray_job": "raysubmit_zT95z5htru5cLYHq",
+    "resource_type": "reconstruction",
+    "num_cpus": 4,
+    "host_ram_gib": 26,
+    "gpu_gib": 0,
+    "tool": "tools/functional_geometry_review.py",
+    "tool_sha256": "5cb460aa3761887465df4a5a2af372c04074eef57275545c933d0f01fb805282",
+    "config": "docs/validation/dgx/functional_geometry_review.json",
+    "config_sha256": "888f30c992bb445e86df1396271f9011ce0d15281f09295e7678a5434702dbb9"
+  }
+}
