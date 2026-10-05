@@ -1,6 +1,6 @@
 {
-  "time_utc": "2026-10-05T11:26:59.765344+00:00",
-  "status": "shared_problem_verified_production_running",
+  "time_utc": "2026-10-05T13:13:05.848401+00:00",
+  "status": "production_failed_not_converged_results_unusable",
   "requirements": {
     "flight_pitch_nose_down_deg": 15,
     "camera_metric": "Lens centre above minimum world vertical coordinate across the reconstructed frame and every modeled installed component in the flight pose",
@@ -43,22 +43,47 @@
   },
   "production_jobs": {
     "simp": {
-      "status": "RUNNING",
+      "status": "FAILED",
       "job": "raysubmit_FtAAQ9pueLzpBwnN",
       "kind": "gpu_compare",
       "gpu_limit_gb": 32,
       "host_limit_gb": 46,
-      "started": "2026-10-05T11:05:21.690031+00:00"
+      "started": "2026-10-05T11:05:21.690031+00:00",
+      "finished": "2026-10-05T13:13:05.848401+00:00",
+      "design_status": "not_converged_diverged_best_feasible",
+      "iterations": 494,
+      "field_mass_g": 19.667,
+      "field_mass_eroded_g": 11.862,
+      "field_mass_dilated_g": 32.456,
+      "raw_stl_mass_g": 13.732,
+      "raw_stl_bodies": 3,
+      "max_violation": 1.92e-14
     },
     "neural": {
-      "status": "RUNNING",
+      "status": "FAILED",
       "job": "raysubmit_SUaC833pWQi2DaiL",
       "kind": "gpu_compare",
       "gpu_limit_gb": 32,
       "host_limit_gb": 46,
-      "started": "2026-10-05T11:05:21.683386+00:00"
+      "started": "2026-10-05T11:05:21.683386+00:00",
+      "finished": "2026-10-05T13:13:05.848401+00:00",
+      "design_status": "not_converged_stalled_best_feasible",
+      "field_mass_g": 37.203,
+      "raw_stl": null,
+      "max_violation": 9.81e-07
     }
   },
+  "production_outcome": "Both branches FAILED without convergence; reconstruction, acceptance, cable channels and 0.75 mm withheld. Results are not usable as design or initialization.",
+  "failure_causes": [
+    "Camera shielding constraint 0.29 (crash_front) forces frame material below the lens",
+    "maximum_extra_gap_mm 3.0 lets the frame drop below the camera",
+    "KS lens-clearance objective term biased and ineffective",
+    "Guide regions and handling cases destabilize SIMP",
+    "best_feasible chosen by lowest objective without stationarity; levels advance at iteration cap while infeasible",
+    "Neural route resets multipliers, penalty and Adam per beta level; no logit bound or rate decay",
+    "Controller fingerprint check compared the probe definition, not the production definition"
+  ],
+  "next": "Corrected definition and restart: camera tilt 15 deg (net 0 deg at 15 deg flight pitch), camera as low as possible relative to the lowest point of the assembled copter, ideal-press battery without rubber model or guide, shielding/crash-reserve constraint deferred, optimizer and neural fixes.",
   "tests": [
     {
       "job": "raysubmit_tP7EP54gzXAV9Vtx",
@@ -93,8 +118,8 @@
   ],
   "coarse_seed_acceptance": false,
   "coarse_infeasibility_evidence": "ground15_camera_headroom.json",
-  "schedule": "../../dgx_handoff.md",
-  "result_acceptance": "Still pending actual reconstructed geometry, wall rule, stand/prop clearance and both mechanical evaluations; code tests and GPU resource probes are not design acceptance.",
+  "schedule": "Previous schedule void; new schedule after restart",
+  "result_acceptance": "None; both production branches failed before reconstruction.",
   "historical_geometry": "Requirement-dependent old frames invalidated; solver/reference and reconstruction code reused",
   "code_commit": "a647e6c",
   "full_cpu_suite": {
@@ -105,7 +130,6 @@
     "seconds": 866.12,
     "junit": ".wf/ray_nodes/ground15_full_cpu.xml"
   },
-  "controller_resume": "Reattached the same two active production Ray jobs; no duplicate production launch. New code checks all five cable paths and repeats functional, shared physical and independent acceptance after channels. Viewer failure is recorded separately and does not stop compute.",
   "validated_code_commits": [
     "a647e6c",
     "fa99a57",
