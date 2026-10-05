@@ -877,41 +877,71 @@ class MemoryProbe:
     def __init__(self, interval, log=None):
         import cupy
         import psutil
-        self.cp, self.process, self.interval, self.samples, self.phases, self.running = cupy, psutil.Process(), interval, [], [], True
+        self.cp, self.process, self.interval, self.samples, self.phases = cupy, psutil.Process(), interval, [], []
+        self.pid, self.device = os.getpid(), self.cp.cuda.runtime.getDevice()
+        self.stop, self.lock = threading.Event(), threading.Lock()
         self.log, self.started = (open(log, "a") if log else None), perf_counter()
-        self.cp.cuda.runtime.memGetInfo()
+        self.total = self.cp.cuda.runtime.memGetInfo()[1]
         self.cp.zeros(1)
-        paths = ",".join(f"'\\GPU Process Memory(pid_{os.getpid()}_*)\\{name} Usage'" for name in ("Dedicated", "Shared"))
-        script = (f"Get-Counter -Counter {paths} -SampleInterval 1 -Continuous -ErrorAction SilentlyContinue | ForEach-Object {{ $c = $_.CounterSamples; "
-                  "$d = ($c | Where-Object Path -like '*dedicated*' | Measure-Object CookedValue -Sum).Sum; $s = ($c | Where-Object Path -like '*shared*' | Measure-Object CookedValue -Sum).Sum; "
-                  "[Console]::Out.WriteLine(\"$d $s\"); [Console]::Out.Flush() }")
-        self.readers = [subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True) for command in
-                        (["powershell", "-NoProfile", "-Command", script], ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits", "-lms", str(int(interval * 1000))])]
-        self.threads = [threading.Thread(target=self.read, args=(reader, kind), daemon=True) for reader, kind in zip(self.readers, ("counter", "smi"))] + [threading.Thread(target=self.poll, daemon=True)]
+        self.measurements = {"rss_gb": "psutil process RSS", "pool_used_gb": "CuPy used pool bytes", "pool_total_gb": "CuPy reserved pool bytes",
+                             "device_used_gb": f"CUDA memGetInfo, assigned logical device {self.device}; includes other processes",
+                             "process_gpu_gb": "nvidia-smi query-compute-apps pid,used_memory; own PID only, MiB per GPU row; unavailable values omitted",
+                             "dedicated_gb": "unavailable on this platform", "shared_gb": "unavailable on this platform"}
+        commands = {"smi": ["nvidia-smi", "--query-compute-apps=pid,used_memory", "--format=csv,noheader,nounits", "-lms", str(max(1, int(interval * 1000)))]}
+        if os.name == "nt":
+            paths = ",".join(f"'\\GPU Process Memory(pid_{self.pid}_*)\\{name} Usage'" for name in ("Dedicated", "Shared"))
+            script = (f"Get-Counter -Counter {paths} -SampleInterval 1 -Continuous -ErrorAction SilentlyContinue | ForEach-Object {{ $c = $_.CounterSamples; "
+                      "$d = ($c | Where-Object Path -like '*dedicated*' | Measure-Object CookedValue -Sum).Sum; $s = ($c | Where-Object Path -like '*shared*' | Measure-Object CookedValue -Sum).Sum; "
+                      "[Console]::Out.WriteLine(\"$d $s\"); [Console]::Out.Flush() }")
+            commands["counter"] = ["powershell", "-NoProfile", "-Command", script]
+            self.measurements.update(dedicated_gb="Windows GPU Process Memory Dedicated Usage, own PID", shared_gb="Windows GPU Process Memory Shared Usage, own PID")
+        self.readers, self.threads, self.reader_errors = [], [], {}
+        for kind, command in commands.items():
+            try:
+                reader = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+            except OSError as error:
+                self.reader_errors[kind] = str(error)
+                continue
+            self.readers.append(reader)
+            self.threads.append(threading.Thread(target=self.read, args=(reader, kind), daemon=True))
+        self.threads.append(threading.Thread(target=self.poll, daemon=True))
         for thread in self.threads:
             thread.start()
+    def parse(self, line, kind):
+        try:
+            if kind == "counter":
+                values = [float(item.replace(",", ".")) for item in line.split()]
+                if len(values) == 2 and all(np.isfinite(value) and value >= 0 for value in values):
+                    return dict(zip(("dedicated_bytes", "shared_bytes"), values))
+            elif kind == "smi":
+                pid, used = [item.strip() for item in line.split(",")]
+                value = float(used)
+                if int(pid) == self.pid and np.isfinite(value) and value >= 0:
+                    return {"process_gpu_bytes": value * 2 ** 20}
+        except ValueError:
+            pass
+        return {}
     def read(self, reader, kind):
         for line in reader.stdout:
-            try:
-                values = [float(item) for item in line.split()]
-            except ValueError:
-                continue
-            if kind == "counter" and len(values) == 2:
-                self.record({"dedicated_bytes": values[0], "shared_bytes": values[1]})
-            elif kind == "smi" and len(values) == 1:
-                self.record({"smi_used_bytes": values[0] * 2 ** 20})
+            if self.stop.is_set():
+                break
+            values = self.parse(line, kind)
+            if values:
+                self.record(values)
     def record(self, values):
         clock = perf_counter()
-        self.samples.append((clock, values))
-        if self.log:
-            self.log.write(json.dumps({"t": round(clock - self.started, 2), **{key.replace("_bytes", "_gb"): round(value / 2 ** 30, 4) for key, value in values.items()}}) + "\n")
-            self.log.flush()
+        with self.lock:
+            self.samples.append((clock, values))
+            if self.log:
+                self.log.write(json.dumps({"t": round(clock - self.started, 2), **{key.replace("_bytes", "_gb"): round(value / 2 ** 30, 4) for key, value in values.items()}}) + "\n")
+                self.log.flush()
     def poll(self):
-        pool = self.cp.get_default_memory_pool()
-        while self.running:
-            free, total = self.cp.cuda.runtime.memGetInfo()
-            self.record({"rss_bytes": self.process.memory_info().rss, "pool_used_bytes": pool.used_bytes(), "pool_total_bytes": pool.total_bytes(), "device_used_bytes": total - free})
-            threading.Event().wait(self.interval)
+        with self.cp.cuda.Device(self.device):
+            pool = self.cp.get_default_memory_pool()
+            while not self.stop.is_set():
+                free, total = self.cp.cuda.runtime.memGetInfo()
+                self.record({"rss_bytes": self.process.memory_info().rss, "pool_used_bytes": pool.used_bytes(), "pool_total_bytes": pool.total_bytes(), "device_used_bytes": total - free})
+                self.stop.wait(self.interval)
     def phase(self, name):
         probe = self
         class Phase:
@@ -932,12 +962,23 @@ class MemoryProbe:
         return {key.replace("_bytes", "_gb"): float(reduce(value)) / 2 ** 30 for key, value in found.items()}
     def summary(self):
         names = [phase[0] for phase in self.phases]
-        return {"interval_s": self.interval, "idle_mean": self.peaks(names[0], np.mean), "peaks": {name: self.peaks(name) for name in names},
-                "last": {name: self.peaks(name, lambda value: value[-1]) for name in names}, "device_total_gb": self.cp.cuda.runtime.memGetInfo()[1] / 2 ** 30}
+        return {"interval_s": self.interval, "idle_mean": self.peaks(names[0], np.mean) if names else {}, "peaks": {name: self.peaks(name) for name in names},
+                "last": {name: self.peaks(name, lambda value: value[-1]) for name in names}, "device_total_gb": self.total / 2 ** 30,
+                "measurement_methods": self.measurements, "reader_errors": self.reader_errors}
     def close(self):
-        self.running = False
+        self.stop.set()
         for reader in self.readers:
-            reader.kill()
+            if reader.poll() is None:
+                reader.terminate()
+            try:
+                reader.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                reader.kill()
+                reader.wait()
+        for thread in self.threads:
+            thread.join()
+        for reader in self.readers:
+            reader.stdout.close()
         if self.log:
             self.log.close()
 
@@ -1048,19 +1089,19 @@ def solver_memory(cfg):
     out = Path(spec["output"])
     out.mkdir(parents=True, exist_ok=True)
     probe = MemoryProbe(spec["sample_s"])
-    record = {"sha": git_sha(), "config": spec, "grids": {}}
+    record = {"sha": git_sha(), "config": spec, "grids": {}, "measurement_methods": probe.measurements}
     try:
         for grid in spec["grids"]:
             record["grids"][grid] = solver_grid(cfg, spec, grid, probe, out)
     finally:
         probe.close()
     record["peak_wset_gb"] = probe.process.memory_info().peak_wset / 2 ** 30 if hasattr(probe.process.memory_info(), "peak_wset") else None
-    lines = ["| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi total GB | CuPy pool GB | host RSS GB |", "|---|---|---|---|---|---|---|---|---|"]
+    lines = ["| grid | factorizations / evaluation | s / evaluation (cold, warm) | s / MMA iteration | dedicated peak GB | shared peak GB | nvidia-smi process GB | CuPy pool GB | host RSS GB |", "|---|---|---|---|---|---|---|---|---|"]
     for grid, item in record["grids"].items():
         phases = item["evaluations"] + [item["mma"]]
-        peak = lambda key: max(phase.get(key, 0.0) for phase in phases)
+        peak = lambda key: f"{max(phase[key] for phase in phases if key in phase):.2f}" if any(key in phase for phase in phases) else "n/a"
         lines.append(f"| {grid} | {item['evaluations'][-1]['factorizations']} | {item['evaluations'][0]['seconds']:.1f}, {item['evaluations'][-1]['seconds']:.1f} | {item['mma']['seconds_per_iteration']:.1f} | "
-                     f"{peak('dedicated_gb'):.2f} | {peak('shared_gb'):.2f} | {peak('smi_used_gb'):.2f} | {peak('pool_total_gb'):.2f} | {peak('rss_gb'):.2f} |")
+                     f"{peak('dedicated_gb')} | {peak('shared_gb')} | {peak('process_gpu_gb')} | {peak('pool_total_gb')} | {peak('rss_gb')} |")
     record["table"] = "\n".join(lines)
     (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
     print(record["table"], flush=True)
