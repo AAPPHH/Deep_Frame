@@ -3,7 +3,7 @@ from time import perf_counter
 
 import numpy as np
 
-from deep_frame.topology_optimization import HexElasticity, StiffnessConstraint, _case_scaling, _history_entry, validate_masks, volume_weights
+from deep_frame.topology_optimization import HexElasticity, StiffnessConstraint, _case_scaling, _history_entry, validate_masks, volume_weights, continuation_decision
 
 NEURAL_SETTINGS = {
     "volume_fraction": 0.12,
@@ -219,12 +219,15 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
             warm = {"path": str(settings["initial_density"]), "source_shape": source_shape, "target_shape": list(domain["grid"]["shape"]), "fit_iterations": settings["initial_fit_iterations"],
                     "fit_sharpness": settings["sharpness_final"], "initial_rmse": initial_rmse, "fit_rmse": mapping.fit(target_density, settings["sharpness_final"], settings["initial_fit_iterations"], settings["learning_rate"]),
                     "target_mean_free": float(np.mean(target_density[mapping.free])), "budget_mean_free": float(mapping.budget / np.count_nonzero(mapping.free)), "fit_runtime_s": perf_counter() - fit_started}
-        ramp = 0 if warm else settings["sharpness_iterations"]
         scales = None
         converged, stop_reason = False, "max_iterations"
+        final_iterations, previous_density, previous_sharpness = 0, None, None
         for iteration in range(1, settings["max_iterations"] + 1):
             sharpness = settings["sharpness_final"] if warm else 1 + (settings["sharpness_final"] - 1) * min(1.0, (iteration - 1) / max(settings["sharpness_iterations"], 1))
             physical, cache = mapping.physical(sharpness)
+            final_level = sharpness == settings["sharpness_final"]
+            final_iterations = final_iterations+1 if final_level else 0
+            change = None if previous_density is None or sharpness != previous_sharpness else float(np.max(np.abs(physical[mapping.free]-previous_density)))
             solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"])
             stiffness_penalty, stiffness_gradient, stiffness_info = stiffness(solutions.pop(stiffness.case)) if stiffness is not None else (0.0, 0.0, {})
             if scales is None:
@@ -239,26 +242,29 @@ def optimize_neural(domain, settings, *, progress_callback=None, output_domain=N
                 objective_gradient = objective_gradient + modal_gradient
                 modal_log.append({"iteration": iteration, **modal_info})
             gradients = mapping.gradient(cache, objective_gradient)
-            previous = [value.copy() for value in mapping.field.parameters]
-            optimizer.step(mapping.field.parameters, gradients)
-            change = float(max(np.max(np.abs(value - old)) for value, old in zip(mapping.field.parameters, previous)))
             history.append(_history_entry(iteration, physical, solutions, scales, change, perf_counter() - started))
             history[-1].update(volume_fraction=float(np.sum(physical[mapping.allowed]) / allowed_count), sharpness=sharpness, width_penalty=width_penalty, modal_penalty=modal_penalty, f1_hz=modal_info.get("f1_hz"),
                                stiffness_penalty=stiffness_penalty, stiffness_n_per_mm=stiffness_info.get("stiffness_n_per_mm"))
             history[-1]["objective"] += width_penalty + modal_penalty + stiffness_penalty
             density = physical.reshape(tuple(domain["grid"]["shape"]))
+            recent = [entry["objective"] for entry in history[-settings["objective_window"]:]]
+            stall = (max(recent) - min(recent)) / max(abs(min(recent)), 1e-30) if len(recent) == settings["objective_window"] else None
+            violations = [info["violation"] for info in (modal_info, stiffness_info) if info]
+            violation = max(violations, default=0.0)
+            history[-1].update(objective_stall=stall, max_violation=violation, final_level_iterations=final_iterations)
             if progress_callback is not None:
                 progress_callback(deepcopy(history[-1]))
-            recent = [entry["objective"] for entry in history[-settings["objective_window"]:]]
-            stall = (max(recent) - min(recent)) / min(recent) if len(recent) == settings["objective_window"] else None
-            violations = [info["violation"] for info in (modal_info, stiffness_info) if info]
-            feasible = settings["feasibility_tolerance"] is None or max(violations, default=0.0) <= settings["feasibility_tolerance"]
-            if iteration >= max(settings["minimum_iterations"], ramp) and stall is not None and stall < settings["change_tolerance"] and feasible:
-                converged, stop_reason = True, "objective_stall"
+            decision = continuation_decision(final_iterations, final_level, change, violation, settings["minimum_iterations"], float("inf"), settings["change_tolerance"], 1e-3 if settings["feasibility_tolerance"] is None else settings["feasibility_tolerance"])
+            if decision == "converged":
+                converged, stop_reason = True, "change_tolerance"
                 break
             if settings["max_runtime_s"] is not None and perf_counter() - started >= settings["max_runtime_s"]:
                 stop_reason = "max_runtime_s"
                 break
+            if iteration == settings["max_iterations"]:
+                break
+            previous_density, previous_sharpness = physical[mapping.free].copy(), sharpness
+            optimizer.step(mapping.field.parameters, gradients)
         physical, _ = mapping.physical(sharpness)
         density = physical.reshape(tuple(domain["grid"]["shape"]))
         solutions = system.solve(physical, settings["penalization"], settings["min_stiffness_ratio"], metrics=True)
