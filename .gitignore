@@ -33,3 +33,10 @@ env/
 /exports/r4recon/*/*.log
 /exports/solver_memory/*/*.npz
 /exports/solver_memory/*.log
+
+/Hardware/
+/.wf/
+/exports/recon3/*/
+/exports/cables/
+/exports/**/*.npz
+!/exports/handoff/**/*.npz

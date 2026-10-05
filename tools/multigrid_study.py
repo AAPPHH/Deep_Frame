@@ -4,7 +4,7 @@ from pathlib import Path
 from time import perf_counter
 import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from deep_frame.config import PRINT_MATERIAL, command_line, configure
+from deep_frame.config import PATHS, PRINT_MATERIAL, command_line, configure
 from deep_frame.topology_multigrid import GeometricMultigrid, MultigridModal, solve_elasticity
 from deep_frame.topology_optimization import HexElasticity, ModalConstraint
 from deep_frame.topology_problem import PROBLEM, cantilever_domain, orthotropic_material
@@ -116,7 +116,7 @@ CANTILEVER = {"output": "docs/validation/multigrid_cantilever.json", "scales": [
                            "jacobi_bfloat16": {"precision": "bfloat16", "smoother": "jacobi"}, "float32_deep": {"precision": "float32", "coarsest_dofs": 1500}}, "reference_variant": "bfloat16"}
 CANTILEVER_KINDS = {"output": "text", "scales": ["int"], "fields": ["text"], "variants": "object", "reference_variant": "text"}
 TRUSS = {"output": "docs/validation/multigrid_truss.json", "spacing_mm": 1.25, "shape": [128, 16, 32], "panel_cells": 16, "member_mm": 2.5,
-         "frame_density": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "problems": ["sweep", "truss", "frame"],
+         "frame_density": str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_opt/fine/density_half.npz'), "problems": ["sweep", "truss", "frame"],
          "frame_cases": ["stiffness_arm_tip", "thrust_all", "crash_front", "crash_side_left"],
          "variants": {"galerkin": {"precision": "float32"}, "galerkin_float64": {"precision": "float64"}, "galerkin_float16": {"precision": "float16"}, "galerkin_bfloat16": {"precision": "bfloat16"},
                       "rediscretize": {"precision": "float32", "coarse": "rediscretize"}, "galerkin_pinned": {"precision": "float32", "projection": False}, "jacobi": {"precision": "float32", "smoother": "jacobi", "growth": 1.0},

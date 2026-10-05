@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT))
 
 import numpy as np
 
-from deep_frame.config import IMPLICIT_CONFIG, IMPLICIT_KINDS, command_line, configure
+from deep_frame.config import PATHS, IMPLICIT_CONFIG, IMPLICIT_KINDS, command_line, configure
 from deep_frame.fea import MESH_KEYS, evaluate
 from deep_frame.frame import build_geometry
 from deep_frame.topology_geometry import build_design_domain
@@ -23,7 +23,7 @@ from deep_frame.topology_surface_validation import surface_metrics
 from tools.mature_pipeline import acceptance, artifacts, baseline_fea, comparison_inputs, draw_view, save_provenance, snapshot_source
 from tools.workstation_study import load_source
 
-REFERENCE_STEP = Path("C:/clones/Deep_Frame/exports/topology/workstation_20260930/candidate_study/grid4_iter300/candidates/density_t01/geometry.step")
+REFERENCE_STEP = Path(str(Path(PATHS["data"]) / 'topology/workstation_20260930/candidate_study/grid4_iter300/candidates/density_t01/geometry.step'))
 PACKAGES = ("numpy", "scipy", "scikit-image", "trimesh", "rtree", "pymeshlab", "manifold3d", "gmsh", "matplotlib", "psutil")
 PARAMETERS = {"transition_radius_mm": "k_mm", "density_sigma_mm": "sigma_d_mm", "preserve_inflation_mm": "delta_mm", "constraint_offset_mm": "c_mm", "opening_radius_mm": "r_open_mm", "ripple_sigma_mm": "sigma_r_mm", "subdivisions": "subdivisions"}
 VIEWS = (("isometric", 28, -48, "Isometrie"), ("top", 90, -90, "Draufsicht (+z)"), ("front", 0, -90, "Vorderansicht (-y)"), ("side", 0, 0, "Seitenansicht (+x)"))

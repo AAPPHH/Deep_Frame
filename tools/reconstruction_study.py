@@ -14,7 +14,7 @@ import trimesh
 from PIL import Image
 from scipy.ndimage import gaussian_filter
 
-from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, RUN_SETTINGS, STAGES, SPLINE_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_KINDS, command_line, configure
+from deep_frame.config import PATHS, DESIGN_RECONSTRUCTION_CONFIG, DESIGN_RECONSTRUCTION_KINDS, IMPLICIT_CONFIG, RUN_SETTINGS, STAGES, SPLINE_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_KINDS, command_line, configure
 from deep_frame.frame_run import FrameRun, _git
 from deep_frame.topology_reconstruction import body_weights, bumps, load_paths, reconstruct, reconstruct_splines, reference_body, stored_domain
 
@@ -262,16 +262,16 @@ def compose_main(overrides):
 
 RECON3_STUDY = {
     "root": "exports/recon3",
-    "viewer": "C:/clones/Deep_Frame-neural/exports",
-    "manafly_renders": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/manafly/renders",
-    "manafly_stl": "C:/clones/Deep_Frame-neural/exports/manafly_ref/manafly3_repaired.stl",
-    "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
+    "viewer": PATHS["data"],
+    "manafly_renders": str(Path(PATHS["data"]) / 'runs/simp_mma_opt/manafly/renders'),
+    "manafly_stl": str(Path(PATHS["data"]) / 'manafly_ref/manafly3_repaired.stl'),
+    "python": PATHS["python"],
     "steps": ["run", "evaluate", "compose", "figure", "table"],
     "only": [],
     "fallback": {"fea_settings": {"fea_memory_budget_mb": 16384.0}, "compute": "reconstruction"},
     "cases": {
-        "simp_mma": {"label": "SIMP-MMA", "raw": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_raw_1", "recon": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_recon_1", "result": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/simp_mma"},
-        "neural_v06_f1": {"label": "Neural 6 % f1", "raw": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1_raw", "recon": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_recon11_1", "result": "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1"},
+        "simp_mma": {"label": "SIMP-MMA", "raw": str(Path(PATHS["data"]) / 'runs/simp_mma_raw_1'), "recon": str(Path(PATHS["data"]) / 'runs/simp_mma_recon_1'), "result": str(Path(PATHS["data"]) / 'runs/simp_mma_opt/simp_mma')},
+        "neural_v06_f1": {"label": "Neural 6 % f1", "raw": str(Path(PATHS["data"]) / 'runs/r4_neural_v06_f1_1_raw'), "recon": str(Path(PATHS["data"]) / 'runs/r4_neural_v06_f1_recon11_1'), "result": str(Path(PATHS["data"]) / 'runs/r4_neural_v06_f1_1/optimization/r4_neural_v06_f1')},
     },
 }
 RECON3_KINDS = {"fallback": "object", "root": "path", "viewer": "path", "manafly_renders": "path", "manafly_stl": "path", "python": "text", "steps": ["text"], "only": ["text"], "cases": "object"}

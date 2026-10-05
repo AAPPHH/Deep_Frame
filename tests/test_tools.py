@@ -1084,7 +1084,7 @@ def test_compute_local_profile_shares_the_card_by_measured_gpu_gb_plus_margin():
     assert {kind: (spec["entrypoint_num_cpus"], spec["entrypoint_memory"], (spec["entrypoint_resources"] or {}).get("gpu_gb", 0), spec["entrypoint_num_gpus"])
             for kind, spec in requests.items()} == {"density_neural": (4, 24 * 2**30, 14, None), "density_simp": (4, 8 * 2**30, 13.8, None),
                                                     "density_simp_1mm": (8, 28 * 2**30, 14, None), "gpu": (4, 6 * 2**30, 6.6, None), "fea_static": (2, 8 * 2**30, 0, None)}
-    assert compute.request("cpu", ["C:/clones/Deep_Frame-gpu-venv/Scripts/python.exe"], ".", machine="local")["entrypoint_resources"] == {"gpu_gb": 6.6}
+    assert compute.request("cpu", ["X:/isolated/gpu-venv/Scripts/python.exe"], ".", machine="local")["entrypoint_resources"] == {"gpu_gb": 6.6}
     assert 2 * requests["gpu"]["entrypoint_resources"]["gpu_gb"] <= local["gpu_gb"] and local["throttle"] == {}
 
 def test_compute_dgx_head_fits_four_a100_jobs():
@@ -1095,7 +1095,7 @@ def test_compute_dgx_head_fits_four_a100_jobs():
 
 def test_compute_head_command_pins_agent_ports_per_profile(monkeypatch):
     monkeypatch.delenv("RAY_PYTHON", raising=False)
-    for name, gpus, python in (("local", "1", "C:/clones/ray-venv/Scripts/python.exe"), ("dgx", "8", "/home/john/ray-venv/bin/python")):
+    for name, gpus, python in (("local", "1", compute.CONFIG["heads"]["local"]["ray_python"]), ("dgx", "8", compute.CONFIG["heads"]["dgx"]["ray_python"])):
         command = compute.head_command(name)
         assert command[0] == str(Path(python).with_name("ray.exe" if os.name == "nt" else "ray")) and command[1:3] == ["start", "--head"]
         assert command[command.index("--num-gpus") + 1] == gpus and command[command.index("--dashboard-port") + 1] == "8265"

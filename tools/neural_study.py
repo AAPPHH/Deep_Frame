@@ -11,7 +11,7 @@ from scipy.ndimage import gaussian_filter, label, zoom
 from skimage.measure import marching_cubes
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import deep_frame.topology_neural as topology_neural
-from deep_frame.config import CRASH_DIRECTIONS, command_line
+from deep_frame.config import PATHS, CRASH_DIRECTIONS, command_line
 from deep_frame.frame import motor_positions, prop_plane_z
 from deep_frame.topology_geometry import _merge, build_design_domain, grid_centers, mirror_field, region_contains, symmetric_domains
 from deep_frame.topology_neural import member_widths, neural_settings, optimize_neural
@@ -22,13 +22,13 @@ from tools.topology_study import study_parameters
 
 STUDY = {
     "root": "exports/r3",
-    "viewer_root": "C:/clones/Deep_Frame-neural/exports",
+    "viewer_root": PATHS["data"],
     "viewer_prefix": "r3_",
     "crash_directions": list(CRASH_DIRECTIONS),
     "inertia_relief": {"cases": ["arm_tip", "thrust_all", "crash_"], "attachments": {"battery": "battery_rail_", "aio15": "aio_contact_", "camera": "camera_mount_", "motor_": "_motor_contact", "prop_": "_motor_contact"}, "frame_mass": "target"},
     "verify_shape": [68, 64, 24],
     "chord": {"half_width_mm": 20.0, "z_max_mm": 10.0, "y_span_mm": [-25.0, 25.0]},
-    "compare": {"labels": ["neural_v05", "mcrash_v05", "r2_v05", "r3_v05", "ManaFly"], "inputs": ["C:/clones/Deep_Frame-neural/exports/fast/neural_v05", "C:/clones/Deep_Frame-mcrash/exports/mcrash/neural_v05", "C:/clones/Deep_Frame-nr2/exports/r2/neural_r2_v05", "exports/r3/neural_r3_v05", "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer"], "output": "exports/r3/compare"},
+    "compare": {"labels": ["neural_v05", "mcrash_v05", "r2_v05", "r3_v05", "ManaFly"], "inputs": [str(Path(PATHS["data"]) / 'fast/neural_v05'), str(Path(PATHS["data"]) / 'mcrash/neural_v05'), str(Path(PATHS["data"]) / 'r2/neural_r2_v05'), "exports/r3/neural_r3_v05", str(Path(PATHS["data"]) / 'fast/_manafly_same_renderer')], "output": "exports/r3/compare"},
     "shape": [102, 96, 24],
     "fine_shape": [204, 192, 48],
     "pad": {"top_mm": 28 / 3, "thickness_mm": 8 / 3, "support_half_mm": 5.0, "bore_margin_mm": 0.5},

@@ -20,7 +20,7 @@ from build123d import Plane, export_step, import_step, section
 from OCP.BRepClass3d import BRepClass3d_SolidClassifier
 from OCP.TopAbs import TopAbs_OUT
 
-from deep_frame.config import command_line, configure
+from deep_frame.config import PATHS, command_line, configure
 from deep_frame.fea import evaluate
 from deep_frame.frame import build_geometry
 from deep_frame.topology_geometry import _merge, build_design_domain, region_shape
@@ -52,7 +52,7 @@ RUN_KINDS = {"output": "path", "reference_step": "path", "source": "path", "dens
 GEOMETRY_CONFIG = {"source": None, "output": None, "reference_step": None, **SURFACE_CONFIG, "study_timeout_s": 14400, "run_log": None}
 GEOMETRY_KINDS = {"source": "path", "output": "path", "reference_step": "path", **SURFACE_KINDS, "study_timeout_s": "float", "run_log": "path"}
 RENDER_CONFIG = {"step": None, "output": None,
-                 "inputs": Path("C:/clones/Deep_Frame/exports/topology/workstation_20260930/density_study/grid8over3_iter150/inputs.json"),
+                 "inputs": Path(str(Path(PATHS["data"]) / 'topology/workstation_20260930/density_study/grid8over3_iter150/inputs.json')),
                  "validation": None}
 RENDER_KINDS = {"step": "path", "output": "path", "inputs": "path", "validation": "path"}
 

@@ -15,7 +15,7 @@ from time import perf_counter
 import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import deep_frame.config as config
-from deep_frame.config import RUN_SETTINGS, STAGES, command_line
+from deep_frame.config import PATHS, RUN_SETTINGS, STAGES, command_line
 from deep_frame.frame_run import ROOT, FrameRun, _git
 from deep_frame.topology_geometry import _merge, embed_field
 from deep_frame.topology_neural import cell_centers
@@ -23,7 +23,7 @@ from deep_frame.topology_optimization import HexElasticity
 from deep_frame.topology_stability import STAND_CASES, FOUR_FEET, StandStability, stand_design, stand_domain, voxel_reserve
 from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, cable_corridor, density_map, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
-RUN = "C:/clones/Deep_Frame-r4/exports/runs/r4_neural_v06_f1_1"
+RUN = str(Path(PATHS["data"]) / 'runs/r4_neural_v06_f1_1')
 FORMULATION = {
     "request": RUN + "/requests/optimization.json",
     "reference_density": RUN + "/optimization/r4_neural_v06_f1/density_half.npz",
@@ -48,29 +48,29 @@ FORMULATION = {
     "camera_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.02, "battery_support": "free", "output": "docs/validation/camera_support_fd.json", "limits": {}},
     "battery_fd": {"shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "output": "docs/validation/battery_support_fd.json"},
     "stand_fd": {"shape": [68, 64, 24], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.05, "output": "docs/validation/stand_stability_fd.json", "exact": "docs/validation/stand_stability.json",
-                 "fields": {"rail_v3b": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/domain.json"],
-                            "battery_free": ["C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/domain.json"]}},
+                 "fields": {"rail_v3b": [str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_opt/fine/density_half.npz'), str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_v3_2/domain.json')],
+                            "battery_free": [str(Path(PATHS["data"]) / 'runs/battery_free_opt/fine/density_half.npz'), str(Path(PATHS["data"]) / 'runs/battery_free_v3_2/domain.json')]}},
     "cable_width_fd": {"shapes": [[68, 64, 24], [102, 96, 24]], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "betas": [1.0, 8.0, 32.0], "output": "docs/validation/cable_width_fd.json",
-                       "sources": {"rail_v3b": ["C:/clones/Deep_Frame-cable/exports/cables/simp_mma_cov3_v3_2/cables.json", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz"],
-                                   "battery_free": ["C:/clones/Deep_Frame-cable/exports/cables/battery_free_v3c/cables.json", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz"]}},
+                       "sources": {"rail_v3b": [str(Path(PATHS["data"]) / 'cables/simp_mma_cov3_v3_2/cables.json'), str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_opt/fine/density_half.npz')],
+                                   "battery_free": [str(Path(PATHS["data"]) / 'cables/battery_free_v3c/cables.json'), str(Path(PATHS["data"]) / 'runs/battery_free_opt/fine/density_half.npz')]}},
     "landing": {"tilt_deg": 20.0, "output": "docs/validation/landing_limit_manafly.json", "fd_output": "docs/validation/landing_fd.json", "shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "linear_solver": "auto",
                 "fields": {}, "designs": {"stand_fix_coarse": "exports/runs/stand_fix_opt/coarse/design.npz"},
                 "proof": {"runs": {"stand_land": "exports/runs/stand_land_opt/coarse", "stand_fix": "exports/runs/stand_fix_opt/coarse"}, "output": "docs/validation/stand_land_proof.json", "image": "docs/validation/stand_land_floor.png"}},
     "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "cable_width": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None, "memory_log": "memory.jsonl", "fine_dir": "fine",
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
-            "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
+            "viewer": PATHS["data"], "manafly_renders": str(Path(PATHS["data"]) / 'fast/_manafly_same_renderer'), "evaluation_python": PATHS["python"],
             "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
             "figures": [{"output": "{method}_4views.png", "panels": ["raw", "recon", "manafly"], "labels": ["SIMP-MMA raw", "SIMP-MMA recon", "ManaFly"]}]},
-    "v3": {"worktree": "C:/clones/Deep_Frame-recon3", "ref": "HEAD", "copy": "C:/Users/jfham/AppData/Local/Temp/claude/c--clones-Deep-Frame/2bec171b-ba58-44fe-ab0f-61ff45688b18/scratchpad/recon3_copy",
+    "v3": {"worktree": PATHS["root"], "ref": "HEAD", "copy": str(Path(PATHS["data"]) / "recon3_source"),
            "argv": ["splines"], "compute": "geometry", "compare": "recon"},
-    "comparison": {"output": "exports/cov/comparison.json", "old": {"raw": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_raw_1", "recon": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_recon_1"},
-                   "old_fine": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/result.json", "previous": {}, "previous_fine": None, "gap": {}, "manafly_sigma": "exports/cov/eval/manafly3/sigma.json", "aether4_sigma": "exports/cov/eval/aether4/sigma.json",
+    "comparison": {"output": "exports/cov/comparison.json", "old": {"raw": str(Path(PATHS["data"]) / 'runs/simp_mma_raw_1'), "recon": str(Path(PATHS["data"]) / 'runs/simp_mma_recon_1')},
+                   "old_fine": str(Path(PATHS["data"]) / 'runs/simp_mma_opt/fine/result.json'), "previous": {}, "previous_fine": None, "gap": {}, "manafly_sigma": "exports/cov/eval/manafly3/sigma.json", "aether4_sigma": "exports/cov/eval/aether4/sigma.json",
                    "twist": {"motor_front_left": 1.0, "motor_rear_right": 1.0, "motor_front_right": -1.0, "motor_rear_left": -1.0}, "twist_dof": "Fz"},
     "covariance": {"variant": "mean", "limit_factor": 4.0, "start": 0.5, "fd_step": 1e-5, "fd_seed": 11, "ks_fd": 5.0, "settings": {},
-                   "frame_density": "C:/clones/Deep_Frame-mma/exports/runs/simp_mma_opt/fine/density_half.npz", "frame_solver": "auto"},
-    "solver_memory": {"run": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt", "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
+                   "frame_density": str(Path(PATHS["data"]) / 'runs/simp_mma_opt/fine/density_half.npz'), "frame_solver": "auto"},
+    "solver_memory": {"run": str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_opt'), "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
                       "output": "exports/solver_memory/baseline", "reference": None, "start": None, "multigrid": None, "share_static": True, "modal": {}},
-    "setup_memory": {"shape": None, "start": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine", "evaluate": True, "sample_s": 0.02, "min_free_gb": 5.0, "output": "exports/setup_memory/probe"},
+    "setup_memory": {"shape": None, "start": str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_opt/fine'), "evaluate": True, "sample_s": 0.02, "min_free_gb": 5.0, "output": "exports/setup_memory/probe"},
 }
 
 def configure(overrides):

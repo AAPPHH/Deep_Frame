@@ -1,9 +1,16 @@
 from copy import deepcopy
 import hashlib
 import json
+import os
+import shutil
 from math import atan2, degrees
 from pathlib import Path
 import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+PATHS = {"root": str(ROOT), "data": os.environ.get("DEEP_FRAME_DATA", str(ROOT / "exports")), "compute": str(ROOT / "tools" / "compute.py"),
+         "python": os.environ.get("DEEP_FRAME_PYTHON", sys.executable), "gpu_python": os.environ.get("DEEP_FRAME_GPU_PYTHON", sys.executable),
+         "slicer": os.environ.get("DEEP_FRAME_SLICER", shutil.which("prusa-slicer-console") or shutil.which("prusa-slicer") or "prusa-slicer-console")}
 
 COMPONENT_LIBRARY = {
     "GTS V3 1203": {
@@ -758,7 +765,7 @@ EVALUATION_CONFIG = {
     "parts": ["geometry", "walls", "fea", "sigma", "slicer"],
     "sigma_mesh": None,
     "python": sys.executable,
-    "compute": "C:/clones/Deep_Frame-int/tools/compute.py",
+    "compute": PATHS["compute"],
     "voxel_mm": 0.4,
     "loop_closing_mm": 3.0,
     "overhang_deg": 45.0,
@@ -781,7 +788,7 @@ EVALUATION_CONFIG = {
                           "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"}},
     "fea_settings": {"threads": 4, "mesh_threads": 4, "mesh_timeout_s": 900.0, "solver_timeout_s": 900.0, "fea_memory_budget_mb": 9728.0, "mesh_minimum_sicn": 0.005, "fea_remesh_targets_mm": [2.0, 1.5], "num_modes": 6},
     "fea_surface": {"targets_mm": [0.5, 0.6], "taubin": 10, "feature_degs": [40.0, 60.0, 89.0]},
-    "slicer": {"executable": "C:/clones/prusaslicer/PrusaSlicer-2.9.6/prusa-slicer-console.exe", "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
+    "slicer": {"executable": PATHS["slicer"], "version": "PrusaSlicer 2.9.6 portable (github.com/prusa3d/PrusaSlicer/releases/tag/version_2.9.6)",
                "options": ["--nozzle-diameter", "0.4", "--layer-height", "0.2", "--first-layer-height", "0.2", "--perimeters", "2", "--fill-density", "15%", "--filament-diameter", "1.75", "--filament-density", "1.09",
                            "--bed-shape", "0x0,256x0,256x256,0x256", "--max-print-height", "256", "--center", "128,128"],
                "support": ["--support-material", "--support-material-auto"], "timeout_s": 1800.0,
@@ -1188,7 +1195,7 @@ LAYOUT_OPTIMIZATION = {
     "mount_gap_mm": 3.0,
     "mount_gap_source": "camera envelope to AIO envelope: 2 mm minimum wall + 2 x 0.5 mm keep-out clearance",
     "antennas": "ELRS wire 3 mm above the board is part of the stack top that the battery gap is measured from; VTX antenna strapped with a rubber band, no seat, nothing to check",
-    "frame_share": {"stl": "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/frame.stl", "sha256": "81504ebdb07388a2", "mass_g": 17.6208, "center_mm": [0.1395, 5.2608, 12.9003],
+    "frame_share": {"stl": str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_v3_2/frame.stl'), "sha256": "81504ebdb07388a2", "mass_g": 17.6208, "center_mm": [0.1395, 5.2608, 12.9003],
                     "inertia_g_mm2": [[13744.5, 94.2, 10.2], [94.2, 14022.9, -364.7], [10.2, -364.7, 25970.9]], "source": "load-model SIMP v3b frame (simp_mma_cov3_v3_2), mesh volume integrals x PA6-CF 1.09 g/cm3, about its own centre of mass",
                     "layout": {"battery_y_mm": 0.0, "deck_top_mm": 28.0, "camera_y_mm": 35.0, "camera_bottom_clearance_mm": 2.0, "aio_standoff_mm": 3.0}},
     "solver": {"popsize": 40, "maxiter": 400, "tol": 1e-10, "seed": 1},
@@ -1313,14 +1320,14 @@ RUN_GRIDS = {
 }
 
 STAGES = {
-    "optimization": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": "C:/clones/Deep_Frame-gpu-venv/Scripts/python.exe"},
-    "reconstruction": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "geometry": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "evaluation": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "datasheet": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
-    "renders": {"worktree": "C:/clones/Deep_Frame-r4", "tool": "tools/neural_study.py", "argv": ["render_views"], "compute": "render", "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe"},
+    "optimization": {"worktree": PATHS["root"], "tool": "tools/neural_study.py", "argv": ["run"], "compute": "density_neural", "python": PATHS["gpu_python"]},
+    "reconstruction": {"worktree": PATHS["root"], "tool": "tools/reconstruction_study.py", "argv": ["build"], "compute": "reconstruction", "python": PATHS["python"]},
+    "geometry": {"worktree": PATHS["root"], "tool": "deep_frame/topology_implicit_validation.py", "argv": ["wall_rule"], "compute": "wall_check", "python": PATHS["python"]},
+    "evaluation": {"worktree": PATHS["root"], "tool": "tools/evaluate_frame.py", "argv": ["run"], "compute": None, "python": PATHS["python"]},
+    "datasheet": {"worktree": PATHS["root"], "tool": "run.py", "argv": ["datasheet"], "compute": "cpu", "python": PATHS["python"]},
+    "renders": {"worktree": PATHS["root"], "tool": "tools/neural_study.py", "argv": ["render_views"], "compute": "render", "python": PATHS["python"]},
 }
-RUN_SETTINGS = {"root": "exports/runs", "compute": "C:/clones/Deep_Frame-int/tools/compute.py", "domain_stage": "optimization", "domain_compute": "cpu",
+RUN_SETTINGS = {"root": "exports/runs", "compute": PATHS["compute"], "domain_stage": "optimization", "domain_compute": "cpu",
                 "views": {"iso": [[0.55, -0.85, -0.62], [0, 0, 1]], "top": [[0, 0, -1], [0, 1, 0]], "side": [[-1, 0, 0], [0, 0, 1]], "front": [[0, -1, 0], [0, 0, 1]]},
                 "datasheet_voxel_mm": 0.5, "deck_band_mm": 1.0, "fixture_band_mm": 0.5}
 

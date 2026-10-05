@@ -6,12 +6,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from deep_frame.config import command_line, configure
+from deep_frame.config import PATHS, command_line, configure
 from deep_frame.frame_evaluation import HEADER, LEGEND, append_datasheet, frame_spec, geometry, limits_markdown, mechanics, sigma, sigma_limits, slice_frame, summary, walls
 
 PARTS = {"geometry": (geometry, "cpu"), "walls": (walls, "wall_check"), "fea": (mechanics, "fea_modal"), "sigma": (sigma, "fea_modal"), "slicer": (slice_frame, "cpu")}
 
-GAP = Path("C:/clones/Deep_Frame-gap/exports")
+GAP = Path(PATHS["data"])
 gap = lambda *names: str(next((path for path in (GAP / folder / name / "interface_stiffness.json" for folder in ("gap", "interface_stiffness") for name in names) if path.exists()), GAP / "gap" / names[0] / "interface_stiffness.json"))
 LIMITS = {"references": {"manafly3": gap("manafly3"), "aether4": gap("aether4")}, "candidates": {"simp_mma_raw_1": gap("simp_mma_raw", "simp_mma_raw_1"), "simp_mma_recon_1": gap("simp_mma_recon", "simp_mma_recon_1")},
           "evaluations": {name: str(ROOT / "exports" / "cov" / "eval" / name / "sigma.json") for name in ("manafly3", "aether4", "simp_mma_raw_1", "simp_mma_recon_1")}
