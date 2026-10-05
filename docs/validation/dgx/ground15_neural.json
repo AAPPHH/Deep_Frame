@@ -55,7 +55,7 @@
     24
   ],
   "mma": {
-    "root": "exports/runs/ground15_neural_opt",
+    "root": "exports/runs/ground15b_neural_opt",
     "variant": "ground15_neural",
     "method": "ground15_neural",
     "linear_solver": "cuda_cudss",
@@ -97,6 +97,6 @@
   },
   "v3": {
     "compute": "reconstruction",
-    "copy": "exports/runs/ground15_neural_opt/v3_source"
+    "copy": "exports/runs/ground15b_neural_opt/v3_source"
   }
 }

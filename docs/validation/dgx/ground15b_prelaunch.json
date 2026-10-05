@@ -1,0 +1,155 @@
+{
+ "time_utc": "2026-10-05T21:55:30Z",
+ "status": "prelaunch_validated_production_not_started",
+ "code_commit": "431cd98",
+ "tests": {
+  "cpu_suite": {
+   "job": "raysubmit_wtq7d1rBPViDzhmF",
+   "passed": 897,
+   "skipped": 21,
+   "seconds": 893.34
+  },
+  "gpu_targeted": {
+   "job": "raysubmit_YXPxjJyaWLsj7Wqq",
+   "profile": "gpu_a100",
+   "files": [
+    "tests/test_topology_problem.py",
+    "tests/test_topology_multigrid.py",
+    "tests/test_formulation_study.py",
+    "tests/test_topology_optimization.py",
+    "tests/test_topology_neural.py"
+   ],
+   "passed": 177,
+   "skipped": 0
+  },
+  "after_reservation_change": {
+   "profile": "cpu",
+   "files": [
+    "tests/test_compare_pipelines.py",
+    "tests/test_tools.py"
+   ],
+   "passed": 214,
+   "note": "gpu_compare 16.65 -> 18.95 GiB and the two reservation-bound tests adjusted; full suites above ran on 431cd98"
+  }
+ },
+ "shared_seed": {
+  "job": "raysubmit_aTPMGBkCn35QicgV",
+  "regenerated": "exports/runs/ground15_validation/start",
+  "byte_identical_to": "exports/runs/ground15_start",
+  "sha256": "5a219e1365c7cdfe55e75ac027e1821e3dca750b9ce91509ec428a93e59f39c5",
+  "problem_definition_sha256": "3c6bf87ad284c17acc98554a261b20ab4b6a0047b2744b84423072dc2db8d551"
+ },
+ "flight_geometry": {
+  "pitch_deg": 15.0,
+  "fixed_hardware_gap_mm": 7.0,
+  "guard_drop_mm": 0.8,
+  "maximum_gap_mm": 7.8,
+  "lens_world_z_mm": -6.626390171519146,
+  "camera_bottom_world_z_mm": -13.626390171519146,
+  "minimum_frame_world_z_mm": -14.426390171519145,
+  "acceptance_tolerance_mm": 0.5
+ },
+ "probes": {
+  "simp": {
+   "job": "raysubmit_Cs7bHHx7HDPZrbnW",
+   "status": "not_converged_iteration_cap",
+   "iterations": 3,
+   "seconds_per_iteration": 22.01169938221574,
+   "gpu_peak_gb": 18.951171875,
+   "host_peak_gb": 11.680049896240234,
+   "production_definition_sha256": "3c6bf87ad284c17acc98554a261b20ab4b6a0047b2744b84423072dc2db8d551",
+   "probe_definition_sha256": "cac6f3a3fddab87cb3b9975c801220ec9a03b09537e6c37cb75c4b67c852f831",
+   "start_sha256": "5a219e1365c7cdfe55e75ac027e1821e3dca750b9ce91509ec428a93e59f39c5",
+   "descent": [
+    {
+     "iteration": 0,
+     "f0": 5.032478789627054,
+     "mass_g": 238.58946453326988,
+     "max_violation": 19.696286949166716
+    },
+    {
+     "iteration": 1,
+     "f0": 3.9666509902676723,
+     "mass_g": 188.058643726239,
+     "max_violation": 15.232633931514563
+    },
+    {
+     "iteration": 2,
+     "f0": 3.0549486756115356,
+     "mass_g": 144.83490128028814,
+     "max_violation": 10.881664155155502
+    }
+   ],
+   "monitored": {
+    "camera_shielding_crash_front": 0.15152698856168517,
+    "camera_shielding_crash_below": 0.019250421957531492,
+    "camera_shielding_crash_camera_oblique": 0.4050837161680653,
+    "camera_lens_clearance": 7.522384294085322
+   },
+   "crash_limits_active": {
+    "crash_front": [
+     1.1589152732256875,
+     292.89945
+    ],
+    "crash_below": [
+     5.493319719443681,
+     1027.8225
+    ]
+   },
+   "mma_linalg_warnings": 0
+  },
+  "neural": {
+   "job": "raysubmit_FrrqRNxXbd1Mmrev",
+   "status": "not_converged_iteration_cap",
+   "iterations": 3,
+   "seconds_per_iteration": 21.299354671500623,
+   "gpu_peak_gb": 18.951171875,
+   "host_peak_gb": 11.728649139404297,
+   "production_definition_sha256": "3c6bf87ad284c17acc98554a261b20ab4b6a0047b2744b84423072dc2db8d551",
+   "probe_definition_sha256": "cac6f3a3fddab87cb3b9975c801220ec9a03b09537e6c37cb75c4b67c852f831",
+   "start_sha256": "5a219e1365c7cdfe55e75ac027e1821e3dca750b9ce91509ec428a93e59f39c5",
+   "descent": [
+    {
+     "iteration": 0,
+     "f0": 5.032501886132159,
+     "mass_g": 238.59055953694818,
+     "max_violation": 19.697074935267263
+    },
+    {
+     "iteration": 1,
+     "f0": 4.555504470624172,
+     "mass_g": 215.9761457048656,
+     "max_violation": 17.67160813572565
+    },
+    {
+     "iteration": 2,
+     "f0": 4.093179235846737,
+     "mass_g": 194.05733892655803,
+     "max_violation": 15.65922895394235
+    }
+   ],
+   "monitored": {
+    "camera_shielding_crash_front": 0.1947944033514445,
+    "camera_shielding_crash_below": 0.02129311883225143,
+    "camera_shielding_crash_camera_oblique": 0.41911050901687974,
+    "camera_lens_clearance": 7.0
+   },
+   "crash_limits_active": {
+    "crash_front": [
+     1.0662499764716697,
+     292.89945
+    ],
+    "crash_below": [
+     3.4872374442195038,
+     1027.8225
+    ]
+   },
+   "mma_linalg_warnings": 0
+  }
+ },
+ "reservation": "gpu_compare declared at the measured probe peak 18.95 GiB x 1.3 = 24.6 GiB (was 16.65 GiB from the failed definition); production declares its own probe peak x 1.3",
+ "open": [
+  "crash_front/crash_below compliance limits (1.5 x CAMERA_SUPPORT.crash_reference 195.27 / 685.22 N mm) were measured with the removed battery contact model; re-measure with ideal_press or switch off with the deferred crash-reserve redesign",
+  "Neural route reached 0.585 g vs 0.567 g MMA on the cantilever but ended not_converged_stalled there; neural convergence under the shared gate is not demonstrated"
+ ]
+}

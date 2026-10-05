@@ -1144,7 +1144,7 @@ def test_compute_node20_21_routes_gpu_jobs_to_the_working_a100():
 
 def test_compute_parallel_comparison_declares_measured_gpu_memory_without_fixed_slot():
     job, need = compute.JOB_TYPES["gpu_compare"], compute.request("gpu_compare", ["x"], ".", machine="node20_21")
-    assert "num_gpus" not in job and 20 <= need["entrypoint_resources"]["gpu_gb"] <= 24
+    assert "num_gpus" not in job and 24 <= need["entrypoint_resources"]["gpu_gb"] <= 25
     assert need["entrypoint_resources"] == {"gpu_gb": round(job["gpu_gb"] * job["gpu_margin"], 1), "node:192.168.2.21": 0.001}
     assert need["entrypoint_num_gpus"] == pytest.approx(need["entrypoint_resources"]["gpu_gb"] / 80, abs=1e-4)
     assert 2 * need["entrypoint_resources"]["gpu_gb"] <= 80 and 2 * need["entrypoint_num_gpus"] <= 1

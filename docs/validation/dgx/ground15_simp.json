@@ -55,7 +55,7 @@
     24
   ],
   "mma": {
-    "root": "exports/runs/ground15_simp_opt",
+    "root": "exports/runs/ground15b_simp_opt",
     "variant": "ground15_simp",
     "method": "ground15_simp",
     "linear_solver": "cuda_cudss",
@@ -89,6 +89,6 @@
   },
   "v3": {
     "compute": "reconstruction",
-    "copy": "exports/runs/ground15_simp_opt/v3_source"
+    "copy": "exports/runs/ground15b_simp_opt/v3_source"
   }
 }

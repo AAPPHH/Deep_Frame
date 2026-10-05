@@ -46,7 +46,7 @@ JOB_TYPES = {
     "cpu": {"num_cpus": 2, "memory_gb": 4, "gpu_gb": 0},
     "gpu": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 5.5},
     "gpu_a100": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 80},
-    "gpu_compare": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 16.65, "gpu_margin": 1.3, "shared_gpu": True},
+    "gpu_compare": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 18.95, "gpu_margin": 1.3, "shared_gpu": True},
     "gpu_075": {"num_cpus": 16, "memory_gb": 160, "gpu_gb": 80},
 }
 join = subprocess.list2cmdline if os.name == "nt" else shlex.join

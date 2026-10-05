@@ -12,7 +12,7 @@ import pytest
 from tools import compute
 
 @pytest.mark.skipif(os.name == "nt", reason="Linux cluster controller")
-@pytest.mark.parametrize("gpu,rss,passed", [(20.0,10.0,True),(21.7,10.0,False),(20.0,46.5,False),(20.0,float("nan"),False),(float("nan"),10.0,False),(None,10.0,False)])
+@pytest.mark.parametrize("gpu,rss,passed", [(20.0,10.0,True),(24.7,10.0,False),(20.0,46.5,False),(20.0,float("nan"),False),(float("nan"),10.0,False),(None,10.0,False)])
 def test_parallel_controller_gate_uses_own_pid_memory_against_declared_reservation(gpu,rss,passed,tmp_path,monkeypatch):
     from tools import compare_pipelines
     comparison=compare_pipelines.Comparison.__new__(compare_pipelines.Comparison)
