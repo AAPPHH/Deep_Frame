@@ -5,7 +5,7 @@ from time import perf_counter
 
 import numpy as np
 import trimesh
-from build123d import Align, Box, Compound, Cylinder, Pos, Rot, Solid, Vector
+from build123d import Align, Axis, Box, Compound, Cylinder, Pos, Rot, Solid, Vector
 from OCP.BRep import BRep_Tool
 from OCP.IntCurvesFace import IntCurvesFace_ShapeIntersector
 from OCP.gp import gp_Dir, gp_Lin, gp_Pnt
@@ -22,7 +22,7 @@ def _cylinder(name, role, center, radius, height, purpose, axis="z", **extra):
     return {"name": name, "role": role, "kind": "cylinder", "center_mm": list(center), "radius_mm": float(radius), "height_mm": float(height), "axis": axis, "purpose": purpose, **extra}
 
 def region_bounds(region):
-    if region["kind"] == "box":
+    if region["kind"] in ("box", "halfspace"):
         return np.asarray(region["min_mm"], dtype=float), np.asarray(region["max_mm"], dtype=float)
     half = np.full(3, region["radius_mm"], dtype=float)
     half[{"x": 0, "y": 1, "z": 2}[region.get("axis", "z")]] = region["height_mm"] / 2
@@ -155,6 +155,11 @@ def region_contains(points, region, padding=0.0):
     padding = np.broadcast_to(np.asarray(padding, dtype=float), (3,))
     if points.shape[-1] != 3:
         raise ValueError("Points must have three coordinates")
+    if region["kind"] == "halfspace":
+        normal = np.asarray(region["normal"], dtype=float)
+        if normal.shape != (3,) or not np.isclose(np.linalg.norm(normal), 1):
+            raise ValueError("Halfspace requires a unit normal")
+        return points @ normal - np.abs(normal) @ padding < float(region["offset_mm"]) - 1e-9
     if region["kind"] == "box":
         minimum = np.asarray(region["min_mm"], dtype=float)
         maximum = np.asarray(region["max_mm"], dtype=float)
@@ -186,7 +191,10 @@ def rasterize_regions(grid, regions):
         inside = region_contains(points, region)
         if region["role"] == "forbidden" and region.get("rasterize", True):
             half = np.asarray(grid["spacing_mm"]) / 2
-            if region["kind"] == "box":
+            if region["kind"] == "halfspace":
+                normal = np.asarray(region["normal"])
+                inside = points @ normal - np.abs(normal) @ half < region["offset_mm"] - 1e-9
+            elif region["kind"] == "box":
                 inside = np.all((points + half > np.asarray(region["min_mm"]) + 1e-9) & (points - half < np.asarray(region["max_mm"]) - 1e-9), axis=-1)
             else:
                 axis = {"x": 0, "y": 1, "z": 2}[region.get("axis", "z")]
@@ -258,7 +266,17 @@ def _component_regions(parameters, settings, grid):
     battery_half = c["battery"]["width_mm"] / 2 + clearance
     if settings.get("battery_support", "rails") == "free":
         regions.append(_box("battery_contact", "allowed", [-battery_half, battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_z - 3.0], [battery_half, battery_y + c["battery"]["length_mm"] / 2 + clearance, battery_z], "Free battery support: contact plane under the battery (flatten target), no prescribed geometry"))
-    regions.append(_box("battery_insertion", "forbidden", [-battery_half, battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_z], [battery_half, battery_y + c["battery"]["length_mm"] / 2 + clearance, max(battery_z + c["battery"]["height_mm"] + clearance, upper[2] + 1)], "Battery removal vertically above its contact pads"))
+    regions.append(_box("battery_insertion", "forbidden", [-battery_half, battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_z], [battery_half, battery_y + c["battery"]["length_mm"] / 2 + clearance, max(battery_z + c["battery"]["height_mm"] + clearance, upper[2] + 1)], "Battery insertion and removal vertically, no retaining roof"))
+    guide = settings["battery_guide"]
+    if guide["enabled"]:
+        height, width = guide["height_mm"], guide["wall_zone_mm"]
+        low_y, high_y = battery_y - c["battery"]["length_mm"] / 2 - clearance, battery_y + c["battery"]["length_mm"] / 2 + clearance
+        regions.append(_box("battery_guide_side", "allowed", [battery_half, low_y, battery_z], [battery_half + width, high_y, battery_z + height], "Free low side guide, reflected by symmetry; no flight load interface", guide_axis=0))
+        for name, lo, hi in (("front", high_y, high_y + width), ("rear", low_y - width, low_y)):
+            regions.append(_box("battery_guide_" + name, "allowed", [-battery_half, lo, battery_z], [battery_half, hi, battery_z + height], "Free low end guide, handling only; no flight load interface", guide_axis=1))
+        relief = guide["entry_relief_mm"]
+        regions.append(_box("battery_guide_entry", "forbidden", [-battery_half-relief, low_y-relief, battery_z+height-relief], [battery_half+relief, high_y+relief, upper[2]+1], "Expanded upper insertion opening; no top overhang or latch"))
+        regions.append(_box("battery_guide_height_cap", "forbidden", [-battery_half-12, low_y-12, battery_z+height], [battery_half+12, high_y+12, upper[2]+1], "Positioner limited to a low perimeter; higher cages and retention lips excluded"))
     camera_width = c["camera"]["width_mm"] + 2 * f["camera_side_clearance_mm"]
     for sign in (-1, 1) if settings.get("camera_support", "prescribed") == "prescribed" else ():
         x = sign * (camera_width / 2 + settings["camera_contact_width_mm"] / 2)
@@ -328,6 +346,29 @@ def embed_field(field, grid):
         raise ValueError("Field does not fit the grid below its top layer")
     return np.pad(field, ((0, 0), (0, 0), (cells, 0)), mode="edge")
 
+def functional_geometry(parameters, settings, components):
+    result = {}
+    if settings["battery_guide"]["enabled"]:
+        result["battery_guide"] = deepcopy(settings["battery_guide"])
+    flight = settings["low_flight"]
+    if flight["enabled"]:
+        pitch = np.radians(flight["pitch_deg"])
+        vertical = np.array([0, -np.sin(pitch), np.cos(pitch)])
+        camera, frame = parameters["components"]["camera"], parameters["frame"]
+        tilt = np.radians(camera["tilt_deg"])
+        lens = np.array([0, frame["camera_y_mm"]+camera["length_mm"]/2*np.cos(tilt), camera_mount_z(parameters)+camera["length_mm"]/2*np.sin(tilt)])
+        bottoms = {name: float(item["shape"].rotate(Axis.X, -flight["pitch_deg"]).bounding_box().min.Z) for name, item in components.items()}
+        lens_z = float(lens @ vertical)
+        fixed_gap = lens_z - min(bottoms.values())
+        camera_gap = lens_z - bottoms["camera"]
+        maximum = max(fixed_gap, camera_gap+flight["guard_drop_mm"]) + flight["maximum_extra_gap_mm"]
+        result["low_flight"] = {**deepcopy(flight), "vertical_axis": vertical.tolist(), "lens_mm": lens.tolist(), "lens_world_z_mm": lens_z,
+                                "component_bottoms_world_z_mm": bottoms, "fixed_hardware_gap_mm": fixed_gap, "camera_bottom_world_z_mm": bottoms["camera"],
+                                "maximum_gap_mm": maximum, "minimum_frame_world_z_mm": lens_z-maximum,
+                                "camera_center_mm": [0, frame["camera_y_mm"], camera_mount_z(parameters)], "camera_width_mm": camera["width_mm"], "camera_length_mm": camera["length_mm"],
+                                "lens_source": "Front-face midpoint of the selected camera envelope; physical optical-centre offset remains unmeasured"}
+    return result
+
 def build_design_domain(parameters):
     settings = _merge(TOPOLOGY_CONFIG, parameters.get("topology", {}))
     grid = lowered_grid(settings["grid"], settings["floor_drop_mm"])
@@ -345,6 +386,10 @@ def build_design_domain(parameters):
     clearance = prescribed_clearance(regions, manufacturing["minimum_feature_mm"], settings["prescribed_wall_margin_mm"], IMPLICIT_CONFIG["preserve_inflation_mm"])
     regions.extend(_tool_access(regions, settings, grid["origin_mm"][2] + grid["spacing_mm"][2] * grid["shape"][2] + 1))
     subtractions = _preserve_subtractions(regions)
+    functions = functional_geometry(parameters, settings, components)
+    if functions.get("low_flight"):
+        flight = functions["low_flight"]
+        regions.append({"name": "flight_lens_clearance_floor", "role": "forbidden", "kind": "halfspace", "normal": flight["vertical_axis"], "offset_mm": flight["minimum_frame_world_z_mm"], "min_mm": grid["origin_mm"], "max_mm": (np.asarray(grid["origin_mm"])+np.asarray(grid["shape"])*grid["spacing_mm"]).tolist(), "purpose": "Material below the lens-relative whole-copter clearance in requested flight attitude is forbidden"})
     masks = rasterize_regions(grid, regions)
     _, allowed_components = label(masks["allowed"])
     if allowed_components != 1:
@@ -379,6 +424,7 @@ def build_design_domain(parameters):
         "grid": grid,
         **masks,
         "regions": regions,
+        "functional_requirements": functions,
         "material": deepcopy(model["material"]),
         "point_masses": deepcopy(model["point_masses"]),
         "load_cases": deepcopy(model["load_cases"]) + auxiliary_cases,
@@ -442,6 +488,13 @@ def mirror_field(half, axis=0):
     return np.concatenate([np.flip(half, axis), half], axis=axis)
 
 def region_shape(region):
+    if region["kind"] == "halfspace":
+        normal = np.asarray(region["normal"])
+        if abs(normal[0]) > 1e-9:
+            raise ValueError("Flight halfspace expects pitch about X")
+        extent = 4*float(np.linalg.norm(np.asarray(region["max_mm"])-region["min_mm"]))
+        angle = float(np.degrees(np.arctan2(-normal[1], normal[2])))
+        return Pos(*(normal*(region["offset_mm"]-extent/2))) * Rot(angle, 0, 0) * Box(extent, extent, extent)
     if region["kind"] == "box":
         lower = np.asarray(region["min_mm"], dtype=float)
         upper = np.asarray(region["max_mm"], dtype=float)

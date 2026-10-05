@@ -1,0 +1,94 @@
+{
+  "request": null,
+  "reference_density": null,
+  "layout": {
+    "name": "ground15_positioner",
+    "style": "freestyle",
+    "durability": "standard",
+    "prop_size_in": 2.5,
+    "layout": {
+      "x_type": "compressed_x",
+      "battery_mount": "top"
+    },
+    "components": {
+      "motor": "GTS V3 1203",
+      "aio": "HDZero AIO15",
+      "camera": "HDZero Lux",
+      "battery": "GNB5502S120A",
+      "antennas": "HDZero VTX + ELRS",
+      "prop": "HQProp T2.5X2X3V2S"
+    },
+    "material": "PA6-CF",
+    "print": {
+      "nozzle_mm": 0.4,
+      "layer_mm": 0.2
+    },
+    "overrides": {
+      "optimizer": {
+        "volume_fraction": 0.06,
+        "prop_discs": "soft",
+        "f1_min_hz": 300.0
+      },
+      "battery": {
+        "support": "free",
+        "positioning_aid": true
+      },
+      "camera": {
+        "support": "free",
+        "bottom_clearance_mm": -4.0,
+        "tilt_deg": 20.0,
+        "y_mm": 52.0,
+        "near_ground": true,
+        "flight_pitch_deg": 15.0
+      }
+    },
+    "grid": "fine",
+    "reconstruction": false
+  },
+  "shape": [
+    102,
+    96,
+    24
+  ],
+  "coarse_shape": [
+    68,
+    64,
+    24
+  ],
+  "mma": {
+    "root": "exports/runs/ground15_neural_opt",
+    "variant": "ground15_neural",
+    "method": "ground15_neural",
+    "linear_solver": "cuda_cudss",
+    "stage_solvers": {},
+    "initial_density": 0.5,
+    "coarse": false,
+    "start": "exports/runs/ground15_neural_coarse_seed/initialization",
+    "fine_dir": "fine2",
+    "until": "export",
+    "memory_s": 1.0,
+    "stand": {
+      "enabled": false
+    },
+    "cable_width": {
+      "enabled": false
+    },
+    "settings": {
+      "final_max_iterations": 300
+    },
+    "landing": {
+      "enabled": false
+    },
+    "optimizer": "neural_al",
+    "bodies": [
+      "raw",
+      "recon",
+      "v3"
+    ],
+    "fine_start_level": 0
+  },
+  "v3": {
+    "compute": "reconstruction",
+    "copy": "exports/runs/ground15_neural_opt/v3_source"
+  }
+}

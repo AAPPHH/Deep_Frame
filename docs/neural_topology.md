@@ -1,6 +1,6 @@
 # Neural topology optimization (TOuNN-style proof of concept)
 
-Status: prototype on branch `feature/neural-topo`, not integrated into the main pipeline.
+The historical TOuNN volume-constrained prototype below remains available. Since 2026-10-05 a second neural adapter, `NeuralALOptimizer`, runs on the same `TopologyProblem` formulation as SIMP/MMA, including free battery/camera contacts, covariance, crash and modal constraints. `tools/formulation_study.py frame_neural` uses a Fourier MLP with bounded sigmoid design values and Adam/augmented-Lagrangian updates, while reusing the shared continuation, feasibility and best-feasible reporting. Its shared objective includes mass and lens clearance above the lowest part of the assembled copter at 15° nose down. Battery retention uses an ideal external press on underside support nodes, without rubber stiffness or preload; the integrated insertion guides carry handling loads only. Field fit errors are recorded at transitions; network-only resume is not supported. The parallel cluster workflow and corrected shared ground-perspective/positioning-guide domain are documented in [dgx_handoff.md](dgx_handoff.md). Successful resource probes do not establish design convergence.
 
 ## Method
 

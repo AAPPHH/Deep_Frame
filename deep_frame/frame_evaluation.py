@@ -21,6 +21,8 @@ def box(low, high):
     return {"kind": "box", "min_mm": [float(v) for v in low], "max_mm": [float(v) for v in high]}
 
 def shrink(region, margin):
+    if region["kind"] == "halfspace":
+        return {**region, "offset_mm": region["offset_mm"] - margin * float(np.linalg.norm(region["normal"]))}
     if region["kind"] == "box":
         return {**region, "min_mm": [v + margin for v in region["min_mm"]], "max_mm": [v - margin for v in region["max_mm"]]}
     return {**region, "radius_mm": region["radius_mm"] - margin, "height_mm": region["height_mm"] - 2 * margin}

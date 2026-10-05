@@ -21,7 +21,7 @@ from deep_frame.topology_geometry import _merge, embed_field
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import HexElasticity
 from deep_frame.topology_stability import STAND_CASES, FOUR_FEET, StandStability, stand_design, stand_domain, voxel_reserve
-from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, cable_corridor, density_map, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
+from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, cable_corridor, density_map, COVARIANCE, LOAD_COVARIANCE, MMA, MMAOptimizer, NeuralALOptimizer, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = str(Path(PATHS["data"]) / 'runs/r4_neural_v06_f1_1')
 FORMULATION = {
@@ -71,6 +71,7 @@ FORMULATION = {
     "solver_memory": {"run": str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_opt'), "grids": ["coarse", "fine"], "evaluations": 3, "mma_iterations": 5, "sample_s": 0.5,
                       "output": "exports/solver_memory/baseline", "reference": None, "start": None, "multigrid": None, "share_static": True, "modal": {}},
     "setup_memory": {"shape": None, "start": str(Path(PATHS["data"]) / 'runs/simp_mma_cov3_opt/fine'), "evaluate": True, "sample_s": 0.02, "min_free_gb": 5.0, "output": "exports/setup_memory/probe"},
+    "review": {"frame_source": None,"output_directory": None},
 }
 
 def configure(overrides):
@@ -126,13 +127,18 @@ def patched_builder(cfg, stiffness=True):
 def free_support(half):
     regions = {region["name"]: region for region in half["regions"]}
     part, clearance = config.COMPONENT_DEFAULTS["battery"], config.TOPOLOGY_CONFIG["component_clearance_mm"]
-    keep_out = regions["battery_insertion"]
+    keep_out = regions["battery_envelope" if config.BATTERY_SUPPORT.get("retention") == "ideal_press" else "battery_insertion"]
     low = np.asarray(keep_out["min_mm"]) + [clearance, clearance, 0.0]
     size = np.array([part["width_mm"], part["length_mm"], part["height_mm"]])
     center = low + size / 2
+    if config.BATTERY_SUPPORT.get("retention") == "ideal_press":
+        position = np.asarray(half["metadata"]["components"]["battery"]["position_mm"])
+        center = position + np.array([0,0,size[2]/2])
     mass = part["mass_g"]
     inertia = mass / 12 * np.diag([size[1] ** 2 + size[2] ** 2, size[0] ** 2 + size[2] ** 2, size[0] ** 2 + size[1] ** 2])
     half["battery"] = {"keep_out": keep_out, "reference_mm": [0.0, float(center[1]), float(low[2])], "center_mm": center.tolist(), "size_mm": size.tolist(), "mass_g": mass, "inertia_g_mm2": inertia.tolist()}
+    half["battery"]["retention"] = config.BATTERY_SUPPORT.get("retention", "contact")
+    half["battery"]["guide_regions"] = [deepcopy(region) for name, region in regions.items() if name in ("battery_guide_side", "battery_guide_front", "battery_guide_rear")]
     deck = half["interfaces"]["battery"]["regions"][0]
     for case in half["load_cases"]:
         if "inertia_relief" not in case:
@@ -142,7 +148,7 @@ def free_support(half):
         case["inertia_relief"] = {**deepcopy(case["inertia_relief"]), "bodies": [{"name": "battery", "mass_g": mass, "position_mm": center.tolist(), "inertia_g_mm2": inertia.tolist(), "force_n": applied.tolist()}]}
     half["point_masses"] = [item for item in half["point_masses"] if item["name"] != "battery"]
     half["metadata"]["formulation"]["battery_support"] = {"mode": "free", **{key: half["battery"][key] for key in ("reference_mm", "center_mm", "size_mm", "mass_g")},
-                                                          "statement": "battery rigid body on density-dependent contact springs (BATTERY_SUPPORT); its inertia and the crash_back deck load act on the body, not on frame nodes"}
+                                                          "retention": half["battery"]["retention"], "statement": "battery inertia and crash_back load act on its rigid body; ideal_press uses only underside pad nodes and an external ideal holding assumption; guide faces transfer no flight or crash wrench"}
     return half
 
 def free_camera_mode():
@@ -1224,15 +1230,31 @@ def keep_best(out):
         np.savez_compressed(out / f"best_beta{best['beta']:g}.npz", design=x, **{key: best[key] for key in ("iteration", "level", "beta", "f0", "mass_g", "max_violation")})
     return save
 
+def shared_definition(half,problem):
+    keys=("grid","regions","material","load_cases","point_masses","interfaces","battery","camera","functional_requirements","symmetry","optimizer_settings")
+    domain={key:half[key] for key in keys if key in half}
+    domain["mask_sha256"]={key:hashlib.sha256(np.asarray(half[key],dtype=np.uint8).tobytes()).hexdigest() for key in ("allowed","preserve","forbidden")}
+    definition=json.loads(json.dumps({"domain":domain,"problem":problem},sort_keys=True,default=lambda value:value.tolist() if hasattr(value,"tolist") else float(value)))
+    return {"sha256":hashlib.sha256(json.dumps(definition,sort_keys=True,separators=(",",":")).encode()).hexdigest(),**definition}
+
 def optimize_stage(cfg, half, problem, design, out, start_level, stage):
     out.mkdir(parents=True, exist_ok=True)
+    definition = shared_definition(half,problem)
+    (out / "problem_definition.json").write_text(json.dumps(definition,indent=2),encoding="utf-8")
     tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["stage_solvers"].get(stage, cfg["mma"]["linear_solver"]))
+    method = cfg["mma"].get("optimizer", "mma")
+    if method not in ("mma", "neural_al"):
+        raise ValueError("Optimizer must be mma or neural_al")
+    if method == "neural_al" and cfg["mma"]["resume"]:
+        raise ValueError("Neural AL resume requires network and multiplier state; density checkpoints alone are insufficient")
     if cfg["mma"]["resume"] and (out / "checkpoint.npz").is_file():
         saved = np.load(out / "checkpoint.npz")
         design, start_level = saved["design"], int(saved["level"])
     with (out / "iterations.jsonl").open("a") as log:
         progress = lambda row: (log.write(json.dumps(row, default=float) + "\n"), log.flush())
-        result = MMAOptimizer(tp, {**cfg["mma"]["settings"], "start_level": start_level}).run(design, progress, checkpoint(out / "checkpoint.npz"), keep_best(out))
+        settings = {**cfg["mma"]["settings"], "start_level": start_level}
+        optimizer = NeuralALOptimizer(tp, settings, cfg["mma"].get("neural", {})) if method == "neural_al" else MMAOptimizer(tp, settings)
+        result = optimizer.run(design, progress, checkpoint(out / "checkpoint.npz"), keep_best(out))
     report = tp.report(result["design"])
     fields, _ = tp.map.fields(result["design"])
     physical = fields["intermediate"][0]
@@ -1243,6 +1265,12 @@ def optimize_stage(cfg, half, problem, design, out, start_level, stage):
     record = {"status": result["status"], "iterations": result["iterations"], "runtime_s": result["runtime_s"], "seconds_per_iteration": result["seconds_per_iteration"], "levels": result["levels"],
               "best_feasible": result["best_feasible"], "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
               "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"], "linear_solver": tp.system.linear_solver}
+    record["optimizer"] = method
+    record.update(problem_definition_sha256=definition["sha256"],functional_requirements=half.get("functional_requirements",{}),battery_retention=(problem.get("battery") or {}).get("retention"),objective_components=report["objective_components"],camera_lens_clearance_smooth_mm=report["camera_lens_clearance_smooth_mm"])
+    if method == "neural_al":
+        record["neural"] = {"settings": optimizer.neural, "fit_rmse": optimizer.fit_rmse, "parameter_count": sum(value.size for value in optimizer.mapping.field.parameters),
+                            "network_artifact": "last_network.npz", "network_statement": "Last network iterate; a returned best-feasible density may come from an earlier iterate"}
+        np.savez_compressed(out / "last_network.npz", **{f"parameter_{i}": value for i, value in enumerate(optimizer.mapping.field.parameters)})
     if tp.system.multigrid is not None:
         record["multigrid"] = {"settings": tp.system.multigrid.settings, "solves": multigrid_summary(tp.system.multigrid.statistics)}
     tp.close()
@@ -1252,13 +1280,28 @@ def optimize_stage(cfg, half, problem, design, out, start_level, stage):
     return result["design"], record
 
 def export_body(cfg, physical, out):
-    from tools.neural_study import R2Domain, finish, upsample
+    from tools.neural_study import finish, upsample, render_views
+    from tools.reconstruction_study import save_materialization
+    from deep_frame.topology_geometry import mirror_field
+    from deep_frame.topology_implicit import exact_booleans
     settings = patched_settings(cfg)
     settings["fine_shape"] = [2 * size for size in cfg["shape"]]
-    fine_full, _ = R2Domain(settings).build(settings["fine_shape"], cfg["reference_fraction"])
+    half = frame_domain(cfg,settings["fine_shape"])
+    grid=deepcopy(half["grid"])
+    grid["shape"][0]*=2
+    grid["origin_mm"][0]=-grid["shape"][0]*grid["spacing_mm"][0]/2
+    fine_full={**half,"grid":grid,**{key:mirror_field(half[key]) for key in ("allowed","preserve","forbidden")}}
+    fine_full.pop("symmetry",None)
     density = upsample(physical, fine_full)
-    np.savez_compressed(out / "density_fine.npz", density=density.astype(np.float32))
-    return finish(out, density, fine_full, settings, None)
+    save_materialization(fine_full,density,out)
+    result=finish(out, density, fine_full, settings, None)
+    if fine_full.get("functional_requirements"):
+        import trimesh
+        mesh,booleans=exact_booleans(trimesh.load_mesh(out/"geometry.stl",process=True),fine_full,config.IMPLICIT_CONFIG)
+        mesh.export(out/"geometry.stl")
+        result.update(exact_booleans=booleans,mass_g=float(mesh.volume*fine_full["material"]["density_g_cm3"]/1000),mesh_volume_mm3=float(mesh.volume),volume_fraction_mesh=float(mesh.volume/(np.count_nonzero(fine_full["allowed"])*np.prod(grid["spacing_mm"]))),watertight=bool(mesh.is_watertight),bodies=len(mesh.split(only_watertight=False)))
+        render_views(mesh,out)
+    return result
 
 def body_start(cfg, design, half):
     from deep_frame.topology_geometry import region_contains
@@ -1283,6 +1326,23 @@ def initial_design(cfg, half):
     design[~half["allowed"].ravel()] = 0.0
     design[half["preserve"].ravel()] = 1.0
     return design
+
+def frame_probe(cfg):
+    config.STAND_STABILITY.update(cfg["mma"]["stand"])
+    config.LANDING.update(cfg["mma"].get("landing", {}))
+    config.CABLE_WIDTH.update(cfg["mma"]["cable_width"])
+    cfg = _merge(cfg, {"mma": {"settings": {"final_max_iterations": 3, "final_min_iterations": 10}}})
+    root = Path(cfg["mma"]["root"] + "_probe")
+    root.mkdir(parents=True, exist_ok=True)
+    probe = MemoryProbe(0.5, root / "memory.jsonl")
+    try:
+        with probe.phase("probe"):
+            half, problem = frame_setup(cfg, cfg["shape"])
+            problem["continuation"]["beta_schedule"] = [1.0]
+            optimize_stage(cfg, half, problem, initial_design(cfg, half), root / "fine", 0, "fine")
+    finally:
+        probe.close()
+        (root / "memory.json").write_text(json.dumps(probe.summary(), indent=1, default=float), encoding="utf-8")
 
 def frame_mma(cfg):
     started = perf_counter()
@@ -1326,7 +1386,8 @@ def frame_mma(cfg):
         if probe:
             probe.close()
             (root / Path(cfg["mma"]["memory_log"]).with_suffix(".json")).write_text(json.dumps(probe.summary(), indent=1, default=float), encoding="utf-8")
-    info = {"variant": cfg["mma"]["variant"], "method": "SIMP-MMA (mmapy 0.3.1), shared formulation " + git_sha(), "stages": stages, "body": body, "total_runtime_s": perf_counter() - started,
+    method = "Neural Fourier MLP/Adam/AL" if cfg["mma"].get("optimizer") == "neural_al" else "SIMP-MMA (mmapy 0.3.1)"
+    info = {"variant": cfg["mma"]["variant"], "method": method + ", shared formulation " + git_sha(), "stages": stages, "body": body, "total_runtime_s": perf_counter() - started,
             "iterations": sum(stage["iterations"] for stage in stages.values()), "reference": cfg["reference_density"], "start": cfg["mma"]["start"], "memory": probe.summary() if probe else None}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=float), encoding="utf-8")
     print(json.dumps({"iterations": info["iterations"], "total_runtime_s": info["total_runtime_s"], "mass_g_body": body["mass_g"], "bodies": body["bodies"], "watertight": body["watertight"]}, default=float), flush=True)
@@ -1338,9 +1399,20 @@ class ResultRun(FrameRun):
     def available(self, stage):
         return stage == "optimization" or super().available(stage)
     def optimization(self, domain):
-        self.manifest["stages"]["optimization"] = {"status": "ran", "source": str(self.result), "method": "SIMP-MMA on the shared formulation", **_git(str(ROOT))}
+        info = read(self.result / "info.json") if (self.result / "info.json").exists() else {}
+        self.manifest["stages"]["optimization"] = {"status": "ran", "source": str(self.result), "method": info.get("method", "Shared formulation optimization"), **_git(str(ROOT))}
         self.save()
         return self.result
+    def reconstruction(self,density):
+        if not (self.result/"domain.json").is_file():
+            if self.request["overrides"].get("battery",{}).get("positioning_aid"):
+                raise ValueError("Integrated positioning aid requires the optimization domain contract")
+            return super().reconstruction(density)
+        out=self.dir/"reconstruction"
+        overrides={"source":str(density),"domain":str(self.result/"domain.json"),"output":str(out),**self.grid["reconstruction"]}
+        command=self.command("reconstruction",{"patch":self.layout.patch(),"argv":self.stages["reconstruction"]["argv"],"overrides":overrides},"cli")
+        self.execute("reconstruction",command,self.stages["reconstruction"]["worktree"],[out/"geometry.stl"])
+        return out/"geometry.stl"
 
 class V3Run(ResultRun):
     def __init__(self, request, result, stages, compare, sha):
@@ -1390,6 +1462,49 @@ def frame_runs(cfg):
     with ThreadPoolExecutor(max(len(todo), 1)) as pool:
         runs.update(pool.map(lambda suffix: body_run(cfg, suffix, request, stages, runs), todo))
     (root / "runs.json").write_text(json.dumps(runs, indent=1), encoding="utf-8")
+    if (cfg.get("layout") or {}).get("overrides",{}).get("battery",{}).get("positioning_aid"):
+        reviewed={}
+        for suffix,path in runs.items():
+            if suffix=="raw":
+                continue
+            output=Path(path)/"functional_review"
+            spec={"pipeline":str(root/"pipeline_config.json"),"frame_source":str(Path(path)/"frame.stl"),"output_directory":str(output)}
+            (root/"pipeline_config.json").write_text(json.dumps(cfg,indent=2))
+            output.mkdir(parents=True,exist_ok=True)
+            request=output/"request.json"
+            request.write_text(json.dumps(spec,indent=2))
+            command=[sys.executable,str(ROOT/"tools/compute.py"),"reconstruction","--",cfg["mma"]["evaluation_python"],str(ROOT/"tools/functional_geometry_review.py"),str(request)]
+            with (output/"run.log").open("w") as log:
+                code=subprocess.call(command,cwd=ROOT,stdout=log,stderr=subprocess.STDOUT)
+            reviewed[suffix]={"exit_code":code,"report":str(output/"report.json")}
+        (root/"functional_reviews.json").write_text(json.dumps(reviewed,indent=2))
+        if not any(row["exit_code"]==0 for row in reviewed.values()):
+            raise RuntimeError("No reconstructed pipeline result passed the assembled camera and integrated battery-guide checks")
+
+def frame_physical(cfg):
+    import trimesh
+    from deep_frame.topology_neural import cell_centers
+    for key,name in (("stand","STAND_STABILITY"),("landing","LANDING"),("cable_width","CABLE_WIDTH")):
+        getattr(config,name).update(cfg["mma"].get(key,{}))
+    half,problem=frame_setup(cfg,cfg["shape"])
+    spec=cfg["review"]
+    mesh=trimesh.load_mesh(spec["frame_source"],process=True)
+    if not mesh.is_watertight or len(mesh.split(only_watertight=False))!=1:
+        raise ValueError("Physical verification requires a single closed reconstructed frame")
+    physical=mesh.contains(cell_centers(half["grid"])).astype(float)
+    tp=TopologyProblem(half,problem,linear_solver=cfg["mma"]["linear_solver"])
+    try:
+        report=tp.physical_report(physical)
+        report.update(stl_mass_g=float(mesh.volume*half["material"]["density_g_cm3"]/1000),frame_source=spec["frame_source"],frame_sha256=hashlib.sha256(Path(spec["frame_source"]).read_bytes()).hexdigest(),problem_definition_sha256=shared_definition(half,problem)["sha256"],method="Reconstructed STL sampled at the shared FE cell centres; ideal underside battery retention, guide handling only; no filter or projection")
+        report["passed"]=all(row["status"]!="violated" for row in report["rows"])
+        output=Path(spec["output_directory"])
+        output.mkdir(parents=True,exist_ok=True)
+        (output/"physical_evaluation.json").write_text(json.dumps(report,indent=2,default=float))
+        print(format_report(report["rows"]),flush=True)
+        if not report["passed"]:
+            raise RuntimeError("Reconstructed frame violates shared mechanical or functional constraints")
+    finally:
+        tp.close()
 
 def manafly_check(cfg):
     spec = json.loads(Path(cfg["manafly"]["frame"]).read_text(encoding="utf-8"))
@@ -1508,6 +1623,9 @@ def cov_compare(cfg):
 def main(argv=None):
     return command_line({"references": lambda overrides: references(configure(overrides)), "modal_split": lambda overrides: modal_split(configure(overrides)), "cantilever": lambda overrides: cantilever(configure(overrides)),
                          "cantilever_mma": lambda overrides: cantilever_mma(configure(overrides)), "frame_mma": lambda overrides: frame_mma(configure(overrides)),
+                         "frame_neural": lambda overrides: frame_mma(_merge(configure(overrides), {"mma": {"optimizer": "neural_al"}})),
+                         "frame_probe": lambda overrides: frame_probe(configure(overrides)),
+                         "frame_physical": lambda overrides: frame_physical(configure(overrides)),
                          "frame_runs": lambda overrides: frame_runs(configure(overrides)), "manafly_check": lambda overrides: manafly_check(configure(overrides)), "compose": lambda overrides: compose(configure(overrides)),
                          "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),
                          "covariance_mma": lambda overrides: covariance_cantilever_mma(configure(overrides)), "covariance_frame": lambda overrides: covariance_frame(configure(overrides)),

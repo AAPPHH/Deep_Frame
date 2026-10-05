@@ -464,3 +464,15 @@ def test_build_plate_face_alone_does_not_require_support():
     result = validate_topology(solid, domain, {})
     assert result["passed"], result["violations"]
     assert not result["checks"]["supports"]["supports_required"]
+
+def test_flight_halfspace_uses_pitched_lens_plane_and_entire_voxel():
+    angle=np.radians(15)
+    normal=np.array([0,-np.sin(angle),np.cos(angle)])
+    region={'name':'flight_floor','role':'forbidden','kind':'halfspace','normal':normal.tolist(),'offset_mm':0.,'min_mm':[-2,-2,-2],'max_mm':[2,2,2]}
+    points=np.array([[0,1,0],[0,-1,0],[0,0,1]])
+    assert region_contains(points,region).tolist()==[True,False,False]
+    grid={'origin_mm':[-1,-1,0],'spacing_mm':[1,1,1],'shape':[2,2,1]}
+    regions=[{'name':'domain','role':'allowed','kind':'box','min_mm':[-1,-1,0],'max_mm':[1,1,1]},region]
+    masks=rasterize_regions(grid,regions)
+    centers=grid_centers(grid)
+    assert np.all((centers@normal)[masks['allowed']]>=np.abs(normal)@np.array([.5,.5,.5])-1e-8)

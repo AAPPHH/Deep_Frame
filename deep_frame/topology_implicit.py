@@ -57,6 +57,8 @@ def _bounds(region):
     return region_bounds(region)
 
 def primitive_distance(axes, region):
+    if region["kind"] == "halfspace":
+        return region["offset_mm"]-sum(axes[i]*region["normal"][i] for i in range(3))
     if region["kind"] == "sphere":
         return region["radius_mm"]-np.sqrt(sum((axes[i]-region["center_mm"][i])**2 for i in range(3)))
     low, high = region_bounds(region)
@@ -546,6 +548,14 @@ def realised_bounds(region, side=0):
 def region_manifold(region, tolerance, margin=0.0, grow=0, side=0, inscribed=False):
     from manifold3d import Manifold
     low, high = realised_bounds(region, side)
+    if region["kind"] == "halfspace":
+        corners = np.array(list(product(*zip(low, high))), dtype=float)
+        distances = corners@np.asarray(region["normal"])-region["offset_mm"]-grow*margin
+        points = list(corners[distances<=0])
+        for a,b in combinations(range(8),2):
+            if np.count_nonzero(corners[a]!=corners[b])==1 and distances[a]*distances[b]<0:
+                points.append(corners[a]+distances[a]/(distances[a]-distances[b])*(corners[b]-corners[a]))
+        return Manifold.hull_points(np.asarray(points)) if len(points)>=4 else Manifold(), None
     if region["kind"] == "box":
         return Manifold.hull_points(np.array(list(product(*zip(low, high))), dtype=float)), None
     if region["kind"] != "cylinder":
@@ -572,6 +582,8 @@ def _manifold(mesh):
 def _snap_planes(mesh, regions, tolerance=1e-9):
     planes = [set() for _ in range(3)]
     for region, side in regions:
+        if region["kind"] == "halfspace":
+            continue
         low, high = realised_bounds(region, side)
         for axis in range(3):
             if region["kind"] == "box" or axis == AXES[region.get("axis", "z")]:

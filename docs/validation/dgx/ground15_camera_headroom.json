@@ -1,0 +1,74 @@
+{
+  "coarse_shape": {
+    "grid": {
+      "origin_mm": [
+        0.0,
+        -64.0,
+        -4.0
+      ],
+      "spacing_mm": [
+        2.0,
+        2.0,
+        1.3333333333333333
+      ],
+      "shape": [
+        34,
+        64,
+        27
+      ],
+      "axis_order": "xyz",
+      "order": "C"
+    },
+    "max_shielding": {
+      "crash_front": 0.2638250632715804,
+      "crash_below": 0.39569538528028514,
+      "crash_camera_oblique": 0.42839394534480363
+    },
+    "shielding_limits": {
+      "crash_front": 0.29,
+      "crash_camera_oblique": 0.0336
+    },
+    "guide_max_areas_mm2": {
+      "side": 170.66666666666666,
+      "front": 42.666666666666664,
+      "rear": 42.666666666666664
+    },
+    "max_coverage": 1.285626741323059
+  },
+  "shape": {
+    "grid": {
+      "origin_mm": [
+        0.0,
+        -64.0,
+        -4.0
+      ],
+      "spacing_mm": [
+        1.3333333333333333,
+        1.3333333333333333,
+        1.3333333333333333
+      ],
+      "shape": [
+        51,
+        96,
+        27
+      ],
+      "axis_order": "xyz",
+      "order": "C"
+    },
+    "max_shielding": {
+      "crash_front": 0.31497328714519535,
+      "crash_below": 0.3967422072801785,
+      "crash_camera_oblique": 0.43231232838093686
+    },
+    "shielding_limits": {
+      "crash_front": 0.29,
+      "crash_camera_oblique": 0.0336
+    },
+    "guide_max_areas_mm2": {
+      "side": 170.66666666666666,
+      "front": 42.66666666666668,
+      "rear": 42.66666666666668
+    },
+    "max_coverage": 1.3765694049480466
+  }
+}

@@ -921,6 +921,8 @@ TOPOLOGY_CONFIG = {
     "battery_contact_y_mm": 0.0,
     "battery_rail_edge_inset_mm": 0.0,
     "battery_support": "free",
+    "battery_guide": {"enabled": False, "height_mm": 2.5, "wall_zone_mm": 3.0, "entry_relief_mm": 0.8, "contact_area_mm2": {"side": 24.0, "front": 12.0, "rear": 12.0}, "seat_area_mm2": 120.0, "area_measure": "nearest_grid_layer_to_battery", "handling_force_n": 0.05, "min_handling_stiffness_n_mm": 1.0},
+    "low_flight": {"enabled": False, "pitch_deg": 15.0, "guard_drop_mm": 0.8, "maximum_extra_gap_mm": 3.0, "guard_area_mm2": 12.0, "objective_weight": 1.0, "objective_scale_mm": 1.0, "ks_per_mm": 5.0},
     "battery_support_modes": {"free": "rigid battery on density-dependent contact springs, no prescribed geometry (BATTERY_SUPPORT); user decision 2026-10-04: standard", "rails": "two prescribed 3.5 x 50 mm longitudinal strap rails (battery_contact_*), selectable"},
     "camera_support": "free",
     "camera_support_modes": {"free": "rigid camera on screw springs in a free cage, FOV keep-out, zone crash loads (CAMERA_SUPPORT); default from 2026-10-04", "prescribed": "prescribed camera side plates and style hoops, selectable"},
@@ -1284,6 +1286,8 @@ LAYOUT_REFERENCES = {
 }
 
 BATTERY_SUPPORT = {
+    "retention": "contact",
+    "retention_modes": {"ideal_press": "User assumption: an external ideal clamp keeps the battery underside seated under every applied wrench. Only underside pad nodes transfer loads; guide faces do not. No rubber stiffness, strength, preload or friction calculation.", "contact": "Historical unilateral pad contact with assumed preload; retained only for reproducibility of old runs."},
     "pad_normal_n_mm3": 1.0, "pad_shear_n_mm3": 0.3,
     "pad_source": "ANNAHME Haftpad (Silikon/Schaum ~1 mm, Shore ~30A): Schubmodul G ~ 0,3 MPa -> 0,3 N/mm je mm2 Kontakt in x/y; Druck ~ 3 G ~ 1,0 N/mm je mm2 in Normalenrichtung (unten z, Seitenband x/y)",
     "exponent": 3.0, "floor": 1e-4, "tension_ratio": 1e-3, "side_secant": 0.5, "active_iterations": 30, "band_preload_n": 10.0,
@@ -1333,8 +1337,8 @@ CAMERA_SUPPORT = {
         "area": "Montageflaeche = sum Knotenflaeche x rho der Federknoten (beide Seiten)"},
 }
 
-LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float", "support": ("prescribed", "free")},
-                    "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free")}, "stack": {"standoff_mm": "float", "fastening": ("heat_set", "self_tapping")},
+LAYOUT_OVERRIDES = {"motors": {"arm_angle_deg": "float", "wheelbase_mm": "float"}, "camera": {"tilt_deg": "float", "y_mm": "float", "bottom_clearance_mm": "float", "support": ("prescribed", "free"), "near_ground": "flag", "flight_pitch_deg": "float"},
+                    "battery": {"deck_top_mm": "float", "y_mm": "float", "support": ("rails", "free"), "positioning_aid": "flag"}, "stack": {"standoff_mm": "float", "fastening": ("heat_set", "self_tapping")},
                     "optimizer": {"volume_fraction": "float", "max_frequency_per_mm": "float", "prop_discs": ("soft", "hard"), "f1_min_hz": "float", "method": ("neural", "simp"),
                                   "arm_tip_stiffness_min_n_per_mm": "float", "stiffness_calibration": "float", "max_runtime_s": "float"}}
 

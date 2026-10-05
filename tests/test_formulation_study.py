@@ -9,6 +9,15 @@ import pytest
 
 from tools import formulation_study as study
 
+def test_neural_command_selects_the_shared_neural_optimizer(monkeypatch,tmp_path):
+    import json
+    path=tmp_path/'neural.json'
+    path.write_text(json.dumps({"mma":{"optimizer":"mma"}}))
+    called=[]
+    monkeypatch.setattr(study,'frame_mma',lambda config:called.append(config))
+    study.main(['frame_neural',str(path)])
+    assert called[0]['mma']['optimizer']=='neural_al'
+
 
 @pytest.mark.parametrize("kind,line,expected", [
     ("smi", "4242, 1536\n", {"process_gpu_bytes": 1536 * 2**20}),

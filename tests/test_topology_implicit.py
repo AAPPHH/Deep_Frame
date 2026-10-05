@@ -46,6 +46,18 @@ def test_primitive_distances_match_brute_force_euclidean_distance(region):
     points = np.random.default_rng(3).uniform(-8, 8, (10000, 3))
     np.testing.assert_allclose(primitive_distance([points[:, i] for i in range(3)], region), brute_distance(points, region), atol=1e-9)
 
+def test_flight_halfspace_survives_exact_reconstruction_and_stl_rounding():
+    from deep_frame.config import IMPLICIT_CONFIG
+    normal=np.array([0,-np.sin(np.radians(15)),np.cos(np.radians(15))])
+    region={"name":"flight_floor","role":"forbidden","kind":"halfspace","normal":normal.tolist(),"offset_mm":0.0,"min_mm":[-2,-2,-2],"max_mm":[2,2,2]}
+    mesh=trimesh.creation.box([4,4,4])
+    domain=make_domain((4,4,4),[region],origin=(-2,-2,-2))
+    cut,report=exact_booleans(mesh,domain,IMPLICIT_CONFIG)
+    assert report['passed'] and cut.is_watertight
+    assert cut.volume==pytest.approx(32.,abs=1e-3)
+    assert np.min(cut.vertices@normal)>=-1e-8
+    assert primitive_distance([mesh.vertices[:,i] for i in range(3)],region)==pytest.approx(-mesh.vertices@normal)
+
 @pytest.mark.parametrize("region, volume", [({"kind": "sphere", "center_mm": [0, 0, 0], "radius_mm": 5.0}, 4*np.pi*125/3), (box("b", "preserve", [-5, -3, -2], [5, 3, 2]), 240.0), (cylinder("c", "preserve", [0, 0, 0], 4.0, 6.0), np.pi*96)])
 def test_analytic_field_sample_volume(region, volume):
     field = ImplicitField.from_function([-7.1, -7.1, -7.1], 0.2, (72, 72, 72), lambda x, y, z: primitive_distance([x, y, z], region))

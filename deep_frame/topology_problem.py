@@ -7,7 +7,7 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.spatial import cKDTree
 
 from deep_frame.config import BATTERY_SUPPORT, CABLE_WIDTH, COMPONENT_LIBRARY, CRASH_DIRECTIONS, DEFAULT_SELECTION, INTEGRATION_CONFIG, LOAD_COVARIANCE_LIMITS, PRINT_MATERIAL
-from deep_frame.topology_neural import cell_centers
+from deep_frame.topology_neural import Adam, SharedNeuralField, cell_centers
 from deep_frame.topology_optimization import SOLVER_CHOICE, DensityMap, HexElasticity, StiffnessConstraint, _settings, continuation_decision
 from deep_frame.topology_stability import GroundSupport, StandStability
 
@@ -217,6 +217,7 @@ class TopologyProblem:
         self.ground = GroundSupport(self.system, problem["landing"], self.bodies) if (problem.get("landing") or {}).get("enabled") else None
         self.weighted = self.ground is not None and self.stability is not None and problem["landing"].get("weighted_reserve", True)
         names = [case["name"] for case in self.system.cases]
+        self.functions = FunctionalRequirements(self.system, domain)
         self.crash = [name for name in (problem.get("crash") or {}).get("cases", []) if name in names]
         self.monitor = [name for name in problem.get("monitor", []) if name in names]
         missing = [name for name in (problem.get("crash") or {}).get("cases", []) if name not in names]
@@ -317,6 +318,7 @@ class TopologyProblem:
         physical = np.asarray(physical, dtype=float).ravel()
         if self.bodies:
             self.body_update(physical)
+        self.functions.update(physical)
         solutions = self.compliances(physical)
         rows, monitor = [], []
         if self.stiffness is not None:
@@ -340,6 +342,7 @@ class TopologyProblem:
             rows.append({"name": "f1", "g": float(g), "gradient": slope, "value": info["f1_hz"], "limit": self.problem["modal"]["f1_min_hz"], "unit": "Hz", "sense": ">=", "info": info})
         if self.battery is not None:
             rows += battery_rows(self)
+        rows += self.functions.rows(physical, solutions)
         if self.camera is not None:
             for row in self.camera_rows(solutions):
                 (rows if row["g"] is not None else monitor).append(row)
@@ -383,9 +386,11 @@ class TopologyProblem:
         geometric = [row for row in geometric if row["g"] is not None]
         mass = self.mass_g(intermediate[0])
         scale = self.mass_g(np.full(self.map.n, self.problem["volume_max"]) * self.map.allowed)
+        camera_objective, camera_slope, camera_gap = self.functions.objective(intermediate[0])
         gradients = [self.map.pullback(row["gradient"], eroded[1]) for row in rows] + [self.map.pullback(row["gradient"], intermediate[1]) for row in geometric]
         rows += geometric
-        return {"objective": mass / scale, "objective_gradient": self.map.pullback(np.full(self.map.n, self.mass_g(np.ones(1)) / scale), intermediate[1]),
+        return {"objective": mass / scale + camera_objective, "objective_gradient": self.map.pullback(np.full(self.map.n, self.mass_g(np.ones(1)) / scale) + camera_slope, intermediate[1]),
+                "objective_components": {"mass": mass / scale, "camera_lens_clearance": camera_objective}, "camera_lens_clearance_smooth_mm": camera_gap,
                 "mass_g": mass, "mass_scale_g": scale, "constraints": np.array([row["g"] for row in rows]), "constraint_gradients": np.array(gradients), "names": [row["name"] for row in rows],
                 "rows": constraint_report(rows + monitor, self.problem["termination"]), "beta": self.beta, "max_violation": float(max(row["g"] for row in rows))}
     def report(self, design):
@@ -574,6 +579,47 @@ class MMAOptimizer:
         status = "converged" if reason == "converged" else "not_converged_" + reason + ("_best_feasible" if kept else "")
         return {"design": x, "status": status, "iterations": len(history), "runtime_s": runtime, "seconds_per_iteration": runtime / len(history), "history": history, "levels": levels, "result": result,
                 "best_feasible": kept or None, "settings": settings}
+
+class NeuralALOptimizer(MMAOptimizer):
+    def __init__(self, problem, settings=None, neural=None):
+        super().__init__(problem, settings or {})
+        self.neural = {"penalty": 10.0, "penalty_growth": 2.0, "penalty_max": 1e4, "multiplier_interval": 10, "learning_rate": 0.002, "initial_fit_iterations": 100, **(neural or {})}
+        if self.neural["penalty"] <= 0 or self.neural["learning_rate"] <= 0 or self.neural["multiplier_interval"] < 1:
+            raise ValueError("Neural AL needs positive penalty, learning rate and multiplier interval")
+        self.mapping = SharedNeuralField(problem.domain, self.free, self.neural)
+        self.fit_rmse = []
+    def start(self, design):
+        x = super().start(design)
+        self.fit_rmse.append(self.mapping.fit(x[self.free]))
+        x[self.free] = self.mapping.values()[0]
+        return x
+    def fresh(self, x):
+        mismatch = float(np.max(np.abs(self.mapping.values()[0] - x[self.free])))
+        if mismatch > 1e-8:
+            self.fit_rmse.append(self.mapping.fit(x[self.free]))
+            x[self.free] = self.mapping.values()[0]
+        return {"iteration": 1, "multipliers": None, "penalty": self.neural["penalty"], "previous_violation": None, "optimizer": Adam(self.mapping.field.parameters, self.neural["learning_rate"])}
+    def move(self):
+        return None
+    def step(self, x, result, state):
+        _, df0, g, dg = self.terms(result)
+        if state["multipliers"] is None:
+            state["multipliers"] = np.zeros_like(g)
+        penalty = state["penalty"]
+        coefficients = np.maximum(0.0, state["multipliers"] + penalty * g)
+        gradient = df0[self.free] + coefficients @ dg[:, self.free]
+        _, cache = self.mapping.values()
+        state["optimizer"].step(self.mapping.field.parameters, self.mapping.gradient(cache, gradient))
+        if state["iteration"] % self.neural["multiplier_interval"] == 0:
+            violation = max(float(np.max(g)), 0.0)
+            state["multipliers"] = coefficients
+            if state["previous_violation"] is not None and violation > 0.75 * state["previous_violation"]:
+                state["penalty"] = min(penalty * self.neural["penalty_growth"], self.neural["penalty_max"])
+            state["previous_violation"] = violation
+        state["iteration"] += 1
+        moved = x.copy()
+        moved[self.free] = self.mapping.values()[0]
+        return moved
 
 _PARTS = {key: COMPONENT_LIBRARY[DEFAULT_SELECTION[key]] for key in ("motor", "aio15", "camera", "battery")}
 _PROP = COMPONENT_LIBRARY["HQProp T2.5X2X3V2S"]
@@ -807,6 +853,91 @@ class InterfaceCovariance:
             rows[1].update(g=float(ks / limits["worst_n_mm"] - 1), gradient=gradient / limits["worst_n_mm"])
         return rows
 
+class FunctionalRequirements:
+    def __init__(self, system, domain):
+        from deep_frame.topology_geometry import region_contains
+        self.system = system
+        self.spec = domain.get("functional_requirements", {})
+        centers, h = cell_centers(domain["grid"]), np.asarray(domain["grid"]["spacing_mm"])
+        self.factor = 2.0 if system.symmetry is not None else 1.0
+        allowed = system.active_elements
+        volume = float(np.prod(h))
+        self.guides, self.guide_forces = {}, {}
+        guide = self.spec.get("battery_guide")
+        if guide:
+            for region in domain["regions"]:
+                if region["name"] not in ("battery_guide_side", "battery_guide_front", "battery_guide_rear"):
+                    continue
+                name = region["name"].removeprefix("battery_guide_")
+                mask = region_contains(centers, region) & allowed
+                axis = region["guide_axis"]
+                coordinate = centers[:,axis]
+                nearest = coordinate[mask].max() if name == "rear" else coordinate[mask].min()
+                mask &= np.abs(coordinate-nearest)<1e-7
+                thickness = h[axis]
+                area = self.factor*volume/thickness*mask.astype(float)
+                direction = np.zeros(3)
+                direction[axis] = -1 if name == "front" else 1
+                source = next(case["name"] for case in system.cases if case["name"] == "stiffness_arm_tip")
+                self.guides[name] = item = {"mask":mask,"area":area,"minimum":guide["contact_area_mm2"][name],"direction":direction,"force_n":guide.get("handling_force_n",0.05),"min_stiffness_n_mm":guide.get("min_handling_stiffness_n_mm",1.0)}
+                direct, mirrored = self.forces(item,mask.astype(float))
+                item["case"] = system.add_case("guide_handling_"+name, source, direct, mirrored)
+        self.flight = self.spec.get("low_flight")
+        self.guard = np.zeros(system.nelem)
+        self.gap_terms = np.zeros(system.nelem)
+        if self.flight:
+            flight, normal = self.flight, np.asarray(self.flight["vertical_axis"])
+            half_height = float(np.abs(normal)@h/2)
+            bottom = centers@normal-half_height
+            gap = flight["lens_world_z_mm"]-bottom
+            base = flight["fixed_hardware_gap_mm"]
+            self.gap_terms = self.factor*volume/0.1*np.expm1(np.clip(flight["ks_per_mm"]*(gap-base),0,100))*allowed
+            camera = np.asarray(flight["camera_center_mm"])
+            guard = (np.abs(centers[:,0])>=flight["camera_width_mm"]/2+0.5)&(np.abs(centers[:,0])<=flight["camera_width_mm"]/2+6)&(np.abs(centers[:,1]-camera[1])<=flight["camera_length_mm"]/2+3)
+            guard &= (bottom<=flight["camera_bottom_world_z_mm"]-flight["guard_drop_mm"]) & allowed
+            self.guard = self.factor*volume/(2*half_height)*guard
+    def forces(self, guide, weights):
+        total = float(weights.sum())
+        if total<=0:
+            raise ValueError("Battery guide is unresolved by the design grid")
+        nodal = np.zeros((len(self.system.points),3))
+        contribution = guide["force_n"]/self.factor*weights[:,None]*guide["direction"]/total/8
+        np.add.at(nodal,self.system.connectivity.ravel(),np.repeat(contribution,8,axis=0))
+        if self.system.symmetry is not None:
+            nodal[self.system.plane_nodes] *= 2
+        direct = nodal.ravel()
+        return direct,direct if self.system.symmetry is not None else np.zeros_like(direct)
+    def update(self, physical):
+        rho = np.asarray(physical).ravel()
+        for name, guide in self.guides.items():
+            weights = guide["mask"]*(1e-12+rho**3)
+            self.system.set_force(guide["case"],*self.forces(guide,weights))
+            self.guide_forces[name] = weights,float(weights.sum())
+    def rows(self, physical, solutions):
+        rho, rows = np.asarray(physical).ravel(), []
+        for name, guide in self.guides.items():
+            value = float(guide["area"]@rho)
+            minimum = guide["minimum"]
+            rows.append({"name":"battery_guide_area_"+name,"g":1-value/minimum,"gradient":-guide["area"]/minimum,"value":value,"limit":minimum,"unit":"mm2","sense":">="})
+            solved = solutions[guide["case"]["name"]]
+            displacement = sum(solved["fields"].values()).reshape(-1,3)
+            projected = displacement[self.system.connectivity].mean(axis=1)@guide["direction"]
+            weights,total = self.guide_forces[name]
+            load_slope = 2*guide["force_n"]/total*3*rho**2*guide["mask"]*(projected-float(weights@projected)/total)
+            limit = guide["force_n"]**2/guide["min_stiffness_n_mm"]
+            rows.append({"name":"battery_guide_connection_"+name,"g":solved["compliance_n_mm"]/limit-1,"gradient":(solved["derivative"]+load_slope)/limit,"value":solved["compliance_n_mm"],"limit":limit,"unit":"N mm","sense":"<=","info":{"handling_force_n":guide["force_n"],"flight_load_interface":False}})
+        if self.flight:
+            value, minimum = float(self.guard@rho),self.flight["guard_area_mm2"]
+            rows.append({"name":"camera_ground_guard_area","g":1-value/minimum,"gradient":-self.guard/minimum,"value":value,"limit":minimum,"unit":"mm2","sense":">="})
+        return rows
+    def objective(self, physical):
+        if not self.flight:
+            return 0.0,np.zeros(self.system.nelem),None
+        total = 1+float(self.gap_terms@np.asarray(physical).ravel())
+        extra = float(np.log(total)/self.flight["ks_per_mm"])
+        scale = self.flight["objective_weight"]/self.flight["objective_scale_mm"]
+        return scale*extra,scale*self.gap_terms/(self.flight["ks_per_mm"]*total),self.flight["fixed_hardware_gap_mm"]+extra
+
 class RigidNodes:
     def select(self, system, nodes):
         self.system = system
@@ -849,13 +980,21 @@ class BatterySupport(RigidNodes):
         nodes, inside, low, high = self.contact_nodes(system, battery["keep_out"])
         points = system.points[nodes]
         bottom = np.abs(points[:, 2] - low[2]) < 1e-6
-        axis = np.where(bottom, 2, np.where(np.abs(np.abs(points[:, 0]) - high[0]) < 1e-6, 0, 1))
-        sign = np.where(bottom, -1.0, np.where(axis == 0, np.sign(points[:, 0]), np.where(points[:, 1] > (low[1] + high[1]) / 2, 1.0, -1.0)))
+        if settings.get("retention") == "ideal_press":
+            nodes, inside = nodes[bottom], inside[bottom]
+            points, bottom = points[bottom], bottom[bottom]
+            self.contact = False
+        top = (np.abs(points[:, 2] - high[2]) < 1e-6) & battery.get("retain_top", False)
+        axis = np.where(bottom | top, 2, np.where(np.abs(np.abs(points[:, 0]) - high[0]) < 1e-6, 0, 1))
+        sign = np.where(bottom, -1.0, np.where(top, 1.0, np.where(axis == 0, np.sign(points[:, 0]), np.where(points[:, 1] > (low[1] + high[1]) / 2, 1.0, -1.0))))
         shear = np.zeros((len(nodes), 3), dtype=bool)
         shear[bottom, :2] = True
         self.assemble(system, settings, battery, nodes, inside, axis, sign, bottom, shear)
         self.summary = {"nodes": len(self.index), "bottom_nodes": int(self.bottom.sum()), "side_nodes": int((~self.bottom).sum()), "bottom_area_mm2": float(self.area[self.bottom].sum()),
                         "side_area_mm2": float(self.area[~self.bottom].sum()), "keep_out_cells_mm": [low.tolist(), high.tolist()]}
+        self.summary["top_nodes"] = int(np.count_nonzero((self.axis == 2) & ~self.bottom))
+        self.summary["retention"] = settings.get("retention", "contact")
+        self.summary["guide_transfers_flight_loads"] = False if not self.contact else True
     @staticmethod
     def contact_nodes(system, keep_out, overlap=False):
         from deep_frame.topology_geometry import region_contains
@@ -889,7 +1028,7 @@ class BatterySupport(RigidNodes):
         base[np.arange(len(self.index)), self.axis] = settings["pad_normal_n_mm3"]
         self.base = base * self.area[:, None]
         self.reference = np.asarray(body["reference_mm"], dtype=float)
-        self.preload = np.array([0.0, 0.0, -settings["band_preload_n"], 0.0, 0.0, 0.0])
+        self.preload = np.array([0.0, 0.0, 0.0 if settings.get("retention") == "ideal_press" else -settings["band_preload_n"], 0.0, 0.0, 0.0])
         self.rows = rigid_rows(self.points - self.reference)
         self.shift = rigid_rows(np.asarray(body["center_mm"], dtype=float)[None] - self.reference)[0, :settings.get("shift_axes", 2)]
     def update(self, physical):
@@ -898,6 +1037,7 @@ class BatterySupport(RigidNodes):
         self.gain = floor + (1 - floor) * self.rho ** p
         self.slope = (1 - floor) * p * self.rho ** (p - 1)
     def state(self, wrench, contact):
+        contact = contact and self.settings.get("retention") != "ideal_press"
         active = np.ones(len(self.index))
         if not contact:
             active[~self.bottom] = self.settings["side_secant"]

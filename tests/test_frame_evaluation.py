@@ -129,3 +129,14 @@ def test_stand_stability_on_the_lowest_material():
     assert one["reserve_mm"] is None or one["reserve_mm"] < 0
     assert not one["reserve_passed"]
     assert plan_reserve([[0, 0], [1, 1], [2, 2]], [1, 1])[0] is None
+
+def test_fit_check_shrinks_flight_floor_along_its_normal():
+    from deep_frame.frame_evaluation import shrink
+    from deep_frame.topology_geometry import region_contains
+    normal=np.array([0,-np.sin(np.radians(15)),np.cos(np.radians(15))])
+    floor={'kind':'halfspace','normal':normal.tolist(),'offset_mm':-4,'min_mm':[-10]*3,'max_mm':[10]*3}
+    checked=shrink(floor,.2)
+    points=np.array([normal*-4.1,normal*-4.3])
+    assert region_contains(points,floor).tolist()==[True,True]
+    assert region_contains(points,checked).tolist()==[False,True]
+    assert checked['offset_mm']==pytest.approx(-4.2)

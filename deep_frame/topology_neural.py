@@ -107,6 +107,27 @@ class Adam:
             second += (1 - self.beta2) * gradient ** 2
             value -= self.rate * first / (1 - self.beta1 ** self.count) / (np.sqrt(second / (1 - self.beta2 ** self.count)) + 1e-8)
 
+class SharedNeuralField:
+    def __init__(self, domain, free, settings):
+        self.settings = {**NEURAL_SETTINGS, **settings, "volume_fraction": 0.5}
+        self.free = free
+        self.field = FourierField(self.settings)
+        self.features = self.field.features(cell_centers(domain["grid"])[free])
+        self.field.parameters[len(self.field.parameters) // 2 - 1][:] = 0.0
+    def values(self):
+        logits, activations = self.field.forward(self.features)
+        values = _sigmoid(logits)
+        return values, (activations, values * (1 - values))
+    def gradient(self, cache, gradient):
+        activations, slope = cache
+        return self.field.backward(activations, slope * np.asarray(gradient))
+    def fit(self, target):
+        optimizer = Adam(self.field.parameters, self.settings["learning_rate"])
+        for _ in range(self.settings["initial_fit_iterations"]):
+            values, cache = self.values()
+            optimizer.step(self.field.parameters, self.gradient(cache, 2 * (values - target) / len(target)))
+        return float(np.sqrt(np.mean((self.values()[0] - target) ** 2)))
+
 def _sigmoid(value):
     return 0.5 * (1 + np.tanh(0.5 * value))
 
