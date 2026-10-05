@@ -1100,7 +1100,7 @@ def test_command_line_passes_parsed_json_or_empty_overrides(tmp_path):
     assert command_line({"run": lambda overrides: overrides}, ["run"]) == {}
 
 def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
-    spec = compute.request("fea_modal", [sys.executable, "-c", "import os,sys; open('out.txt','w').write(os.environ['OMP_NUM_THREADS']+os.environ['CALCULIX_PATH']); sys.exit(3)"],
+    spec = compute.request("fea_modal", [getattr(sys, "_base_executable", sys.executable), "-c", "import os,sys; open('out.txt','w').write(os.environ['OMP_NUM_THREADS']+os.environ['CALCULIX_PATH']); sys.exit(3)"],
                            tmp_path, {"CALCULIX_PATH": "ccx", "HOME": "x", "DEEP_FRAME_SEED": "1"})
     need = compute.JOB_TYPES["fea_modal"]
     assert (spec["entrypoint_num_cpus"], spec["entrypoint_memory"], spec["entrypoint_resources"]) == (need["num_cpus"], need["memory_gb"] * 2**30, None)
