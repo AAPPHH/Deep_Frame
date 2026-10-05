@@ -4,8 +4,8 @@ from scipy.ndimage import label
 
 from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_CONFIG
 from deep_frame.topology_implicit import TWENTY_SIX, ImplicitField
-from deep_frame.topology_reconstruction import DesignGraph, primitive_distance, Reconstruction, clearance, hoop_paths, load_paths, reconstruct, reconstruct_splines, sections, sweep_values, tube
-from tools.reconstruction_study import isotropic_materialization
+from deep_frame.topology_reconstruction import DesignGraph, primitive_distance, Reconstruction, clearance, hoop_paths, load_paths, reconstruct, reconstruct_splines, sections, stored_domain, sweep_values, tube
+from tools.reconstruction_study import isotropic_materialization, save_materialization
 
 def test_isotropic_materialization_preserves_physical_coordinates():
     shape, spacing, origin = (3, 3, 4), np.array([2.0, 1.5, 0.75]), np.array([-7.0, 11.0, -3.0])
@@ -46,6 +46,28 @@ def test_isotropic_four_thirds_materialization_is_unchanged(h):
     domain = {"grid": {"origin_mm": [-68.0, -64.0, -4.0], "spacing_mm": [h]*3, "shape": list(shape)}, "allowed": allowed, "preserve": preserve, "forbidden": ~allowed}
     result, sampled = isotropic_materialization(domain, density)
     assert result is domain and sampled is density
+
+def test_materialization_roundtrip_keeps_masks_absent_from_regions(tmp_path):
+    shape = (2, 4, 4)
+    allowed, preserve = np.ones(shape, dtype=bool), np.zeros(shape, dtype=bool)
+    allowed[0, 1, 1], preserve[1, 2, 2] = False, True
+    domain = {"grid": {"origin_mm": [0.0]*3, "spacing_mm": [2.0, 1.0, 1.0], "shape": list(shape)}, "allowed": allowed, "preserve": preserve, "forbidden": ~allowed, "regions": [{"name": "envelope", "kind": "box", "role": "allowed", "min_mm": [0.0]*3, "max_mm": [4.0]*3}]}
+    domain, density = isotropic_materialization(domain, np.full(shape, 0.4, dtype=np.float32))
+    save_materialization(domain, density, tmp_path)
+    for requested in (None, density.shape):
+        restored = stored_domain(tmp_path / "domain.json", requested)
+        assert restored["grid"] == domain["grid"] and restored["field_file"] == "density_fine.npz"
+        for key in ("allowed", "preserve", "forbidden"):
+            np.testing.assert_array_equal(restored[key], domain[key])
+    with np.load(tmp_path / "density_fine.npz") as fields:
+        np.testing.assert_array_equal(fields["density"], density)
+    resized = stored_domain(tmp_path / "domain.json", (8, 4, 4))
+    assert resized["allowed"].shape == (8, 4, 4) and resized["allowed"].all() and not resized["preserve"].any()
+    assert resized["grid"]["spacing_mm"] == [0.5, 1.0, 1.0] and "field_file" not in resized
+    domain["preserve"] = domain["preserve"][:1]
+    save_materialization(domain, density, tmp_path)
+    with pytest.raises(ValueError, match="Stored preserve shape"):
+        stored_domain(tmp_path / "domain.json")
 
 H = 0.5
 RADIUS = 1.5
