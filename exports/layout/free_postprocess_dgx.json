@@ -1,0 +1,74 @@
+{
+ "formulation": {
+  "layout": {
+   "name": "free_layout",
+   "style": "freestyle",
+   "durability": "standard",
+   "prop_size_in": 2.5,
+   "layout": {
+    "x_type": "compressed_x",
+    "battery_mount": "top"
+   },
+   "components": {
+    "motor": "GTS V3 1203",
+    "aio": "HDZero AIO15",
+    "camera": "HDZero Lux",
+    "battery": "GNB5502S120A",
+    "antennas": "HDZero VTX + ELRS",
+    "prop": "HQProp T2.5X2X3V2S"
+   },
+   "material": "PA6-CF",
+   "print": {
+    "nozzle_mm": 0.4,
+    "layer_mm": 0.2
+   },
+   "overrides": {
+    "optimizer": {
+     "volume_fraction": 0.06,
+     "prop_discs": "soft",
+     "f1_min_hz": 300.0
+    },
+    "battery": {
+     "support": "free"
+    },
+    "camera": {
+     "support": "free"
+    }
+   },
+   "grid": "fine",
+   "reconstruction": false
+  }
+ },
+ "field": "exports/runs/free_layout4_opt/fine2/density_half.npz",
+ "raw_directory": "exports/runs/free_layout4_opt/free_layout4",
+ "reconstructed_stl": "exports/runs/free_layout4_v3_contact/reconstruction/geometry.stl",
+ "frame_stl": "exports/runs/free_layout4_v3_contact/frame.stl",
+ "bodies": {
+  "raw": "exports/runs/free_layout4_opt/free_layout4/geometry.stl",
+  "v3c_contact": "exports/runs/free_layout4_v3_contact/frame.stl"
+ },
+ "camera": {
+  "center_mm": [
+   0,
+   41.1,
+   18.47198934878104
+  ],
+  "radius_mm": 4.0,
+  "half_width_mm": 8.5,
+  "sample_mm": 0.1,
+  "distances_mm": [
+   0.01,
+   0.29,
+   0.31,
+   0.5,
+   0.8,
+   0.84,
+   1.0,
+   1.17,
+   1.5,
+   2.0
+  ]
+ },
+ "contact_output": "exports/layout/camera_contact_dgx.json",
+ "layout_output": "exports/layout/layout_optimization_free_contact.json"
+}
