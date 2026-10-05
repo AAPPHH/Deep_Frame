@@ -408,7 +408,7 @@ class GeometricMultigrid:
         torch = self.torch
         fine = hierarchy["levels"][0]
         tolerance, limit = self.settings["tolerance"], self.settings["max_iterations"]
-        apply = lambda grid: self.operator(grid, mask=fine.mask64)
+        apply = lambda grid: self._remove(fine.kernel, self.operator(grid, mask=fine.mask64))
         norm = torch.linalg.vector_norm(rhs.flatten(1), dim=1)
         solution = torch.zeros_like(rhs) if initial is None else initial.clone()
         count = rhs.shape[0]
@@ -428,7 +428,8 @@ class GeometricMultigrid:
             current = torch.linalg.vector_norm(residual.flatten(1), dim=1) / norm[active]
             history.append(current.max().item())
             converged = current < tolerance
-            if bool(converged.any()):
+            restarted = bool(converged.any())
+            if restarted:
                 true = rhs[active] - apply(solution[active])
                 if fine.kernel is not None:
                     true = self._remove(fine.kernel, true)
@@ -443,7 +444,7 @@ class GeometricMultigrid:
                 break
             active, residual, direction, preconditioned, product = active[keep], residual[keep], direction[keep], preconditioned[keep], product[keep]
             updated = self.precondition(hierarchy, residual)
-            beta = (residual * (updated - preconditioned)).flatten(1).sum(1) / product
+            beta = torch.zeros_like(product) if restarted else (residual * (updated - preconditioned)).flatten(1).sum(1) / product
             product = (residual * updated).flatten(1).sum(1)
             direction = updated + beta[:, None, None, None, None] * direction
             preconditioned = updated

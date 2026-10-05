@@ -1,4 +1,5 @@
 from copy import deepcopy
+from types import SimpleNamespace
 import numpy as np
 import pytest
 
@@ -10,6 +11,21 @@ from tests.test_topology_problem import tiny_domain
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 gpu = pytest.mark.skipif(not torch.cuda.is_available(), reason="multigrid coarsest grid needs CUDA and cuDSS")
+
+def test_floating_pcg_excludes_operator_kernel_roundoff():
+    mg = GeometricMultigrid.__new__(GeometricMultigrid)
+    mg.torch, mg.device = torch, torch.device("cpu")
+    mg.settings = {"tolerance": 1e-8, "max_iterations": 20}
+    kernel = torch.tensor([0.0, 0.0, 1.0], dtype=torch.float64).reshape(1, 3, 1, 1, 1)
+    diagonal = torch.tensor([2.0, 3.0, 0.0], dtype=torch.float64).reshape(1, 3, 1, 1, 1)
+    fine = SimpleNamespace(kernel=kernel, mask64=torch.ones_like(kernel))
+    mg.operator = lambda grid, mask: diagonal * grid + 1e-7 * grid[:, :1] * kernel
+    mg.precondition = lambda hierarchy, residual: mg._remove(kernel, residual)
+    rhs = torch.tensor([1.0, 2.0, 0.0], dtype=torch.float64).reshape(1, 3, 1, 1, 1)
+    solution, report = mg._pcg({"levels": [fine]}, rhs)
+    assert report["converged"]
+    assert torch.allclose(solution.flatten(), torch.tensor([0.5, 2 / 3, 0.0], dtype=torch.float64), atol=1e-12, rtol=1e-12)
+    assert float(torch.linalg.vector_norm(mg._remove(kernel, rhs - mg.operator(solution, fine.mask64)))) < 1e-12
 
 def setup(domain, seed=0, settings=None):
     system = HexElasticity(domain, linear_solver="cuda_cudss" if DEVICE == "cuda" else "cpu_superlu")

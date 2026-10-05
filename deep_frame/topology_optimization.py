@@ -727,7 +727,9 @@ class HexElasticity:
         floating = self.support is not None and bool(np.isin(part["support"], self.support[1]).all())
         solutions, report = self.multigrid.solve(key, part["fixed"], full, part["support"] if floating else None)
         if not report["converged"]:
-            raise RuntimeError(f"Multigrid PCG did not converge: {max(report['relative_residual'])}")
+            columns = np.argsort(report["relative_residual"])[-3:]
+            failed = [(int(column), report["relative_residual"][column], report["iterations"][column]) for column in columns]
+            raise RuntimeError(f"Multigrid PCG did not converge: {failed}; floating={floating}; retried={report['retried_columns']}")
         return solutions[part["free"]]
     def _multigrid_product(self, free, solutions):
         full = np.zeros((self.ndof, solutions.shape[1]))
