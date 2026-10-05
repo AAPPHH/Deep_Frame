@@ -21,7 +21,7 @@ from deep_frame.topology_geometry import _merge, embed_field
 from deep_frame.topology_neural import cell_centers
 from deep_frame.topology_optimization import HexElasticity
 from deep_frame.topology_stability import STAND_CASES, FOUR_FEET, StandStability, stand_design, stand_domain, voxel_reserve
-from deep_frame.topology_optimizers import MMA, MMAOptimizer, NeuralALOptimizer
+from deep_frame.topology_optimizers import MMA, MMAOptimizer, NeuralOptimizer
 from deep_frame.topology_problem import ARM_TIP, BATTERY_SUPPORT, CANTILEVER_COVARIANCE, cable_corridor, density_map, COVARIANCE, LOAD_COVARIANCE, PROBLEM, TopologyProblem, cantilever_domain, cantilever_dual, cantilever_problem, covariance_cantilever, format_report, orthotropic_material, prolongate, shadow_thickness
 
 RUN = str(Path(PATHS["data"]) / 'runs/r4_neural_v06_f1_1')
@@ -57,7 +57,7 @@ FORMULATION = {
     "landing": {"tilt_deg": 20.0, "output": "docs/validation/landing_limit_manafly.json", "fd_output": "docs/validation/landing_fd.json", "shape": [68, 64, 24], "step": 1e-5, "seed": 7, "low": 0.3, "high": 0.9, "linear_solver": "auto",
                 "fields": {}, "designs": {"stand_fix_coarse": "exports/runs/stand_fix_opt/coarse/design.npz"},
                 "proof": {"runs": {"stand_land": "exports/runs/stand_land_opt/coarse", "stand_fix": "exports/runs/stand_fix_opt/coarse"}, "output": "docs/validation/stand_land_proof.json", "image": "docs/validation/stand_land_floor.png"}},
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "cable_width": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "multigrid": None, "memory_s": None, "memory_log": "memory.jsonl", "fine_dir": "fine",
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "cable_width": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "start_sha256": None, "calibration": None, "multigrid": None, "memory_s": None, "memory_log": "memory.jsonl", "fine_dir": "fine",
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": PATHS["data"], "manafly_renders": str(Path(PATHS["data"]) / 'fast/_manafly_same_renderer'), "evaluation_python": PATHS["python"],
             "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -1250,7 +1250,7 @@ def optimize_stage(cfg, half, problem, design, out, start_level, stage):
     with (out / "iterations.jsonl").open("a") as log:
         progress = lambda row: (log.write(json.dumps(row, default=float) + "\n"), log.flush())
         settings = {**cfg["mma"]["settings"], "start_level": start_level}
-        optimizer = NeuralALOptimizer(tp, settings, cfg["mma"].get("neural", {})) if method == "neural_al" else MMAOptimizer(tp, settings)
+        optimizer = NeuralOptimizer(tp, settings, cfg["mma"].get("neural", {})) if method == "neural_al" else MMAOptimizer(tp, settings)
         result = optimizer.run(design, progress, checkpoint(out / "checkpoint.npz"), keep_best(out))
     report = tp.report(result["design"])
     fields, _ = tp.map.fields(result["design"])
@@ -1263,10 +1263,10 @@ def optimize_stage(cfg, half, problem, design, out, start_level, stage):
               "best_feasible": result["best_feasible"], "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
               "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"], "linear_solver": tp.system.linear_solver}
     record["optimizer"] = method
+    record["start_sha256"] = cfg["mma"].get("start_sha256")
     record.update(problem_definition_sha256=definition["sha256"],functional_requirements=half.get("functional_requirements",{}),battery_retention=(problem.get("battery") or {}).get("retention"))
     if method == "neural_al":
-        record["neural"] = {"settings": optimizer.neural, "fit_rmse": optimizer.fit_rmse, "parameter_count": sum(value.size for value in optimizer.mapping.field.parameters),
-                            "network_artifact": "last_network.npz", "network_statement": "Last network iterate; a returned best-feasible density may come from an earlier iterate"}
+        record["neural"] = {**optimizer.report(), "network_artifact": "last_network.npz", "network_statement": "Last network iterate; a returned best-feasible density may come from an earlier iterate"}
         np.savez_compressed(out / "last_network.npz", **{f"parameter_{i}": value for i, value in enumerate(optimizer.mapping.field.parameters)})
     if tp.system.multigrid is not None:
         record["multigrid"] = {"settings": tp.system.multigrid.settings, "solves": multigrid_summary(tp.system.multigrid.statistics)}
@@ -1324,10 +1324,40 @@ def initial_design(cfg, half):
     design[half["preserve"].ravel()] = 1.0
     return design
 
-def frame_probe(cfg):
+def switches(cfg):
     config.STAND_STABILITY.update(cfg["mma"]["stand"])
     config.LANDING.update(cfg["mma"].get("landing", {}))
     config.CABLE_WIDTH.update(cfg["mma"]["cable_width"])
+
+def design_sha256(design):
+    return hashlib.sha256(np.ascontiguousarray(design, dtype=np.float64).tobytes()).hexdigest()
+
+def frame_seed(cfg):
+    switches(cfg)
+    half, problem = frame_setup(cfg, cfg["shape"])
+    design = initial_design(cfg, half)
+    root = Path(cfg["mma"]["start"])
+    root.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(root / "design.npz", design=design)
+    record = {"grid": half["grid"], "sha256": design_sha256(design), "problem_definition_sha256": shared_definition(half, problem)["sha256"], "initial_density": cfg["mma"].get("initial_density", 0.5), "reference_density": cfg["reference_density"],
+              "rule": "shared start of both optimizer routes: initial_design on the fine grid (uniform initial_density on the allowed cells, preserve 1, forbidden 0; not evaluated for feasibility); a route loads it only when its mma start_sha256 equals sha256 and the problem definition matches"}
+    (root / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({key: record[key] for key in ("sha256", "problem_definition_sha256")}), flush=True)
+
+def start_design(cfg, half, problem):
+    source = Path(cfg["mma"]["start"])
+    design, record = np.load(source / "design.npz")["design"], read(source / "result.json")
+    expected = cfg["mma"].get("start_sha256")
+    if expected:
+        digest = design_sha256(design)
+        if digest != expected or record.get("sha256") != expected:
+            raise RuntimeError(f"Start design {source} has sha256 {digest}, configured start_sha256 is {expected}")
+        if record.get("problem_definition_sha256") != shared_definition(half, problem)["sha256"]:
+            raise RuntimeError(f"Start design {source} was generated for a different problem definition")
+    return prolongate(design, record["grid"], half)
+
+def frame_probe(cfg):
+    switches(cfg)
     cfg = _merge(cfg, {"mma": {"settings": {"final_max_iterations": 3, "final_min_iterations": 10}}})
     root = Path(cfg["mma"]["root"] + "_probe")
     root.mkdir(parents=True, exist_ok=True)
@@ -1343,9 +1373,7 @@ def frame_probe(cfg):
 
 def frame_mma(cfg):
     started = perf_counter()
-    config.STAND_STABILITY.update(cfg["mma"]["stand"])
-    config.LANDING.update(cfg["mma"].get("landing", {}))
-    config.CABLE_WIDTH.update(cfg["mma"]["cable_width"])
+    switches(cfg)
     root = Path(cfg["mma"]["root"])
     root.mkdir(parents=True, exist_ok=True)
     probe = MemoryProbe(cfg["mma"]["memory_s"], root / cfg["mma"]["memory_log"]) if cfg["mma"]["memory_s"] else None
@@ -1357,8 +1385,7 @@ def frame_mma(cfg):
             fine, problem = frame_setup(cfg, cfg["shape"])
         stages, level = {}, 0
         if cfg["mma"]["start"]:
-            source = Path(cfg["mma"]["start"])
-            design, level = prolongate(np.load(source / "design.npz")["design"], read(source / "result.json")["grid"], fine), cfg["mma"]["fine_start_level"]
+            design, level = start_design(cfg, fine, problem), cfg["mma"]["fine_start_level"]
         else:
             design = initial_design(cfg, fine)
         if not cfg["mma"]["start"] and cfg["mma"]["coarse"]:
@@ -1621,7 +1648,7 @@ def main(argv=None):
     return command_line({"references": lambda overrides: references(configure(overrides)), "modal_split": lambda overrides: modal_split(configure(overrides)), "cantilever": lambda overrides: cantilever(configure(overrides)),
                          "cantilever_mma": lambda overrides: cantilever_mma(configure(overrides)), "frame_mma": lambda overrides: frame_mma(configure(overrides)),
                          "frame_neural": lambda overrides: frame_mma(_merge(configure(overrides), {"mma": {"optimizer": "neural_al"}})),
-                         "frame_probe": lambda overrides: frame_probe(configure(overrides)),
+                         "frame_probe": lambda overrides: frame_probe(configure(overrides)), "frame_seed": lambda overrides: frame_seed(configure(overrides)),
                          "frame_physical": lambda overrides: frame_physical(configure(overrides)),
                          "frame_runs": lambda overrides: frame_runs(configure(overrides)), "manafly_check": lambda overrides: manafly_check(configure(overrides)), "compose": lambda overrides: compose(configure(overrides)),
                          "agreement": lambda overrides: agreement(configure(overrides)), "covariance_cantilever": lambda overrides: covariance_cantilever_check(configure(overrides)),

@@ -19,6 +19,23 @@ def test_neural_command_selects_the_shared_neural_optimizer(monkeypatch,tmp_path
     assert called[0]['mma']['optimizer']=='neural_al'
 
 
+def test_shared_start_design_is_verified_by_sha256_and_problem(tmp_path):
+    import numpy as np
+    shape=(2,3,2)
+    half={"grid":{"origin_mm":[0.0,0.0,0.0],"spacing_mm":[1.0,1.0,1.0],"shape":list(shape)},"allowed":np.ones(shape,bool),"preserve":np.zeros(shape,bool),"forbidden":np.zeros(shape,bool)}
+    design=np.linspace(0.1,0.9,12)
+    digest=study.design_sha256(design)
+    np.savez_compressed(tmp_path/"design.npz",design=design)
+    (tmp_path/"result.json").write_text(json.dumps({"grid":half["grid"],"sha256":digest,"problem_definition_sha256":study.shared_definition(half,{"a":1})["sha256"]}))
+    cfg={"mma":{"start":str(tmp_path),"start_sha256":digest}}
+    assert np.allclose(study.start_design(cfg,half,{"a":1}),design)
+    with pytest.raises(RuntimeError,match="different problem"):
+        study.start_design(cfg,half,{"a":2})
+    with pytest.raises(RuntimeError,match="start_sha256"):
+        study.start_design({"mma":{"start":str(tmp_path),"start_sha256":"0"*64}},half,{"a":1})
+    assert np.allclose(study.start_design({"mma":{"start":str(tmp_path)}},half,{"a":2}),design)
+
+
 @pytest.mark.parametrize("kind,line,expected", [
     ("smi", "4242, 1536\n", {"process_gpu_bytes": 1536 * 2**20}),
     ("smi", "9999, 71680\n", {}),

@@ -1,7 +1,7 @@
 from time import perf_counter
 import numpy as np
 
-from deep_frame.topology_neural import Adam, SharedNeuralField
+from deep_frame.topology_neural import Adam, NeuralDesign
 from deep_frame.topology_optimization import continuation_decision
 
 MMA = {"package": "mmapy==0.3.1 (Deetman, Python port of Svanberg's MMA)", "move": 0.1, "move_late": 0.05, "move_late_beta": 32.0, "scale": 100.0, "asyinit": 0.5, "asydecr": 0.7, "asyincr": 1.2, "raa0": 1e-5, "c": 1e4, "d": 1.0,
@@ -39,7 +39,7 @@ class MMAOptimizer:
     def __init__(self, problem, settings=MMA):
         from mmapy import mmasub
         self.problem, self.settings, self.subproblem = problem, {**MMA, **settings}, mmasub
-        self.free = problem.map.free
+        self.free, self.bounds = problem.map.free, (0.0, 1.0)
     def start(self, design):
         x = np.clip(np.asarray(design, dtype=float).ravel(), 0, 1)
         x[self.problem.map.preserve] = 1
@@ -57,13 +57,13 @@ class MMAOptimizer:
         f0, df0, g, dg = self.terms(result)
         n, m = int(np.count_nonzero(free)), len(g)
         value = x[free][:, None]
-        zeros, ones = np.zeros((n, 1)), np.ones((n, 1))
-        moved = self.subproblem(m, n, state["iteration"], value, zeros, ones, state["old1"], state["old2"], settings["scale"] * f0, settings["scale"] * df0[free][:, None],
+        lower, upper = np.full((n, 1), self.bounds[0]), np.full((n, 1), self.bounds[1])
+        moved = self.subproblem(m, n, state["iteration"], value, lower, upper, state["old1"], state["old2"], settings["scale"] * f0, settings["scale"] * df0[free][:, None],
                                 settings["scale"] * g[:, None], settings["scale"] * dg[:, free], state["low"], state["upp"], 1.0, np.zeros((m, 1)), np.full((m, 1), settings["c"]), np.full((m, 1), settings["d"]),
                                 move=self.move(), asyinit=settings["asyinit"], asydecr=settings["asydecr"], asyincr=settings["asyincr"], raa0=settings["raa0"])
         state.update(old2=state["old1"], old1=value.copy(), low=moved[9], upp=moved[10], iteration=state["iteration"] + 1)
         x = x.copy()
-        x[free] = np.clip(moved[0].ravel(), 0, 1)
+        x[free] = np.clip(moved[0].ravel(), *self.bounds)
         return x
     def move(self):
         return self.settings["move_late"] if self.problem.beta >= self.settings["move_late_beta"] else self.settings["move"]
@@ -87,9 +87,13 @@ class MMAOptimizer:
         best = {key: row[key] for key in ("iteration", "level", "beta", "f0", "mass_g", "max_violation")}
         best.update(x=x.copy(), result={key: value for key, value in result.items() if "gradient" not in key})
         return best
+    def restore(self, best):
+        return best["x"].copy()
+    def trace(self, state):
+        return {}
     @staticmethod
     def summary(best):
-        return {key: value for key, value in best.items() if key not in ("x", "result")} if best else None
+        return {key: value for key, value in best.items() if key not in ("x", "result", "parameters")} if best else None
     def run(self, design, progress=None, checkpoint=None, keep=None):
         problem, settings = self.problem, self.settings
         while problem.level < settings["start_level"] and problem.advance():
@@ -129,7 +133,7 @@ class MMAOptimizer:
                     restart = not quiet and level_best is not None
                     levels.append({"beta": problem.beta, "iterations": len(level), "reason": "change_tolerance" if quiet else "iteration_cap", "quiet": quiet, "feasible": feasible, "mass_g": row["mass_g"], "max_violation": row["max_violation"],
                                    "best_feasible": self.summary(level_best), "continued_from_best": restart})
-                    x = level_best["x"].copy() if restart else x
+                    x = self.restore(level_best) if restart else x
                     problem.advance()
                     level, state, level_best = [], self.fresh(x), None
                     previous = None
@@ -139,11 +143,12 @@ class MMAOptimizer:
                                "best_feasible": self.summary(best), "returned_best": fallback})
                 row["seconds"] = perf_counter() - clock
                 if fallback:
-                    x, result, kept = best["x"], {**result, **best["result"]}, self.summary(best)
+                    x, result, kept = self.restore(best), {**result, **best["result"]}, self.summary(best)
                 break
             if level:
                 previous = x[self.free].copy()
                 x = self.step(x, result, state)
+                row.update(self.trace(state))
             row["seconds"] = perf_counter() - clock
             if progress:
                 progress(row)
@@ -156,43 +161,60 @@ class MMAOptimizer:
         return {"design": x, "status": status, "iterations": len(history), "runtime_s": runtime, "seconds_per_iteration": runtime / len(history), "history": history, "levels": levels, "result": result,
                 "best_feasible": kept or None, "capped_levels": [entry["beta"] for entry in levels if entry["reason"] == "iteration_cap" and "quiet" in entry], "settings": settings}
 
-class NeuralALOptimizer(MMAOptimizer):
+NEURAL = {"frequencies": 96, "max_frequency_per_mm": 0.125, "hidden": [48, 48], "seed": 0, "mirror_axis": None, "logit_bound": 4.0, "logit_weight": 1.0,
+          "fit_iterations": 800, "fit_learning_rate": 0.01, "fit_rmse_max": 0.05, "track_iterations": 100, "track_learning_rate": 0.01, "rate_decay": 0.7, "track_rmse_max": 0.15,
+          "rules": {"design": "x = sigmoid(z) on the free cells, z the output of a Fourier-feature MLP; every TopologyProblem evaluation, filter, projection, constraint and the Termination are shared with the SIMP route",
+                    "step": "the MMA subproblem of the shared optimizer (same move limits, asymptotes and constraints) proposes x*; the network is warm-started and fitted to x* by at most track_iterations monotone Adam steps (a step that does not lower the squared error is undone and halves the rate), rate = track_learning_rate x rate_decay^level; x = network output, so the iterate stays on the network manifold and stops moving when x* is the manifold's fixed point",
+                    "bound": "the MMA box is [sigmoid(-logit_bound), sigmoid(logit_bound)] so every proposal is reachable; fit loss + w sum(max(0, |z| - logit_bound)^2), targets clipped to that box, so logits stay unsaturated",
+                    "start": "the network is fitted to the shared start design (fit_iterations, fit_learning_rate); a start RMSE above fit_rmse_max or a tracking RMSE above track_rmse_max raises",
+                    "restart": "a capped level restarting from its best feasible iterate and a returned best-feasible design restore the network parameters of that iterate",
+                    "adam_al": "an Adam/augmented-Lagrangian port (logit bound, per-level rate decay, per-constraint penalties 1 -> 10 kept across levels, move limit) did not reach a stationary point on the cantilever benchmark: first-order steps in network parameters end gray at 0.61-0.77 g vs MMA 0.567 g, converged only by step collapse"}}
+
+def neural_settings(settings):
+    unknown = set(settings or {}) - set(NEURAL)
+    if unknown:
+        raise ValueError("Unknown neural optimizer settings: " + ", ".join(sorted(unknown)))
+    result = {**NEURAL, **(settings or {})}
+    if result["logit_bound"] <= 0 or result["fit_learning_rate"] <= 0 or result["track_learning_rate"] <= 0 or not 0 < result["rate_decay"] <= 1 or result["fit_iterations"] < 0 or result["track_iterations"] < 1:
+        raise ValueError("Neural optimizer needs positive rates, logit bound and tracking iterations")
+    return result
+
+class NeuralOptimizer(MMAOptimizer):
     def __init__(self, problem, settings=None, neural=None):
         super().__init__(problem, settings or {})
-        self.neural = {"penalty": 10.0, "penalty_growth": 2.0, "penalty_max": 1e4, "multiplier_interval": 10, "learning_rate": 0.002, "initial_fit_iterations": 100, **(neural or {})}
-        if self.neural["penalty"] <= 0 or self.neural["learning_rate"] <= 0 or self.neural["multiplier_interval"] < 1:
-            raise ValueError("Neural AL needs positive penalty, learning rate and multiplier interval")
-        self.mapping = SharedNeuralField(problem.domain, self.free, self.neural)
-        self.fit_rmse = []
+        self.neural = neural_settings(neural)
+        self.mapping = NeuralDesign(problem.domain, self.free, self.neural)
+        self.fit_rmse, self.tracking, self.bounds = [], [], self.mapping.range()
     def start(self, design):
         x = super().start(design)
-        self.fit_rmse.append(self.mapping.fit(x[self.free]))
+        rmse, _ = self.mapping.fit(x[self.free], self.neural["fit_iterations"], self.neural["fit_learning_rate"])
+        self.fit_rmse.append(rmse)
+        if rmse > self.neural["fit_rmse_max"]:
+            raise RuntimeError(f"Neural start fit RMSE {rmse:.4f} exceeds {self.neural['fit_rmse_max']}; the network does not represent the shared start design")
         x[self.free] = self.mapping.values()[0]
         return x
     def fresh(self, x):
         mismatch = float(np.max(np.abs(self.mapping.values()[0] - x[self.free])))
-        if mismatch > 1e-8:
-            self.fit_rmse.append(self.mapping.fit(x[self.free]))
-            x[self.free] = self.mapping.values()[0]
-        return {"iteration": 1, "multipliers": None, "penalty": self.neural["penalty"], "previous_violation": None, "optimizer": Adam(self.mapping.field.parameters, self.neural["learning_rate"])}
-    def move(self):
-        return None
+        if mismatch > 1e-9:
+            raise RuntimeError(f"Neural design and network output differ by {mismatch:.3g}")
+        return super().fresh(x)
+    def candidate(self, row, x, result):
+        return {**super().candidate(row, x, result), "parameters": self.mapping.snapshot()}
+    def restore(self, best):
+        self.mapping.restore(best["parameters"])
+        return best["x"].copy()
     def step(self, x, result, state):
-        _, df0, g, dg = self.terms(result)
-        if state["multipliers"] is None:
-            state["multipliers"] = np.zeros_like(g)
-        penalty = state["penalty"]
-        coefficients = np.maximum(0.0, state["multipliers"] + penalty * g)
-        gradient = df0[self.free] + coefficients @ dg[:, self.free]
-        _, cache = self.mapping.values()
-        state["optimizer"].step(self.mapping.field.parameters, self.mapping.gradient(cache, gradient))
-        if state["iteration"] % self.neural["multiplier_interval"] == 0:
-            violation = max(float(np.max(g)), 0.0)
-            state["multipliers"] = coefficients
-            if state["previous_violation"] is not None and violation > 0.75 * state["previous_violation"]:
-                state["penalty"] = min(penalty * self.neural["penalty_growth"], self.neural["penalty_max"])
-            state["previous_violation"] = violation
-        state["iteration"] += 1
-        moved = x.copy()
-        moved[self.free] = self.mapping.values()[0]
-        return moved
+        proposal = super().step(x, result, state)
+        rate = self.neural["track_learning_rate"] * self.neural["rate_decay"] ** self.problem.level
+        rmse, steps = self.mapping.fit(proposal[self.free], self.neural["track_iterations"], rate)
+        state["track"] = {"track_rmse": rmse, "track_steps": steps, "track_rate": rate}
+        self.tracking.append(rmse)
+        if rmse > self.neural["track_rmse_max"]:
+            raise RuntimeError(f"Neural tracking RMSE {rmse:.4f} exceeds {self.neural['track_rmse_max']}; the network cannot follow the MMA proposal")
+        proposal[self.free] = self.mapping.values()[0]
+        return proposal
+    def trace(self, state):
+        return state.get("track", {})
+    def report(self):
+        return {"settings": self.neural, "fit_rmse": self.fit_rmse, "track_rmse_max": max(self.tracking, default=None), "track_rmse_last": self.tracking[-1] if self.tracking else None,
+                "parameter_count": int(sum(value.size for value in self.mapping.field.parameters)), "saturation": self.mapping.saturation()}

@@ -98,35 +98,74 @@ class Adam:
         self.rate, self.beta1, self.beta2, self.count = rate, beta1, beta2, 0
         self.first = [np.zeros_like(value) for value in parameters]
         self.second = [np.zeros_like(value) for value in parameters]
-    def step(self, parameters, gradients):
+    def delta(self, gradients):
         self.count += 1
-        for value, gradient, first, second in zip(parameters, gradients, self.first, self.second):
+        steps = []
+        for gradient, first, second in zip(gradients, self.first, self.second):
             first *= self.beta1
             first += (1 - self.beta1) * gradient
             second *= self.beta2
             second += (1 - self.beta2) * gradient ** 2
-            value -= self.rate * first / (1 - self.beta1 ** self.count) / (np.sqrt(second / (1 - self.beta2 ** self.count)) + 1e-8)
+            steps.append(-self.rate * first / (1 - self.beta1 ** self.count) / (np.sqrt(second / (1 - self.beta2 ** self.count)) + 1e-8))
+        return steps
+    def step(self, parameters, gradients):
+        for value, step in zip(parameters, self.delta(gradients)):
+            value += step
 
-class SharedNeuralField:
+class NeuralField:
     def __init__(self, domain, free, settings):
-        self.settings = {**NEURAL_SETTINGS, **settings, "volume_fraction": 0.5}
-        self.free = free
-        self.field = FourierField(self.settings)
-        self.features = self.field.features(cell_centers(domain["grid"])[free])
-        self.field.parameters[len(self.field.parameters) // 2 - 1][:] = 0.0
+        self.field, self.free = FourierField(settings), free
+        self.points = cell_centers(domain["grid"])[free]
+        self.features = self.field.features(self.points)
+    def train(self, evaluate, target, iterations, rate, count):
+        optimizer = Adam(self.field.parameters, rate)
+        for _ in range(iterations):
+            values, cache = evaluate()
+            optimizer.step(self.field.parameters, self.gradient(cache, 2 * (values - target) / count))
+    def shift(self, steps, scale):
+        for value, step in zip(self.field.parameters, steps):
+            value += scale * step
+    def snapshot(self):
+        return [value.copy() for value in self.field.parameters]
+    def restore(self, parameters):
+        for value, saved in zip(self.field.parameters, parameters):
+            value[...] = saved
+
+class NeuralDesign(NeuralField):
+    def __init__(self, domain, free, settings):
+        super().__init__(domain, free, {**settings, "volume_fraction": 0.5})
+        self.bound, self.weight = settings["logit_bound"], settings["logit_weight"]
     def values(self):
         logits, activations = self.field.forward(self.features)
         values = _sigmoid(logits)
-        return values, (activations, values * (1 - values))
+        excess = np.sign(logits) * np.maximum(np.abs(logits) - self.bound, 0.0)
+        return values, (activations, values * (1 - values), excess, self.weight * float(np.sum(excess ** 2)))
     def gradient(self, cache, gradient):
-        activations, slope = cache
-        return self.field.backward(activations, slope * np.asarray(gradient))
-    def fit(self, target):
-        optimizer = Adam(self.field.parameters, self.settings["learning_rate"])
-        for _ in range(self.settings["initial_fit_iterations"]):
-            values, cache = self.values()
-            optimizer.step(self.field.parameters, self.gradient(cache, 2 * (values - target) / len(target)))
-        return float(np.sqrt(np.mean((self.values()[0] - target) ** 2)))
+        activations, slope, excess, _ = cache
+        return self.field.backward(activations, slope * np.asarray(gradient) + 2 * self.weight * excess)
+    def range(self):
+        return float(_sigmoid(-self.bound)), float(_sigmoid(self.bound))
+    def fit(self, target, iterations, rate):
+        clipped = np.clip(target, *self.range())
+        optimizer = Adam(self.field.parameters, rate)
+        values, cache = self.values()
+        error, taken = float(np.sum((values - clipped) ** 2)) + cache[3], 0
+        for _ in range(iterations):
+            steps = optimizer.delta(self.gradient(cache, 2 * (values - clipped)))
+            self.shift(steps, 1.0)
+            trial, trial_cache = self.values()
+            trial_error = float(np.sum((trial - clipped) ** 2)) + trial_cache[3]
+            if trial_error < error:
+                values, cache, error, taken = trial, trial_cache, trial_error, taken + 1
+            else:
+                self.shift(steps, -1.0)
+                optimizer.rate *= 0.5
+                if optimizer.rate < 1e-6 * rate:
+                    break
+        return float(np.sqrt(np.mean((values - target) ** 2))), taken
+    def saturation(self):
+        logits = self.field.forward(self.features)[0]
+        return {"max_abs_logit": float(np.max(np.abs(logits))), "beyond_bound": float(np.mean(np.abs(logits) > self.bound))}
 
 def _sigmoid(value):
     return 0.5 * (1 + np.tanh(0.5 * value))
@@ -144,16 +183,13 @@ def volume_shift(logits, sharpness, budget, weights=None):
             lower = middle
     return (lower + upper) / 2
 
-class NeuralDensity:
+class NeuralDensity(NeuralField):
     def __init__(self, domain, settings):
-        self.field = FourierField(settings)
         self.allowed, self.preserve, self.forbidden = validate_masks(domain)
-        self.free = self.allowed & ~self.preserve
+        super().__init__(domain, self.allowed & ~self.preserve, settings)
         self.budget = settings["volume_fraction"] * np.count_nonzero(self.allowed) - np.count_nonzero(self.preserve)
         self.discs = settings["prop_discs"]
-        points = cell_centers(domain["grid"])[self.free]
-        self.weights = volume_weights(points, self.discs)
-        self.features = self.field.features(points)
+        self.weights = volume_weights(self.points, self.discs)
     def physical(self, sharpness=1.0):
         logits, activations = self.field.forward(self.features)
         density = _sigmoid(sharpness * (logits + volume_shift(logits, sharpness, self.budget, self.weights)))
@@ -182,11 +218,7 @@ class NeuralDensity:
         target[self.preserve], target[~self.allowed] = 1.0, 0.0
         return target, list(source.shape)
     def fit(self, target, sharpness, iterations, rate):
-        optimizer = Adam(self.field.parameters, rate)
-        count = np.count_nonzero(self.free)
-        for _ in range(iterations):
-            physical, cache = self.physical(sharpness)
-            optimizer.step(self.field.parameters, self.gradient(cache, 2 * (physical - target) / count))
+        self.train(lambda: self.physical(sharpness), target, iterations, rate, np.count_nonzero(self.free))
         return float(np.sqrt(np.mean((self.physical(sharpness)[0] - target)[self.allowed] ** 2)))
 
 class LocalVolumePenalty:

@@ -6,56 +6,69 @@ from deep_frame.config import BATTERY_SUPPORT, CAMERA_SUPPORT, COMPONENT_DEFAULT
 from deep_frame.topology_optimization import HexElasticity, elasticity_matrix, hexahedron_matrices, orthotropic_matrix
 from deep_frame.topology_stability import FOUR_FEET, GroundSupport, StandStability, stand_design, stand_domain
 from deep_frame.topology_problem import ARM_TIP, LOAD_COVARIANCE, corridor_weights, FrontCoverage, ShieldedImpact, covariance_cantilever, LoadCovariance, PROBLEM, load_covariance, TopologyProblem, cantilever_domain, cantilever_problem, constraint_report, filter_radius, format_report, length_scale_ratio, orthotropic_material, prolongate, radial_weight, shadow_thickness, weighted_disc_area
-from deep_frame.topology_neural import cell_centers
-from deep_frame.topology_optimizers import MMA, MMAOptimizer, NeuralALOptimizer, Termination
+from deep_frame.topology_neural import NeuralDesign, cell_centers
+from deep_frame.topology_optimizers import MMA, NEURAL, MMAOptimizer, NeuralOptimizer, Termination
 
-@pytest.mark.parametrize("functional",[False,True])
-def test_neural_al_shared_constraints_match_directional_finite_differences(functional):
-    domain, spec = functional_tiny() if functional else (tiny_domain(), tiny_problem())
-    spec["continuation"]["beta_schedule"] = [1.0]
-    problem = TopologyProblem(domain, spec, linear_solver="cpu_superlu")
-    try:
-        optimizer = NeuralALOptimizer(problem, neural={"frequencies": 4, "hidden": [4], "initial_fit_iterations": 0})
-        parameters = optimizer.mapping.field.parameters
-        random = np.random.default_rng(17)
-        parameters[len(parameters) // 2 - 1][:] = random.normal(0, 0.03, parameters[len(parameters) // 2 - 1].shape)
-        x = optimizer.start(np.full(domain["allowed"].size, 0.5))
-        result = problem.evaluate(x)
-        coefficients = np.maximum(0, 10 * result["constraints"])
-        derivative = result["objective_gradient"] + coefficients @ result["constraint_gradients"]
-        gradient = optimizer.mapping.gradient(optimizer.mapping.values()[1], derivative[optimizer.free])
-        directions = [random.normal(size=value.shape) for value in parameters]
-        analytic = sum(float(np.sum(a * b)) for a, b in zip(gradient, directions))
-        def value():
-            design = x.copy()
-            design[optimizer.free] = optimizer.mapping.values()[0]
-            row = problem.evaluate(design)
-            return row["objective"] + 5 * np.sum(np.maximum(row["constraints"], 0) ** 2)
-        step = 1e-6
-        for parameter, direction in zip(parameters, directions):
-            parameter += step * direction
-        high = value()
-        for parameter, direction in zip(parameters, directions):
-            parameter -= 2 * step * direction
-        low = value()
-        for parameter, direction in zip(parameters, directions):
-            parameter += step * direction
-        assert (high - low) / (2 * step) == pytest.approx(analytic, rel=2e-4, abs=1e-6)
-        assert np.all(x[problem.map.preserve] == 1) and np.all(x[~problem.map.allowed] == 0)
-    finally:
-        problem.close()
+def test_neural_design_gradient_matches_finite_differences():
+    domain = tiny_domain()
+    free = domain["allowed"].ravel() & ~domain["preserve"].ravel()
+    design = NeuralDesign(domain, free, {**NEURAL, "frequencies": 4, "hidden": [4], "logit_bound": 0.05})
+    random = np.random.default_rng(17)
+    weights = random.normal(size=int(np.count_nonzero(free)))
+    def value():
+        values, cache = design.values()
+        return float(weights @ values) + cache[3]
+    values, cache = design.values()
+    assert cache[3] > 0
+    gradient = design.gradient(cache, weights)
+    directions = [random.normal(size=parameter.shape) for parameter in design.field.parameters]
+    step = 1e-6
+    design.shift(directions, step)
+    high = value()
+    design.shift(directions, -2 * step)
+    low = value()
+    design.shift(directions, step)
+    assert (high - low) / (2 * step) == pytest.approx(sum(float(np.sum(a * b)) for a, b in zip(gradient, directions)), rel=1e-5)
 
-def test_neural_al_short_shared_problem_probe_does_not_claim_convergence():
+def test_neural_start_fit_gate_and_short_probe():
     domain, spec = tiny_domain(), tiny_problem()
     spec["continuation"]["beta_schedule"] = [1.0]
     problem = TopologyProblem(domain, spec, linear_solver="cpu_superlu")
     try:
-        result = NeuralALOptimizer(problem, {"final_max_iterations": 2}, {"frequencies": 4, "hidden": [4], "initial_fit_iterations": 0}).run(np.full(domain["allowed"].size, 0.5))
+        with pytest.raises(RuntimeError, match="start fit RMSE"):
+            NeuralOptimizer(problem, neural={"frequencies": 4, "hidden": [4], "fit_iterations": 0}).start(np.random.default_rng(3).integers(0, 2, domain["allowed"].size).astype(float))
+        with pytest.raises(ValueError, match="Unknown neural"):
+            NeuralOptimizer(problem, neural={"penalty": 1.0})
+        optimizer = NeuralOptimizer(problem, {"final_max_iterations": 2}, {"frequencies": 4, "hidden": [4], "fit_iterations": 200})
+        result = optimizer.run(np.full(domain["allowed"].size, 0.5))
         assert result["iterations"] == 2 and result["status"].startswith("not_converged_")
-        assert all(np.isfinite(row["mass_g"]) for row in result["history"])
-        assert set(result["result"]["names"]) == {"volume", "arm_tip_stiffness", "f1", "shadow", "crash_front", "crash_side_left"}
+        assert optimizer.fit_rmse[0] <= NEURAL["fit_rmse_max"] and all(np.isfinite(row["mass_g"]) for row in result["history"])
+        assert np.all(result["design"][problem.map.preserve] == 1) and np.all(result["design"][~problem.map.allowed] == 0)
+        assert "track_rmse" in result["history"][0] and set(result["result"]["names"]) == {"volume", "arm_tip_stiffness", "f1", "shadow", "crash_front", "crash_side_left"}
     finally:
         problem.close()
+
+def test_neural_and_mma_converge_to_similar_min_mass_cantilever():
+    pytest.importorskip("mmapy")
+    domain = cantilever_domain((16, 4, 6), 1.0)
+    solid = TopologyProblem(domain, cantilever_problem(1.0))
+    stiffness = {row["name"]: row for row in solid.evaluate(np.ones(solid.map.n))["rows"]}["tip_stiffness"]["value"]
+    solid.close()
+    problem = cantilever_problem(0.4 * stiffness)
+    problem["continuation"]["beta_schedule"] = [1.0, 4.0]
+    settings, results = {"level_max_iterations": 60, "final_max_iterations": 200, "move": 0.2}, {}
+    for name, build in (("mma", lambda tp: MMAOptimizer(tp, settings)), ("neural", lambda tp: NeuralOptimizer(tp, settings, {"max_frequency_per_mm": 1.0}))):
+        tp = TopologyProblem(domain, problem)
+        optimizer = build(tp)
+        result = optimizer.run(np.full(domain["allowed"].size, 0.5))
+        rows = {row["name"]: row for row in result["result"]["rows"]}
+        assert result["status"] == "converged" and rows["tip_stiffness"]["status"] == "active", name
+        assert result["history"][-1]["max_violation"] <= 1e-3 and result["history"][-1]["change"] < 1e-3, name
+        results[name] = (result["result"]["mass_g"], rows["volume"]["value"], optimizer)
+        tp.close()
+    assert results["mma"][0] <= results["neural"][0] <= 1.1 * results["mma"][0]
+    report = results["neural"][2].report()
+    assert report["track_rmse_max"] <= NEURAL["track_rmse_max"] and report["saturation"]["max_abs_logit"] < NEURAL["logit_bound"] + 0.01
 
 def box(low, high):
     return {"kind": "box", "min_mm": list(map(float, low)), "max_mm": list(map(float, high))}

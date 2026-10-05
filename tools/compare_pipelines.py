@@ -78,10 +78,13 @@ class Comparison:
         fingerprints={row["problem_definition_sha256"] for row in records.values()}
         if len(fingerprints)!=1:
             raise RuntimeError("Optimization routes use different problem definitions")
+        starts={cfg["mma"].get("start_sha256") for cfg in self.configs.values()}
+        if len(starts)!=1 or None in starts:
+            raise RuntimeError("Optimization routes must reference one shared start design (mma start_sha256)")
         for row in records.values():
             if row["battery_retention"]!="ideal_press" or row["functional_requirements"]["low_flight"]["pitch_deg"]!=15:
                 raise RuntimeError("Required flight attitude or ideal retention missing")
-        self.update("shared_problem",status="VERIFIED",sha256=next(iter(fingerprints)),battery_retention="ideal_press",flight_pitch_deg=15)
+        self.update("shared_problem",status="VERIFIED",sha256=next(iter(fingerprints)),start_sha256=next(iter(starts)),battery_retention="ideal_press",flight_pitch_deg=15)
     def local(self,stage,command):
         previous=self.data["stages"].get(stage,{})
         if previous.get("command") and previous["command"]!=command:

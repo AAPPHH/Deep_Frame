@@ -1285,7 +1285,7 @@ def test_shared_pipeline_gate_rejects_changed_problem_and_retention(monkeypatch,
     from tools import compare_pipelines as comparison
     monkeypatch.setattr(comparison,'ROOT',tmp_path)
     tested=comparison.Comparison.__new__(comparison.Comparison)
-    tested.configs={name:{'mma':{'root':name}} for name in ('simp','neural')}
+    tested.configs={name:{'mma':{'root':name,'start_sha256':'seed'}} for name in ('simp','neural')}
     tested.update=lambda *args,**kwargs:None
     record={'problem_definition_sha256':'same','battery_retention':'ideal_press','functional_requirements':{'low_flight':{'pitch_deg':15}}}
     for name in tested.configs:
@@ -1303,6 +1303,10 @@ def test_shared_pipeline_gate_rejects_changed_problem_and_retention(monkeypatch,
     changed['battery_retention']='contact'
     target.write_text(json.dumps(changed))
     with pytest.raises(RuntimeError,match='ideal retention'):
+        tested.shared()
+    target.write_text(json.dumps(record))
+    tested.configs['neural']['mma']['start_sha256']='other'
+    with pytest.raises(RuntimeError,match='shared start design'):
         tested.shared()
 
 def test_functional_review_rejects_a_frame_outside_recorded_pipeline_results(tmp_path):
