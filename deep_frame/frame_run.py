@@ -378,7 +378,8 @@ def _git(worktree):
     def run(*args):
         result = subprocess.run(["git", "-C", str(worktree), *args], capture_output=True, text=True)
         return result.stdout.strip() if result.returncode == 0 else None
-    return {"sha": run("rev-parse", "HEAD"), "branch": run("branch", "--show-current"), "dirty": bool(run("status", "--porcelain"))}
+    status = run("status", "--porcelain")
+    return {"sha": run("rev-parse", "HEAD"), "branch": run("branch", "--show-current"), "dirty": None if status is None else bool(status)}
 
 def _digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest() if Path(path).is_file() else None

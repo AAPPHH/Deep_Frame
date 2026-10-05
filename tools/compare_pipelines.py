@@ -101,10 +101,16 @@ class Comparison:
         if not (source/"result.json").is_file():
             raise RuntimeError(f"Shared start design {start} is incomplete: result.json missing next to design.npz")
         record=json.loads((source/"result.json").read_text())
-        digest=hashlib.sha256(np.ascontiguousarray(np.load(source/"design.npz")["design"],dtype=np.float64).tobytes()).hexdigest()
+        digest=self.digest(source)
         if digest!=sha or record.get("sha256")!=sha or not record.get("problem_definition_sha256"):
             raise RuntimeError(f"Shared start design {start} has sha256 {digest} (recorded {record.get('sha256')}), controller seed is {sha}")
         self.update("shared_seed",status="VERIFIED",start=start,sha256=sha,problem_definition_sha256=record["problem_definition_sha256"],pipelines=self.paths)
+    def digest(self,directory):
+        if not (Path(directory)/"design.npz").is_file():
+            raise RuntimeError(f"{directory}: design.npz missing")
+        return hashlib.sha256(np.ascontiguousarray(np.load(Path(directory)/"design.npz")["design"],dtype=np.float64).tobytes()).hexdigest()
+    def unconverged(self,name,status):
+        return f"{name}: {status}; dependent production postprocessing withheld"
     def definition(self,path):
         if not Path(path).is_file():
             raise RuntimeError(f"{path}: production problem definition missing; run the probe with the current frame_probe")
@@ -197,7 +203,7 @@ class Comparison:
             record = self.optimized(name, name + "_optimization", self.data["stages"]["shared_problem"]["sha256"])
             self.started({name: record})
             if record["status"] != "converged":
-                raise RuntimeError(f"{name}: {record['status']}; dependent production postprocessing withheld")
+                raise RuntimeError(self.unconverged(name,record["status"]))
             self.local(name+"_postprocessing",[self.python,"tools/formulation_study.py","frame_runs",path])
             self.physical(name,path)
         except Exception as error:
@@ -306,25 +312,40 @@ class Comparison:
         candidates=[candidate for name in self.configs for candidate in self.data["stages"].get(name+"_acceptance",{}).get("candidates",[])]
         if not candidates:
             statuses={name:self.data["stages"].get(name+"_optimization",{}).get("design_status") for name in self.config["pipelines"]}
-            unconverged=[f"{name}: {status or 'no optimization result'}" for name,status in statuses.items() if status!="converged"]
-            converged=[name for name,status in statuses.items() if status=="converged"]
-            reasons=(["Optimizer not converged ("+", ".join(unconverged)+"); reconstruction and acceptance withheld"] if unconverged else [])+(["No reconstructed frame of "+", ".join(converged)+" passed geometry, shared physics, independent evaluation and wall rule"] if converged else [])
+            causes={"failed":[],"unconverged":[],"rejected":[],"missing":[]}
+            for name,status in statuses.items():
+                branch=self.data["branches"].get(name)
+                error=branch.get("error") if isinstance(branch,dict) else None
+                if error and error!=self.unconverged(name,status):
+                    causes["failed"].append(f"{name}: {error}")
+                elif status and status!="converged":
+                    causes["unconverged"].append(f"{name}: {status}")
+                elif name+"_acceptance" in self.data["stages"]:
+                    causes["rejected"].append(name)
+                else:
+                    causes["missing"].append(name)
+            heads={"failed":"Route failed before acceptance ({}); reconstruction and acceptance withheld","unconverged":"Optimizer not converged ({}); reconstruction and acceptance withheld","rejected":"No reconstructed frame of {} passed geometry, shared physics, independent evaluation and wall rule","missing":"No optimization result recorded ({})"}
+            reasons=[heads[key].format(", ".join(rows)) for key,rows in causes.items() if rows]
             self.update("continuation",status="AWAITING_DESIGN_CORRECTION",reason="; ".join(reasons)+"; 0.75 input withheld",design_status=statuses)
             return
         best=min(candidates,key=lambda candidate:candidate["mass_g"])
-        self.update("best_43",status="SELECTED",**best)
+        base=json.loads((ROOT/best["pipeline"]).read_text())
+        start=ROOT/base["mma"]["root"]/base["mma"]["fine_dir"]
+        design=self.digest(start)
+        self.update("best_43",status="SELECTED",design_sha256=design,**best)
         self.display(best)
         cabled=self.channels(best)
         self.comparisons(candidates+[cabled])
-        base=json.loads((ROOT/best["pipeline"]).read_text())
         for name in ("probe","full"):
             cfg=json.loads(json.dumps(base))
             cfg["shape"]=[182,172,44]
-            cfg["mma"].update(root="exports/runs/ground15_075_"+name,variant="ground15_075",method="ground15_075",optimizer="mma",coarse=False,start=str(ROOT/base["mma"]["root"]/base["mma"]["fine_dir"]),start_sha256=None,fine_dir="fine",fine_start_level=6 if name=="probe" else 3,until="fine" if name=="probe" else "export",settings={"final_max_iterations":3,"final_min_iterations":10} if name=="probe" else {"final_max_iterations":300})
+            cfg["mma"].update(root="exports/runs/ground15_075_"+name,variant="ground15_075",method="ground15_075",optimizer="mma",coarse=False,start=str(start),start_sha256=None,fine_dir="fine",fine_start_level=6 if name=="probe" else 3,until="fine" if name=="probe" else "export",settings={"final_max_iterations":3,"final_min_iterations":10} if name=="probe" else {"final_max_iterations":300})
             cfg["v3"]={"compute":"reconstruction","copy":cfg["mma"]["root"]+"/v3_source"}
             path=self.root/("075_"+name+".json")
             path.write_text(json.dumps(cfg,indent=2))
             self.configs["075"]=cfg
+            if self.digest(start)!=design:
+                raise RuntimeError(f"{start}: accepted 4/3 design changed since selection ({design}); 0.75 start withheld")
             self.ray("075_"+("probe" if name=="probe" else "optimization"),"frame_mma",str(path),kind="gpu_075")
             root=ROOT/cfg["mma"]["root"]
             record=json.loads((root/"fine/result.json").read_text()) if name=="probe" else self.optimized("075","075_optimization")
@@ -362,7 +383,10 @@ class Comparison:
             for cfg in self.configs.values():
                 if not self.config.get("resume") and ((ROOT / cfg["mma"]["root"]).exists() or (ROOT / (cfg["mma"]["root"] + "_probe")).exists()):
                     raise RuntimeError("Fresh comparison output directories required")
-            self.data["source"]=_git(str(ROOT)) if self.config.get("resume") else self.launchable()
+            if self.config.get("resume"):
+                self.data.setdefault("resume_sources",[]).append(_git(str(ROOT)))
+            else:
+                self.data["source"]=self.launchable()
             (self.root / "controller.pid").write_text(str(os.getpid()))
             self.save()
             self.seed()

@@ -200,3 +200,14 @@ def test_stack_posts_follow_the_standoff_and_the_fastening_switch_reaches_domain
     datasheet(tmp_path / "manifest.json")
     text = (tmp_path / "datasheet.md").read_text(encoding="utf-8")
     assert "4 Pfosten Ø 4,5 mm" in text and "Höhe = Stack-Abstand 8,0 mm)" in text and "selbstschneidend (Sackbohrung Ø 1,6 × 4,0 mm)" in text and "kein Zugang von unten" in text
+
+def test_git_source_counts_untracked_files_as_dirty(tmp_path):
+    from deep_frame.frame_run import _git
+    subprocess.run(['git','init','-q',str(tmp_path)],check=True)
+    (tmp_path/'a.py').write_text('')
+    subprocess.run(['git','-C',str(tmp_path),'add','a.py'],check=True)
+    subprocess.run(['git','-C',str(tmp_path),'-c','user.name=t','-c','user.email=t@t','commit','-qm','a'],check=True)
+    assert _git(tmp_path)['dirty'] is False
+    (tmp_path/'b.py').write_text('')
+    assert _git(tmp_path)['dirty'] is True
+    assert _git(tmp_path/'missing')=={'sha':None,'branch':None,'dirty':None}
