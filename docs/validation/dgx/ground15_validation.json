@@ -43,13 +43,14 @@
   },
   "production_jobs": {
     "simp": {
-      "status": "FAILED",
+      "status": "SUCCEEDED",
+      "branch_status": "FAILED",
       "job": "raysubmit_FtAAQ9pueLzpBwnN",
       "kind": "gpu_compare",
       "gpu_limit_gb": 32,
       "host_limit_gb": 46,
       "started": "2026-10-05T11:05:21.690031+00:00",
-      "finished": "2026-10-05T13:13:05.848401+00:00",
+      "finished": "2026-10-05T13:13:02+00:00",
       "design_status": "not_converged_diverged_best_feasible",
       "iterations": 494,
       "field_mass_g": 19.667,
@@ -57,23 +58,33 @@
       "field_mass_dilated_g": 32.456,
       "raw_stl_mass_g": 13.732,
       "raw_stl_bodies": 3,
-      "max_violation": 1.92e-14
+      "max_violation": 1.92e-14,
+      "raw_stl_exact_booleans_passed": false,
+      "raw_stl_chord_spanning_components": 1
     },
     "neural": {
-      "status": "FAILED",
+      "status": "SUCCEEDED",
+      "branch_status": "FAILED",
       "job": "raysubmit_SUaC833pWQi2DaiL",
       "kind": "gpu_compare",
       "gpu_limit_gb": 32,
       "host_limit_gb": 46,
       "started": "2026-10-05T11:05:21.683386+00:00",
-      "finished": "2026-10-05T13:13:05.848401+00:00",
+      "finished": "2026-10-05T13:08:16+00:00",
       "design_status": "not_converged_stalled_best_feasible",
+      "iterations": 582,
       "field_mass_g": 37.203,
-      "raw_stl": null,
+      "field_mass_eroded_g": 24.101,
+      "field_mass_dilated_g": 51.511,
+      "raw_stl_mass_g": 33.017,
+      "raw_stl_bodies": 1,
+      "raw_stl_exact_booleans_passed": true,
+      "raw_stl_chord_spanning_components": 0,
       "max_violation": 9.81e-07
     }
   },
-  "production_outcome": "Both branches FAILED without convergence; reconstruction, acceptance, cable channels and 0.75 mm withheld. Results are not usable as design or initialization.",
+  "production_jobs_note": "status is the Ray job status; branch_status and design_status give the design outcome. finished is the export time per route (info.json); controller_finished_utc is the controller finish time.",
+  "production_outcome": "Both Ray jobs SUCCEEDED, both branches FAILED without convergence (SIMP 13.73 g raw STL, 3 bodies, exact Booleans failed; neural 33.02 g raw STL, 1 body, no spanning lower chord); reconstruction, acceptance, cable channels and 0.75 mm withheld. Results are not usable as design or initialization.",
   "failure_causes": [
     "Camera shielding constraint 0.29 (crash_front) forces frame material below the lens",
     "maximum_extra_gap_mm 3.0 lets the frame drop below the camera",
@@ -135,5 +146,6 @@
     "fa99a57",
     "69ef08d"
   ],
-  "test_fixture_correction": "The first nonfinite-value test fixture lacked its numpy import. The fixture was corrected; the subsequent combined acceptance run passed all five cases."
+  "test_fixture_correction": "The first nonfinite-value test fixture lacked its numpy import. The fixture was corrected; the subsequent combined acceptance run passed all five cases.",
+  "controller_finished_utc": "2026-10-05T13:13:05.848401+00:00"
 }
