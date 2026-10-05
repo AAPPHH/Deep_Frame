@@ -1496,7 +1496,7 @@ def frame_physical(cfg):
     try:
         report=tp.physical_report(physical)
         report.update(stl_mass_g=float(mesh.volume*half["material"]["density_g_cm3"]/1000),frame_source=spec["frame_source"],frame_sha256=hashlib.sha256(Path(spec["frame_source"]).read_bytes()).hexdigest(),problem_definition_sha256=shared_definition(half,problem)["sha256"],method="Reconstructed STL sampled at the shared FE cell centres; ideal underside battery retention, guide handling only; no filter or projection")
-        report["passed"]=all(row["status"]!="violated" for row in report["rows"])
+        report["passed"]=all(row["status"]!="violated" and np.isfinite(row["value"]) and (row["g"] is None or np.isfinite(row["g"])) for row in report["rows"])
         output=Path(spec["output_directory"])
         output.mkdir(parents=True,exist_ok=True)
         (output/"physical_evaluation.json").write_text(json.dumps(report,indent=2,default=float))

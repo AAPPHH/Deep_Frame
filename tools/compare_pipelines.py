@@ -113,8 +113,11 @@ class Comparison:
                 self.update(name+"_physical_"+suffix,acceptance="FAILED",error=str(error))
                 continue
             manifest=json.loads((run/"manifest.json").read_text())
-            if not manifest.get("wall_rule_passed") or (manifest.get("evaluation_gates") or {}).get("missed") or not manifest.get("evaluation_gates"):
-                self.update(name+"_physical_"+suffix,acceptance="FAILED",wall_rule_passed=manifest.get("wall_rule_passed"),independent_evaluation=manifest.get("evaluation_gates"))
+            evaluation=json.loads((run/"evaluation.json").read_text())
+            stand=((evaluation.get("geometry") or {}).get("mass") or {}).get("standing",{}).get("stability",{})
+            standing=stand.get("reserve_passed") is True and stand.get("prop_clearance_passed") is True
+            if not manifest.get("wall_rule_passed") or (manifest.get("evaluation_gates") or {}).get("missed") or not manifest.get("evaluation_gates") or not standing:
+                self.update(name+"_physical_"+suffix,acceptance="FAILED",wall_rule_passed=manifest.get("wall_rule_passed"),independent_evaluation=manifest.get("evaluation_gates"),stand=stand)
                 continue
             report=json.loads((run/"functional_review/physical_evaluation.json").read_text())
             accepted.append({"route":name,"suffix":suffix,"run":str(run),"mass_g":report["stl_mass_g"],"pipeline":path})
@@ -151,8 +154,9 @@ class Comparison:
     def hardware(self):
         command = "LD_LIBRARY_PATH=" + shlex.quote(os.environ.get("LD_LIBRARY_PATH", "")) + " nvidia-smi --query-gpu=memory.used,memory.total,utilization.gpu --format=csv,noheader"
         result = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "node21", command], capture_output=True, text=True, timeout=15)
+        cpu = subprocess.run(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", "node20", "ps -eo pid,pcpu,rss,comm --sort=-pcpu | head -n 8"], capture_output=True, text=True, timeout=15)
         with (self.root / "hardware.jsonl").open("a") as stream:
-            stream.write(json.dumps({"time": datetime.now(timezone.utc).isoformat(), "exit_code": result.returncode, "output": result.stdout.strip(), "error": result.stderr.strip()}) + "\n")
+            stream.write(json.dumps({"time": datetime.now(timezone.utc).isoformat(), "exit_code": result.returncode, "output": result.stdout.strip(), "error": result.stderr.strip(),"node20":{"exit_code":cpu.returncode,"output":cpu.stdout.strip(),"error":cpu.stderr.strip()}}) + "\n")
         for name, cfg in self.configs.items():
             phases=(("_probe", cfg["mma"]["root"] + "_probe"), ("_optimization", cfg["mma"]["root"])) if name!="075" else (("_probe" if cfg["mma"]["until"]=="fine" else "_optimization",cfg["mma"]["root"]),)
             for suffix, directory in phases:
@@ -210,7 +214,8 @@ class Comparison:
         after=json.loads((out/"evaluation/evaluation.json").read_text())
         (out/"evaluation.json").write_text(json.dumps(after,indent=2))
         before=json.loads((run/"evaluation.json").read_text())
-        record={"parent":best,"frame_source":str(out/"frame.stl"),"frame_sha256":hashlib.sha256((out/"frame.stl").read_bytes()).hexdigest(),"cables":report,"before":before,"after":after,"passed":bool(after["assessment"]["good"])}
+        stand=((after.get("geometry") or {}).get("mass") or {}).get("standing",{}).get("stability",{})
+        record={"parent":best,"frame_source":str(out/"frame.stl"),"frame_sha256":hashlib.sha256((out/"frame.stl").read_bytes()).hexdigest(),"cables":report,"before":before,"after":after,"stand":stand,"passed":bool(after["assessment"]["good"] and stand.get("reserve_passed") is True and stand.get("prop_clearance_passed") is True)}
         (out/"before_after.json").write_text(json.dumps(record,indent=2))
         self.update(tag+"_acceptance",status="PASSED" if record["passed"] else "FAILED",report=str(out/"before_after.json"))
         if not record["passed"]:

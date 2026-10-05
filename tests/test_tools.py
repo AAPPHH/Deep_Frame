@@ -1380,3 +1380,25 @@ def test_missing_ocp_viewer_does_not_interrupt_authorized_compute_plan():
     tested.display({'run':'actual_pipeline','route':'simp','suffix':'recon'})
     assert calls[0][1]['status']=='PENDING_VIEWER'
     assert calls[0][1]['frame_source']=='actual_pipeline/frame.stl'
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+@pytest.mark.parametrize('standing',[True,False])
+def test_controller_acceptance_keeps_stand_and_prop_clearance_required(tmp_path,monkeypatch,standing):
+    from tools import compare_pipelines as study
+    monkeypatch.setattr(study,'ROOT',tmp_path)
+    tested=study.Comparison.__new__(study.Comparison)
+    tested.ray=lambda *args,**kwargs:None
+    tested.update=lambda *args,**kwargs:None
+    cfg={'mma':{'root':'optimization'}}
+    path=tmp_path/'pipeline.json'
+    path.write_text(json.dumps(cfg))
+    root=tmp_path/'optimization'
+    root.mkdir()
+    run=tmp_path/'run'
+    (run/'functional_review').mkdir(parents=True)
+    (root/'runs.json').write_text(json.dumps({'recon':str(run)}))
+    (root/'functional_reviews.json').write_text(json.dumps({'recon':{'exit_code':0}}))
+    (run/'manifest.json').write_text(json.dumps({'wall_rule_passed':True,'evaluation_gates':{'missed':[]}}))
+    (run/'evaluation.json').write_text(json.dumps({'geometry':{'mass':{'standing':{'stability':{'reserve_passed':standing,'prop_clearance_passed':True}}}}}))
+    (run/'functional_review/physical_evaluation.json').write_text(json.dumps({'stl_mass_g':20}))
+    assert bool(tested.physical('simp',str(path))) is standing

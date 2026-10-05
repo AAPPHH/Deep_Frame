@@ -123,3 +123,29 @@ def test_memory_probe_is_portable_pid_scoped_and_joins_before_log_close(monkeypa
     samples = [json.loads(line) for line in target.read_text().splitlines()]
     assert any(row.get("process_gpu_gb") == 1.5 for row in samples)
     assert not any(row.get("process_gpu_gb") == 70 for row in samples)
+
+@pytest.mark.parametrize('value,g',[(float('nan'),-1),(1,float('nan')),(float('inf'),-1)])
+def test_reconstructed_physical_acceptance_rejects_nonfinite_measurements(tmp_path,monkeypatch,value,g):
+    import numpy as np
+    import trimesh
+    from tools import formulation_study as study
+    mesh=trimesh.creation.box(extents=[2,2,2])
+    source=tmp_path/'frame.stl'
+    mesh.export(source)
+    domain={'grid':{},'material':{'density_g_cm3':1}}
+    monkeypatch.setattr(study,'frame_setup',lambda *args:(domain,{}))
+    monkeypatch.setattr(study,'shared_definition',lambda *args:{'sha256':'shared'})
+    monkeypatch.setattr('deep_frame.topology_neural.cell_centers',lambda *args:np.zeros((1,3)))
+    class Problem:
+        def __init__(self,*args,**kwargs):
+            pass
+        def physical_report(self,physical):
+            return {'rows':[{'name':'f1','status':'satisfied','value':value,'g':g,'limit':1,'unit':'Hz','sense':'>=','margin':1}]}
+        def close(self):
+            pass
+    monkeypatch.setattr(study,'TopologyProblem',Problem)
+    cfg={'mma':{'linear_solver':'none'},'shape':[2,2,2],'review':{'frame_source':str(source),'output_directory':str(tmp_path/'review')}}
+    with pytest.raises(RuntimeError,match='violates shared mechanical'):
+        study.frame_physical(cfg)
+    report=json.loads((tmp_path/'review/physical_evaluation.json').read_text())
+    assert report['passed'] is False
