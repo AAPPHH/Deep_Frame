@@ -5,6 +5,47 @@ from scipy.ndimage import label
 from deep_frame.config import DESIGN_RECONSTRUCTION_CONFIG, SPLINE_RECONSTRUCTION_CONFIG
 from deep_frame.topology_implicit import TWENTY_SIX, ImplicitField
 from deep_frame.topology_reconstruction import DesignGraph, primitive_distance, Reconstruction, clearance, hoop_paths, load_paths, reconstruct, reconstruct_splines, sections, sweep_values, tube
+from tools.reconstruction_study import isotropic_materialization
+
+def test_isotropic_materialization_preserves_physical_coordinates():
+    shape, spacing, origin = (3, 3, 4), np.array([2.0, 1.5, 0.75]), np.array([-7.0, 11.0, -3.0])
+    centers = origin+(np.indices(shape).transpose(1, 2, 3, 0)+0.5)*spacing
+    linear = lambda points: 0.4+(points-origin)@np.array([0.02, 0.03, 0.04])
+    density = linear(centers).astype(np.float32)
+    domain = {"grid": {"origin_mm": origin.tolist(), "spacing_mm": spacing.tolist(), "shape": list(shape)}, "allowed": np.ones(shape, dtype=bool), "preserve": np.zeros(shape, dtype=bool), "forbidden": np.zeros(shape, dtype=bool), "regions": [{"center_mm": [-3.0, 13.0, -1.0]}]}
+    result, sampled = isotropic_materialization(domain, density)
+    assert result["grid"] == {"origin_mm": origin.tolist(), "spacing_mm": [0.75]*3, "shape": [8, 6, 4]}
+    physical = origin+(np.indices(sampled.shape).transpose(1, 2, 3, 0)+0.5)*0.75
+    interior = np.all((physical >= centers[0, 0, 0]) & (physical <= centers[-1, -1, -1]), axis=-1)
+    np.testing.assert_allclose(sampled[interior], linear(physical[interior]), atol=1e-7)
+    assert result["regions"] == domain["regions"] and domain["grid"]["shape"] == [3, 3, 4]
+
+def test_isotropic_materialization_resamples_masks_and_zeros_outside_extent():
+    shape = (3, 2, 2)
+    allowed, preserve, forbidden = np.ones(shape, dtype=bool), np.zeros(shape, dtype=bool), np.zeros(shape, dtype=bool)
+    allowed[0, 1, :] = False
+    preserve[1, :, :] = True
+    forbidden[1, 1, :] = True
+    domain = {"grid": {"origin_mm": [5.0, -2.0, 4.0], "spacing_mm": [1.6, 1.0, 1.0], "shape": list(shape)}, "allowed": allowed, "preserve": preserve, "forbidden": forbidden}
+    result, sampled = isotropic_materialization(domain, np.full(shape, 0.4, dtype=np.float32))
+    assert result["grid"]["shape"] == [5, 2, 2]
+    np.testing.assert_array_equal(result["preserve"][:, 0, 0], [False, False, True, False, False])
+    np.testing.assert_array_equal(result["allowed"][:, 1, 0], [False, False, False, True, True])
+    assert sampled[0, 0, 0] > 0 and sampled[2, 0, 0] == 1 and np.all(sampled[~result["allowed"]] == 0)
+    np.testing.assert_array_equal(result["forbidden"], ~result["allowed"])
+    extended = {**domain, "grid": {**domain["grid"], "spacing_mm": [1.4, 1.0, 1.0]}}
+    outside, padded = isotropic_materialization(extended, np.full(shape, 0.4, dtype=np.float32))
+    assert not outside["allowed"][-1].any() and outside["forbidden"][-1].all() and not padded[-1].any()
+
+@pytest.mark.parametrize("h", [4/3, 2/3])
+def test_isotropic_four_thirds_materialization_is_unchanged(h):
+    shape = (12, 10, 6)
+    density = np.random.default_rng(43).uniform(size=shape).astype(np.float32)
+    preserve, allowed = density > 0.8, density > 0.2
+    density[preserve], density[~allowed] = 1.0, 0.0
+    domain = {"grid": {"origin_mm": [-68.0, -64.0, -4.0], "spacing_mm": [h]*3, "shape": list(shape)}, "allowed": allowed, "preserve": preserve, "forbidden": ~allowed}
+    result, sampled = isotropic_materialization(domain, density)
+    assert result is domain and sampled is density
 
 H = 0.5
 RADIUS = 1.5
