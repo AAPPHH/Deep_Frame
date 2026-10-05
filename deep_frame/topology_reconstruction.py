@@ -389,7 +389,7 @@ class Reconstruction:
             axes = self.field.axes(window)
             self._blend(window, self._fit(axes, primitive_distance(axes, region), primitive_distance(axes, dict(region, radius_mm=min(node["radius"], self.config["minimum_radius_mm"])))).astype(np.float32), blend)
 
-    def lift_contacts(self, faces, reach, over):
+    def lift_contacts(self, faces, reach, over, radial=None):
         h = float(self.field.spacing[0])
         for axis, sign, plane, low, high in faces:
             bounds = np.array([low, high])
@@ -401,8 +401,23 @@ class Reconstruction:
             depth = sign*(axes[axis]-plane)
             first, second = [(axes[i] >= low[i]+h) & (axes[i] <= high[i]-h) for i in range(3) if i != axis]
             inside = first & second
+            if radial is not None:
+                center, radius = radial
+                inside &= sum((axes[i]-center[i])**2 for i in range(3) if i != axis) <= radius**2
             peak = np.where((depth >= -reach) & (depth <= 0), values, -np.inf).max(axis=axis, keepdims=True)
             self.field.values[window] = np.where(inside & (depth >= -reach) & (depth <= over) & (peak > 0), np.maximum(values, peak), values)
+
+    def camera_contacts(self):
+        radius = self.config.get("camera_contact_radius_mm", 0.0)
+        regions = {r["name"]: r for r in self.domain["regions"]}
+        if radius <= 0 or "camera_envelope" not in regions or "camera_screw_axis" not in regions:
+            return
+        low, high = region_bounds(regions["camera_envelope"])
+        center = np.asarray(regions["camera_screw_axis"]["center_mm"], dtype=float)
+        first, last = np.maximum(low, center-radius-self.field.spacing[0]), np.minimum(high, center+radius+self.field.spacing[0])
+        faces = [(0, sign, float(plane), first, last) for sign, plane in ((1, low[0]), (-1, high[0]))]
+        reach = float(max(self.domain["grid"]["spacing_mm"]))+self.config["boolean_offset_mm"]
+        self.lift_contacts(faces, reach, abs(self.config["preserve_flush_mm"]), (center, radius))
 
     def finish(self):
         h = self.field.spacing[0]
@@ -421,6 +436,7 @@ class Reconstruction:
         clip = lambda margin: self.field.intersect(-self.field.primitives(forbidden, margin+3*h)-margin)
         clip(offset)
         self.lift_contacts(contact_faces(self.domain, self.config.get("contact_regions", [])), self.config.get("contact_reach_mm", 0.0), abs(self.config["preserve_flush_mm"]))
+        self.camera_contacts()
         self.field.smooth_union(self.preserve_values(preserves, self.config["preserve_blend_mm"]+3*h), self.config["preserve_blend_mm"])
         clip(np.float32(self.config["preserve_flush_mm"]))
         self.field.intersect(self.field.primitives([_envelope(self.domain)])+offset)
