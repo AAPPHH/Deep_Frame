@@ -1,0 +1,35 @@
+{
+ "date": "2026-10-05",
+ "platform": "Windows workstation; Linux/DGX execution pending",
+ "tested_commit": "fd66ccc6b433648087745d5cded86877e299cf8a",
+ "suites": [
+  {
+   "environment": "CPU",
+   "passed": 833,
+   "skipped": 11,
+   "failed": 0,
+   "seconds": 667.21,
+   "ray_job": "raysubmit_D1E43T5gPfUSYLzf",
+   "command": "python -m pytest -q"
+  },
+  {
+   "environment": "GPU dependencies and CUDA available",
+   "passed": 856,
+   "skipped": 1,
+   "failed": 0,
+   "seconds": 683.4,
+   "ray_job": "raysubmit_Zb3Rja3rtr5BBmjL",
+   "command": "python -m pytest -q"
+  }
+ ],
+ "warnings": "141 existing deprecation/runtime warnings per suite; no failed test",
+ "coldstart_smoke": {
+  "external_density_required": false,
+  "external_request_required": false,
+  "battery_support": "free",
+  "camera_support": "free",
+  "allowed_and_preserve_enforced": true
+ },
+ "remaining_compute": "Fresh 4/3 mm, 0.75 mm cuDSS probe/full run, reconstructed body and channel evaluations on DGX",
+ "known_unresolved": "Stand/wall criteria and missing final Sigma/camera/twist/layout/comparison evidence; local 0.75 mm multigrid residual failure remains documented"
+}
