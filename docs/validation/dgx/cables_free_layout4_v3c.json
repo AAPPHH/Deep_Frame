@@ -1,5 +1,5 @@
 {
- "source": "exports/runs/free_layout4_opt/free_layout4/density_fine.npz",
+ "source": "exports/runs/free_layout4_v3_contact/reconstruction/density_fine.npz",
  "domain": "exports/runs/free_layout4_v3_contact/reconstruction/domain.json",
  "body": "exports/runs/free_layout4_v3_contact/frame.stl",
  "output": "exports/cables/free_layout4_v3_contact",
@@ -7,5 +7,6 @@
   204,
   192,
   48
- ]
+ ],
+ "section_body": "exports/runs/free_layout4_opt/free_layout4/geometry.stl"
 }

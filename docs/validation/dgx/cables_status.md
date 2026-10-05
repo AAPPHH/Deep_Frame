@@ -32,7 +32,7 @@ Die **2-mm-Wandregel ist verfehlt**. `wall_mm=1.0` und die geforderten Lippen ab
 
 ## Auf DGX noch auszufuehren
 
-1. Neue Dichte und reparierte v3c-Kontakte erzeugen, dann die portable Kabelstufe ausfuehren.
+1. Neue Dichte und reparierte v3c-Kontakte erzeugen, dann die portable Kabelstufe ausfuehren. Diese verwendet `reconstruction/density_fine.npz` zusammen mit `reconstruction/domain.json`; damit bleiben Raster und Masken nach der Rekonstruktion identisch. Der Rohkoerper bleibt explizit `section_body` fuer die Querschnittsableitung.
 2. Alle fuenf Pfade pruefen: Kontinuitaet, strenge Propseitenpruefung, Kabellaengen, gemeinsame Buendel, zu schmale Streben; vier Ansichten und Querschnitte am neuen Koerper pruefen.
 3. Wandregel mit unveraenderten Grenzwerten ausfuehren. Der aktuelle Schalenentwurf bleibt konstruktiv unter 2 mm; Ergebnis ehrlich als Fehler ausweisen.
 4. FEA beider finalen Koerper mit identischem Material, Lasten und Vernetzungsweg ausfuehren; Armsteifigkeit, f1, Crash und Oberflaechenabweichung vergleichen. Keine Zahlen aelterer gefalteter Koerper als Nachweis verwenden. Aeltere foldfreie Koerper scheiterten am Oberflaechenwinkel-/Selbstschnitt-Gate; diese technische Huerde ist nicht behoben.

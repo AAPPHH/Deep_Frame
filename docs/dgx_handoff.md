@@ -68,7 +68,7 @@ python tools/compute.py cpu -- python exports/layout/postprocess_free.py layout
 python tools/compute.py reconstruction -- python tools/reconstruction_study.py cables docs/validation/dgx/cables_free_layout4_v3c.json
 ```
 
-Die Rekonstruktion speichert ihren Domänenvertrag unter `exports/runs/free_layout4_v3_contact/reconstruction/domain.json`; die Kabelkonfiguration verwendet genau diesen Vertrag. `stage` kopiert nur das neue STL an den vereinbarten Auswertungspfad. Die Evaluation orchestriert ihre Ray-Unterjobs selbst und darf nicht zusätzlich in einen ressourcenhaltenden Ray-Job eingepackt werden. Kontakte und Layout benötigen Rechenjobs. Falls nur die Feinstufe gerechnet wurde: zuerst `python tools/compute.py geometry -- python exports/layout/postprocess_free.py export` ausführen.
+Die Rekonstruktion speichert ihren Domänenvertrag unter `exports/runs/free_layout4_v3_contact/reconstruction/domain.json` und das passende Dichtefeld mit Masken daneben in `density_fine.npz`; die Kabelkonfiguration verwendet genau diesen Vertrag. Ungleiche Zellabstände werden vor der Splinerekonstruktion anhand physischer Zellmitten auf ein isotropes Raster übertragen, ohne die Geometriehöhe zu strecken. Das Optimierungsraster bleibt unverändert. `stage` kopiert nur das neue STL an den vereinbarten Auswertungspfad. Die Evaluation orchestriert ihre Ray-Unterjobs selbst und darf nicht zusätzlich in einen ressourcenhaltenden Ray-Job eingepackt werden. Kontakte und Layout benötigen Rechenjobs. Falls nur die Feinstufe gerechnet wurde: zuerst `python tools/compute.py geometry -- python exports/layout/postprocess_free.py export` ausführen.
 
 Für 0,75 mm sind eigene Eingaben vorbereitet; die größere Rekonstruktion erhält 26 GiB Host-RAM:
 
