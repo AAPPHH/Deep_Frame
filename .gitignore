@@ -20,6 +20,7 @@ env/
 /exports/frame_v0.json
 /exports/topology/
 /exports/topology_solver_*/
+/Examples/
 /exports/implicit/
 /exports/run_log.jsonl
 /exports/mcrash/

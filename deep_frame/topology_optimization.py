@@ -111,16 +111,23 @@ class CudaDirectSolver:
         for name, array in (("rhs", self.rhs_device), ("solution", self.solution_device)):
             self._create(name, "cudssMatrixCreateDn", array.shape[0], array.shape[1], array.shape[0],
                          array.data.ptr, 1, 0)
+        self.device_min_free = None
         self.analysis_s = self._execute(3)
+        self._sample_memory()
         self.memory_estimates = self._memory_estimates()
     def _memory_estimates(self):
         estimates = (ctypes.c_int64 * 16)()
         written = ctypes.c_size_t()
         try:
-            status = self.library.cudssDataGet(self.handles["handle"], self.handles["data"], 13, ctypes.cast(estimates, ctypes.c_void_p), ctypes.sizeof(estimates), ctypes.byref(written))
+            status = self.library.cudssDataGet(self.handles["handle"], self.handles["data"], 13, ctypes.cast(estimates, ctypes.c_void_p),
+                                               ctypes.sizeof(estimates), ctypes.byref(written))
         except Exception:
             return None
         return dict(zip(("permanent_device_bytes", "peak_device_bytes", "permanent_host_bytes", "peak_host_bytes"), map(int, estimates))) if status == 0 else None
+    def _sample_memory(self):
+        available, self.device_total = self.cp.cuda.runtime.memGetInfo()
+        self.device_min_free = available if self.device_min_free is None else min(self.device_min_free, available)
+        return available
     def _call(self, name, *arguments):
         status = getattr(self.library, name)(*arguments)
         if status:
@@ -154,12 +161,13 @@ class CudaDirectSolver:
         self.values_device.set(np.asarray(matrix.data, dtype=np.float64))
         self.rhs_device.set(np.asarray(rhs, dtype=np.float64, order="F"))
         factor_s = self._execute(4)
+        self._sample_memory()
         solve_s = self._execute(1008)
         solution = self.cp.asnumpy(self.solution_device)
-        available, total = self.cp.cuda.runtime.memGetInfo()
+        available = self._sample_memory()
         self.timings.append({"factor_s": factor_s, "solve_s": solve_s,
                              "transfer_factor_solve_s": perf_counter() - started,
-                             "device_free_bytes_after_solve": available, "device_total_bytes": total})
+                             "device_free_bytes_after_solve": available, "device_total_bytes": self.device_total})
         return solution
     def substitute(self, rhs):
         if self.closed or rhs.shape != self.rhs_device.shape or not np.all(np.isfinite(rhs)):
@@ -180,7 +188,9 @@ class CudaDirectSolver:
                 "device_name": name.decode() if isinstance(name, bytes) else name,
                 "precision": "float64", "numeric_factorization": "GPU Cholesky, hybrid execution disabled",
                 "analysis_s": self.analysis_s, "shape": list(self.shape), "nnz": len(self.indices),
-                "cudss_memory_estimates": self.memory_estimates, "solves": self.timings}
+                "device_total_bytes": self.device_total, "device_min_free_bytes": self.device_min_free, "device_used_after_phase_max_bytes": self.device_total - self.device_min_free,
+                "cudss_memory_estimates": self.memory_estimates,
+                "solves": self.timings}
     def close(self):
         if getattr(self, "closed", True):
             return getattr(self, "cleanup_errors", []).copy()

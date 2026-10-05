@@ -81,3 +81,15 @@ def test_local_volume_penalty_gradient_and_blob_vs_strut():
         step = np.zeros_like(density)
         step[index] = 1e-6
         assert np.isclose((penalty(density + step)[0] - penalty(density - step)[0]) / 2e-6, gradient[index], rtol=1e-5, atol=1e-9)
+
+def test_warm_start_fits_resampled_field_and_runs_exact_iterations(tmp_path):
+    target = np.zeros((8, 4, 4))
+    target[:, 1:3, 1:3] = 1.0
+    np.savez(tmp_path / "density_half.npz", density=target)
+    domain = beam_domain((16, 8, 8), (1.0, 1.0, 1.0))
+    settings = {"volume_fraction": 0.34, "max_iterations": 3, "minimum_iterations": 3, "objective_window": 2, "change_tolerance": 1.0, "mirror_axis": None, "initial_density": str(tmp_path / "density_half.npz"), "initial_fit_iterations": 150, "learning_rate": 0.02}
+    result = optimize_neural(domain, settings)
+    warm = result["summary"]["warm_start"]
+    assert result["status"] == "ok" and result["summary"]["iterations"] == 3
+    assert warm["source_shape"] == [8, 4, 4] and warm["target_shape"] == [16, 8, 8] and warm["fit_rmse"] < 0.5 * warm["initial_rmse"]
+    assert all(entry["sharpness"] == result["summary"]["settings"]["sharpness_final"] for entry in result["history"][:-1])

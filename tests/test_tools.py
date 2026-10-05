@@ -1,6 +1,7 @@
 from copy import deepcopy
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -1070,12 +1071,42 @@ def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
                            tmp_path, {"CALCULIX_PATH": "ccx", "HOME": "x", "DEEP_FRAME_SEED": "1"})
     need = compute.JOB_TYPES["fea_modal"]
     assert (spec["entrypoint_num_cpus"], spec["entrypoint_memory"], spec["entrypoint_resources"]) == (need["num_cpus"], need["memory_gb"] * 2**30, None)
-    assert compute.request("density_neural", ["x"], tmp_path)["entrypoint_resources"] == {"gpu_gb": compute.JOB_TYPES["density_neural"]["gpu_gb"]}
+    assert spec["entrypoint_num_gpus"] is None
     token = spec["entrypoint"].split()[-1]
     assert compute.main(["exec", token]) == 3
     assert (tmp_path / "out.txt").read_text() == str(need["num_cpus"]) + "ccx"
     with pytest.raises(SystemExit):
         compute.main(["unknown", "--", "x"])
+
+def test_compute_local_profile_shares_the_card_by_measured_gpu_gb_plus_margin():
+    local = compute.CONFIG["heads"]["local"]
+    requests = {kind: compute.request(kind, ["x"], ".", machine="local") for kind in ("density_neural", "density_simp", "density_simp_1mm", "gpu", "fea_static")}
+    assert {kind: (spec["entrypoint_num_cpus"], spec["entrypoint_memory"], (spec["entrypoint_resources"] or {}).get("gpu_gb", 0), spec["entrypoint_num_gpus"])
+            for kind, spec in requests.items()} == {"density_neural": (4, 24 * 2**30, 14, None), "density_simp": (4, 8 * 2**30, 13.8, None),
+                                                    "density_simp_1mm": (8, 28 * 2**30, 14, None), "gpu": (4, 6 * 2**30, 6.6, None), "fea_static": (2, 8 * 2**30, 0, None)}
+    assert compute.request("cpu", ["C:/clones/Deep_Frame-gpu-venv/Scripts/python.exe"], ".", machine="local")["entrypoint_resources"] == {"gpu_gb": 6.6}
+    assert 2 * requests["gpu"]["entrypoint_resources"]["gpu_gb"] <= local["gpu_gb"] and local["throttle"] == {}
+
+def test_compute_dgx_head_fits_four_a100_jobs():
+    head, need = compute.CONFIG["heads"]["dgx"], compute.request("gpu_a100", ["x"], ".", machine="dgx")
+    assert (need["entrypoint_resources"], need["entrypoint_num_gpus"], compute.request("density_neural", ["x"], ".", machine="dgx")["entrypoint_num_gpus"]) == ({"gpu_gb": 80}, 1, 1)
+    assert all(have >= 4 * want for have, want in ((head["num_cpus"], need["entrypoint_num_cpus"]), (head["memory_gb"] * 2**30, need["entrypoint_memory"]),
+                                                   (head["gpu_gb"], need["entrypoint_resources"]["gpu_gb"]), (head["num_gpus"], need["entrypoint_num_gpus"])))
+
+def test_compute_head_command_pins_agent_ports_per_profile(monkeypatch):
+    monkeypatch.delenv("RAY_PYTHON", raising=False)
+    for name, gpus, python in (("local", "1", "C:/clones/ray-venv/Scripts/python.exe"), ("dgx", "8", "/home/john/ray-venv/bin/python")):
+        command = compute.head_command(name)
+        assert command[0] == str(Path(python).with_name("ray.exe" if os.name == "nt" else "ray")) and command[1:3] == ["start", "--head"]
+        assert command[command.index("--num-gpus") + 1] == gpus and command[command.index("--dashboard-port") + 1] == "8265"
+        assert command[-4:] == ["--dashboard-agent-listen-port=53365", "--dashboard-agent-grpc-port=53366", "--metrics-export-port=53367", "--runtime-env-agent-port=53368"]
+    monkeypatch.setenv("RAY_PYTHON", "/opt/ray/bin/python")
+    assert compute.head_command("dgx")[0] == str(Path("/opt/ray/bin/python").with_name("ray.exe" if os.name == "nt" else "ray"))
+    calls = []
+    monkeypatch.setattr(compute, "head", lambda *args: calls.append(args) or 0)
+    assert compute.main(["head", "dgx"]) == 0 and calls == [("dgx",)]
+    with pytest.raises(SystemExit):
+        compute.main(["head", "cluster"])
 
 def test_round2_domain_lifts_pads_and_adds_camera_hoops(rails):
     full, half = neural_study.R2Domain(neural_study.STUDY).build([68, 64, 16])

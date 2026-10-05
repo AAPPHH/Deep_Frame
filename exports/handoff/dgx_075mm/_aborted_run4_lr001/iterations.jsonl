@@ -1,0 +1,5 @@
+{"iteration": 1, "objective": 1.5602987532215258, "volume_fraction": 0.054302824502593106, "sharpness": 8.0, "projection_beta": null, "elapsed_s": 1926.2643873337656, "f1_hz": 244.98845586817018, "modal_penalty": 0.5602987532215258}
+{"iteration": 2, "objective": 154.60206089669782, "volume_fraction": 0.05178500463153923, "sharpness": 8.0, "projection_beta": null, "elapsed_s": 2108.4301426932216, "f1_hz": 34.526069542600524, "modal_penalty": 4.920749285036845}
+{"iteration": 3, "objective": 9.186305543303645, "volume_fraction": 0.051621913296379746, "sharpness": 8.0, "projection_beta": null, "elapsed_s": 2289.99765365012, "f1_hz": 185.6448283591594, "modal_penalty": 1.9114452500338575}
+{"iteration": 4, "objective": 12.931106459091914, "volume_fraction": 0.05208964140218858, "sharpness": 8.0, "projection_beta": null, "elapsed_s": 2471.8783163800836, "f1_hz": 144.30053752729626, "modal_penalty": 2.9556098799249857}
+{"iteration": 5, "objective": 17.829183275033493, "volume_fraction": 0.052976447886026345, "sharpness": 8.0, "projection_beta": null, "elapsed_s": 2654.6464370470494, "f1_hz": 102.5184021510994, "modal_penalty": 3.900544942595812}

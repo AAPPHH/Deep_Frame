@@ -1,0 +1,22 @@
+{
+ "viewer_root": null,
+ "compare": {
+  "labels": [
+   "R3 7% 4/3mm",
+   "1: R3 7%",
+   "2: R3 7% w2.5",
+   "3: R3 5%",
+   "4: R4 6% f300 w2",
+   "ManaFly"
+  ],
+  "inputs": [
+   "/home/john/Deep_Frame/exports/handoff/neural_r3_v07",
+   "/home/john/Deep_Frame/exports/handoff/dgx_075mm/run1_r3_v07",
+   "/home/john/Deep_Frame/exports/handoff/dgx_075mm/run2_r3_v07_w25",
+   "/home/john/Deep_Frame/exports/handoff/dgx_075mm/run3_r3_v05",
+   "/home/john/Deep_Frame/exports/handoff/dgx_075mm/run4_r4_v06_soft_f300_w2",
+   "/home/john/Deep_Frame/exports/handoff/manafly"
+  ],
+  "output": "/home/john/Deep_Frame/exports/handoff/dgx_075mm/compare"
+ }
+}
