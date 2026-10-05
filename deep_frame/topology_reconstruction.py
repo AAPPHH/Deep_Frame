@@ -478,6 +478,14 @@ def stored_domain(path, shape=None):
     domain = stored.get("domain", stored)
     if shape is not None and list(shape) != list(domain["grid"]["shape"]):
         domain = {**domain, "grid": {**domain["grid"], "shape": list(shape), "spacing_mm": (np.asarray(domain["grid"]["spacing_mm"])*domain["grid"]["shape"]/np.asarray(shape)).tolist()}}
+        domain.pop("field_file", None)
+    elif domain.get("field_file"):
+        with np.load(Path(path).parent / domain["field_file"]) as fields:
+            masks = {key: fields[key].astype(bool) for key in ("allowed", "preserve", "forbidden")}
+        for key, mask in masks.items():
+            if list(mask.shape) != list(domain["grid"]["shape"]):
+                raise ValueError(f"Stored {key} shape {mask.shape} differs from domain shape {domain['grid']['shape']}")
+        return {**domain, **masks}
     masks = rasterize_regions(domain["grid"], domain["regions"])
     centers = grid_centers(domain["grid"])
     hoop = domain.get("metadata", {}).get("round2", {}).get("hoop")

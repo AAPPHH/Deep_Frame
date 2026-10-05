@@ -170,6 +170,12 @@ def isotropic_materialization(domain, density):
     density[masks["preserve"]] = 1.0
     return {**domain, "grid": {**grid, "shape": fine_shape.tolist(), "spacing_mm": [h]*3}, **masks}, density
 
+def save_materialization(domain, density, output):
+    keys = ("allowed", "preserve", "forbidden")
+    stored = {**{key: value for key, value in domain.items() if key not in keys}, "field_file": "density_fine.npz"}
+    np.savez_compressed(output / stored["field_file"], density=density, **{key: domain[key] for key in keys})
+    (output / "domain.json").write_text(json.dumps(stored, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else str(value)), encoding="utf-8")
+
 def _widen(region, band):
     if region.get("kind") != "box":
         return region
@@ -247,9 +253,7 @@ def splines_main(overrides):
     domain = full_domain(config)
     density = np.load(config["source"])["density"]
     domain, density = isotropic_materialization(domain, density)
-    stored = {key: value for key, value in domain.items() if key not in ("allowed", "preserve", "forbidden")}
-    (config["output"] / "domain.json").write_text(json.dumps(stored, indent=1, default=lambda value: value.tolist() if hasattr(value, "tolist") else str(value)), encoding="utf-8")
-    np.savez_compressed(config["output"] / "density_fine.npz", density=density)
+    save_materialization(domain, density, config["output"])
     source = config["section_body"] or config["source"].with_name("geometry.stl")
     body = trimesh.load_mesh(source, process=True) if Path(source).is_file() else None
     mesh, graph, rods, report = reconstruct_splines(domain, density, config, body)
