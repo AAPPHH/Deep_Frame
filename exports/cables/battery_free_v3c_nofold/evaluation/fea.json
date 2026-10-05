@@ -1,0 +1,1160 @@
+{
+ "status": "failed",
+ "mass_g": null,
+ "eigenfrequencies_hz": [],
+ "max_displacement_mm": null,
+ "max_von_mises_mpa": null,
+ "stiffness_n_per_mm": null,
+ "load_cases": {},
+ "diagnostics": [
+  "RuntimeError: All tetrahedral meshing attempts failed: remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, refine_hxt failed, classify_hxt failed, classify_delaunay failed, direct_hxt skipped"
+ ],
+ "artifacts": {
+  "directory": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c_nofold\\evaluation\\fea\\evaluation_2s_nzfa8",
+  "result": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c_nofold\\evaluation\\fea\\evaluation_2s_nzfa8\\result.json"
+ },
+ "linear_solver": null,
+ "solver_threads": 4,
+ "mesh": {
+  "attempts": [
+   {
+    "name": "remesh_hxt",
+    "target_mm": 2.0,
+    "status": "failed",
+    "timeout_s": 900.0,
+    "diagnostic": "RuntimeError: d, fold- and self-intersection-free body: {'refined_input': False, 'target_mm': 2.0, 'merge_tolerance_mm': 1.6732154164280107e-07, 'cleanup_applied': True, 'face_count': 80418, 'minimum_angle_deg': 0.0, 'topology': {'input': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'remeshed': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'prepared': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': 27}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 15, 'runtime_s': 59.33873030000541, 'passed': False}\n",
+    "prepared_surface": {
+     "refined_input": false,
+     "target_mm": 2.0,
+     "merge_tolerance_mm": 1.6732154164280107e-07,
+     "cleanup_applied": true,
+     "face_count": 80418,
+     "minimum_angle_deg": 0.0,
+     "topology": {
+      "input": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "remeshed": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "prepared": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      }
+     },
+     "topology_changed": false,
+     "rejected_steps": {
+      "remove_t_vertices": {
+       "watertight": false,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": 27
+      }
+     },
+     "topology_passed": true,
+     "self_intersections_passed": false,
+     "folded_edges": 15,
+     "runtime_s": 59.33873030000541,
+     "passed": false
+    },
+    "surface_failed": true,
+    "runtime_s": 61.59817199999816
+   },
+   {
+    "name": "remesh_delaunay",
+    "target_mm": 2.0,
+    "status": "skipped",
+    "diagnostic": "prepared surface at 2.0 mm already failed in remesh_hxt",
+    "runtime_s": 0.0003995000006398186
+   },
+   {
+    "name": "remesh_hxt",
+    "target_mm": 1.5,
+    "status": "failed",
+    "timeout_s": 900.0,
+    "diagnostic": "RuntimeError: d, fold- and self-intersection-free body: {'refined_input': False, 'target_mm': 1.5, 'merge_tolerance_mm': 1.6732154164280107e-07, 'cleanup_applied': True, 'face_count': 84296, 'minimum_angle_deg': 0.0, 'topology': {'input': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'remeshed': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'prepared': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': 21}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 16, 'runtime_s': 57.81342510000104, 'passed': False}\n",
+    "prepared_surface": {
+     "refined_input": false,
+     "target_mm": 1.5,
+     "merge_tolerance_mm": 1.6732154164280107e-07,
+     "cleanup_applied": true,
+     "face_count": 84296,
+     "minimum_angle_deg": 0.0,
+     "topology": {
+      "input": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "remeshed": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "prepared": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      }
+     },
+     "topology_changed": false,
+     "rejected_steps": {
+      "remove_t_vertices": {
+       "watertight": false,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": 21
+      }
+     },
+     "topology_passed": true,
+     "self_intersections_passed": false,
+     "folded_edges": 16,
+     "runtime_s": 57.81342510000104,
+     "passed": false
+    },
+    "surface_failed": true,
+    "runtime_s": 60.0697780999908
+   },
+   {
+    "name": "remesh_delaunay",
+    "target_mm": 1.5,
+    "status": "skipped",
+    "diagnostic": "prepared surface at 1.5 mm already failed in remesh_hxt",
+    "runtime_s": 0.00042130000656470656
+   },
+   {
+    "name": "remesh_hxt",
+    "target_mm": 1.2,
+    "status": "failed",
+    "timeout_s": 900.0,
+    "diagnostic": "RuntimeError: , fold- and self-intersection-free body: {'refined_input': False, 'target_mm': 1.2, 'merge_tolerance_mm': 1.6732154164280107e-07, 'cleanup_applied': True, 'face_count': 90106, 'minimum_angle_deg': 0.0, 'topology': {'input': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'remeshed': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'prepared': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': 10}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 18, 'runtime_s': 54.077865900006145, 'passed': False}\n",
+    "prepared_surface": {
+     "refined_input": false,
+     "target_mm": 1.2,
+     "merge_tolerance_mm": 1.6732154164280107e-07,
+     "cleanup_applied": true,
+     "face_count": 90106,
+     "minimum_angle_deg": 0.0,
+     "topology": {
+      "input": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "remeshed": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "prepared": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      }
+     },
+     "topology_changed": false,
+     "rejected_steps": {
+      "remove_t_vertices": {
+       "watertight": false,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": 10
+      }
+     },
+     "topology_passed": true,
+     "self_intersections_passed": false,
+     "folded_edges": 18,
+     "runtime_s": 54.077865900006145,
+     "passed": false
+    },
+    "surface_failed": true,
+    "runtime_s": 56.349227900005644
+   },
+   {
+    "name": "remesh_delaunay",
+    "target_mm": 1.2,
+    "status": "skipped",
+    "diagnostic": "prepared surface at 1.2 mm already failed in remesh_hxt",
+    "runtime_s": 0.000415000002249144
+   },
+   {
+    "name": "remesh_hxt",
+    "target_mm": 1.0,
+    "status": "failed",
+    "timeout_s": 900.0,
+    "diagnostic": "RuntimeError: ed, fold- and self-intersection-free body: {'refined_input': False, 'target_mm': 1.0, 'merge_tolerance_mm': 1.6732154164280107e-07, 'cleanup_applied': True, 'face_count': 98486, 'minimum_angle_deg': 0.0, 'topology': {'input': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'remeshed': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'prepared': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': 7}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 17, 'runtime_s': 67.61873550000018, 'passed': False}\n",
+    "prepared_surface": {
+     "refined_input": false,
+     "target_mm": 1.0,
+     "merge_tolerance_mm": 1.6732154164280107e-07,
+     "cleanup_applied": true,
+     "face_count": 98486,
+     "minimum_angle_deg": 0.0,
+     "topology": {
+      "input": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "remeshed": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "prepared": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      }
+     },
+     "topology_changed": false,
+     "rejected_steps": {
+      "remove_t_vertices": {
+       "watertight": false,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": 7
+      }
+     },
+     "topology_passed": true,
+     "self_intersections_passed": false,
+     "folded_edges": 17,
+     "runtime_s": 67.61873550000018,
+     "passed": false
+    },
+    "surface_failed": true,
+    "runtime_s": 69.94276050000917
+   },
+   {
+    "name": "remesh_delaunay",
+    "target_mm": 1.0,
+    "status": "skipped",
+    "diagnostic": "prepared surface at 1.0 mm already failed in remesh_hxt",
+    "runtime_s": 0.0004191999905742705
+   },
+   {
+    "name": "refine_hxt",
+    "target_mm": 2.0,
+    "status": "failed",
+    "timeout_s": 900.0,
+    "diagnostic": "RuntimeError: ersection-free body: {'refined_input': True, 'target_mm': 2.0, 'merge_tolerance_mm': 1.6732154164280107e-07, 'cleanup_applied': True, 'face_count': 159564, 'minimum_angle_deg': 4.5008622127338415e-05, 'topology': {'input': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'remeshed': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}, 'prepared': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -14}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 18, 'runtime_s': 128.08043269999325, 'passed': False}\n",
+    "prepared_surface": {
+     "refined_input": true,
+     "target_mm": 2.0,
+     "merge_tolerance_mm": 1.6732154164280107e-07,
+     "cleanup_applied": true,
+     "face_count": 159564,
+     "minimum_angle_deg": 4.5008622127338415e-05,
+     "topology": {
+      "input": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "remeshed": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      },
+      "prepared": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -80
+      }
+     },
+     "topology_changed": false,
+     "rejected_steps": {
+      "remove_t_vertices": {
+       "watertight": false,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -14
+      }
+     },
+     "topology_passed": true,
+     "self_intersections_passed": false,
+     "folded_edges": 18,
+     "runtime_s": 128.08043269999325,
+     "passed": false
+    },
+    "surface_failed": true,
+    "runtime_s": 130.5278427000012
+   },
+   {
+    "name": "classify_hxt",
+    "target_mm": null,
+    "status": "failed",
+    "timeout_s": 120.0,
+    "diagnostic": "TimeoutExpired: Command '['C:\\\\clones\\\\Deep_Frame\\\\.venv\\\\Scripts\\\\python.exe', '-m', 'deep_frame.fea', 'C:\\\\clones\\\\Deep_Frame-cable\\\\exports\\\\cables\\\\battery_free_v3c_nofold\\\\evaluation\\\\fea\\\\evaluation_2s_nzfa8\\\\mesh_request_09_classify_hxt.json']' timed out after 120.0 seconds",
+    "surface_failed": false,
+    "runtime_s": 120.01366070000222
+   },
+   {
+    "name": "classify_delaunay",
+    "target_mm": null,
+    "status": "failed",
+    "timeout_s": 120.0,
+    "diagnostic": "TimeoutExpired: Command '['C:\\\\clones\\\\Deep_Frame\\\\.venv\\\\Scripts\\\\python.exe', '-m', 'deep_frame.fea', 'C:\\\\clones\\\\Deep_Frame-cable\\\\exports\\\\cables\\\\battery_free_v3c_nofold\\\\evaluation\\\\fea\\\\evaluation_2s_nzfa8\\\\mesh_request_10_classify_delaunay.json']' timed out after 120.0 seconds",
+    "surface_failed": false,
+    "runtime_s": 120.02044179999211
+   },
+   {
+    "name": "direct_hxt",
+    "target_mm": null,
+    "status": "skipped",
+    "diagnostic": "minimum input triangle angle 4.09e-06 deg below 10.0 deg",
+    "runtime_s": 0.00021829998877365142
+   }
+  ],
+  "input_face_count": 620674,
+  "input_minimum_angle_deg": 4.094554566467037e-06,
+  "memory_budget": {
+   "elements": 218584,
+   "solver_memory_mb": 8111.546875,
+   "process_mb": 1616.453125,
+   "available_mb": 25661.02734375,
+   "memory_budget_mb": 9728.0,
+   "memory_per_element_kb": 38.0
+  }
+ },
+ "runtime_s": 618.5728692999983,
+ "sliver_cleanup": {
+  "target_mm": 0.4,
+  "iterations": 8,
+  "collapse_mm": 0.02,
+  "collapsed": false,
+  "input_minimum_angle_deg": 4.094554566467037e-06,
+  "minimum_angle_deg": 1.780686120515573e-05,
+  "face_count": 620674,
+  "topology_unchanged": true,
+  "checks_passed": false,
+  "maximum_sampled_deviation_mm": 0.017283717170357704,
+  "relative_volume_change": 2.156386627061302e-05,
+  "passed": false
+ },
+ "fea_surface": {
+  "trials": [
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 2.0,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -69}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 1, 'runtime_s': 20.686522100004368, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 2.0,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "umber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -67}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 1, 'runtime_s': 18.70087080000667, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 2.0,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "umber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -72}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 3, 'runtime_s': 21.79376630000479, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 2.0,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "umber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -69}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 0, 'runtime_s': 19.44036710000364, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 2.0,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -72}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 3, 'runtime_s': 21.562759799999185, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 2.0,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -74}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 2, 'runtime_s': 19.782142900003237, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.5,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -69}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 2, 'runtime_s': 19.277767199993832, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.5,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "umber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -68}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 2, 'runtime_s': 17.29873850000149, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.5,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -71}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 3, 'runtime_s': 20.562755599996308, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.5,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "umber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -68}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 0, 'runtime_s': 18.29277839999122, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.5,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "umber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -71}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 3, 'runtime_s': 20.77136790000077, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.5,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -74}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 2, 'runtime_s': 18.604217799991602, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.2,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -69}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 2, 'runtime_s': 17.664239100005943, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.2,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -67}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 1, 'runtime_s': 15.386465000003227, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.2,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -72}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 3, 'runtime_s': 18.508493800007273, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.2,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -70}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 0, 'runtime_s': 16.522946299999603, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.2,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -73}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 3, 'runtime_s': 19.217799800011562, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.2,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -73}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 2, 'runtime_s': 16.686325799993938, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.0,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "umber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -70}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 1, 'runtime_s': 16.27823399999761, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.0,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -66}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 1, 'runtime_s': 14.026581800004351, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.0,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -69}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 4, 'runtime_s': 17.495725999993738, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.0,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -69}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 0, 'runtime_s': 15.158640399997239, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 1.0,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.41798779368400574,
+    "relative_volume_change": 0.001272771244327231,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -73}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 4, 'runtime_s': 17.756046399998013, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 1.0,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.45773178339004517,
+    "relative_volume_change": 0.0012872501346095078,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -80}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -75}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 2, 'runtime_s': 15.306990100012626, 'passed': False}"
+   }
+  ],
+  "graded": {
+   "voxel_mm": 0.125,
+   "grid_shape": [
+    989,
+    893,
+    244
+   ],
+   "inconsistent_columns": 0,
+   "voxel_face_count": 2624808,
+   "voxel_volume_change": -0.000124203976107351,
+   "sizes_mm": [
+    0.5,
+    1.0,
+    1.6
+   ],
+   "tier_vertex_counts": [
+    16081,
+    30505,
+    22874
+   ],
+   "dropped_parts": 19,
+   "dropped_volume_mm3": 0.017300372093814076,
+   "intersection_repairs": [
+    4,
+    4,
+    4
+   ],
+   "snapped_planes_mm": [
+    25.8
+   ],
+   "snapped_vertices": 513,
+   "face_count": 139096,
+   "minimum_angle_deg": 0.018252221593168787,
+   "folded_edges": 0,
+   "topology": {
+    "input": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -80
+    },
+    "graded": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -88
+    }
+   },
+   "checks_passed": false,
+   "self_intersections_passed": false,
+   "print_deviation_mm": 0.9104825258255005,
+   "print_to_fea_mm": {
+    "max": 0.9104825258255005,
+    "p50": 0.01980285905301571,
+    "p95": 0.058420493453741035,
+    "p99": 0.08131915330886841,
+    "mean": 0.02344780587260441
+   },
+   "fea_to_print_mm": {
+    "max": 0.15106120705604553,
+    "p50": 0.013102649245411158,
+    "p95": 0.04362088441848755,
+    "p99": 0.06229823004454373,
+    "mean": 0.016752804337304594
+   },
+   "relative_volume_change": -0.006014349857931589,
+   "runtime_s": 232.9768638999958,
+   "deviation_within_limit": false,
+   "passed": false
+  },
+  "choice": {},
+  "volume_mm3": 14959.947578250873
+ },
+ "model": {
+  "material": {
+   "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+   "young_modulus_mpa": 4430.0,
+   "poisson_ratio": 0.3,
+   "density_g_cm3": 1.09,
+   "orthotropic": {
+    "e_xy_mpa": 4430.0,
+    "e_z_mpa": 2170.0,
+    "nu_xy": 0.3,
+    "nu_xz": 0.3,
+    "g_xy_mpa": 1703.8,
+    "g_z_mpa": 834.6
+   },
+   "strength_xy_mpa": 102.0,
+   "strength_z_mpa": 48.0,
+   "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+   "measured": [
+    "E_xy 4430 +/- 310 MPa",
+    "E_z 2170 +/- 230 MPa",
+    "tensile strength XY 102 +/- 7 MPa",
+    "tensile strength Z 48 +/- 6 MPa",
+    "density 1.09 g/cm3"
+   ],
+   "assumptions": {
+    "nu_xy": "0.30 not in the TDS",
+    "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+    "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+    "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+    "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+   },
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "point_masses": [
+   {
+    "name": "battery",
+    "mass_g": 37.0,
+    "position_mm": [
+     -4.399639222765998e-17,
+     -3.299999999999996,
+     31.3
+    ],
+    "attachment_region": {
+     "kind": "box",
+     "min_mm": [
+      -20.1,
+      -34.9,
+      25.79
+     ],
+     "max_mm": [
+      20.1,
+      28.3,
+      25.810000000000002
+     ]
+    }
+   }
+  ],
+  "load_cases": [
+   {
+    "name": "arm_tip",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        8.823333333333334
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        9.343333333333334
+       ]
+      },
+      "force_n": [
+       0.0,
+       0.0,
+       3.6
+      ]
+     }
+    ]
+   },
+   {
+    "name": "modes",
+    "analysis": "modal",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_front",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -12.01,
+        40.9,
+        19.5
+       ],
+       "max_mm": [
+        12.01,
+        57.9,
+        26.01
+       ]
+      },
+      "force_n": [
+       0.0,
+       -30.64578125,
+       0.0
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_arm",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        8.823333333333334
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        9.343333333333334
+       ]
+      },
+      "force_n": [
+       2.2077626326054296,
+       -14.27686502418177,
+       -5.107630208333331
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_back",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -20.1,
+        -34.9,
+        25.79
+       ],
+       "max_mm": [
+        20.1,
+        28.3,
+        25.810000000000002
+       ]
+      },
+      "force_n": [
+       0.0,
+       0.0,
+       -15.322890625
+      ]
+     }
+    ]
+   }
+  ],
+  "loads": {
+   "arm_tip_force_n": 3.6,
+   "all_up_mass_g": 125.0,
+   "standard_gravity_m_s2": 9.80665,
+   "crash_front_g": 25.0,
+   "crash_arm_g": 12.5,
+   "crash_back_g": 12.5,
+   "safety_factor": 2.0,
+   "sources": {
+    "arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+    "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+    "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+    "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+    "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"
+   }
+  },
+  "support": {
+   "arm_tip": "centre mount undersides fixed (all translations)",
+   "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
+   "crash_front": "centre mount undersides fixed",
+   "crash_arm": "centre mount undersides fixed",
+   "crash_back": "four motor seat undersides fixed"
+  }
+ }
+}

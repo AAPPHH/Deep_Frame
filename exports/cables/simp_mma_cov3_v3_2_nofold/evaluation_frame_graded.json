@@ -1,0 +1,1131 @@
+{
+ "name": "simp_mma_cov3_v3_2_cables_nofold",
+ "stl": "C:/clones/Deep_Frame-cable/exports/cables/simp_mma_cov3_v3_2_nofold/frame.stl",
+ "output": "C:/clones/Deep_Frame-cable/exports/cables/simp_mma_cov3_v3_2_nofold/evaluation_graded",
+ "prop_diameter_mm": 63.5,
+ "motors": {
+  "front_left": [
+   -53.45466183516625,
+   39.13644884360386,
+   9.333333333333334
+  ],
+  "front_right": [
+   53.45466183516625,
+   39.13644884360386,
+   9.333333333333334
+  ],
+  "rear_left": [
+   -53.45466183516625,
+   -39.13644884360386,
+   9.333333333333334
+  ],
+  "rear_right": [
+   53.45466183516625,
+   -39.13644884360386,
+   9.333333333333334
+  ]
+ },
+ "mount_patterns": [
+  {
+   "name": "motor_front_left",
+   "center_mm": [
+    -53.45466183516625,
+    39.13644884360386
+   ],
+   "z_mm": 8.333333333333334,
+   "radius_mm": 4.5,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "name": "motor_front_right",
+   "center_mm": [
+    53.45466183516625,
+    39.13644884360386
+   ],
+   "z_mm": 8.333333333333334,
+   "radius_mm": 4.5,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "name": "motor_rear_left",
+   "center_mm": [
+    -53.45466183516625,
+    -39.13644884360386
+   ],
+   "z_mm": 8.333333333333334,
+   "radius_mm": 4.5,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "name": "motor_rear_right",
+   "center_mm": [
+    53.45466183516625,
+    -39.13644884360386
+   ],
+   "z_mm": 8.333333333333334,
+   "radius_mm": 4.5,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  },
+  {
+   "name": "stack",
+   "center_mm": [
+    0.0,
+    0.0
+   ],
+   "z_mm": 1.5,
+   "radius_mm": 18.031222920256962,
+   "count": 4,
+   "hole_diameter_mm": [
+    1.6,
+    4.0
+   ],
+   "screw_diameter_mm": 2.0,
+   "tool_direction": [
+    0,
+    0,
+    -1
+   ]
+  }
+ ],
+ "components": [
+  {
+   "type": "aio15",
+   "name": "aio15",
+   "center_mm": [
+    9.404120364122206e-16,
+    -6.367373163207745e-17,
+    8.5
+   ]
+  },
+  {
+   "type": "camera",
+   "name": "camera",
+   "center_mm": [
+    1.166513031294608e-16,
+    35.0,
+    13.47198934878104
+   ]
+  },
+  {
+   "type": "battery",
+   "name": "battery",
+   "center_mm": [
+    -1.6781509643504353e-16,
+    -3.0144237274670914e-16,
+    33.5
+   ]
+  },
+  {
+   "type": "motor",
+   "name": "motor_front_left",
+   "center_mm": [
+    -53.45466183516625,
+    39.13644884360386,
+    14.283333333333333
+   ]
+  },
+  {
+   "type": "prop",
+   "name": "prop_front_left",
+   "center_mm": [
+    -53.45466183516625,
+    39.13644884360386,
+    21.733333333333334
+   ]
+  },
+  {
+   "type": "motor",
+   "name": "motor_front_right",
+   "center_mm": [
+    53.45466183516625,
+    39.13644884360386,
+    14.283333333333335
+   ]
+  },
+  {
+   "type": "prop",
+   "name": "prop_front_right",
+   "center_mm": [
+    53.45466183516625,
+    39.13644884360386,
+    21.733333333333334
+   ]
+  },
+  {
+   "type": "motor",
+   "name": "motor_rear_left",
+   "center_mm": [
+    -53.45466183516625,
+    -39.13644884360386,
+    14.283333333333335
+   ]
+  },
+  {
+   "type": "prop",
+   "name": "prop_rear_left",
+   "center_mm": [
+    -53.45466183516625,
+    -39.13644884360386,
+    21.733333333333334
+   ]
+  },
+  {
+   "type": "motor",
+   "name": "motor_rear_right",
+   "center_mm": [
+    53.45466183516625,
+    -39.13644884360386,
+    14.283333333333333
+   ]
+  },
+  {
+   "type": "prop",
+   "name": "prop_rear_right",
+   "center_mm": [
+    53.45466183516624,
+    -39.13644884360386,
+    21.733333333333334
+   ]
+  }
+ ],
+ "connectors": [],
+ "keep_outs": [
+  {
+   "name": "aio15_envelope",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    -16.15,
+    -16.15,
+    5.5
+   ],
+   "max_mm": [
+    16.15,
+    16.15,
+    12.0
+   ],
+   "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "camera_envelope",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    -8.5,
+    25.528010651218956,
+    4.0
+   ],
+   "max_mm": [
+    8.5,
+    44.47198934878104,
+    22.94397869756208
+   ],
+   "purpose": "Component envelope with clearance, excluding intentional lower support contact"
+  },
+  {
+   "name": "battery_envelope",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    -15.5,
+    -32.0,
+    28.0
+   ],
+   "max_mm": [
+    15.5,
+    32.0,
+    39.5
+   ],
+   "purpose": "Component envelope with clearance, excluding intentional lower support contact",
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "motor_front_left_envelope",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -53.45466183516625,
+    39.13644884360386,
+    14.533333333333335
+   ],
+   "radius_mm": 8.379999999999999,
+   "height_mm": 10.4,
+   "axis": "z",
+   "purpose": "Motor hardware envelope; lower mating face permits contact",
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "prop_front_left_swept_clearance",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -53.45466183516625,
+    39.13644884360386,
+    21.733333333333334
+   ],
+   "radius_mm": 33.75,
+   "height_mm": 9.0,
+   "axis": "z",
+   "purpose": "Propeller swept volume including axial and radial clearance"
+  },
+  {
+   "name": "motor_front_right_envelope",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    53.45466183516625,
+    39.13644884360386,
+    14.533333333333335
+   ],
+   "radius_mm": 8.379999999999999,
+   "height_mm": 10.4,
+   "axis": "z",
+   "purpose": "Motor hardware envelope; lower mating face permits contact",
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "prop_front_right_swept_clearance",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    53.45466183516625,
+    39.13644884360386,
+    21.733333333333334
+   ],
+   "radius_mm": 33.75,
+   "height_mm": 9.0,
+   "axis": "z",
+   "purpose": "Propeller swept volume including axial and radial clearance"
+  },
+  {
+   "name": "motor_rear_left_envelope",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -53.45466183516625,
+    -39.13644884360386,
+    14.533333333333335
+   ],
+   "radius_mm": 8.379999999999999,
+   "height_mm": 10.4,
+   "axis": "z",
+   "purpose": "Motor hardware envelope; lower mating face permits contact",
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "prop_rear_left_swept_clearance",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -53.45466183516625,
+    -39.13644884360386,
+    21.733333333333334
+   ],
+   "radius_mm": 33.75,
+   "height_mm": 9.0,
+   "axis": "z",
+   "purpose": "Propeller swept volume including axial and radial clearance"
+  },
+  {
+   "name": "motor_rear_right_envelope",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    53.45466183516625,
+    -39.13644884360386,
+    14.533333333333335
+   ],
+   "radius_mm": 8.379999999999999,
+   "height_mm": 10.4,
+   "axis": "z",
+   "purpose": "Motor hardware envelope; lower mating face permits contact",
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "prop_rear_right_swept_clearance",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    53.45466183516624,
+    -39.13644884360386,
+    21.733333333333334
+   ],
+   "radius_mm": 33.75,
+   "height_mm": 9.0,
+   "axis": "z",
+   "purpose": "Propeller swept volume including axial and radial clearance"
+  },
+  {
+   "name": "front_left_shaft_clearance",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -53.45466183516625,
+    39.13644884360386,
+    4.666666666666667
+   ],
+   "radius_mm": 1.4,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Motor shaft clearance",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_left_motor_screw_0",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -50.27268131982679,
+    42.31842935894332,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_left_motor_screw_1",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -56.63664235050571,
+    42.31842935894332,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_left_motor_screw_2",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -56.63664235050571,
+    35.9544683282644,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_left_motor_screw_3",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -50.27268131982679,
+    35.9544683282644,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_left_motor_leads",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    -48.45466183516625,
+    37.13644884360386,
+    10.333333333333334
+   ],
+   "max_mm": [
+    -20,
+    41.13644884360386,
+    14.333333333333334
+   ],
+   "purpose": "Provisional accessible straight motor lead corridor"
+  },
+  {
+   "name": "front_right_shaft_clearance",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    53.45466183516625,
+    39.13644884360386,
+    4.666666666666667
+   ],
+   "radius_mm": 1.4,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Motor shaft clearance",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_right_motor_screw_0",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    56.63664235050571,
+    42.31842935894332,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_right_motor_screw_1",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    50.27268131982679,
+    42.31842935894332,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_right_motor_screw_2",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    50.27268131982679,
+    35.9544683282644,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_right_motor_screw_3",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    56.63664235050571,
+    35.9544683282644,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "front_right_motor_leads",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    20,
+    37.13644884360386,
+    10.333333333333334
+   ],
+   "max_mm": [
+    48.45466183516625,
+    41.13644884360386,
+    14.333333333333334
+   ],
+   "purpose": "Provisional accessible straight motor lead corridor"
+  },
+  {
+   "name": "rear_left_shaft_clearance",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -53.45466183516625,
+    -39.13644884360386,
+    4.666666666666667
+   ],
+   "radius_mm": 1.4,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Motor shaft clearance",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_left_motor_screw_0",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -50.27268131982679,
+    -35.9544683282644,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_left_motor_screw_1",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -56.63664235050571,
+    -35.9544683282644,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_left_motor_screw_2",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -56.63664235050571,
+    -42.31842935894332,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_left_motor_screw_3",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -50.27268131982679,
+    -42.31842935894332,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_left_motor_leads",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    -48.45466183516625,
+    -41.13644884360386,
+    10.333333333333334
+   ],
+   "max_mm": [
+    -20,
+    -37.13644884360386,
+    14.333333333333334
+   ],
+   "purpose": "Provisional accessible straight motor lead corridor"
+  },
+  {
+   "name": "rear_right_shaft_clearance",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    53.45466183516625,
+    -39.13644884360386,
+    4.666666666666667
+   ],
+   "radius_mm": 1.4,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Motor shaft clearance",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_right_motor_screw_0",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    56.63664235050571,
+    -35.9544683282644,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_right_motor_screw_1",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    50.27268131982679,
+    -35.9544683282644,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_right_motor_screw_2",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    50.27268131982679,
+    -42.31842935894332,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_right_motor_screw_3",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    56.63664235050571,
+    -42.31842935894332,
+    4.666666666666667
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 11.333333333333334,
+   "axis": "z",
+   "purpose": "Through screw bore and unobstructed underside screwdriver approach",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "rear_right_motor_leads",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    20,
+    -41.13644884360386,
+    10.333333333333334
+   ],
+   "max_mm": [
+    48.45466183516625,
+    -37.13644884360386,
+    14.333333333333334
+   ],
+   "purpose": "Provisional accessible straight motor lead corridor"
+  },
+  {
+   "name": "aio_screw_0",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -12.75,
+    -12.75,
+    2.75
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 7.5,
+   "axis": "z",
+   "purpose": "AIO through screw and underside assembly access",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "aio_screw_1",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -12.75,
+    12.75,
+    2.75
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 7.5,
+   "axis": "z",
+   "purpose": "AIO through screw and underside assembly access",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "aio_screw_2",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    12.75,
+    -12.75,
+    2.75
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 7.5,
+   "axis": "z",
+   "purpose": "AIO through screw and underside assembly access",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "aio_screw_3",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    12.75,
+    12.75,
+    2.75
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 7.5,
+   "axis": "z",
+   "purpose": "AIO through screw and underside assembly access",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "elrs_antenna_clearance",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    -16.15,
+    -16.15,
+    12.0
+   ],
+   "max_mm": [
+    16.15,
+    16.15,
+    15.0
+   ],
+   "purpose": "ELRS wire antenna lifted at least 3 mm above the AIO board"
+  },
+  {
+   "name": "battery_insertion",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    -15.5,
+    -32.0,
+    28.0
+   ],
+   "max_mm": [
+    15.5,
+    32.0,
+    39.5
+   ],
+   "purpose": "Battery removal vertically above its contact pads",
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "camera_screw_axis",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    0,
+    35.0,
+    13.47198934878104
+   ],
+   "radius_mm": 1.1,
+   "height_mm": 32.0,
+   "axis": "x",
+   "purpose": "Camera screw bore limited to exact mounting lugs",
+   "rasterize": false,
+   "allow_preserve_subtraction": true
+  },
+  {
+   "name": "camera_tool_access_-1",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    -42.5,
+    35.0,
+    13.47198934878104
+   ],
+   "radius_mm": 2.0,
+   "height_mm": 53.0,
+   "axis": "x",
+   "purpose": "Conservative outboard screwdriver corridor; no subvoxel cut through free material"
+  },
+  {
+   "name": "camera_tool_access_1",
+   "role": "forbidden",
+   "kind": "cylinder",
+   "center_mm": [
+    42.5,
+    35.0,
+    13.47198934878104
+   ],
+   "radius_mm": 2.0,
+   "height_mm": 53.0,
+   "axis": "x",
+   "purpose": "Conservative outboard screwdriver corridor; no subvoxel cut through free material"
+  },
+  {
+   "name": "camera_front_access",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    -8.5,
+    43.97198934878104,
+    4.0
+   ],
+   "max_mm": [
+    8.5,
+    65.0,
+    22.94397869756208
+   ],
+   "purpose": "Unobstructed camera front, insertion and lens field corridor"
+  },
+  {
+   "name": "aio_side_assembly_access",
+   "role": "forbidden",
+   "kind": "box",
+   "min_mm": [
+    0,
+    -16.15,
+    5.5
+   ],
+   "max_mm": [
+    69.0,
+    16.15,
+    12.0
+   ],
+   "purpose": "AIO insertion/removal through right side with connectors unplugged",
+   "allow_preserve_subtraction": true
+  }
+ ],
+ "selectors": {
+  "center_fixtures": [
+   {
+    "kind": "box",
+    "min_mm": [
+     -15.95,
+     -15.95,
+     -0.01
+    ],
+    "max_mm": [
+     -9.55,
+     -9.55,
+     0.51
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     -15.95,
+     9.55,
+     -0.01
+    ],
+    "max_mm": [
+     -9.55,
+     15.95,
+     0.51
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     9.55,
+     -15.95,
+     -0.01
+    ],
+    "max_mm": [
+     15.95,
+     -9.55,
+     0.51
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     9.55,
+     9.55,
+     -0.01
+    ],
+    "max_mm": [
+     15.95,
+     15.95,
+     0.51
+    ]
+   }
+  ],
+  "motor_fixtures": [
+   {
+    "kind": "box",
+    "min_mm": [
+     -63.05466183516625,
+     29.536448843603857,
+     6.656666666666668
+    ],
+    "max_mm": [
+     -43.85466183516625,
+     48.73644884360386,
+     7.166666666666668
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     43.85466183516625,
+     29.536448843603857,
+     6.656666666666668
+    ],
+    "max_mm": [
+     63.05466183516625,
+     48.73644884360386,
+     7.166666666666668
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     -63.05466183516625,
+     -48.73644884360386,
+     6.656666666666668
+    ],
+    "max_mm": [
+     -43.85466183516625,
+     -29.536448843603857,
+     7.166666666666668
+    ]
+   },
+   {
+    "kind": "box",
+    "min_mm": [
+     43.85466183516625,
+     -48.73644884360386,
+     6.656666666666668
+    ],
+    "max_mm": [
+     63.05466183516625,
+     -29.536448843603857,
+     7.166666666666668
+    ]
+   }
+  ],
+  "arm_tip": {
+   "kind": "box",
+   "min_mm": [
+    -63.05466183516625,
+    29.536448843603857,
+    8.823333333333334
+   ],
+   "max_mm": [
+    -43.85466183516625,
+    48.73644884360386,
+    9.343333333333334
+   ]
+  },
+  "arm_motor": "front_left",
+  "camera": {
+   "kind": "box",
+   "min_mm": [
+    -12.01,
+    26.5,
+    19.5
+   ],
+   "max_mm": [
+    12.01,
+    43.5,
+    26.01
+   ]
+  },
+  "deck": {
+   "kind": "box",
+   "min_mm": [
+    -20.1,
+    -2.0,
+    27.5
+   ],
+   "max_mm": [
+    20.1,
+    2.0,
+    28.51
+   ]
+  },
+  "battery_center_mm": [
+   -1.6781509643504353e-16,
+   -3.0144237274670914e-16,
+   33.5
+  ],
+  "battery_mass_g": 37.0
+ },
+ "loads": {
+  "safety_factor": 2.0
+ },
+ "python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
+ "compute": "C:/clones/Deep_Frame-int/tools/compute.py",
+ "fea_settings": {
+  "fea_remesh_targets_mm": [
+   2.0,
+   1.5,
+   1.2,
+   1.0
+  ],
+  "fea_memory_budget_mb": 14336.0
+ },
+ "fea_surface": {
+  "targets_mm": []
+ }
+}
