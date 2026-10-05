@@ -1,9 +1,11 @@
 --extra-index-url https://download.pytorch.org/whl/cu129
 cupy-cuda12x==14.2.0
 nvidia-cudss-cu12==0.8.0.10
-nvidia-cublas-cu12==12.9.2.10
+nvidia-cublas-cu12==12.9.2.10; sys_platform == "win32"
+nvidia-cublas-cu12==12.9.1.4; sys_platform != "win32"
 nvidia-cuda-nvrtc-cu12==12.9.86
-cuda-toolkit==12.9.2.0
+cuda-toolkit==12.9.2.0; sys_platform == "win32"
+cuda-toolkit==12.9.1.0; sys_platform != "win32"
 cuda-pathfinder==1.8.2
 mmapy==0.3.1
 torch==2.9.0+cu129

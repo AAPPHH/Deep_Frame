@@ -141,6 +141,8 @@ def test_explicit_backend_preserves_real_point_mass_beam_physics(tmp_path, backe
     monkeypatch.setenv("CCX_NPROC_EQUATION_SOLVER", "7")
     result = evaluate(solid, material, masses, cases, settings)
     expected = analytical_beam(0.0015)
+    if backend == "PASTIX" and any("the PASTIX library is not linked" in diagnostic for diagnostic in result["diagnostics"]):
+        pytest.skip("This CalculiX binary was built without PaStiX")
     assert result["status"] == "ok", result["diagnostics"]
     assert result["linear_solver"] == backend
     assert result["solver_threads"] == 1

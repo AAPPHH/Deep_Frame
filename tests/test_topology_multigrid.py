@@ -177,7 +177,7 @@ def test_multigrid_carries_body_springs_and_design_dependent_loads(builder):
 
 @gpu
 def test_zero_load_columns_skip_pcg():
-    system, moduli, mg = setup(tiny_domain())
+    system, moduli, mg = setup(tiny_domain(), settings={"precision": "float64", "tolerance": 1e-12})
     part = next(iter(system.groups.values()))[0][1]
     forces = np.zeros((system.ndof, 2))
     forces[part["free"], 0] = part["force"][part["free"]]

@@ -12,13 +12,22 @@ from pathlib import Path
 CONFIG = {
     "address": os.environ.get("RAY_ADDRESS", "http://127.0.0.1:8265"),
     "machine": os.environ.get("DEEP_FRAME_MACHINE", "local"),
-    "forward_env": ("CALCULIX_PATH", "PYTHONPATH", "CUDA_PATH", "LD_LIBRARY_PATH"),
+    "forward_env": ("CALCULIX_PATH", "PYTHONPATH", "CUDA_PATH", "LD_LIBRARY_PATH", "RAY_ADDRESS"),
     "forward_prefix": "DEEP_FRAME_",
     "thread_env": ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"),
     "heads": {"local": {"num_cpus": 24, "num_gpus": 1, "memory_gb": 40, "object_store_gb": 1, "gpu_gb": 14,
                         "ray_python": "C:/clones/ray-venv/Scripts/python.exe", "gpus_per_job": 0, "gpu_margin": 1.2, "card_gb": 14, "throttle": {}},
               "dgx": {"num_cpus": 128, "num_gpus": 8, "memory_gb": 768, "object_store_gb": 8, "gpu_gb": 640,
-                      "ray_python": "/home/john/ray-venv/bin/python", "gpus_per_job": 1, "gpu_margin": 1.0, "card_gb": 80, "throttle": {}}},
+                      "ray_python": "/home/john/ray-venv/bin/python", "gpus_per_job": 1, "gpu_margin": 1.0, "card_gb": 80, "throttle": {}},
+              "node20_21": {"num_cpus": 80, "num_gpus": 0, "memory_gb": 768, "object_store_gb": 8, "gpu_gb": 0,
+                            "ray_python": str(Path(__file__).resolve().parents[1] / ".venv/bin/python"),
+                            "gpus_per_job": 1, "gpu_margin": 1.0, "card_gb": 80,
+                            "cpu_node": "192.168.2.20", "gpu_node": "192.168.2.21", "throttle": {},
+                            "dashboard_host": "192.168.2.20", "dashboard_port": 8266,
+                            "agent_ports": (53465, 53466, 53467, 53468),
+                            "head_options": ("--node-ip-address=192.168.2.20", "--port=6380", "--ray-client-server-port=10003",
+                                             "--node-manager-port=53469", "--object-manager-port=53470",
+                                             "--min-worker-port=22000", "--max-worker-port=22999", "--temp-dir=/scratch/tmp/deep_frame_ray")}},
     "dashboard_port": 8265,
     "agent_ports": (53365, 53366, 53367, 53368),
     "start_timeout_s": 7 * 24 * 3600,
@@ -49,14 +58,21 @@ def profile(config=CONFIG, machine=None):
 
 def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=getattr(sys, "_base_executable", sys.executable), machine=None):
     need, spec = JOB_TYPES[kind], profile(config, machine)
+    if spec["gpus_per_job"] and need["gpu_gb"] > spec["card_gb"]:
+        raise ValueError(f"{kind} needs {need['gpu_gb']} GiB GPU memory; {machine or config['machine']} provides {spec['card_gb']} GiB per GPU")
     measured = need["gpu_gb"] or (JOB_TYPES["gpu"]["gpu_gb"] if any("gpu-venv" in str(part) or "Deep_Frame-gpu/" in str(part) for part in command) else 0)
     gpu_gb = min(round(measured * spec["gpu_margin"], 1), spec["card_gb"]) if measured else 0
     env = {key: value for key, value in environ.items() if key in config["forward_env"] or key.startswith(config["forward_prefix"])}
     env.update({key: str(need["num_cpus"]) for key in config["thread_env"]})
     payload = {"command": list(command), "cwd": str(Path(cwd).resolve()), "env": env}
+    resources = {"gpu_gb": gpu_gb} if gpu_gb else {}
+    if not gpu_gb and spec.get("cpu_node"):
+        resources["node:" + spec["cpu_node"]] = 0.001
+    if gpu_gb and spec.get("gpu_node"):
+        resources["node:" + spec["gpu_node"]] = 0.001
     return {"entrypoint": join([python, str(Path(__file__).resolve()), "exec", encode(payload)]),
             "entrypoint_num_cpus": need["num_cpus"], "entrypoint_memory": int(need["memory_gb"] * 2**30),
-            "entrypoint_resources": {"gpu_gb": gpu_gb} if gpu_gb else None,
+            "entrypoint_resources": resources or None,
             "entrypoint_num_gpus": spec["gpus_per_job"] if gpu_gb and spec["gpus_per_job"] else None,
             "metadata": {"type": kind, "cwd": payload["cwd"], "command": join(command)[:500]}}
 
@@ -148,9 +164,10 @@ def head_command(name="local", config=CONFIG):
             "--num-cpus", str(spec["num_cpus"]), "--num-gpus", str(spec["num_gpus"]),
             "--memory", str(spec["memory_gb"] * 2**30), "--object-store-memory", str(spec["object_store_gb"] * 2**30),
             "--resources", json.dumps({"gpu_gb": spec["gpu_gb"]}), "--include-dashboard", "true",
-            "--dashboard-host", "127.0.0.1", "--dashboard-port", str(config["dashboard_port"]), "--disable-usage-stats",
+            "--dashboard-host", spec.get("dashboard_host", "127.0.0.1"), "--dashboard-port", str(spec.get("dashboard_port", config["dashboard_port"])), "--disable-usage-stats",
             *[f"--{flag}={port}" for flag, port in zip(("dashboard-agent-listen-port", "dashboard-agent-grpc-port",
-                                                       "metrics-export-port", "runtime-env-agent-port"), config["agent_ports"])]]
+                                                       "metrics-export-port", "runtime-env-agent-port"), spec.get("agent_ports", config["agent_ports"]))],
+            *spec.get("head_options", ())]
 
 def head(name="local", config=CONFIG):
     return subprocess.call(head_command(name, config), env={**os.environ, "RAY_JOB_START_TIMEOUT_SECONDS": str(config["start_timeout_s"]),

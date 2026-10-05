@@ -3,3 +3,4 @@
 -r requirements-optimization.txt
 -r requirements-topology.txt
 -r requirements-implicit.txt
+-r requirements-visualization.txt

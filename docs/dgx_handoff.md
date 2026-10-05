@@ -4,6 +4,29 @@ Auftrag: über GitHub wechseln und große Dateien auf der DGX neu rechnen. `main
 
 ## Umgebung
 
+### Cluster auf Node 20 und 21
+
+Der am 5. Oktober eingerichtete Cluster verwendet Node 20 als CPU-Head (`192.168.2.20:6380`, Jobs/Dashboard `http://192.168.2.20:8266`) mit 80 CPUs und 768 GiB Ray-RAM. Node 21 stellt zusätzlich 32 CPUs, eine A100 mit 80 GiB und 256 GiB Ray-RAM bereit. Der andere Ray-Cluster auf Node 21 läuft weiter; Deep_Frame verwendet einen eigenen temporären Pfad und eigene Ports. Die zwei A40 auf Node 20 werden nicht eingeplant: dort fehlen `libcuda.so.1` und das Kernelmodul `nvidia_uvm`, der installierte vGPU-Hosttreiber erlaubt derzeit keinen CUDA-Lauf.
+
+```sh
+bash tools/ray_nodes.sh start  # nur wenn der eigene Head noch nicht läuft
+source .wf/ray_nodes/env.sh
+bash tools/ray_nodes.sh status
+.venv/bin/python tools/compute.py suite -- .venv/bin/python -m pytest -q
+.venv/bin/python tools/compute.py gpu_a100 -- .venv/bin/python -m pytest tests/test_topology_problem.py tests/test_topology_multigrid.py tests/test_formulation_study.py -q
+.venv/bin/python tools/compute.py gpu_a100 -- .venv/bin/python tools/formulation_study.py frame_mma docs/validation/dgx/free_43_coldstart.json
+```
+
+Das Profil `node20_21` bindet CPU-Jobs an Node 20 und GPU-Jobs an Node 21. `gpu_a100` reserviert eine ganze GPU, 80 GiB GPU-Ressource, 46 GiB Host-RAM und 16 CPUs. Verschachtelte Jobs erhalten die Clusteradresse. Die größere 0,75-mm-Probe muss ihren tatsächlichen Speicherbedarf zunächst nachweisen.
+
+Die gemeinsame Python-3.12-Umgebung liegt in `.venv`; `requirements-all.txt` enthält auch die für Berichte benötigte Matplotlib-Installation. Die Linux-Pins von cuBLAS und CUDA Toolkit stimmen mit PyTorch 2.9/cu129 überein. Node 21 hatte Kernel-Treiber 580.159.03, aber Userspace-Bibliotheken 580.178.04. Das exakte Paket `libnvidia-compute-580_580.159.03-1ubuntu1_amd64.deb` aus dem [NVIDIA-Ubuntu-22.04-Repository](https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/libnvidia-compute-580_580.159.03-1ubuntu1_amd64.deb) wurde nach SHA256-Prüfung nur nach `.wf/nvidia_node21` entpackt (SHA256 `a6d1c47bc34ff9aeadafc39f4203f95e87e6d4d408629685014eee5296a1aa86`). `env.sh` setzt diese Bibliotheken für Deep_Frame; Systeminstallation und geladener Treiber bleiben unverändert. Nach einem System-Treiberwechsel muss diese Bibliotheksversion erneut zum geladenen Kernelmodul passen.
+
+CalculiX 2.17, PrusaSlicer 2.4 und deren fehlende Bibliotheken liegen ohne Systeminstallation unter `.wf/sysroot`. Zum Wiederaufbau auf Ubuntu 22.04 die folgenden Pakete mit `apt-get download` herunterladen und jeweils mit `dpkg-deb -x DATEI .wf/sysroot` entpacken: `calculix-ccx libspooles2.2 libarpack2 liblapack3 libblas3 prusa-slicer libboost-log1.74.0 libboost-filesystem1.74.0 libboost-locale1.74.0 libboost-regex1.74.0 libboost-chrono1.74.0 libopenvdb8.1 libilmbase25 libtbb2 libnlopt0 libglew2.2 libwxbase3.0-0v5 libwxgtk3.0-gtk3-0v5 liblog4cplus-2.0.5 libblosc1 libnotify4 libsnappy1v5`. `env.sh` setzt die zugehörigen Bibliotheks- und Programmpfade. Der optionale PaStiX-Test wird übersprungen, wenn CalculiX ausdrücklich meldet, dass dieser Backend nicht einkompiliert wurde; die SPOOLES-Physiktests bleiben verpflichtend. Der Null-RHS-Regressionstest rechnet für seinen unveränderten 1e−12-Vergleich ausdrücklich mit Float64 und einem strengeren Residuum von 1e−12; der Produktionssolver und dessen Genauigkeitsvorgaben werden nicht geändert. Head-/Worker-Protokolle und Startprozess-IDs liegen unter `.wf/ray_nodes`; **kein globales `ray stop` auf Node 21 verwenden**, da dort der andere Cluster läuft.
+
+Die ursprüngliche Referenz ist lokal unter `Examples/Frames/ManaFly3/Manafly+3inch+BETA+V4+Frame.stl` vorhanden. Für neue Messungen zuerst Orientierung und Aufbereitung nachvollziehbar neu erzeugen; die alten Windows-Auswertungspfade sind kein neuer Nachweis.
+
+### Einzelne DGX mit A100
+
 Im Repository-Hauptverzeichnis arbeiten. Vorhandene passende Umgebungen weiterverwenden; bei neuer Installation Python 3.12 und die gepinnten Requirements verwenden. CalculiX, die Gmsh-Systembibliotheken und PrusaSlicer müssen auf Linux verfügbar sein. Auf Ubuntu heißen die entsprechenden Pakete `calculix-ccx`, `libglu1-mesa`, `libgl1`, `libopengl0` und `prusa-slicer`.
 
 ```sh

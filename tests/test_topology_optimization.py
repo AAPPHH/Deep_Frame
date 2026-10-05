@@ -1,4 +1,5 @@
 from copy import deepcopy
+import os
 
 import numpy as np
 import pytest
@@ -386,6 +387,8 @@ def test_preserved_interface_policy_excludes_unattached_free_load_nodes():
 
 @pytest.fixture
 def cuda_solver():
+    if os.environ.get("CUDA_VISIBLE_DEVICES") == "":
+        pytest.skip("This Ray job does not reserve a CUDA device")
     cupy = pytest.importorskip("cupy")
     if cupy.cuda.runtime.getDeviceCount() < 1:
         pytest.skip("CUDA device is unavailable")

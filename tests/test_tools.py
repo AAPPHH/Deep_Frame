@@ -1101,7 +1101,7 @@ def test_command_line_passes_parsed_json_or_empty_overrides(tmp_path):
 
 def test_compute_request_declares_job_type_and_runs_command_in_cwd(tmp_path):
     spec = compute.request("fea_modal", [getattr(sys, "_base_executable", sys.executable), "-c", "import os,sys; open('out.txt','w').write(os.environ['OMP_NUM_THREADS']+os.environ['CALCULIX_PATH']); sys.exit(3)"],
-                           tmp_path, {"CALCULIX_PATH": "ccx", "HOME": "x", "DEEP_FRAME_SEED": "1"})
+                           tmp_path, {"CALCULIX_PATH": "ccx", "HOME": "x", "DEEP_FRAME_SEED": "1"}, machine="local")
     need = compute.JOB_TYPES["fea_modal"]
     assert (spec["entrypoint_num_cpus"], spec["entrypoint_memory"], spec["entrypoint_resources"]) == (need["num_cpus"], need["memory_gb"] * 2**30, None)
     assert spec["entrypoint_num_gpus"] is None
@@ -1125,6 +1125,18 @@ def test_compute_dgx_head_fits_four_a100_jobs():
     assert (need["entrypoint_resources"], need["entrypoint_num_gpus"], compute.request("density_neural", ["x"], ".", machine="dgx")["entrypoint_num_gpus"]) == ({"gpu_gb": 80}, 1, 1)
     assert all(have >= 4 * want for have, want in ((head["num_cpus"], need["entrypoint_num_cpus"]), (head["memory_gb"] * 2**30, need["entrypoint_memory"]),
                                                    (head["gpu_gb"], need["entrypoint_resources"]["gpu_gb"]), (head["num_gpus"], need["entrypoint_num_gpus"])))
+
+def test_compute_node20_21_routes_gpu_jobs_to_the_working_a100():
+    gpu = compute.request("gpu_a100", ["x"], ".", machine="node20_21")
+    cpu = compute.request("suite", ["x"], ".", {"RAY_ADDRESS": "http://192.168.2.20:8266"}, machine="node20_21")
+    assert gpu["entrypoint_num_gpus"] == 1
+    assert gpu["entrypoint_resources"] == {"gpu_gb": 80, "node:192.168.2.21": 0.001}
+    assert cpu["entrypoint_resources"] == {"node:192.168.2.20": 0.001}
+    payload = json.loads(compute.base64.urlsafe_b64decode(cpu["entrypoint"].split()[-1]))
+    assert payload["env"]["RAY_ADDRESS"] == "http://192.168.2.20:8266"
+    head = compute.head_command("node20_21")
+    assert head[head.index("--num-gpus") + 1] == "0" and head[head.index("--dashboard-port") + 1] == "8266"
+    assert "--port=6380" in head and "--min-worker-port=22000" in head
 
 def test_compute_head_command_pins_agent_ports_per_profile(monkeypatch):
     monkeypatch.delenv("RAY_PYTHON", raising=False)
