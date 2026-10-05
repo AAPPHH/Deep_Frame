@@ -416,9 +416,9 @@ def cantilever_dual(volume_fraction=0.3, domain=None, problem=None):
     return {"status": result["status"], "converged": result["summary"].get("converged"), "volume_fraction_intermediate": rows["volume"]["value"], "stiffness_n_per_mm": rows["tip_stiffness"]["value"],
             "statement": "min-compliance at volume V* (OC, same robust filter) gives stiffness k*; min-mass subject to k >= k* must return volume ~ V* with the stiffness constraint active"}
 
-MMA = {"package": "mmapy==0.3.1 (Deetman, Python port of Svanberg's MMA)", "move": 0.1, "scale": 100.0, "asyinit": 0.5, "asydecr": 0.7, "asyincr": 1.2, "raa0": 1e-5, "c": 1e4, "d": 1.0,
+MMA = {"package": "mmapy==0.3.1 (Deetman, Python port of Svanberg's MMA)", "move": 0.1, "move_late": 0.05, "move_late_beta": 32.0, "scale": 100.0, "asyinit": 0.5, "asydecr": 0.7, "asyincr": 1.2, "raa0": 1e-5, "c": 1e4, "d": 1.0,
        "start_level": 0, "level_window": 5, "level_mass_change": 1e-2, "level_violation": 1e-2, "level_min_iterations": 10, "level_max_iterations": 80, "final_max_iterations": 300,
-       "stall_window": 40, "stall_improvement": 1e-3, "checkpoint_interval": 10, "objective": None}
+       "stall_window": 40, "stall_improvement": 1e-3, "diverge_window": 10, "diverge_violation": 1.0, "checkpoint_interval": 10, "objective": None}
 
 class MMAOptimizer:
     def __init__(self, problem, settings=MMA):
@@ -445,11 +445,16 @@ class MMAOptimizer:
         zeros, ones = np.zeros((n, 1)), np.ones((n, 1))
         moved = self.subproblem(m, n, state["iteration"], value, zeros, ones, state["old1"], state["old2"], settings["scale"] * f0, settings["scale"] * df0[free][:, None],
                                 settings["scale"] * g[:, None], settings["scale"] * dg[:, free], state["low"], state["upp"], 1.0, np.zeros((m, 1)), np.full((m, 1), settings["c"]), np.full((m, 1), settings["d"]),
-                                move=settings["move"], asyinit=settings["asyinit"], asydecr=settings["asydecr"], asyincr=settings["asyincr"], raa0=settings["raa0"])
+                                move=self.move(), asyinit=settings["asyinit"], asydecr=settings["asydecr"], asyincr=settings["asyincr"], raa0=settings["raa0"])
         state.update(old2=state["old1"], old1=value.copy(), low=moved[9], upp=moved[10], iteration=state["iteration"] + 1)
         x = x.copy()
         x[free] = np.clip(moved[0].ravel(), 0, 1)
         return x
+    def move(self):
+        return self.settings["move_late"] if self.problem.beta >= self.settings["move_late_beta"] else self.settings["move"]
+    def diverged(self, level, best):
+        window = level[-self.settings["diverge_window"]:]
+        return best is not None and len(window) == self.settings["diverge_window"] and best["iteration"] < window[0]["iteration"] and max(row["max_violation"] for row in window) > self.settings["diverge_violation"]
     def fresh(self, x):
         value = x[self.free][:, None]
         return {"iteration": 1, "old1": value.copy(), "old2": value.copy(), "low": np.zeros_like(value), "upp": np.ones_like(value)}
@@ -469,34 +474,47 @@ class MMAOptimizer:
         if (max(masses) - min(masses)) / max(min(masses), 1e-30) < settings["level_mass_change"] and level[-1]["max_violation"] <= settings["level_violation"]:
             return "converged"
         return "stalled" if self.stalled(level) else None
-    def run(self, design, progress=None, checkpoint=None):
+    def run(self, design, progress=None, checkpoint=None, keep=None):
         problem, settings = self.problem, self.settings
         while problem.level < settings["start_level"] and problem.advance():
             pass
-        x, termination, history, levels, level = self.start(design), Termination(problem.problem["termination"]), [], [], []
+        x, termination, history, levels, level, best, kept = self.start(design), Termination(problem.problem["termination"]), [], [], [], None, []
         state, initial = self.fresh(x), problem.problem["modal"]["initial_iterations"] if problem.modal is not None else None
+        tolerance = problem.problem["termination"]["violation"]
         started = perf_counter()
         while True:
             clock = perf_counter()
             result = problem.evaluate(x, initial if not level else None)
             f0, _, g, _ = self.terms(result)
             row = {"iteration": len(history), "level": problem.level, "beta": problem.beta, "objective": result["objective"], "f0": float(f0), "mass_g": result["mass_g"], "max_violation": float(np.max(g)),
-                   "constraints": dict(zip(result["names"], result["constraints"].tolist()))}
+                   "move": self.move(), "constraints": dict(zip(result["names"], result["constraints"].tolist()))}
             history.append(row)
             level.append(row)
+            if row["max_violation"] <= tolerance and (best is None or row["f0"] < best["f0"]):
+                best = {key: row[key] for key in ("iteration", "level", "beta", "f0", "mass_g", "max_violation")}
+                best.update(x=x.copy(), result={key: value for key, value in result.items() if "gradient" not in key})
+                if keep:
+                    keep(x, best)
             converged = termination(row["f0"], row["max_violation"], problem.final_level)
             reason = "converged" if converged else None
             if problem.final_level and not converged:
-                reason = "iteration_cap" if len(level) >= settings["final_max_iterations"] else "stalled" if self.stalled(level) else None
+                reason = "iteration_cap" if len(level) >= settings["final_max_iterations"] else "stalled" if self.stalled(level) else "diverged" if self.diverged(level, best) else None
             elif not problem.final_level:
-                ready = self.advance_ready(level)
+                ready = self.advance_ready(level) or ("diverged" if self.diverged(level, best) else None)
                 if ready:
-                    levels.append({"beta": problem.beta, "iterations": len(level), "reason": ready, "mass_g": row["mass_g"], "max_violation": row["max_violation"]})
+                    fallback = ready != "converged" and best is not None
+                    levels.append({"beta": problem.beta, "iterations": len(level), "reason": ready, "mass_g": row["mass_g"], "max_violation": row["max_violation"],
+                                   "best_feasible": {key: value for key, value in best.items() if key not in ("x", "result")} if best else None, "continued_from_best": fallback})
+                    x = best["x"].copy() if fallback else x
                     problem.advance()
-                    level, state = [], self.fresh(x)
+                    level, state, best = [], self.fresh(x), None
             if reason:
-                levels.append({"beta": problem.beta, "iterations": len(level), "reason": reason, "mass_g": row["mass_g"], "max_violation": row["max_violation"]})
+                fallback = reason != "converged" and best is not None
+                levels.append({"beta": problem.beta, "iterations": len(level), "reason": reason, "mass_g": row["mass_g"], "max_violation": row["max_violation"],
+                               "best_feasible": {key: value for key, value in best.items() if key not in ("x", "result")} if best else None, "returned_best": fallback})
                 row["seconds"] = perf_counter() - clock
+                if fallback:
+                    x, result, kept = best["x"], {**result, **best["result"]}, {key: value for key, value in best.items() if key not in ("x", "result")}
                 break
             if level:
                 x = self.step(x, result, state)
@@ -508,9 +526,9 @@ class MMAOptimizer:
         if progress:
             progress(row)
         runtime = perf_counter() - started
-        status = "converged" if reason == "converged" else "not_converged_" + reason
+        status = "converged" if reason == "converged" else "not_converged_" + reason + ("_best_feasible" if kept else "")
         return {"design": x, "status": status, "iterations": len(history), "runtime_s": runtime, "seconds_per_iteration": runtime / len(history), "history": history, "levels": levels, "result": result,
-                "settings": settings}
+                "best_feasible": kept or None, "settings": settings}
 
 _PARTS = {key: COMPONENT_LIBRARY[DEFAULT_SELECTION[key]] for key in ("motor", "aio15", "camera", "battery")}
 _PROP = COMPONENT_LIBRARY["HQProp T2.5X2X3V2S"]

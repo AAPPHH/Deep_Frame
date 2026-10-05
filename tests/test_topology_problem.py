@@ -505,3 +505,34 @@ def test_stand_rows_in_the_shared_formulation():
     live = {row["name"]: row for row in on.geometry(np.full(on.map.n, 0.5)) if row["name"].startswith("stand_")}
     assert np.any(live["stand_reserve"]["gradient"]) and live["stand_reserve"]["value"] == gated["stand_reserve"]["value"]
     on.close()
+
+class Diverging:
+    def __init__(self, problem):
+        self.inner, self.armed, self.kept = problem, False, []
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+    def evaluate(self, *arguments):
+        result = self.inner.evaluate(*arguments)
+        if self.inner.final_level and self.armed:
+            result = {**result, "constraints": result["constraints"] + 1000.0}
+        self.armed = self.armed or (self.inner.final_level and max(result["constraints"]) <= 1e-3)
+        return result
+
+def test_mma_late_move_and_best_feasible_fallback():
+    pytest.importorskip("mmapy")
+    domain = cantilever_domain((16, 4, 6), 1.0)
+    solid = TopologyProblem(domain, cantilever_problem(1.0))
+    stiffness = {row["name"]: row for row in solid.evaluate(np.ones(solid.map.n))["rows"]}["tip_stiffness"]["value"]
+    solid.close()
+    problem = cantilever_problem(0.4 * stiffness)
+    problem["continuation"]["beta_schedule"] = [1.0, 32.0]
+    wrapped, kept = Diverging(TopologyProblem(domain, problem)), []
+    result = MMAOptimizer(wrapped, {"level_max_iterations": 60, "final_max_iterations": 200, "move": 0.2}).run(np.ones(domain["allowed"].size), keep=lambda x, best: kept.append((x.copy(), best)))
+    moves = {row["beta"]: row["move"] for row in result["history"]}
+    assert moves == {1.0: 0.2, 32.0: 0.05}
+    assert result["status"] == "not_converged_diverged_best_feasible" and result["levels"][-1]["returned_best"]
+    best = result["best_feasible"]
+    assert best["beta"] == 32.0 and best["max_violation"] <= 1e-3 and np.array_equal(kept[-1][0], result["design"]) and kept[-1][1]["iteration"] == best["iteration"]
+    check = wrapped.inner.evaluate(result["design"])
+    assert check["mass_g"] == pytest.approx(best["mass_g"]) and np.max(check["constraints"]) <= 1e-3
+    wrapped.inner.close()

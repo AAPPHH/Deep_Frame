@@ -50,7 +50,7 @@ FORMULATION = {
     "stand_fd": {"shape": [68, 64, 24], "steps": [1e-4, 1e-5, 1e-6], "seed": 7, "low": 0.3, "high": 0.9, "sparse": 0.05, "output": "docs/validation/stand_stability_fd.json", "exact": "docs/validation/stand_stability.json",
                  "fields": {"rail_v3b": ["C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_opt/fine/density_half.npz", "C:/clones/Deep_Frame-cov/exports/runs/simp_mma_cov3_v3_2/domain.json"],
                             "battery_free": ["C:/clones/Deep_Frame-layout/exports/runs/battery_free_opt/fine/density_half.npz", "C:/clones/Deep_Frame-layout/exports/runs/battery_free_v3_2/domain.json"]}},
-    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None,
+    "mma": {"settings": {}, "cantilever_start": 0.5, "dual_volume": 0.3, "fd_step": 1e-5, "fd_seed": 7, "linear_solver": "auto", "stage_solvers": {}, "stand": {}, "until": "export", "coarse": True, "fine_start_level": 3, "start": None, "calibration": None, "memory_s": None, "memory_log": "memory.jsonl", "fine_dir": "fine",
             "root": "exports/runs/simp_mma_opt", "variant": "simp_mma", "resume": False, "gray": [0.05, 0.95], "method": "simp_mma", "agreement": 0.15,
             "viewer": "C:/clones/Deep_Frame-neural/exports", "manafly_renders": "C:/clones/Deep_Frame-neural/exports/fast/_manafly_same_renderer", "evaluation_python": "C:/clones/Deep_Frame/.venv/Scripts/python.exe",
             "bodies": ["raw", "recon"], "body_start": {"battery": {"density": 0.5, "cells": 2}, "camera": {"density": 0.5, "cells": 2, "zone": True}}, "viewer_names": {"raw": "{method}_final", "recon": "{method}_final_recon", "v3": "{method}_v3"},
@@ -1018,15 +1018,20 @@ def checkpoint(path):
         np.savez_compressed(path, design=x, level=history[-1]["level"], iteration=len(history))
     return save
 
-def optimize_stage(cfg, half, problem, design, out, start_level):
+def keep_best(out):
+    def save(x, best):
+        np.savez_compressed(out / f"best_beta{best['beta']:g}.npz", design=x, **{key: best[key] for key in ("iteration", "level", "beta", "f0", "mass_g", "max_violation")})
+    return save
+
+def optimize_stage(cfg, half, problem, design, out, start_level, stage):
     out.mkdir(parents=True, exist_ok=True)
-    tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["stage_solvers"].get(out.name, cfg["mma"]["linear_solver"]))
+    tp = TopologyProblem(half, problem, linear_solver=cfg["mma"]["stage_solvers"].get(stage, cfg["mma"]["linear_solver"]))
     if cfg["mma"]["resume"] and (out / "checkpoint.npz").is_file():
         saved = np.load(out / "checkpoint.npz")
         design, start_level = saved["design"], int(saved["level"])
     with (out / "iterations.jsonl").open("a") as log:
         progress = lambda row: (log.write(json.dumps(row, default=float) + "\n"), log.flush())
-        result = MMAOptimizer(tp, {**cfg["mma"]["settings"], "start_level": start_level}).run(design, progress, checkpoint(out / "checkpoint.npz"))
+        result = MMAOptimizer(tp, {**cfg["mma"]["settings"], "start_level": start_level}).run(design, progress, checkpoint(out / "checkpoint.npz"), keep_best(out))
     report = tp.report(result["design"])
     fields, _ = tp.map.fields(result["design"])
     physical = fields["intermediate"][0]
@@ -1035,7 +1040,7 @@ def optimize_stage(cfg, half, problem, design, out, start_level):
     np.savez_compressed(out / "design.npz", design=result["design"])
     np.savez_compressed(out / "density_half.npz", density=physical.reshape(half["grid"]["shape"]).astype(np.float32))
     record = {"status": result["status"], "iterations": result["iterations"], "runtime_s": result["runtime_s"], "seconds_per_iteration": result["seconds_per_iteration"], "levels": result["levels"],
-              "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
+              "best_feasible": result["best_feasible"], "start_level": start_level, "grid": half["grid"], "filter_radius_mm": tp.radius, "free_cells": int(np.count_nonzero(free)), "gray_fraction": gray, "mass_g": report["mass_g"],
               "mass_by_field_g": report["mass_by_field_g"], "rows": report["rows"], "table": format_report(report["rows"]), "max_violation": report["max_violation"], "mma": result["settings"], "linear_solver": tp.system.linear_solver}
     tp.close()
     (out / "result.json").write_text(json.dumps(record, indent=1, default=float), encoding="utf-8")
@@ -1068,7 +1073,7 @@ def frame_mma(cfg):
     config.STAND_STABILITY.update(cfg["mma"]["stand"])
     root = Path(cfg["mma"]["root"])
     root.mkdir(parents=True, exist_ok=True)
-    probe = MemoryProbe(cfg["mma"]["memory_s"], root / "memory.jsonl") if cfg["mma"]["memory_s"] else None
+    probe = MemoryProbe(cfg["mma"]["memory_s"], root / cfg["mma"]["memory_log"]) if cfg["mma"]["memory_s"] else None
     phase = lambda name: probe.phase(name) if probe else nullcontext()
     try:
         with phase("idle"):
@@ -1084,24 +1089,24 @@ def frame_mma(cfg):
             with phase("coarse"):
                 coarse, coarse_problem = frame_setup(cfg, cfg["coarse_shape"])
                 start = body_start(cfg, prolongate(reference, fine["grid"], coarse), coarse)
-                result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0)
+                result, stages["coarse"] = optimize_stage(cfg, coarse, coarse_problem, start, root / "coarse", 0, "coarse")
             design, level = prolongate(result, coarse["grid"], fine), cfg["mma"]["fine_start_level"]
         if cfg["mma"]["until"] == "coarse":
             return
         with phase("fine"):
-            design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / "fine", level)
+            design, stages["fine"] = optimize_stage(cfg, fine, problem, design, root / cfg["mma"]["fine_dir"], level, "fine")
         if cfg["mma"]["until"] == "fine":
             return
         out = root / cfg["mma"]["variant"]
         out.mkdir(parents=True, exist_ok=True)
-        physical = np.load(root / "fine" / "density_half.npz")["density"]
+        physical = np.load(root / cfg["mma"]["fine_dir"] / "density_half.npz")["density"]
         np.savez_compressed(out / "density_half.npz", density=physical)
         with phase("export"):
             body = export_body(cfg, physical, out)
     finally:
         if probe:
             probe.close()
-            (root / "memory.json").write_text(json.dumps(probe.summary(), indent=1, default=float), encoding="utf-8")
+            (root / Path(cfg["mma"]["memory_log"]).with_suffix(".json")).write_text(json.dumps(probe.summary(), indent=1, default=float), encoding="utf-8")
     info = {"variant": cfg["mma"]["variant"], "method": "SIMP-MMA (mmapy 0.3.1), shared formulation " + git_sha(), "stages": stages, "body": body, "total_runtime_s": perf_counter() - started,
             "iterations": sum(stage["iterations"] for stage in stages.values()), "reference": cfg["reference_density"], "start": cfg["mma"]["start"], "memory": probe.summary() if probe else None}
     (out / "info.json").write_text(json.dumps(info, indent=1, default=float), encoding="utf-8")
