@@ -1,0 +1,100 @@
+{
+  "time_utc": "2026-10-05T11:15:15.093264+00:00",
+  "status": "shared_problem_verified_production_running",
+  "requirements": {
+    "flight_pitch_nose_down_deg": 15,
+    "camera_metric": "Lens centre above minimum world vertical coordinate across the reconstructed frame and every modeled installed component in the flight pose",
+    "lens_source": "Camera front midpoint proxy; optical offset not measured",
+    "battery_retention": "ideal_press",
+    "rubber_model": false,
+    "flight_load_interface": "underside seat, all six wrench components including uplift and tipping",
+    "guides": "Optimizer-generated free cells, handling loads only; 2.5-mm height cap, no overhead retention",
+    "ocp": "Exactly two opaque actual accepted frames: best pipeline artifact and original ManaFly"
+  },
+  "production_common_sha256": "47c6456ec9de4692a3cf3f178592fdf86f5224920b935403e486e50bc904ba06",
+  "probe_common_sha256": "3d06f363d483f6148e2181773d6db6040cec406a775ef8f9f856b6b0f9950425",
+  "probe_resources": {
+    "simp": {
+      "status": "SUCCEEDED",
+      "job": "raysubmit_cPskf3RDJkZ6FBsk",
+      "kind": "gpu_compare",
+      "gpu_limit_gb": 32,
+      "host_limit_gb": 46,
+      "started": "2026-10-05T11:03:15.766043+00:00",
+      "gate": "PASSED",
+      "gpu_peak_gb": 16.646484375,
+      "host_peak_gb": 9.334735870361328,
+      "design_status": "not_converged_iteration_cap",
+      "note": "Numerical/resource probe; no design acceptance"
+    },
+    "neural": {
+      "status": "SUCCEEDED",
+      "job": "raysubmit_SzWc2nhX8xshC781",
+      "kind": "gpu_compare",
+      "gpu_limit_gb": 32,
+      "host_limit_gb": 46,
+      "started": "2026-10-05T11:03:15.771150+00:00",
+      "gate": "PASSED",
+      "gpu_peak_gb": 16.646484375,
+      "host_peak_gb": 9.154487609863281,
+      "design_status": "not_converged_iteration_cap",
+      "note": "Numerical/resource probe; no design acceptance"
+    }
+  },
+  "production_jobs": {
+    "simp": {
+      "status": "RUNNING",
+      "job": "raysubmit_FtAAQ9pueLzpBwnN",
+      "kind": "gpu_compare",
+      "gpu_limit_gb": 32,
+      "host_limit_gb": 46,
+      "started": "2026-10-05T11:05:21.690031+00:00"
+    },
+    "neural": {
+      "status": "RUNNING",
+      "job": "raysubmit_SUaC833pWQi2DaiL",
+      "kind": "gpu_compare",
+      "gpu_limit_gb": 32,
+      "host_limit_gb": 46,
+      "started": "2026-10-05T11:05:21.683386+00:00"
+    }
+  },
+  "tests": [
+    {
+      "job": "raysubmit_tP7EP54gzXAV9Vtx",
+      "passed": 416,
+      "skipped": 2
+    },
+    {
+      "job": "raysubmit_q1EfqVjUjHpGcPkg",
+      "passed": 5
+    },
+    {
+      "job": "raysubmit_vEBxDjGqfQiSa1ZV",
+      "passed": 254,
+      "skipped": 1
+    },
+    {
+      "job": "raysubmit_XHJ5YWTnJqA1NCcX",
+      "passed": 211,
+      "seconds": 30.14
+    },
+    {
+      "job": "raysubmit_Au5HA8zZ8vEK2VCV",
+      "passed": 7,
+      "seconds": 2.86
+    }
+  ],
+  "coarse_seed_acceptance": false,
+  "coarse_infeasibility_evidence": "ground15_camera_headroom.json",
+  "schedule": "../../dgx_handoff.md",
+  "result_acceptance": "Pending actual reconstructed geometry, wall rule and both mechanical evaluations; resource probes are not design acceptance",
+  "historical_geometry": "Requirement-dependent old frames invalidated; solver/reference and reconstruction code reused",
+  "code_commit": "a647e6c",
+  "full_cpu_suite": {
+    "job": "raysubmit_degyqR51kAMAUfAK",
+    "status": "RUNNING",
+    "junit": ".wf/ray_nodes/ground15_full_cpu.xml"
+  },
+  "controller_resume": "Reattached the same two active production Ray jobs; no duplicate production launch. New code checks all five cable paths and repeats functional, shared physical and independent acceptance after channels. Viewer failure is recorded separately and does not stop compute."
+}

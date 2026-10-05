@@ -1141,6 +1141,32 @@ def test_compute_node20_21_routes_gpu_jobs_to_the_working_a100():
     assert head[head.index("--num-gpus") + 1] == "0" and head[head.index("--dashboard-port") + 1] == "8266"
     assert "--port=6380" in head and "--min-worker-port=22000" in head
 
+def test_compute_parallel_comparison_reserves_two_halves_of_the_a100():
+    need = compute.request("gpu_compare", ["x"], ".", machine="node20_21")
+    assert need["entrypoint_num_gpus"] == 0.5
+    assert need["entrypoint_resources"] == {"gpu_gb": 32, "node:192.168.2.21": 0.001}
+    assert 2 * need["entrypoint_num_cpus"] == 32
+    assert 2 * need["entrypoint_resources"]["gpu_gb"] <= 80
+
+@pytest.mark.skipif(os.name == "nt", reason="Linux cluster controller")
+@pytest.mark.parametrize("gpu,rss,passed", [(20.0,10.0,True),(32.1,10.0,False),(20.0,float("nan"),False),(float("nan"),10.0,False),(None,10.0,False)])
+def test_parallel_controller_gate_uses_own_pid_memory(gpu,rss,passed,tmp_path,monkeypatch):
+    from tools import compare_pipelines
+    comparison=compare_pipelines.Comparison.__new__(compare_pipelines.Comparison)
+    comparison.configs={"simp":{"mma":{"root":"run"}}}
+    comparison.update=lambda *args,**kwargs:None
+    monkeypatch.setattr(compare_pipelines,"ROOT",tmp_path)
+    out=tmp_path/"run_probe"
+    (out/"fine").mkdir(parents=True)
+    (out/"fine/result.json").write_text(json.dumps({"iterations":3,"mass_g":100.0,"max_violation":5.0,"status":"not_converged_iteration_cap"}))
+    (out/"fine/iterations.jsonl").write_text('{}\n{}\n{}\n')
+    (out/"memory.json").write_text(json.dumps({"peaks":{"probe":{"process_gpu_gb":gpu,"rss_gb":rss,"device_used_gb":50.0}}}))
+    if passed:
+        comparison.gate("simp")
+    else:
+        with pytest.raises(RuntimeError,match="gate failed"):
+            comparison.gate("simp")
+
 def test_compute_head_command_pins_agent_ports_per_profile(monkeypatch):
     monkeypatch.delenv("RAY_PYTHON", raising=False)
     for name, gpus, python in (("local", "1", compute.CONFIG["heads"]["local"]["ray_python"]), ("dgx", "8", compute.CONFIG["heads"]["dgx"]["ray_python"])):
@@ -1254,3 +1280,103 @@ def test_interface_couple_and_conjugate_rotation():
     assert len(elements) == 6 * 16
     volume = sum(abs(np.linalg.det(np.array([np.subtract(nodes[n], nodes[e[0]]) for n in e[1:4]]))) / 6 for e in elements.values())
     assert volume == pytest.approx(16.0)
+
+def test_shared_pipeline_gate_rejects_changed_problem_and_guide_retention(monkeypatch,tmp_path):
+    from tools import compare_pipelines as comparison
+    monkeypatch.setattr(comparison,'ROOT',tmp_path)
+    tested=comparison.Comparison.__new__(comparison.Comparison)
+    tested.configs={name:{'mma':{'root':name}} for name in ('simp','neural')}
+    tested.update=lambda *args,**kwargs:None
+    record={'problem_definition_sha256':'same','battery_retention':'ideal_press','functional_requirements':{'low_flight':{'pitch_deg':15},'battery_guide':{'area_measure':'nearest_grid_layer_to_battery'}}}
+    for name in tested.configs:
+        root=tmp_path/(name+'_probe')/'fine'
+        root.mkdir(parents=True)
+        (root/'result.json').write_text(json.dumps(record))
+    tested.shared()
+    changed=deepcopy(record)
+    changed['problem_definition_sha256']='different'
+    target=tmp_path/'neural_probe/fine/result.json'
+    target.write_text(json.dumps(changed))
+    with pytest.raises(RuntimeError,match='different problem'):
+        tested.shared()
+    changed=deepcopy(record)
+    changed['battery_retention']='contact'
+    target.write_text(json.dumps(changed))
+    with pytest.raises(RuntimeError,match='ideal retention'):
+        tested.shared()
+
+def test_functional_review_rejects_a_frame_outside_recorded_pipeline_results(tmp_path):
+    from tools.functional_geometry_review import PipelineReview
+    tested=PipelineReview.__new__(PipelineReview)
+    tested.root=tmp_path
+    tested.cfg={'mma':{'root':'optimization'}}
+    tested.source=tmp_path/'separate_drawing.stl'
+    root=tmp_path/'optimization'
+    root.mkdir()
+    (root/'runs.json').write_text(json.dumps({'recon':str(tmp_path/'actual_pipeline')}))
+    with pytest.raises(ValueError,match='recorded by this optimization pipeline'):
+        tested.provenance()
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+def test_controller_resume_reattaches_existing_ray_job(tmp_path):
+    from tools.compare_pipelines import Comparison
+    tested=Comparison.__new__(Comparison)
+    tested.python=sys.executable
+    tested.root=tmp_path
+    tested.data={'stages':{'production':{'status':'RUNNING','job':'existing-job'}}}
+    tested.update=lambda stage,**values:tested.data['stages'][stage].update(values)
+    calls=[]
+    tested.wait=lambda job:calls.append(job)
+    tested.client=type('Client',(),{'submit_job':lambda *args,**kwargs:pytest.fail('must not duplicate an existing Ray job'),'get_job_logs':lambda self,job:'reattached'})()
+    path=tmp_path/'pipeline.json'
+    path.write_text('{}')
+    tested.ray('production','frame_mma',str(path))
+    assert calls==['existing-job']
+    assert tested.data['stages']['production']['status']=='SUCCEEDED'
+    path.write_text('{"changed":true}')
+    with pytest.raises(RuntimeError,match='inputs changed'):
+        tested.ray('production','frame_mma',str(path))
+
+def test_cable_review_requires_delivered_artifact_from_recorded_pipeline(tmp_path):
+    from tools.functional_geometry_review import PipelineReview
+    tested=PipelineReview.__new__(PipelineReview)
+    tested.root=tmp_path
+    tested.cfg={'mma':{'root':'optimization'}}
+    tested.source=tmp_path/'cables/frame.stl'
+    tested.spec={'derived_cables':'cables/cables.json'}
+    (tmp_path/'optimization').mkdir()
+    (tmp_path/'optimization/runs.json').write_text(json.dumps({'recon':str(tmp_path/'actual_pipeline')}))
+    tested.source.parent.mkdir()
+    report=tested.source.with_name('cables.json')
+    report.write_text(json.dumps({'body':str(tmp_path/'actual_pipeline/frame.stl'),'delivered':False}))
+    with pytest.raises(ValueError,match='delivered pipeline artifact'):
+        tested.provenance()
+    report.write_text(json.dumps({'body':str(tmp_path/'unrelated/frame.stl'),'delivered':True}))
+    with pytest.raises(ValueError,match='recorded by this optimization pipeline'):
+        tested.provenance()
+
+@pytest.mark.parametrize('changed',['functions','physics','digest'])
+def test_ocp_rejects_unaccepted_or_changed_actual_pipeline_artifact(tmp_path,changed):
+    import hashlib
+    from tools.functional_geometry_review import PipelineReview
+    tested=PipelineReview.__new__(PipelineReview)
+    tested.out=tmp_path
+    tested.source=tmp_path/'frame.stl'
+    tested.source.write_bytes(b'actual artifact')
+    digest=hashlib.sha256(tested.source.read_bytes()).hexdigest()
+    (tmp_path/'report.json').write_text(json.dumps({'passed':changed!='functions','provenance':{'frame_sha256':digest}}))
+    (tmp_path/'physical_evaluation.json').write_text(json.dumps({'passed':changed!='physics','frame_sha256':'different' if changed=='digest' else digest}))
+    with pytest.raises(ValueError,match='same functionally and mechanically checked'):
+        tested.ocp()
+
+@pytest.mark.skipif(os.name == 'nt', reason='Linux cluster controller')
+def test_missing_ocp_viewer_does_not_interrupt_authorized_compute_plan():
+    from tools.compare_pipelines import Comparison
+    tested=Comparison.__new__(Comparison)
+    calls=[]
+    tested.ray=lambda *args,**kwargs:None
+    tested.local=lambda *args,**kwargs:(_ for _ in ()).throw(RuntimeError('viewer unavailable'))
+    tested.update=lambda stage,**fields:calls.append((stage,fields))
+    tested.display({'run':'actual_pipeline','route':'simp','suffix':'recon'})
+    assert calls[0][1]['status']=='PENDING_VIEWER'
+    assert calls[0][1]['frame_source']=='actual_pipeline/frame.stl'

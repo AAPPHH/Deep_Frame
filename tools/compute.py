@@ -46,6 +46,8 @@ JOB_TYPES = {
     "cpu": {"num_cpus": 2, "memory_gb": 4, "gpu_gb": 0},
     "gpu": {"num_cpus": 4, "memory_gb": 6, "gpu_gb": 5.5},
     "gpu_a100": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 80},
+    "gpu_compare": {"num_cpus": 16, "memory_gb": 46, "gpu_gb": 32, "num_gpus": 0.5},
+    "gpu_075": {"num_cpus": 16, "memory_gb": 160, "gpu_gb": 80},
 }
 join = subprocess.list2cmdline if os.name == "nt" else shlex.join
 
@@ -74,7 +76,7 @@ def request(kind, command, cwd, environ=os.environ, config=CONFIG, python=getatt
     return {"entrypoint": join([python, str(Path(__file__).resolve()), "exec", encode(payload)]),
             "entrypoint_num_cpus": need["num_cpus"], "entrypoint_memory": int(need["memory_gb"] * 2**30),
             "entrypoint_resources": resources or None,
-            "entrypoint_num_gpus": spec["gpus_per_job"] if gpu_gb and spec["gpus_per_job"] else None,
+            "entrypoint_num_gpus": need.get("num_gpus", spec["gpus_per_job"]) if gpu_gb and spec["gpus_per_job"] else None,
             "metadata": {"type": kind, "cwd": payload["cwd"], "command": join(command)[:500]}}
 
 def contain():

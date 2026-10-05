@@ -1,0 +1,10 @@
+{
+  "state_directory": "exports/runs/ground15_comparison",
+  "validation_job": "raysubmit_XHJ5YWTnJqA1NCcX",
+  "pipelines": {
+    "simp": "docs/validation/dgx/ground15_simp.json",
+    "neural": "docs/validation/dgx/ground15_neural.json"
+  },
+  "continue_plan": true,
+  "resume": true
+}
