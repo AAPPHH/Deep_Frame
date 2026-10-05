@@ -27,6 +27,7 @@ class Comparison:
         self.lock = threading.RLock()
         self.problem_ready = threading.Barrier(len(self.config["pipelines"]))
         self.data = json.loads((self.root/"status.json").read_text()) if self.config.get("resume") and (self.root/"status.json").exists() else {"created": datetime.now(timezone.utc).isoformat(), "config": self.config, "stages": {}, "branches": {}}
+        self.data["config"]=self.config
         self.configs = {name: json.loads((ROOT / path).read_text()) for name, path in self.config["pipelines"].items()}
     def save(self):
         with self.lock:

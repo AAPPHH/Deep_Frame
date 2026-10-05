@@ -1,5 +1,5 @@
 {
-  "time_utc": "2026-10-05T11:15:15.093264+00:00",
+  "time_utc": "2026-10-05T11:26:59.765344+00:00",
   "status": "shared_problem_verified_production_running",
   "requirements": {
     "flight_pitch_nose_down_deg": 15,
@@ -83,18 +83,33 @@
       "job": "raysubmit_Au5HA8zZ8vEK2VCV",
       "passed": 7,
       "seconds": 2.86
+    },
+    {
+      "job": "raysubmit_shrgtex7DGjJkMsg",
+      "passed": 5,
+      "seconds": 2.6,
+      "scope": "Nonfinite physical measurements and actual stand/prop acceptance"
     }
   ],
   "coarse_seed_acceptance": false,
   "coarse_infeasibility_evidence": "ground15_camera_headroom.json",
   "schedule": "../../dgx_handoff.md",
-  "result_acceptance": "Pending actual reconstructed geometry, wall rule and both mechanical evaluations; resource probes are not design acceptance",
+  "result_acceptance": "Still pending actual reconstructed geometry, wall rule, stand/prop clearance and both mechanical evaluations; code tests and GPU resource probes are not design acceptance.",
   "historical_geometry": "Requirement-dependent old frames invalidated; solver/reference and reconstruction code reused",
   "code_commit": "a647e6c",
   "full_cpu_suite": {
     "job": "raysubmit_degyqR51kAMAUfAK",
-    "status": "RUNNING",
+    "status": "SUCCEEDED",
+    "passed": 860,
+    "skipped": 21,
+    "seconds": 866.12,
     "junit": ".wf/ray_nodes/ground15_full_cpu.xml"
   },
-  "controller_resume": "Reattached the same two active production Ray jobs; no duplicate production launch. New code checks all five cable paths and repeats functional, shared physical and independent acceptance after channels. Viewer failure is recorded separately and does not stop compute."
+  "controller_resume": "Reattached the same two active production Ray jobs; no duplicate production launch. New code checks all five cable paths and repeats functional, shared physical and independent acceptance after channels. Viewer failure is recorded separately and does not stop compute.",
+  "validated_code_commits": [
+    "a647e6c",
+    "fa99a57",
+    "69ef08d"
+  ],
+  "test_fixture_correction": "The first nonfinite-value test fixture lacked its numpy import. The fixture was corrected; the subsequent combined acceptance run passed all five cases."
 }
