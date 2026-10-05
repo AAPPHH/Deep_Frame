@@ -1,0 +1,875 @@
+{
+ "status": "ok",
+ "mass_g": 55.75120678905128,
+ "eigenfrequencies_hz": [
+  487.1557,
+  489.7684,
+  560.6283,
+  595.4053,
+  600.953,
+  754.379
+ ],
+ "max_displacement_mm": 1.3651712003637821,
+ "max_von_mises_mpa": 16.367397780627183,
+ "stiffness_n_per_mm": 15.414319942990161,
+ "load_cases": {
+  "arm_tip": {
+   "analysis": "static",
+   "max_displacement_mm": 0.32038281612483915,
+   "max_von_mises_mpa": 4.053578302145918,
+   "von_mises_p99_mpa": 1.8118038114093526,
+   "print_normal_tension_p99_mpa": 0.4999949800000012,
+   "print_normal_abs_p99_mpa": 0.6435387950000003,
+   "von_mises_p999_mpa": 2.802184591731359,
+   "print_normal_tension_p999_mpa": 0.9377197815000295,
+   "print_normal_abs_p999_mpa": 1.1439909700000332,
+   "stress_samples": 204016,
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "loads": [
+    {
+     "node_count": 771,
+     "force_n": [
+      0.0,
+      0.0,
+      3.6
+     ],
+     "mean_displacement_mm": [
+      -0.008425961515525295,
+      0.022571270470817143,
+      0.23354906433203634
+     ],
+     "directional_displacement_mm": 0.23354906433203634,
+     "stiffness_n_per_mm": 15.414319942990161
+    }
+   ],
+   "stiffness_n_per_mm": 15.414319942990161,
+   "fixed_node_count": 995
+  },
+  "modes": {
+   "analysis": "modal",
+   "eigenfrequencies_hz": [
+    487.1557,
+    489.7684,
+    560.6283,
+    595.4053,
+    600.953,
+    754.379
+   ],
+   "discarded_rigid_modes": 0,
+   "fixture": "all translations fixed on selected nodes",
+   "fixed_node_count": 2635
+  },
+  "crash_front": {
+   "analysis": "static",
+   "max_displacement_mm": 0.12553416213635418,
+   "max_von_mises_mpa": 16.29722191489528,
+   "von_mises_p99_mpa": 2.8905524525734867,
+   "print_normal_tension_p99_mpa": 1.6987717000000004,
+   "print_normal_abs_p99_mpa": 2.406127000000003,
+   "von_mises_p999_mpa": 5.300874271831931,
+   "print_normal_tension_p999_mpa": 3.905516725000001,
+   "print_normal_abs_p999_mpa": 4.216363180000058,
+   "stress_samples": 204016,
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "loads": [
+    {
+     "node_count": 3669,
+     "force_n": [
+      0.0,
+      -30.64578125,
+      0.0
+     ],
+     "mean_displacement_mm": [
+      -0.0008316651572635589,
+      -0.07467440257563364,
+      0.06481958674843291
+     ],
+     "directional_displacement_mm": 0.07467440257563364,
+     "stiffness_n_per_mm": 410.392051264964
+    }
+   ],
+   "stiffness_n_per_mm": 410.392051264964,
+   "fixed_node_count": 995
+  },
+  "crash_arm": {
+   "analysis": "static",
+   "max_displacement_mm": 1.3651712003637821,
+   "max_von_mises_mpa": 16.367397780627183,
+   "von_mises_p99_mpa": 7.601801611116096,
+   "print_normal_tension_p99_mpa": 1.1348434000000003,
+   "print_normal_abs_p99_mpa": 1.5426648500000009,
+   "von_mises_p999_mpa": 12.755201239568493,
+   "print_normal_tension_p999_mpa": 2.350435910000006,
+   "print_normal_abs_p999_mpa": 2.832819145000007,
+   "stress_samples": 204016,
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "loads": [
+    {
+     "node_count": 771,
+     "force_n": [
+      2.2077626326054296,
+      -14.27686502418177,
+      -5.107630208333331
+     ],
+     "mean_displacement_mm": [
+      -0.24661996595875535,
+      -0.8876680071335923,
+      -0.42603660337224397
+     ],
+     "directional_displacement_mm": 0.9335494035788275,
+     "stiffness_n_per_mm": 16.41358300509712
+    }
+   ],
+   "stiffness_n_per_mm": 16.41358300509712,
+   "fixed_node_count": 995
+  },
+  "crash_back": {
+   "analysis": "static",
+   "max_displacement_mm": 0.026509852823285253,
+   "max_von_mises_mpa": 3.1534281667313713,
+   "von_mises_p99_mpa": 0.8247395614949108,
+   "print_normal_tension_p99_mpa": 0.15728968500000015,
+   "print_normal_abs_p99_mpa": 0.2706844750000003,
+   "von_mises_p999_mpa": 1.151439141590526,
+   "print_normal_tension_p999_mpa": 0.42680536800000557,
+   "print_normal_abs_p999_mpa": 0.515712250500006,
+   "stress_samples": 204016,
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "loads": [
+    {
+     "node_count": 1248,
+     "force_n": [
+      0.0,
+      0.0,
+      -15.322890625
+     ],
+     "mean_displacement_mm": [
+      2.650883945272438e-05,
+      0.0021793706891025636,
+      -0.018968709431089734
+     ],
+     "directional_displacement_mm": 0.018968709431089734,
+     "stiffness_n_per_mm": 807.7982680195294
+    }
+   ],
+   "stiffness_n_per_mm": 807.7982680195294,
+   "fixed_node_count": 2635
+  }
+ },
+ "diagnostics": [],
+ "artifacts": {
+  "directory": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p",
+  "arm_tip": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_0.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_0.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_0.log"
+  },
+  "modes": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_1.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_1.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_1.log"
+  },
+  "crash_front": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_2.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_2.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_2.log"
+  },
+  "crash_arm": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_3.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_3.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_3.log"
+  },
+  "crash_back": {
+   "input": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_4.inp",
+   "data": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_4.dat",
+   "log": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\case_4.log"
+  },
+  "result": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\battery_free_v3c\\evaluation_graded_base\\fea\\evaluation_zrfm4r9p\\result.json"
+ },
+ "linear_solver": null,
+ "solver_threads": 4,
+ "mesh": {
+  "attempts": [
+   {
+    "name": "remesh_hxt",
+    "target_mm": 2.0,
+    "status": "ok",
+    "timeout_s": 900.0,
+    "linear_element_count": 51004,
+    "runtime_s": 41.72912180000276
+   }
+  ],
+  "input_face_count": 498654,
+  "input_minimum_angle_deg": 0.0006910716242705359,
+  "memory_budget": {
+   "elements": 229545,
+   "solver_memory_mb": 8518.296875,
+   "process_mb": 1209.703125,
+   "available_mb": 24349.39453125,
+   "memory_budget_mb": 9728.0,
+   "memory_per_element_kb": 38.0
+  },
+  "gmsh_version": "4.15.2",
+  "element_type": "C3D10",
+  "element_count": 51004,
+  "minimum_jacobian_mm3": 7.895910722066658e-07,
+  "mesh_size_mm": 3.0,
+  "second_order_linear": false,
+  "high_order_optimize": 0,
+  "boundary_geometry": "quadratic boundary nodes projected to CAD",
+  "attempt": "remesh_hxt",
+  "target_mm": 2.0,
+  "prepared_surface": {
+   "refined_input": false,
+   "target_mm": 2.0,
+   "merge_tolerance_mm": 1.6732154164280107e-07,
+   "cleanup_applied": false,
+   "face_count": 27562,
+   "minimum_angle_deg": 0.35188485458033963,
+   "topology": {
+    "input": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -60
+    },
+    "remeshed": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -60
+    },
+    "prepared": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -60
+    }
+   },
+   "topology_changed": false,
+   "rejected_steps": {},
+   "topology_passed": true,
+   "self_intersections_passed": true,
+   "folded_edges": 0,
+   "runtime_s": 29.421969799994258,
+   "passed": true
+  },
+  "linear_element_count": 51004,
+  "element_budget": 229545,
+  "over_budget": false,
+  "boundary_node_count": 13721,
+  "boundary_node_deviation_mm": 1.2147937225280453e-05,
+  "boundary_fidelity": {
+   "method": "bidirectional vertices, centroids and all edge midpoints; exact nearest-surface distance by MeshLab per-vertex distance",
+   "reference_to_approximation": {
+    "sample_count": 2243883,
+    "surface_distance_mm": {
+     "max": 0.1364971250295639,
+     "p50": 0.016752799972891808,
+     "p95": 0.04223163425922394,
+     "p99": 0.05402293220162395,
+     "mean": 0.018571010471026907
+    }
+   },
+   "approximation_to_reference": {
+    "sample_count": 123969,
+    "surface_distance_mm": {
+     "max": 0.12377136200666428,
+     "p50": 0.0163628701120615,
+     "p95": 0.044059284031391144,
+     "p99": 0.055083459019660906,
+     "mean": 0.018034887144634824
+    }
+   },
+   "maximum_sampled_deviation_mm": 0.1364971250295639,
+   "relative_volume_change": -0.007218813835321747,
+   "runtime_s": 2.680652299997746
+  },
+  "input_volume_mm3": 17202.942008303926,
+  "tet_volume_mm3": 17078.75717252614,
+  "tet_volume_relative_change": -0.007218813835321969,
+  "minimum_sicn": 0.008684122377907855,
+  "elements_below_sicn": 0,
+  "node_count": 97191
+ },
+ "point_mass_coupling": [
+  {
+   "name": "battery",
+   "mass_g": 37.0,
+   "position_mm": [
+    -4.399639222765998e-17,
+    -3.299999999999996,
+    31.3
+   ],
+   "attachment_nodes": 1248,
+   "coupling": "rigid attachment patch with reference at point-mass COM; patch deformation suppressed"
+  }
+ ],
+ "frame_mass_g": 18.75120678905128,
+ "model_frame_mass_g": 18.615845318053495,
+ "point_mass_g": 37.0,
+ "solver_version": "2.22",
+ "runtime_s": 102.69229350000387,
+ "sliver_cleanup": {
+  "target_mm": 0.4,
+  "iterations": 8,
+  "collapse_mm": 0.02,
+  "collapsed": false,
+  "input_minimum_angle_deg": 0.00020178701262585485,
+  "minimum_angle_deg": 0.0006910716242705359,
+  "face_count": 498654,
+  "topology_unchanged": true,
+  "checks_passed": true,
+  "maximum_sampled_deviation_mm": 0.0004147437575738877,
+  "relative_volume_change": -6.088042181495723e-09,
+  "passed": true
+ },
+ "fea_surface": {
+  "trials": [],
+  "graded": {
+   "voxel_mm": 0.125,
+   "grid_shape": [
+    989,
+    893,
+    244
+   ],
+   "inconsistent_columns": 0,
+   "voxel_face_count": 2217226,
+   "voxel_volume_change": -4.6794436807662265e-05,
+   "sizes_mm": [
+    0.5,
+    1.0,
+    1.6
+   ],
+   "tier_vertex_counts": [
+    120,
+    6720,
+    29108
+   ],
+   "dropped_parts": 0,
+   "dropped_volume_mm3": 0.0,
+   "intersection_repairs": [],
+   "face_count": 72016,
+   "minimum_angle_deg": 0.7837625464292098,
+   "folded_edges": 0,
+   "topology": {
+    "input": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -60
+    },
+    "graded": {
+     "watertight": true,
+     "winding_consistent": true,
+     "body_count": 1,
+     "euler_number": -60
+    }
+   },
+   "checks_passed": true,
+   "self_intersections_passed": true,
+   "print_deviation_mm": 0.2347431182861328,
+   "print_to_fea_mm": {
+    "max": 0.2347431182861328,
+    "p50": 0.022441402077674866,
+    "p95": 0.06112955883145332,
+    "p99": 0.07974259555339813,
+    "mean": 0.02553103172947679
+   },
+   "fea_to_print_mm": {
+    "max": 0.15106120705604553,
+    "p50": 0.016809718683362007,
+    "p95": 0.0493234358727932,
+    "p99": 0.07042423941195043,
+    "mean": 0.019985291773830825
+   },
+   "relative_volume_change": -0.008991811842114061,
+   "runtime_s": 206.07546120000188,
+   "deviation_within_limit": false,
+   "passed": false
+  },
+  "choice": {},
+  "volume_mm3": 17202.942008303926
+ },
+ "model": {
+  "material": {
+   "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+   "young_modulus_mpa": 4430.0,
+   "poisson_ratio": 0.3,
+   "density_g_cm3": 1.09,
+   "orthotropic": {
+    "e_xy_mpa": 4430.0,
+    "e_z_mpa": 2170.0,
+    "nu_xy": 0.3,
+    "nu_xz": 0.3,
+    "g_xy_mpa": 1703.8,
+    "g_z_mpa": 834.6
+   },
+   "strength_xy_mpa": 102.0,
+   "strength_z_mpa": 48.0,
+   "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+   "measured": [
+    "E_xy 4430 +/- 310 MPa",
+    "E_z 2170 +/- 230 MPa",
+    "tensile strength XY 102 +/- 7 MPa",
+    "tensile strength Z 48 +/- 6 MPa",
+    "density 1.09 g/cm3"
+   ],
+   "assumptions": {
+    "nu_xy": "0.30 not in the TDS",
+    "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+    "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+    "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+    "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+   },
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "point_masses": [
+   {
+    "name": "battery",
+    "mass_g": 37.0,
+    "position_mm": [
+     -4.399639222765998e-17,
+     -3.299999999999996,
+     31.3
+    ],
+    "attachment_region": {
+     "kind": "box",
+     "min_mm": [
+      -20.1,
+      -34.9,
+      25.79
+     ],
+     "max_mm": [
+      20.1,
+      28.3,
+      25.810000000000002
+     ]
+    }
+   }
+  ],
+  "load_cases": [
+   {
+    "name": "arm_tip",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        8.823333333333334
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        9.343333333333334
+       ]
+      },
+      "force_n": [
+       0.0,
+       0.0,
+       3.6
+      ]
+     }
+    ]
+   },
+   {
+    "name": "modes",
+    "analysis": "modal",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_front",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -12.01,
+        40.9,
+        19.5
+       ],
+       "max_mm": [
+        12.01,
+        57.9,
+        26.01
+       ]
+      },
+      "force_n": [
+       0.0,
+       -30.64578125,
+       0.0
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_arm",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        8.823333333333334
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        9.343333333333334
+       ]
+      },
+      "force_n": [
+       2.2077626326054296,
+       -14.27686502418177,
+       -5.107630208333331
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_back",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -20.1,
+        -34.9,
+        25.79
+       ],
+       "max_mm": [
+        20.1,
+        28.3,
+        25.810000000000002
+       ]
+      },
+      "force_n": [
+       0.0,
+       0.0,
+       -15.322890625
+      ]
+     }
+    ]
+   }
+  ],
+  "loads": {
+   "arm_tip_force_n": 3.6,
+   "all_up_mass_g": 125.0,
+   "standard_gravity_m_s2": 9.80665,
+   "crash_front_g": 25.0,
+   "crash_arm_g": 12.5,
+   "crash_back_g": 12.5,
+   "safety_factor": 2.0,
+   "sources": {
+    "arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+    "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+    "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+    "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+    "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"
+   }
+  },
+  "support": {
+   "arm_tip": "centre mount undersides fixed (all translations)",
+   "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
+   "crash_front": "centre mount undersides fixed",
+   "crash_arm": "centre mount undersides fixed",
+   "crash_back": "four motor seat undersides fixed"
+  }
+ }
+}

@@ -5,12 +5,13 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
+import numpy as np
 import pytest
 import trimesh
 from build123d import Align, Box, Pos, Solid
 
-from deep_frame.config import CONFIG, CRASH_DIRECTIONS, FEA_CONFIG, IMPLICIT_CONFIG, INTEGRATION_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG
-from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, clean_slivers, _prepare_surface, _read_mesh, _run, _select, _topology, _volume_mesh, evaluate, prepare_frame_case
+from deep_frame.config import CONFIG, CRASH_DIRECTIONS, EVALUATION_CONFIG, FEA_CONFIG, IMPLICIT_CONFIG, INTEGRATION_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG
+from deep_frame.fea import MESH_ATTEMPTS, FrameEvaluator, _mesh_settings, clean_slivers, graded_surface, voxel_coverage, _prepare_surface, _read_mesh, _run, _select, _topology, _volume_mesh, evaluate, prepare_frame_case
 from deep_frame.frame import assembly_placements, build_components, intersection_shape, motor_positions, reference_parameters
 from tests.test_frame import frame
 
@@ -541,6 +542,23 @@ def test_sliver_cleanup_keeps_body_within_the_surface_deviation_limit():
     assert report["input_minimum_angle_deg"] < 1 and report["minimum_angle_deg"] > 5 * report["input_minimum_angle_deg"]
     assert report["passed"] and surface is not source and _topology(surface) == _topology(source)
     assert report["maximum_sampled_deviation_mm"] <= settings["surface_deviation_mm"] and abs(report["relative_volume_change"]) <= settings["relative_volume_change"]
+
+def test_voxel_coverage_integrates_the_volume_and_is_consistent():
+    box = trimesh.creation.box(extents=(3.1, 2.3, 1.7))
+    low = box.bounds[0]-np.array([0.5, 0.5, 0.55])+1e-5
+    coverage, bad = voxel_coverage(box, low, 0.1, np.array([42, 34, 28]), 7)
+    assert bad == 0 and coverage.sum()*1e-3 == pytest.approx(box.volume, rel=0.02)
+
+def test_graded_surface_meshes_a_thin_walled_channel_within_the_deviation_limit():
+    from manifold3d import Manifold
+    body = Manifold.cube((20.0, 8.0, 6.0)).translate((-10.0, -4.0, 0.0))+Manifold.cube((10.0, 1.0, 5.0)).translate((-5.0, 7.5, 0.0))+Manifold.cube((10.0, 4.0, 1.0)).translate((-5.0, 4.0, 0.0))
+    channel = Manifold.cylinder(30.0, 1.2, 1.2, 64).rotate((0.0, 90.0, 0.0)).translate((-15.0, 0.0, 2.2))+Manifold.cube((30.0, 0.9, 2.2)).translate((-15.0, -0.45, 0.0))
+    solid = (body-channel).to_mesh()
+    mesh = trimesh.Trimesh(solid.vert_properties[:, :3], solid.tri_verts)
+    settings = _mesh_settings({})
+    surface, report = graded_surface(mesh, settings, EVALUATION_CONFIG["fea_surface"]["graded"])
+    assert report["passed"] and report["deviation_within_limit"] and report["inconsistent_columns"] == 0 and surface.is_watertight, report
+    assert report["tier_vertex_counts"][0] > 0 and report["tier_vertex_counts"][-1] > 0 and report["print_deviation_mm"] <= settings["surface_deviation_mm"]
 
 def test_fallback_attempts_get_the_short_timeout(tmp_path, monkeypatch):
     import deep_frame.fea as fea

@@ -471,10 +471,12 @@ def sections(a, b, scale, config):
     b = np.maximum(np.asarray(b, dtype=float)*scale, config["minimum_radius_mm"])
     return np.clip(np.asarray(a, dtype=float)*scale, b, config["maximum_aspect"]*b), b
 
-def stored_domain(path):
+def stored_domain(path, shape=None):
     from deep_frame.topology_geometry import grid_centers, rasterize_regions
     stored = json.loads(Path(path).read_text(encoding="utf-8"))
     domain = stored.get("domain", stored)
+    if shape is not None and list(shape) != list(domain["grid"]["shape"]):
+        domain = {**domain, "grid": {**domain["grid"], "shape": list(shape), "spacing_mm": (np.asarray(domain["grid"]["spacing_mm"])*domain["grid"]["shape"]/np.asarray(shape)).tolist()}}
     masks = rasterize_regions(domain["grid"], domain["regions"])
     centers = grid_centers(domain["grid"])
     hoop = domain.get("metadata", {}).get("round2", {}).get("hoop")
@@ -856,8 +858,7 @@ def bumps(graph, domain, rods, areas, config):
                          "preserve_gap_mm": round(float(gap[tuple(member["voxels"][i])]), 2), "preserves": touching, "load_cases": cases})
     return rows
 
-def reconstruct_splines(domain, density, config, body=None):
-    started, times = perf_counter(), {}
+def spline_graph(domain, density, config, body=None):
     grid = domain["grid"]
     spacing = np.asarray(grid["spacing_mm"], dtype=float)
     solid, fragments = solid_body(density, config, float(np.prod(spacing)))
@@ -867,6 +868,12 @@ def reconstruct_splines(domain, density, config, body=None):
     seating = {**seat_nodes(graph, domain, config), "anchors": snap_anchors(graph, domain, config)}
     rods = [spline_member(graph, member, area, config, domain) if member["kind"] == "rod" else None for member, area in zip(graph.members, areas)]
     rods = [None if rod is not None and member["nodes"][0] == member["nodes"][1] and rod["length"] < config["loop_factor"]*float(np.mean(rod["b"])) else rod for member, rod in zip(graph.members, rods)]
+    return graph, rods, areas, seating, fragments
+
+def reconstruct_splines(domain, density, config, body=None):
+    started, times = perf_counter(), {}
+    spacing = np.asarray(domain["grid"]["spacing_mm"], dtype=float)
+    graph, rods, areas, seating, fragments = spline_graph(domain, density, config, body)
     times["skeleton_s"] = perf_counter()-started
     builder, k = Reconstruction(domain, {**config, **({} if body is not None else {"raw_margin_mm": -1.0, "rod_raw_margin_mm": -1.0})}, (density if body is None else graph.weights) if config["bridge_gap_mm"] > 0 else None), config["transition_radius_mm"]
     for rod in rods:

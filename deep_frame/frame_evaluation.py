@@ -10,7 +10,7 @@ import trimesh
 from scipy import ndimage
 
 from deep_frame.config import COMPONENT_DEFAULTS, EVALUATION_CONFIG, LOAD_COVARIANCE_LIMITS, EVALUATION_KINDS, FEA_CONFIG, FRAME_DEFAULTS, IMPLICIT_CONFIG, PRINT_MATERIAL, TOPOLOGY_CONFIG, configure
-from deep_frame.fea import MESH_KEYS, clean_slivers, evaluate, print_axes, robust_surface
+from deep_frame.fea import MESH_KEYS, clean_slivers, evaluate, graded_surface, print_axes, robust_surface
 from deep_frame.topology_geometry import region_contains, stack_pattern
 from deep_frame.topology_stability import stand_measure
 
@@ -290,10 +290,18 @@ def mechanics(spec, config=None):
     sliver = None
     mesh, trials, chosen = robust_surface(mesh, settings, config["fea_surface"])
     settings.update(chosen)
+    graded = None
+    if not chosen and config["fea_surface"].get("graded"):
+        boxes = [box for value in spec["selectors"].values() for box in (value if isinstance(value, list) else [value]) if isinstance(box, dict) and box.get("kind") == "box"]
+        planes = sorted({round((box["min_mm"][2]+box["max_mm"][2])/2, 6) for box in boxes if box["max_mm"][2]-box["min_mm"][2] <= config["fea_surface"]["graded"]["snap_selector_mm"]})
+        surface, graded = graded_surface(mesh, settings, config["fea_surface"]["graded"], planes)
+        if graded["passed"]:
+            mesh, chosen = surface, {"tet_attempts": ["direct_hxt"], "fea_direct_minimum_angle_deg": config["fea_surface"]["graded"]["minimum_angle_deg"]}
+            settings.update(chosen)
     if not chosen and np.degrees(mesh.face_angles.min()) < settings["fea_direct_minimum_angle_deg"]:
         mesh, sliver = clean_slivers(mesh, settings)
     result = evaluate(mesh, material, masses, cases, settings)
-    result.update(sliver_cleanup=sliver, fea_surface={"trials": trials, "choice": chosen, "volume_mm3": float(mesh.volume)})
+    result.update(sliver_cleanup=sliver, fea_surface={"trials": trials, "graded": graded, "choice": chosen, "volume_mm3": float(mesh.volume)})
     result["model"] = {"material": material, "point_masses": masses, "load_cases": cases, "loads": config["loads"],
                        "support": {"arm_tip": "centre mount undersides fixed (all translations)", "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
                                    "crash_front": "centre mount undersides fixed", "crash_arm": "centre mount undersides fixed", "crash_back": "four motor seat undersides fixed"}}

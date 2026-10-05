@@ -1,0 +1,842 @@
+{
+ "status": "failed",
+ "mass_g": null,
+ "eigenfrequencies_hz": [],
+ "max_displacement_mm": null,
+ "max_von_mises_mpa": null,
+ "stiffness_n_per_mm": null,
+ "load_cases": {},
+ "diagnostics": [
+  "RuntimeError: All tetrahedral meshing attempts failed: remesh_hxt failed, remesh_delaunay skipped, remesh_hxt failed, remesh_delaunay skipped, refine_hxt failed, classify_hxt failed, classify_delaunay failed, direct_hxt skipped"
+ ],
+ "artifacts": {
+  "directory": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_fine\\fea\\evaluation_oggb2i0_",
+  "result": "C:\\clones\\Deep_Frame-cable\\exports\\cables\\simp_mma_cov3_v3_2\\evaluation_fine\\fea\\evaluation_oggb2i0_\\result.json"
+ },
+ "linear_solver": null,
+ "solver_threads": 4,
+ "mesh": {
+  "attempts": [
+   {
+    "name": "remesh_hxt",
+    "target_mm": 0.8,
+    "status": "failed",
+    "timeout_s": 900.0,
+    "diagnostic": "RuntimeError: d, fold- and self-intersection-free body: {'refined_input': False, 'target_mm': 0.8, 'merge_tolerance_mm': 1.578824170822018e-07, 'cleanup_applied': True, 'face_count': 123166, 'minimum_angle_deg': 0.0, 'topology': {'input': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}, 'remeshed': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}, 'prepared': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -5}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 87, 'runtime_s': 47.40598840000166, 'passed': False}\n",
+    "prepared_surface": {
+     "refined_input": false,
+     "target_mm": 0.8,
+     "merge_tolerance_mm": 1.578824170822018e-07,
+     "cleanup_applied": true,
+     "face_count": 123166,
+     "minimum_angle_deg": 0.0,
+     "topology": {
+      "input": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      },
+      "remeshed": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      },
+      "prepared": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      }
+     },
+     "topology_changed": false,
+     "rejected_steps": {
+      "remove_t_vertices": {
+       "watertight": false,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -5
+      }
+     },
+     "topology_passed": true,
+     "self_intersections_passed": false,
+     "folded_edges": 87,
+     "runtime_s": 47.40598840000166,
+     "passed": false
+    },
+    "surface_failed": true,
+    "runtime_s": 49.9082100999949
+   },
+   {
+    "name": "remesh_delaunay",
+    "target_mm": 0.8,
+    "status": "skipped",
+    "diagnostic": "prepared surface at 0.8 mm already failed in remesh_hxt",
+    "runtime_s": 0.00046529999235644937
+   },
+   {
+    "name": "remesh_hxt",
+    "target_mm": 0.6,
+    "status": "failed",
+    "timeout_s": 900.0,
+    "diagnostic": "RuntimeError: , fold- and self-intersection-free body: {'refined_input': False, 'target_mm': 0.6, 'merge_tolerance_mm': 1.578824170822018e-07, 'cleanup_applied': True, 'face_count': 159406, 'minimum_angle_deg': 0.0, 'topology': {'input': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}, 'remeshed': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}, 'prepared': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -7}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 105, 'runtime_s': 46.69198499999766, 'passed': False}\n",
+    "prepared_surface": {
+     "refined_input": false,
+     "target_mm": 0.6,
+     "merge_tolerance_mm": 1.578824170822018e-07,
+     "cleanup_applied": true,
+     "face_count": 159406,
+     "minimum_angle_deg": 0.0,
+     "topology": {
+      "input": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      },
+      "remeshed": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      },
+      "prepared": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      }
+     },
+     "topology_changed": false,
+     "rejected_steps": {
+      "remove_t_vertices": {
+       "watertight": false,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -7
+      }
+     },
+     "topology_passed": true,
+     "self_intersections_passed": false,
+     "folded_edges": 105,
+     "runtime_s": 46.69198499999766,
+     "passed": false
+    },
+    "surface_failed": true,
+    "runtime_s": 49.09177890000865
+   },
+   {
+    "name": "remesh_delaunay",
+    "target_mm": 0.6,
+    "status": "skipped",
+    "diagnostic": "prepared surface at 0.6 mm already failed in remesh_hxt",
+    "runtime_s": 0.000410699998610653
+   },
+   {
+    "name": "refine_hxt",
+    "target_mm": 0.8,
+    "status": "failed",
+    "timeout_s": 900.0,
+    "diagnostic": "RuntimeError: d, fold- and self-intersection-free body: {'refined_input': True, 'target_mm': 0.8, 'merge_tolerance_mm': 1.578824170822018e-07, 'cleanup_applied': True, 'face_count': 198636, 'minimum_angle_deg': 0.0, 'topology': {'input': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}, 'remeshed': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}, 'prepared': {'watertight': True, 'winding_consistent': True, 'body_count': 1, 'euler_number': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -15}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 86, 'runtime_s': 86.75606109999353, 'passed': False}\n",
+    "prepared_surface": {
+     "refined_input": true,
+     "target_mm": 0.8,
+     "merge_tolerance_mm": 1.578824170822018e-07,
+     "cleanup_applied": true,
+     "face_count": 198636,
+     "minimum_angle_deg": 0.0,
+     "topology": {
+      "input": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      },
+      "remeshed": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      },
+      "prepared": {
+       "watertight": true,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -90
+      }
+     },
+     "topology_changed": false,
+     "rejected_steps": {
+      "remove_t_vertices": {
+       "watertight": false,
+       "winding_consistent": true,
+       "body_count": 1,
+       "euler_number": -15
+      }
+     },
+     "topology_passed": true,
+     "self_intersections_passed": false,
+     "folded_edges": 86,
+     "runtime_s": 86.75606109999353,
+     "passed": false
+    },
+    "surface_failed": true,
+    "runtime_s": 89.19814570000744
+   },
+   {
+    "name": "classify_hxt",
+    "target_mm": null,
+    "status": "failed",
+    "timeout_s": 120.0,
+    "diagnostic": "TimeoutExpired: Command '['C:\\\\clones\\\\Deep_Frame\\\\.venv\\\\Scripts\\\\python.exe', '-m', 'deep_frame.fea', 'C:\\\\clones\\\\Deep_Frame-cable\\\\exports\\\\cables\\\\simp_mma_cov3_v3_2\\\\evaluation_fine\\\\fea\\\\evaluation_oggb2i0_\\\\mesh_request_05_classify_hxt.json']' timed out after 120.0 seconds",
+    "surface_failed": false,
+    "runtime_s": 120.0215090999991
+   },
+   {
+    "name": "classify_delaunay",
+    "target_mm": null,
+    "status": "failed",
+    "timeout_s": 120.0,
+    "diagnostic": "TimeoutExpired: Command '['C:\\\\clones\\\\Deep_Frame\\\\.venv\\\\Scripts\\\\python.exe', '-m', 'deep_frame.fea', 'C:\\\\clones\\\\Deep_Frame-cable\\\\exports\\\\cables\\\\simp_mma_cov3_v3_2\\\\evaluation_fine\\\\fea\\\\evaluation_oggb2i0_\\\\mesh_request_06_classify_delaunay.json']' timed out after 120.0 seconds",
+    "surface_failed": false,
+    "runtime_s": 120.00925649999408
+   },
+   {
+    "name": "direct_hxt",
+    "target_mm": null,
+    "status": "skipped",
+    "diagnostic": "minimum input triangle angle 0 deg below 10.0 deg",
+    "runtime_s": 0.0002234999992651865
+   }
+  ],
+  "input_face_count": 648324,
+  "input_minimum_angle_deg": 0.0,
+  "memory_budget": {
+   "elements": 392212,
+   "solver_memory_mb": 14554.7421875,
+   "process_mb": 1829.2578125,
+   "available_mb": 28297.15625,
+   "memory_budget_mb": 16384.0,
+   "memory_per_element_kb": 38.0
+  }
+ },
+ "runtime_s": 428.2807396999997,
+ "sliver_cleanup": {
+  "target_mm": 0.4,
+  "iterations": 8,
+  "collapse_mm": 0.02,
+  "collapsed": false,
+  "input_minimum_angle_deg": 0.0,
+  "minimum_angle_deg": 0.0,
+  "face_count": 268604,
+  "topology_unchanged": true,
+  "checks_passed": false,
+  "maximum_sampled_deviation_mm": 0.13284602761268616,
+  "relative_volume_change": -0.002347057994613322,
+  "passed": false
+ },
+ "fea_surface": {
+  "trials": [
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 0.8,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.5308923125267029,
+    "relative_volume_change": 0.00025943852046395044,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -84}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 7, 'runtime_s': 13.016464600004838, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 0.8,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.47812801599502563,
+    "relative_volume_change": 5.940565010198462e-05,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -79}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 32, 'runtime_s': 13.462706299993442, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 0.8,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.3775898814201355,
+    "relative_volume_change": 0.0004219356172641131,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -73}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 16, 'runtime_s': 15.897580899996683, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 0.8,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.47812801599502563,
+    "relative_volume_change": 5.940565010198462e-05,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -81}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 24, 'runtime_s': 14.22671000000264, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 0.8,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.3775898814201355,
+    "relative_volume_change": 0.0004219356172641131,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -78}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 15, 'runtime_s': 16.103773399998317, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 0.8,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.47812801599502563,
+    "relative_volume_change": 5.940565010198462e-05,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -79}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 19, 'runtime_s': 14.843474900000729, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 0.6,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.3775898814201355,
+    "relative_volume_change": 0.0004219356172641131,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -76}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 19, 'runtime_s': 13.776036799987196, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 0.6,
+    "feature_deg": 40.0,
+    "deviation_mm": 0.47812801599502563,
+    "relative_volume_change": 5.940565010198462e-05,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 20, 'runtime_s': 12.261233099998208, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 0.6,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.3775898814201355,
+    "relative_volume_change": 0.0004219356172641131,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -75}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 20, 'runtime_s': 14.296409699993092, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 0.6,
+    "feature_deg": 60.0,
+    "deviation_mm": 0.47812801599502563,
+    "relative_volume_change": 5.940565010198462e-05,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -75}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 25, 'runtime_s': 12.472428300010506, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.5,
+    "taubin": 10,
+    "volume_mm": 0.6,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.3775898814201355,
+    "relative_volume_change": 0.0004219356172641131,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "mber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -72}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 18, 'runtime_s': 14.71340729999065, 'passed': False}"
+   },
+   {
+    "surface_mm": 0.6,
+    "taubin": 10,
+    "volume_mm": 0.6,
+    "feature_deg": 89.0,
+    "deviation_mm": 0.47812801599502563,
+    "relative_volume_change": 5.940565010198462e-05,
+    "deviation_within_limit": false,
+    "passed": false,
+    "diagnostic": "ber': -90}}, 'topology_changed': False, 'rejected_steps': {'remove_t_vertices': {'watertight': False, 'winding_consistent': True, 'body_count': 1, 'euler_number': -80}}, 'topology_passed': True, 'self_intersections_passed': False, 'folded_edges': 25, 'runtime_s': 12.941082499994081, 'passed': False}"
+   }
+  ],
+  "choice": {},
+  "volume_mm3": 14737.634241428925
+ },
+ "model": {
+  "material": {
+   "name": "Bambu PA6-CF, printed, transversely isotropic (layer plane XY, build direction Z)",
+   "young_modulus_mpa": 4430.0,
+   "poisson_ratio": 0.3,
+   "density_g_cm3": 1.09,
+   "orthotropic": {
+    "e_xy_mpa": 4430.0,
+    "e_z_mpa": 2170.0,
+    "nu_xy": 0.3,
+    "nu_xz": 0.3,
+    "g_xy_mpa": 1703.8,
+    "g_z_mpa": 834.6
+   },
+   "strength_xy_mpa": 102.0,
+   "strength_z_mpa": 48.0,
+   "source": "https://store.bblcdn.eu/s8/default/a64af9edb0f64095ad18bc4ad4faf1ec/Bambu_PA6-CF_Technical_Data_Sheet-v2.pdf (Technical Data Sheet V3.0, ISO 527 / ISO 1183, specimens 100 % infill, annealed and dried 80 C 12 h)",
+   "measured": [
+    "E_xy 4430 +/- 310 MPa",
+    "E_z 2170 +/- 230 MPa",
+    "tensile strength XY 102 +/- 7 MPa",
+    "tensile strength Z 48 +/- 6 MPa",
+    "density 1.09 g/cm3"
+   ],
+   "assumptions": {
+    "nu_xy": "0.30 not in the TDS",
+    "nu_xz": "0.30 not in the TDS (load in the layer plane, contraction along Z)",
+    "g_xy_mpa": "E_xy/(2(1+nu)), in-plane isotropy assumed",
+    "g_z_mpa": "E_z/(2(1+nu)), interlayer shear modulus not in the TDS",
+    "state": "dry, annealed, 100 % infill; no moisture, voids, plasticity, fatigue or strain rate"
+   },
+   "print_axis": [
+    0.0,
+    0.0,
+    1.0
+   ]
+  },
+  "point_masses": [
+   {
+    "name": "battery",
+    "mass_g": 37.0,
+    "position_mm": [
+     -1.6781509643504353e-16,
+     -3.0144237274670914e-16,
+     33.5
+    ],
+    "attachment_region": {
+     "kind": "box",
+     "min_mm": [
+      -20.1,
+      -2.0,
+      27.5
+     ],
+     "max_mm": [
+      20.1,
+      2.0,
+      28.51
+     ]
+    }
+   }
+  ],
+  "load_cases": [
+   {
+    "name": "arm_tip",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        8.823333333333334
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        9.343333333333334
+       ]
+      },
+      "force_n": [
+       0.0,
+       0.0,
+       3.6
+      ]
+     }
+    ]
+   },
+   {
+    "name": "modes",
+    "analysis": "modal",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_front",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -12.01,
+        26.5,
+        19.5
+       ],
+       "max_mm": [
+        12.01,
+        43.5,
+        26.01
+       ]
+      },
+      "force_n": [
+       0.0,
+       -30.64578125,
+       0.0
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_arm",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -15.95,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       -9.55,
+       15.95,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       -15.95,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       -9.55,
+       0.51
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       9.55,
+       9.55,
+       -0.01
+      ],
+      "max_mm": [
+       15.95,
+       15.95,
+       0.51
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -63.05466183516625,
+        29.536448843603857,
+        8.823333333333334
+       ],
+       "max_mm": [
+        -43.85466183516625,
+        48.73644884360386,
+        9.343333333333334
+       ]
+      },
+      "force_n": [
+       2.2077626326054296,
+       -14.27686502418177,
+       -5.107630208333331
+      ]
+     }
+    ]
+   },
+   {
+    "name": "crash_back",
+    "analysis": "static",
+    "fixed_regions": [
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       29.536448843603857,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       48.73644884360386,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       -63.05466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       -43.85466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     },
+     {
+      "kind": "box",
+      "min_mm": [
+       43.85466183516625,
+       -48.73644884360386,
+       6.656666666666668
+      ],
+      "max_mm": [
+       63.05466183516625,
+       -29.536448843603857,
+       7.166666666666668
+      ]
+     }
+    ],
+    "loads": [
+     {
+      "region": {
+       "kind": "box",
+       "min_mm": [
+        -20.1,
+        -2.0,
+        27.5
+       ],
+       "max_mm": [
+        20.1,
+        2.0,
+        28.51
+       ]
+      },
+      "force_n": [
+       0.0,
+       0.0,
+       -15.322890625
+      ]
+     }
+    ]
+   }
+  ],
+  "loads": {
+   "arm_tip_force_n": 3.6,
+   "all_up_mass_g": 125.0,
+   "standard_gravity_m_s2": 9.80665,
+   "crash_front_g": 25.0,
+   "crash_arm_g": 12.5,
+   "crash_back_g": 12.5,
+   "safety_factor": 2.0,
+   "sources": {
+    "arm_tip": "motor thrust 1.80 N (GTS V3 1203 8000KV, GF65R, 7.4 V) x 2, upward on the front-left motor seat, centre mounts fixed",
+    "crash_front": "all-up mass 125 g x 25 g = 30.6 N rearward on the camera region, centre mounts fixed",
+    "crash_arm": "all-up mass 125 g x 12.5 g = 15.3 N on the front-left motor seat, oblique (inward, tangential, downward 2:2:1 normalised), centre mounts fixed",
+    "crash_back": "ASSUMPTION: all-up mass 125 g x 12.5 g = 15.3 N on the battery deck towards the frame (landing on the back), four motor seats fixed",
+    "safety_factor": "2.0 against TDS tensile strength, linear static equivalent load, no impact dynamics"
+   }
+  },
+  "support": {
+   "arm_tip": "centre mount undersides fixed (all translations)",
+   "modes": "four motor seat undersides fixed (all translations), battery as rigidly coupled point mass on the deck band",
+   "crash_front": "centre mount undersides fixed",
+   "crash_arm": "centre mount undersides fixed",
+   "crash_back": "four motor seat undersides fixed"
+  }
+ }
+}

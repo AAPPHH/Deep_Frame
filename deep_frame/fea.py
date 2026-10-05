@@ -546,6 +546,142 @@ def clean_slivers(mesh, settings):
     report["passed"] = report["topology_unchanged"] and report["checks_passed"] and report["maximum_sampled_deviation_mm"] <= settings["surface_deviation_mm"] and abs(report["relative_volume_change"]) <= settings["relative_volume_change"]
     return (surface if report["passed"] else mesh), report
 
+def _cross(u, v, x, y):
+    return (u[:, 0]-x)*(v[:, 1]-y)-(u[:, 1]-y)*(v[:, 0]-x)
+
+def voxel_coverage(mesh, low, h, shape, block):
+    triangles = np.asarray(mesh.triangles, dtype=np.float64)
+    area = _cross(triangles[:, 1], triangles[:, 2], triangles[:, 0, 0], triangles[:, 0, 1])
+    triangles, area = triangles[area != 0], area[area != 0]
+    delta = np.zeros((shape[0], shape[1], shape[2]+1), dtype=np.float32)
+    for start in range(0, len(triangles), block):
+        t, a = triangles[start:start+block], area[start:start+block]
+        first = np.ceil((t[:, :, :2].min(1)-low[:2])/h).astype(np.int64)
+        span = np.maximum(np.floor((t[:, :, :2].max(1)-low[:2])/h).astype(np.int64)-first+1, 0)
+        counts = span[:, 0]*span[:, 1]
+        index = np.repeat(np.arange(len(t)), counts)
+        local = np.arange(counts.sum())-np.repeat(np.cumsum(counts)-counts, counts)
+        i, j = first[index, 0]+local//span[index, 1], first[index, 1]+local % span[index, 1]
+        x, y, t, a = low[0]+i*h, low[1]+j*h, t[index], a[index]
+        weights = np.stack([_cross(t[:, (k+1) % 3], t[:, (k+2) % 3], x, y)/a for k in range(3)])
+        inside = np.all(weights >= 0, axis=0)
+        q = (np.einsum("ki,ik->i", weights[:, inside], t[inside, :, 2])-low[2])/h
+        cell, sign, i, j = np.floor(q+0.5).astype(np.int64), np.where(a[inside] > 0, -1.0, 1.0), i[inside], j[inside]
+        fraction = cell+0.5-q
+        np.add.at(delta, (i, j, cell), (sign*fraction).astype(np.float32))
+        np.add.at(delta, (i, j, cell+1), (sign*(1-fraction)).astype(np.float32))
+    np.cumsum(delta, axis=2, out=delta)
+    tolerance = 1e-3
+    bad = (np.abs(delta[:, :, -1]) > tolerance) | (delta.max(axis=2) > 1+tolerance) | (delta.min(axis=2) < -tolerance)
+    return np.clip(delta[:, :, :-1], 0, 1), int(bad.sum())
+
+def _local_depth(inside, h, tiers):
+    from scipy.ndimage import distance_transform_edt, maximum_filter
+    depth = distance_transform_edt(inside)*h
+    return [maximum_filter(depth, size=2*int(np.ceil(radius/h))+1) for radius, _ in tiers]
+
+def _levels(points, depths, low, h, tiers):
+    index = tuple(np.clip(np.round((points-low)/h).astype(np.int64), 0, np.array(depths[0].shape)-1).T)
+    level = np.full(len(points), len(tiers))
+    for k in reversed(range(len(tiers))):
+        level[depths[k][index] < tiers[k][0]] = k
+    return level
+
+def _isotropic(mesh, target, plan, level=None, minimum=0):
+    import pymeshlab
+    import trimesh
+    meshes = pymeshlab.MeshSet()
+    arrays = {} if level is None else {"v_scalar_array": level.astype(np.float64)}
+    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32), **arrays))
+    if level is not None:
+        meshes.compute_selection_by_condition_per_vertex(condselect=f"q >= {minimum}")
+        meshes.compute_selection_transfer_vertex_to_face(inclusive=False)
+    meshes.meshing_isotropic_explicit_remeshing(iterations=plan["iterations"], targetlen=pymeshlab.PureValue(target), featuredeg=plan["feature_deg"], checksurfdist=True,
+                                                maxsurfdist=pymeshlab.PureValue(plan["max_surface_distance_mm"]), selectedonly=level is not None)
+    current = meshes.current_mesh()
+    return trimesh.Trimesh(current.vertex_matrix(), current.face_matrix(), process=False)
+
+def _meshset(mesh):
+    import pymeshlab
+    meshes = pymeshlab.MeshSet()
+    meshes.add_mesh(pymeshlab.Mesh(vertex_matrix=np.asarray(mesh.vertices, dtype=np.float64), face_matrix=np.asarray(mesh.faces, dtype=np.int32)))
+    return meshes
+
+def _current(meshes):
+    import trimesh
+    return trimesh.Trimesh(meshes.current_mesh().vertex_matrix(), meshes.current_mesh().face_matrix(), process=False)
+
+def _repair_intersections(mesh, target, plan):
+    import pymeshlab
+    repaired = []
+    for _ in range(plan["repair_rounds"]):
+        meshes = _meshset(mesh)
+        meshes.compute_selection_by_self_intersections_per_face()
+        count = int(meshes.current_mesh().selected_face_number())
+        if not count:
+            break
+        repaired.append(count)
+        for _ in range(plan["repair_rings"]):
+            meshes.apply_selection_dilatation()
+        meshes.meshing_isotropic_explicit_remeshing(iterations=plan["iterations"], targetlen=pymeshlab.PureValue(target), featuredeg=plan["repair_feature_deg"], checksurfdist=True,
+                                                    maxsurfdist=pymeshlab.PureValue(plan["max_surface_distance_mm"]), selectedonly=True)
+        candidate = _current(meshes)
+        if _topology(candidate) != _topology(mesh):
+            break
+        mesh = candidate
+    return mesh, repaired
+
+def graded_surface(mesh, settings, plan, planes=()):
+    import trimesh
+    from scipy.ndimage import gaussian_filter
+    from skimage.measure import marching_cubes
+    from deep_frame.topology_implicit import mesh_checks, surface_fidelity
+    start, h = time.monotonic(), plan["voxel_mm"]
+    low = mesh.bounds[0]-(plan["pad_cells"]+0.5)*h+np.array([math.pi, math.e, math.sqrt(2)])*1e-5
+    shape = np.ceil((mesh.bounds[1]-low)/h).astype(np.int64)+plan["pad_cells"]+1
+    field, bad_columns = np.zeros(shape, dtype=np.float32), 0
+    for axes in ((0, 1, 2), (1, 2, 0), (2, 0, 1)):
+        order = np.array(axes)
+        coverage, bad = voxel_coverage(trimesh.Trimesh(np.asarray(mesh.vertices)[:, order], mesh.faces, process=False), low[order], h, shape[order], plan["block_faces"])
+        field += np.transpose(coverage, np.argsort(order))/3
+        bad_columns += bad
+        del coverage
+    if plan["sigma_cells"]:
+        field = gaussian_filter(field, plan["sigma_cells"], output=np.float32)
+    vertices, faces, _, _ = marching_cubes(field, 0.5, spacing=(h, h, h), allow_degenerate=False)
+    voxel = trimesh.Trimesh(vertices+low, faces, process=True)
+    if voxel.volume < 0:
+        voxel.invert()
+    stride = plan["sizing_stride"]
+    depths = _local_depth(field[::stride, ::stride, ::stride] > 0.5, h*stride, plan["tiers"])
+    del field
+    sizes = [size for _, size in plan["tiers"]]+[plan["coarse_mm"]]
+    surface = _isotropic(voxel, sizes[0], plan)
+    for minimum, size in enumerate(sizes[1:], 1):
+        surface = _isotropic(surface, size, plan, _levels(np.asarray(surface.vertices), depths, low, h*stride, plan["tiers"]), minimum)
+    parts = trimesh.Trimesh(surface.vertices, surface.faces, process=True).split(only_watertight=False)
+    surface = max(parts, key=lambda part: abs(part.volume))
+    dropped = float(sum(abs(part.volume) for part in parts)-abs(surface.volume))
+    collapsed = _collapse_short_edges(surface, plan["collapse_mm"])
+    if _topology(collapsed) == _topology(surface) and collapsed.face_angles.min() > surface.face_angles.min():
+        surface = collapsed
+    surface, repaired = _repair_intersections(surface, sizes[0], plan)
+    vertices, normals, snapped = np.array(surface.vertices), surface.vertex_normals, 0
+    for z in planes:
+        snap = (np.abs(vertices[:, 2]-z) <= plan["snap_mm"]) & (np.abs(normals[:, 2]) >= plan["snap_normal_z"])
+        vertices[snap, 2], snapped = z, snapped+int(snap.sum())
+    surface = trimesh.Trimesh(vertices, surface.faces, process=False)
+    checks, fidelity = mesh_checks(surface), surface_fidelity(mesh, surface)
+    level = _levels(np.asarray(surface.vertices), depths, low, h*stride, plan["tiers"])
+    report = {"voxel_mm": h, "grid_shape": shape.tolist(), "inconsistent_columns": bad_columns, "voxel_face_count": len(voxel.faces), "voxel_volume_change": float(voxel.volume/mesh.volume-1), "sizes_mm": sizes, "tier_vertex_counts": np.bincount(level, minlength=len(sizes)).tolist(), "dropped_parts": len(parts)-1, "dropped_volume_mm3": dropped, "intersection_repairs": repaired, "snapped_planes_mm": list(planes), "snapped_vertices": snapped,
+              "face_count": len(surface.faces), "minimum_angle_deg": float(np.degrees(surface.face_angles.min())), "folded_edges": int(np.sum(surface.face_adjacency_angles > math.radians(179))),
+              "topology": {"input": _topology(mesh), "graded": _topology(surface)}, "checks_passed": checks["passed"], "self_intersections_passed": checks["self_intersections"]["passed"],
+              "print_deviation_mm": fidelity["maximum_sampled_deviation_mm"], "print_to_fea_mm": fidelity["reference_to_approximation"]["surface_distance_mm"], "fea_to_print_mm": fidelity["approximation_to_reference"]["surface_distance_mm"],
+              "relative_volume_change": fidelity["relative_volume_change"], "runtime_s": time.monotonic()-start}
+    report["deviation_within_limit"] = report["print_deviation_mm"] <= settings["surface_deviation_mm"]
+    report["passed"] = checks["passed"] and not report["folded_edges"] and report["minimum_angle_deg"] >= plan["minimum_angle_deg"] and abs(report["relative_volume_change"]) <= settings["relative_volume_change"] and surface.body_count == 1
+    return surface, report
+
 def _surface_model(gmsh, request, settings):
     import trimesh
     data = np.load(request["surface_path"])
