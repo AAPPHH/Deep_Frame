@@ -389,7 +389,7 @@ class Reconstruction:
             axes = self.field.axes(window)
             self._blend(window, self._fit(axes, primitive_distance(axes, region), primitive_distance(axes, dict(region, radius_mm=min(node["radius"], self.config["minimum_radius_mm"])))).astype(np.float32), blend)
 
-    def lift_contacts(self, faces, reach, over, radial=None):
+    def lift_contacts(self, faces, reach, over, radial=None, source=False):
         h = float(self.field.spacing[0])
         for axis, sign, plane, low, high in faces:
             bounds = np.array([low, high])
@@ -398,13 +398,14 @@ class Reconstruction:
             if window is None:
                 continue
             axes, values = self.field.axes(window), self.field.values[window]
+            footprint = np.maximum(values, self.raw_values(axes)) if source and self.density is not None else values
             depth = sign*(axes[axis]-plane)
             first, second = [(axes[i] >= low[i]+h) & (axes[i] <= high[i]-h) for i in range(3) if i != axis]
             inside = first & second
             if radial is not None:
                 center, radius = radial
                 inside &= sum((axes[i]-center[i])**2 for i in range(3) if i != axis) <= radius**2
-            peak = np.where((depth >= -reach) & (depth <= 0), values, -np.inf).max(axis=axis, keepdims=True)
+            peak = np.where((depth >= -reach) & (depth <= 0), footprint, -np.inf).max(axis=axis, keepdims=True)
             self.field.values[window] = np.where(inside & (depth >= -reach) & (depth <= over) & (peak > 0), np.maximum(values, peak), values)
 
     def camera_contacts(self):
@@ -416,8 +417,8 @@ class Reconstruction:
         center = np.asarray(regions["camera_screw_axis"]["center_mm"], dtype=float)
         first, last = np.maximum(low, center-radius-self.field.spacing[0]), np.minimum(high, center+radius+self.field.spacing[0])
         faces = [(0, sign, float(plane), first, last) for sign, plane in ((1, low[0]), (-1, high[0]))]
-        reach = float(max(self.domain["grid"]["spacing_mm"]))+self.config["boolean_offset_mm"]
-        self.lift_contacts(faces, reach, abs(self.config["preserve_flush_mm"]), (center, radius))
+        reach = max(self.config.get("camera_contact_reach_mm", 0.0), float(max(self.domain["grid"]["spacing_mm"]))+self.config["boolean_offset_mm"])
+        self.lift_contacts(faces, reach, abs(self.config["preserve_flush_mm"]), (center, radius), True)
 
     def finish(self):
         h = self.field.spacing[0]
